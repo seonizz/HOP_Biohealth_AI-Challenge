@@ -381,7 +381,7 @@ test('empty, invalid JSON, mixed prose and truncated output return a safe 502 er
   await assert.rejects(gateway(async () => new Response('upstream-private-data')).respond(context()), { status: 502, code: 'MODEL_INVALID_RESPONSE' });
 });
 
-test('busy, down and authentication errors do not read or expose upstream error bodies or retry', async () => {
+test('busy and down errors retry within the cap while authentication and other errors fail immediately', async () => {
   for (const [status, code] of [[429, 'MODEL_UNAVAILABLE'], [503, 'MODEL_UNAVAILABLE'], [401, 'MODEL_AUTH_FAILED'], [403, 'MODEL_AUTH_FAILED'], [400, 'MODEL_UPSTREAM_ERROR']]) {
     let calls = 0;
     const model = gateway(async () => {
@@ -389,7 +389,7 @@ test('busy, down and authentication errors do not read or expose upstream error 
       return { ok: false, status, json: () => { throw new Error('Must not read secret body'); } };
     });
     await assert.rejects(model.respond(context()), error => error.code === code && !error.message.includes('secret'));
-    assert.equal(calls, 1);
+    assert.equal(calls, [429, 503].includes(status) ? 3 : 1);
   }
   await assert.rejects(gateway(async () => { throw new Error('private-network-detail'); }).respond(context()), error => error.status === 503 && !error.message.includes('private-network-detail'));
 });
@@ -521,7 +521,7 @@ for (const limit of [4096, 131072]) test(`trained profile retries the ${limit}-t
   assert.equal(bodies[1].max_tokens, 2048);
 });
 
-test('trained retry stops after two budget errors and never retries unsupported fields or malformed output', async () => {
+test('trained retry stops after two budget errors, rejects unsupported fields and caps malformed repairs', async () => {
   let calls = 0;
   const model = trainedGateway(async () => {
     calls++;
@@ -529,14 +529,14 @@ test('trained retry stops after two budget errors and never retries unsupported 
   });
   await assert.rejects(model.updateState(context()), { code: 'MODEL_CONTEXT_TOO_LONG', status: 502 });
   assert.equal(calls, 2);
-  for (const response of [
-    () => new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: 'Unsupported request fields: private-detail' } }), { status: 400 }),
-    () => envelope('{'), () => envelope(JSON.stringify(trainedState()), 'length'),
+  for (const [response, expectedAttempts] of [
+    [() => new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: 'Unsupported request fields: private-detail' } }), { status: 400 }), 1],
+    [() => envelope('{'), 3], [() => envelope(JSON.stringify(trainedState()), 'length'), 3],
   ]) {
     let attempts = 0;
     const one = trainedGateway(async () => { attempts++; return response(); });
     await assert.rejects(one.updateState(context()), error => error.status === 502 && !error.message.includes('private-detail'));
-    assert.equal(attempts, 1);
+    assert.equal(attempts, expectedAttempts);
   }
 });
 

@@ -6,6 +6,7 @@ import { request as httpRequest } from 'node:http';
 import { createApp } from '../src/server.js';
 import { createIntake, answerIntake, currentView } from '../src/intake.js';
 import { HttpError } from '../src/errors.js';
+import { ModelGateway } from '../src/model.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const memory = { summary:'사용자가 전한 상황', facts:[], unknowns:['당사자의 직접 의향'], user_goal:'부담 없는 첫마디' };
@@ -555,4 +556,85 @@ test('two results at the same clock time have distinct stable record IDs', { ski
   assert.equal((await f.request(session, '/api/records')).data.records.length, 2);
   const replay = await f.request(session, `/api/intakes/${b.id}/result`, 'POST', { revision:0 });
   assert.equal(replay.data.record.id, second.data.record.id);
+});
+
+
+test('automatic model recovery shares duplicate requests and commits one validated answer', { skip:!databaseUrl }, async t => {
+  let calls = 0;
+  const diagnostics = [];
+  const gateway = new ModelGateway({
+    baseUrl:'https://example.test/v1', apiKey:'test-only-secret', model:'malssi-gemma4-31b-step100',
+    diagnosticLogger:entry => diagnostics.push(entry),
+    fetchImpl:async () => {
+      calls++;
+      if (calls === 1) return new Response('{}', {status:503,headers:{'Retry-After':'0'}});
+      const content = calls === 2 ? '{incomplete' : JSON.stringify({
+        patient_state:{
+          summary:'사용자가 합성 호칭을 제공했습니다.',
+          facts:[{subject:'patient',question_id:'name',quote:'검증친구',interpretation:'사용자가 제공한 호칭입니다.',certainty:'reported'}],
+          unknowns:['현재 상태는 미확인입니다.'],
+        },
+        name_index:{alias:'검증친구',source_question_id:'name',quote:'검증친구'},
+        question_plan:{skip:[]},
+      });
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content}}]}), {status:200});
+    },
+  });
+  const f = await fixture(t, gateway), session = await f.browser();
+  const row = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  const input = {revision:0,question_id:'name',text:'검증친구',selected:[]};
+  const responses = await Promise.all([
+    f.request(session, `/api/intakes/${row.id}/answers`, 'POST', input),
+    f.request(session, `/api/intakes/${row.id}/answers`, 'POST', input),
+  ]);
+  for (const response of responses) {
+    assert.equal(response.status, 200, JSON.stringify(response.data));
+    assert.equal(response.data.revision, 2);
+    assert.equal(response.data.question.id, 'want');
+    assert.equal(response.data.model_pending, undefined);
+    assert.equal(response.data.log.filter(entry => entry.who === 'me').length, 1);
+  }
+  assert.equal(calls, 3);
+  assert.deepEqual(diagnostics.map(entry => entry.reason), ['http_transient','content_json','success']);
+  assert.equal(new Set(diagnostics.map(entry => entry.request_id)).size, 1);
+  assert.match(diagnostics[0].request_id, /^[0-9a-f-]{36}$/);
+  const logged = JSON.stringify(diagnostics);
+  for (const secret of ['test-only-secret','검증친구','{incomplete']) assert.equal(logged.includes(secret), false);
+  const history = await f.store.pool.query('SELECT revision,reason FROM patient_state_revisions WHERE intake_id=$1 ORDER BY revision', [row.id]);
+  assert.deepEqual(history.rows, [{revision:0,reason:'created'},{revision:1,reason:'user_answer'},{revision:2,reason:'model_update'}]);
+});
+
+
+test('shared recovery exhaustion correlates both HTTP failures with one model operation', { skip:!databaseUrl }, async t => {
+  let calls = 0;
+  const attempts = [], failures = [];
+  const gateway = new ModelGateway({
+    baseUrl:'https://example.test/v1',apiKey:'test-only-secret',model:'malssi-gemma4-31b-step100',
+    diagnosticLogger:entry => attempts.push(entry),
+    fetchImpl:async () => ++calls === 1
+      ? new Response('{}',{status:503})
+      : new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'{'}}]})),
+  });
+  const f = await fixture(t, gateway), session = await f.browser();
+  const row = (await f.request(session,'/api/intakes','POST',{})).data;
+  const input = {revision:0,question_id:'name',text:'검증친구',selected:[]};
+  const previous = console.error;
+  let responses;
+  try {
+    console.error = line => failures.push(JSON.parse(line));
+    responses = await Promise.all([
+      f.request(session,`/api/intakes/${row.id}/answers`,'POST',input),
+      f.request(session,`/api/intakes/${row.id}/answers`,'POST',input),
+    ]);
+  } finally { console.error = previous; }
+  assert.equal(calls,3);
+  assert.ok(responses.every(response => response.status === 502 && response.data.error.code === 'MODEL_INVALID_RESPONSE'));
+  assert.equal(failures.length,2);
+  assert.equal(new Set(failures.map(entry => entry.request_id)).size,2);
+  assert.ok(failures.every(entry => entry.operation_id === attempts[0].request_id));
+  assert.deepEqual(new Set(failures.map(entry => entry.request_id)),new Set(responses.map(response => response.data.error.request_id)));
+  const saved = (await f.request(session,`/api/intakes/${row.id}`)).data;
+  assert.equal(saved.revision,1);
+  assert.equal(saved.model_pending,true);
+  assert.equal(saved.log.filter(entry => entry.who === 'me').length,1);
 });

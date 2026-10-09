@@ -47,7 +47,11 @@ const ChatScreen={
   clear(){$("log").innerHTML="";this.messages=[];this.think(false);},
   think(on){const t=$("thinking");t.hidden=!on;if(on){t.querySelector(".th-err").hidden=true;this.thinkStep(0);}},
   thinkStep(i){$("thinking").querySelectorAll("li").forEach((l,k)=>l.className=k<i?"done":k===i?"now":"");},
-  thinkError(retry){$("thinking").querySelector(".th-err").hidden=false;$("thinking").querySelectorAll("li").forEach(l=>l.className="");$("thRetry").onclick=retry;},
+  thinkError(retry,message="정리하는 중에 문제가 생겼어요. 답해 주신 내용은 그대로 있으니 다시 시도해 주세요."){
+    const error=$("thinking").querySelector(".th-err");error.hidden=false;
+    error.querySelector("p").textContent=message;
+    $("thinking").querySelectorAll("li").forEach(l=>l.className="");$("thRetry").onclick=retry;
+  },
   // 이전 질문으로 돌아갈 때 그 뒤에 쌓인 말풍선을 지움
   count(){return $("log").children.length;},
   truncate(n){const l=$("log");while(l.children.length>n)l.lastChild.remove();},

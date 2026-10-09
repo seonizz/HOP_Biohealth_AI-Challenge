@@ -60,6 +60,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   const view = row => ({ id: row.id, revision: row.revision, name:row.state.name, chat_title:row.state.chatTitle || '', ...currentView(row.state), log: row.state.log });
   const server = createServer(async (req, res) => {
     const requestId = randomUUID();
+    const requestStarted = Date.now();
     res.setHeader('X-Request-Id', requestId);
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('Referrer-Policy', 'no-referrer');
@@ -177,20 +178,13 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             const runKey = `${owner}:${id}:${row.revision}`;
             const run = async () => {
               const context = buildContext(row.state);
-              const memory = await gateway.updateState(context, row.state.agentMemory || null);
+              const memory = await gateway.updateState(context, row.state.agentMemory || null, { requestId });
               return store.updateIntake(owner, id, row.revision,
                 state => completeModelAnswer(state, memory), 'model_update');
             };
             if (!modelRuns.has(runKey)) modelRuns.set(runKey, run().finally(() => modelRuns.delete(runKey)));
-            try {
-              return json(res, 200, view(await modelRuns.get(runKey)));
-            } catch (error) {
-              if (error instanceof HttpError && error.code.startsWith('MODEL_')) {
-                console.error(`[${requestId}] model state update failed (${error.code})`);
-              }
-              // The pending input remains saved; an error cannot advance a prompt.
-              throw error;
-            }
+            // The pending input remains saved; an error cannot advance a prompt.
+            return json(res, 200, view(await modelRuns.get(runKey)));
           }
           const row = await store.updateIntake(owner, id, revision, state => {
             const next = action === 'back' ? backIntake(state) : answerIntake(discardModelAnswer(state), input);
@@ -210,7 +204,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             if (row.revision !== revision || row.state.status !== 'ready') throw new HttpError(409, 'INTAKE_NOT_READY', '대화를 마친 뒤 결과를 확인해 주세요.');
             if (!gateway) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
             const context = (await store.context(owner, id)).context;
-            const result = await gateway.respond(context, row.state.agentMemory || null);
+            const result = await gateway.respond(context, row.state.agentMemory || null, { requestId });
             const recordId = await store.nextRecordId();
             const p = { ...context.profileInput, scores:{}, safety:result.assessment.safety,
               symptoms:[], risks:[], protect:[] };
@@ -243,6 +237,10 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       throw new HttpError(404, 'NOT_FOUND', '요청한 기능을 찾을 수 없어요.');
     } catch (error) {
       const known = error instanceof HttpError;
+      if (known && error.code.startsWith('MODEL_')) console.error(JSON.stringify({
+        event:'model_request_failed', request_id:requestId, operation_id:error.modelRequestId || requestId, code:error.code,
+        status:error.status, elapsed_ms:Date.now() - requestStarted,
+      }));
       if (!known) console.error(`[${requestId}] request failed`); // No inputs, credentials or counselling content.
       if (!res.headersSent) json(res, known ? error.status : 500, { error:{ code:known ? error.code : 'INTERNAL_ERROR', message:known ? error.message : '저장하지 못했어요. 잠시 후 다시 시도해 주세요.', request_id:requestId } });
       else res.end();

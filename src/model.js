@@ -1,5 +1,5 @@
 import { HttpError } from './errors.js';
-import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex } from './agent-state.js';
+import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { modelResponseFormat } from './model-schema.js';
 import { trainedContext } from './model-context.js';
 
@@ -97,140 +97,298 @@ function modelContext(context) {
 }
 
 function parseContent(content) {
-  if (typeof content !== 'string' || !content.trim() || content.length > 60000) throw invalidResponse();
+  if (typeof content !== 'string' || !content.trim() || content.length > 60000) throw invalidResponse('content_json');
   let json = content.trim();
-  // A single complete fenced object is accepted; mixed prose/partial JSON is not repaired.
+  // A single complete fenced object is accepted; mixed prose/partial JSON is not repaired locally.
   const fenced = /^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i.exec(json);
   if (fenced) json = fenced[1].trim();
-  try { return JSON.parse(json); } catch { throw invalidResponse(); }
+  try { return JSON.parse(json); } catch { throw invalidResponse('content_json'); }
 }
 
-const invalidResponse = () => new HttpError(502, 'MODEL_INVALID_RESPONSE', '모델의 답변을 확인하지 못했어요. 다시 시도해 주세요.');
+function invalidResponse(reason = 'output_schema') {
+  return failure(502, 'MODEL_INVALID_RESPONSE', '모델의 답변을 확인하지 못했어요. 다시 시도해 주세요.', reason);
+}
+
+function failure(status, code, message, reason) {
+  const error = new HttpError(status, code, message);
+  error.modelReason = reason;
+  return error;
+}
+
+const timeout = () => failure(504, 'MODEL_TIMEOUT', '모델의 답변이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.', 'deadline');
+const unavailable = reason => failure(503, 'MODEL_UNAVAILABLE', '모델이 다른 답변을 만들고 있거나 연결되지 않았어요. 잠시 후 다시 시도해 주세요.', reason);
+const MAX_ATTEMPTS = 3;
+const MAX_RETRY_DELAY_MS = 5000;
+const TRANSIENT_STATUSES = new Set([429, 502, 503, 504]);
+const TRANSIENT_CONNECTION_CODES = new Set(['ECONNRESET', 'ECONNREFUSED', 'EPIPE', 'ETIMEDOUT', 'EAI_AGAIN', 'ENETUNREACH', 'EHOSTUNREACH',
+  'UND_ERR_CONNECT_TIMEOUT', 'UND_ERR_HEADERS_TIMEOUT', 'UND_ERR_BODY_TIMEOUT', 'UND_ERR_SOCKET']);
+
+function transientConnection(error) {
+  return TRANSIENT_CONNECTION_CODES.has(error?.code) || TRANSIENT_CONNECTION_CODES.has(error?.cause?.code);
+}
 
 function exactKeys(value, keys) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
       Object.keys(value).length !== keys.length || keys.some(key => !Object.hasOwn(value, key))) throw invalidResponse();
 }
 
+function checked(reason, validate) {
+  try { return validate(); } catch (error) {
+    if (error instanceof HttpError && error.code === 'MODEL_INVALID_RESPONSE') throw invalidResponse(reason);
+    throw error;
+  }
+}
+
+function validateState(payload, context) {
+  exactKeys(payload, ['patient_state', 'name_index', 'question_plan']);
+  checked('patient_state_validation', () => validatePatientState(payload.patient_state, context));
+  checked('name_index_validation', () => validateNameIndex(payload.name_index, context));
+  checked('question_plan_validation', () => validateQuestionPlan(payload.question_plan, context));
+  return validateStateResult(payload, context);
+}
+
+function validateGuide(payload, context) {
+  exactKeys(payload, ['guide', 'patient_state', 'assessment', 'name_index']);
+  checked('patient_state_validation', () => validatePatientState(payload.patient_state, context));
+  checked('name_index_validation', () => validateNameIndex(payload.name_index, context));
+  return checked('guide_validation', () => validateAgentResult(payload, context));
+}
+
 function validMemory(value, context) {
   try { return validatePatientState(value, context); } catch { return null; }
 }
 
-function contextBudgetError(value) {
-  return value?.error?.type === 'invalid_request_error' && typeof value.error.message === 'string' &&
+function contextBudgetError(value, status) {
+  if (status === 422) return value?.error?.code === 'context_budget_exceeded';
+  return status === 400 && value?.error?.type === 'invalid_request_error' && typeof value.error.message === 'string' &&
     /^Prompt \(\d+\) plus max_tokens \(\d+\) exceeds the \d+-token context budget; no text was truncated$/.test(value.error.message);
 }
 
+function correction(reason, repair) {
+  if (!reason) return '';
+  const evidence = ['patient_state_validation', 'name_index_validation', 'question_plan_validation'].includes(reason);
+  return '\n검증 후 재작성 ' + repair + ': ' + (evidence
+    ? '근거 검증에 실패했습니다. 마지막 user 자료의 같은 사람·질문에서 정확히 복사한 인용만 사용하고 unknown을 확정하지 마세요. 불확실한 이름은 null, 건너뛰기는 []로 유지하세요.'
+    : '응답 형식 검증에 실패했습니다. 지정된 키와 자료형만 사용한 완전한 JSON 객체 하나를 처음부터 작성하세요. 설명·추가 키·미완성 문자열을 넣지 마세요.') +
+    ' 사실이나 진단을 만들지 말고, 앞선 형식 예시의 사실을 현재 자료로 사용하지 마세요. 중복을 줄여 출력 한도 안에서 모든 필수 필드를 완성하세요.';
+}
+
+function retryDelay(response, attempt) {
+  const raw = response?.headers?.get?.('retry-after');
+  let requested = 0;
+  if (typeof raw === 'string') {
+    if (/^\d+(?:\.\d+)?$/.test(raw.trim())) requested = Number(raw) * 1000;
+    else {
+      const date = Date.parse(raw);
+      if (Number.isFinite(date)) requested = Math.max(0, date - Date.now());
+    }
+  }
+  // Do not retry sooner than requested or hold a request for an unbounded Retry-After.
+  if (requested > MAX_RETRY_DELAY_MS) return null;
+  return Math.max(250 * 2 ** (attempt - 1), requested);
+}
+
+function ensureTime(operation) {
+  if (operation.controller.signal.aborted || performance.now() >= operation.deadline) throw timeout();
+}
+
+function waitRetry(delay, operation) {
+  ensureTime(operation);
+  return new Promise((resolve, reject) => {
+    const signal = operation.controller.signal;
+    const onAbort = () => { clearTimeout(timer); signal.removeEventListener('abort', onAbort); reject(timeout()); };
+    const timer = setTimeout(() => { signal.removeEventListener('abort', onAbort); resolve(); }, delay);
+    signal.addEventListener('abort', onAbort, { once: true });
+    if (signal.aborted) onAbort();
+  });
+}
+
+function safeUsage(usage) {
+  if (!usage || typeof usage !== 'object') return null;
+  const result = {};
+  for (const key of ['prompt_tokens', 'completion_tokens', 'total_tokens']) {
+    if (Number.isSafeInteger(usage[key]) && usage[key] >= 0) result[key] = usage[key];
+  }
+  return Object.keys(result).length ? result : null;
+}
+
 export class ModelGateway {
-  constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, fetchImpl = globalThis.fetch } = {}) {
+  constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, fetchImpl = globalThis.fetch,
+    diagnosticLogger = entry => console.error(JSON.stringify(entry)) } = {}) {
     this.baseUrl = typeof baseUrl === 'string' ? baseUrl.replace(/\/+$/, '') : '';
     this.apiKey = apiKey;
     this.model = model;
     this.protocol = protocol || (model === TRAINED_MODEL ? 'json_prompt' : 'json_schema');
     this.timeoutMs = timeoutMs ?? (this.protocol === 'json_prompt' ? 1800000 : 180000);
     this.fetchImpl = fetchImpl;
+    this.diagnosticLogger = diagnosticLogger;
   }
 
   get configured() {
     try {
       const url = new URL(this.baseUrl);
       return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !url.search && !url.hash &&
-        typeof this.apiKey === 'string' && Boolean(this.apiKey.trim()) && !/[\r\n]/.test(this.apiKey) &&
+        typeof this.apiKey === 'string' && Boolean(this.apiKey.trim()) && !/[\u0000-\u001f\u007f-\uffff]/.test(this.apiKey) &&
         typeof this.model === 'string' && Boolean(this.model.trim()) && Number.isInteger(this.timeoutMs) && this.timeoutMs > 0 &&
-        ['json_schema', 'json_prompt'].includes(this.protocol) && typeof this.fetchImpl === 'function';
+        this.timeoutMs <= 2147483647 && ['json_schema', 'json_prompt'].includes(this.protocol) && typeof this.fetchImpl === 'function';
     } catch { return false; }
   }
 
-  async respond(context, priorMemory = null) {
-    if (this.protocol === 'json_prompt') {
-      let memory = validMemory(priorMemory || context.agent_state, context);
-      let name = context.name_index ?? null;
-      try { name = validateNameIndex(name, context); } catch { memory = null; }
-      if (!memory) {
-        const updated = await this.trainedState(context, null, true);
-        memory = updated.patient_state; name = updated.name_index;
-      }
-      const payload = await this.completeTrained(context, memory, true);
-      exactKeys(payload, ['guide', 'assessment']);
-      return validateAgentResult({ ...payload, patient_state: memory, name_index: name }, context);
+  async operation(options, generate) {
+    if (!this.configured) throw new HttpError(503, 'MODEL_NOT_CONFIGURED', '모델 연결 설정을 확인해 주세요.');
+    const controller = new AbortController();
+    const requestId = typeof options?.requestId === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(options.requestId)
+      ? options.requestId : null;
+    const operation = { controller, deadline: performance.now() + this.timeoutMs, requestId };
+    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    try { return await generate(operation); }
+    catch (error) {
+      if (error instanceof HttpError) error.modelRequestId = requestId;
+      throw error;
     }
-    const payload = await this.complete(context, priorMemory, SYSTEM_PROMPT, FINAL_MAX_TOKENS, true);
-    return validateAgentResult(payload, context);
+    finally { clearTimeout(timer); }
   }
 
-  async updateState(context, priorMemory = null) {
-    if (this.protocol === 'json_prompt') return this.trainedState(context, validMemory(priorMemory, context));
-    const payload = await this.complete(context, priorMemory, STATE_PROMPT, 2200);
-    return validateStateResult(payload, context);
+  async respond(context, priorMemory = null, options = {}) {
+    return this.operation(options, async operation => {
+      if (this.protocol === 'json_prompt') {
+        let memory = validMemory(priorMemory || context.agent_state, context);
+        let name = context.name_index ?? null;
+        try { name = validateNameIndex(name, context); } catch { memory = null; }
+        if (!memory) {
+          const updated = await this.trainedState(context, null, operation, true);
+          memory = updated.patient_state; name = updated.name_index;
+        }
+        return this.completeTrained(context, memory, true, operation, payload => {
+          exactKeys(payload, ['guide', 'assessment']);
+          return validateGuide({ ...payload, patient_state: memory, name_index: name }, context);
+        });
+      }
+      return this.complete(context, priorMemory, SYSTEM_PROMPT, FINAL_MAX_TOKENS, operation, payload => validateGuide(payload, context), true);
+    });
   }
 
-  async trainedState(context, memory, finalProjection = false) {
-    const payload = await this.completeTrained(context, memory, false, finalProjection);
-    exactKeys(payload, ['patient_state', 'name_index', 'question_plan']);
-    exactKeys(payload.patient_state, ['summary', 'facts', 'unknowns']);
-    // Keep the output budget for generated state rather than echoing the original goal.
-    return validateStateResult({ ...payload, patient_state: { ...payload.patient_state, user_goal: contextGoal(context) } }, context);
+  async updateState(context, priorMemory = null, options = {}) {
+    return this.operation(options, operation => this.protocol === 'json_prompt'
+      ? this.trainedState(context, validMemory(priorMemory, context), operation)
+      : this.complete(context, priorMemory, STATE_PROMPT, 2200, operation, payload => validateState(payload, context)));
   }
 
-  async completeTrained(context, memory, final, finalProjection = final) {
-    return this.request(attempt => ({
+  async trainedState(context, memory, operation, finalProjection = false) {
+    return this.completeTrained(context, memory, false, operation, payload => {
+      exactKeys(payload, ['patient_state', 'name_index', 'question_plan']);
+      exactKeys(payload.patient_state, ['summary', 'facts', 'unknowns']);
+      // Keep the output budget for generated state rather than echoing the original goal.
+      return validateState({ ...payload, patient_state: { ...payload.patient_state, user_goal: contextGoal(context) } }, context);
+    }, finalProjection);
+  }
+
+  async completeTrained(context, memory, final, operation, validate, finalProjection = final) {
+    return this.request(({ tighter, repairReason, repairs }) => ({
       model: this.model, stream: false, n: 1, temperature: 0, max_tokens: final ? FINAL_MAX_TOKENS : 2048,
       messages: [
-        { role: 'system', content: final ? TRAINED_GUIDE_PROMPT : TRAINED_STATE_PROMPT },
+        { role: 'system', content: (final ? TRAINED_GUIDE_PROMPT : TRAINED_STATE_PROMPT) + correction(repairReason, repairs) },
         ...(final ? TRAINED_GUIDE_EXAMPLE : TRAINED_STATE_EXAMPLE),
-        { role: 'user', content: JSON.stringify(trainedContext(context, memory, { final: finalProjection, tighter: attempt > 0 })) },
+        { role: 'user', content: JSON.stringify(trainedContext(context, memory, { final: finalProjection, tighter })) },
       ],
-    }), true);
+    }), operation, validate, final ? 'guide' : 'state', true);
   }
 
-  async complete(context, priorMemory, prompt, maxTokens, final = false) {
-    return this.request(() => ({
+  async complete(context, priorMemory, prompt, maxTokens, operation, validate, final = false) {
+    return this.request(({ repairReason, repairs }) => ({
       model: this.model, stream: false, reasoning_effort: 'none', temperature: 0,
       max_tokens: maxTokens, response_format: modelResponseFormat(context, final),
       messages: [
-        { role: 'system', content: prompt },
+        { role: 'system', content: prompt + correction(repairReason, repairs) },
         { role: 'user', content: JSON.stringify({ current_context: modelContext(context), supplied_user_goal: contextGoal(context), prior_memory: priorMemory }) },
       ],
-    }));
+    }), operation, validate, final ? 'guide' : 'state');
   }
 
-  async request(body, retryBudget = false) {
-    if (!this.configured) throw new HttpError(503, 'MODEL_NOT_CONFIGURED', '모델 연결 설정을 확인해 주세요.');
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
-    try {
-      for (let attempt = 0; attempt < (retryBudget ? 2 : 1); attempt++) {
-        const response = await this.fetchImpl(`${this.baseUrl}/chat/completions`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${this.apiKey}` },
-          signal: controller.signal,
-          body: JSON.stringify(body(attempt)),
-        });
+  async request(body, operation, validate, generation, allowTighter = false) {
+    let tighter = false; let repairReason = null; let repairs = 0;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      ensureTime(operation);
+      const started = performance.now();
+      let status = null; let finishReason = null; let usage = null; let response;
+      let retry = false; let delay = 0;
+      try {
+        const requestBody = JSON.stringify(body({ tighter, repairReason, repairs }));
+        ensureTime(operation);
+        try {
+          response = await this.fetchImpl(this.baseUrl + '/chat/completions', {
+            method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + this.apiKey },
+            signal: operation.controller.signal, body: requestBody,
+          });
+        } catch (error) {
+          retry = transientConnection(error);
+          throw unavailable(retry ? 'connection_transient' : 'connection_failure');
+        }
+        ensureTime(operation);
+        status = Number.isInteger(response.status) ? response.status : null;
         if (!response.ok) {
-          if (retryBudget && response.status === 400) {
-            let failure;
-            try { failure = await response.json(); } catch { /* Error details remain private. */ }
-            if (contextBudgetError(failure)) {
-              if (attempt === 0) continue;
-              throw new HttpError(502, 'MODEL_CONTEXT_TOO_LONG', '모델이 읽을 내용이 많아 답변을 만들지 못했어요. 입력 내용을 확인하고 다시 시도해 주세요.');
+          if (allowTighter && [400, 422].includes(status)) {
+            let detail;
+            try { detail = await response.json(); } catch { /* Never log upstream error bodies. */ }
+            ensureTime(operation);
+            if (contextBudgetError(detail, status)) {
+              retry = !tighter;
+              tighter = true;
+              throw failure(502, 'MODEL_CONTEXT_TOO_LONG', '모델이 읽을 내용이 많아 답변을 만들지 못했어요. 입력 내용을 확인하고 다시 시도해 주세요.', 'context_budget');
             }
           }
-          if ([401, 403].includes(response.status)) throw new HttpError(503, 'MODEL_AUTH_FAILED', '모델 연결 인증 설정을 확인해 주세요.');
-          if ([429, 502, 503, 504].includes(response.status)) throw new HttpError(503, 'MODEL_UNAVAILABLE', '모델이 다른 답변을 만들고 있거나 연결되지 않았어요. 잠시 후 다시 시도해 주세요.');
-          throw new HttpError(502, 'MODEL_UPSTREAM_ERROR', '모델에 답변을 요청하지 못했어요. 연결 설정을 확인해 주세요.');
+          if ([401, 403].includes(status)) throw failure(503, 'MODEL_AUTH_FAILED', '모델 연결 인증 설정을 확인해 주세요.', 'authentication');
+          if (TRANSIENT_STATUSES.has(status)) {
+            delay = retryDelay(response, attempt);
+            retry = delay !== null;
+            throw unavailable(retry ? 'http_transient' : 'retry_after_limit');
+          }
+          throw failure(502, 'MODEL_UPSTREAM_ERROR', '모델에 답변을 요청하지 못했어요. 연결 설정을 확인해 주세요.', 'http_rejected');
         }
         let payload;
-        try { payload = await response.json(); } catch { throw invalidResponse(); }
-        const choice = payload?.choices?.[0];
-        if (!choice || choice.finish_reason !== 'stop') throw invalidResponse();
-        return parseContent(choice.message?.content);
+        try { payload = await response.json(); } catch (error) {
+          if (transientConnection(error)) { retry = true; throw unavailable('connection_transient'); }
+          if (error instanceof SyntaxError) throw invalidResponse('envelope_json');
+          throw unavailable('envelope_read_failure');
+        }
+        ensureTime(operation);
+        usage = safeUsage(payload?.usage);
+        const choice = Array.isArray(payload?.choices) && payload.choices.length === 1 ? payload.choices[0] : null;
+        if (!choice || !choice.message || typeof choice.message !== 'object') throw invalidResponse('envelope');
+        finishReason = ['stop', 'length', 'content_filter', 'tool_calls', 'function_call'].includes(choice.finish_reason) ? choice.finish_reason : 'other';
+        if (choice.finish_reason !== 'stop') throw invalidResponse('finish_reason');
+        const result = validate(parseContent(choice.message.content));
+        ensureTime(operation);
+        this.logAttempt(operation, generation, attempt, started, status, finishReason, usage, 'success');
+        return result;
+      } catch (error) {
+        // Release an unread error body without retaining or logging its contents.
+        try { if (response?.body && !response.bodyUsed) await response.body.cancel(); } catch { /* Already closed or aborted. */ }
+        const expired = operation.controller.signal.aborted || performance.now() >= operation.deadline;
+        const known = error instanceof HttpError;
+        const failure = expired ? timeout() : known ? error : unavailable('internal_failure');
+        this.logAttempt(operation, generation, attempt, started, status, finishReason, usage, failure.modelReason || 'internal_failure');
+        if (expired || !known || attempt === MAX_ATTEMPTS) throw failure;
+        if (error.code === 'MODEL_INVALID_RESPONSE') {
+          repairReason = error.modelReason; repairs++;
+          retry = true;
+        }
+        if (!retry) throw failure;
+        if (error.modelReason === 'connection_transient') delay = retryDelay(null, attempt);
+        if (delay > 0) {
+          try { await waitRetry(delay, operation); }
+          catch (waitError) {
+            this.logAttempt(operation, generation, attempt, started, status, finishReason, usage, 'deadline');
+            throw waitError;
+          }
+        }
       }
-    } catch (error) {
-      if (controller.signal.aborted) throw new HttpError(504, 'MODEL_TIMEOUT', '모델의 답변이 오래 걸리고 있어요. 잠시 후 다시 시도해 주세요.');
-      if (error instanceof HttpError) throw error;
-      throw new HttpError(503, 'MODEL_UNAVAILABLE', '모델에 연결하지 못했어요. 잠시 후 다시 시도해 주세요.');
-    } finally {
-      clearTimeout(timer);
     }
+  }
+
+  logAttempt(operation, generation, attempt, started, status, finishReason, usage, reason) {
+    const entry = { event: 'model_attempt', request_id: operation.requestId, generation, attempt, status,
+      duration_ms: Math.round(performance.now() - started), finish_reason: finishReason, usage, reason };
+    try { this.diagnosticLogger?.(entry); } catch { /* Diagnostics must never fail a validated response. */ }
   }
 }

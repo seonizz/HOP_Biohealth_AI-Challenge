@@ -24,8 +24,21 @@ function renderConversation(view,token){
   ChatInput.render(q,(text,selected,custom="",skipped=false)=>answer(text,selected,custom,skipped),view.canGoBack?goBack:null);
   if(view.model_pending&&view.pending_answer){
     const body={...view.pending_answer,revision:view.revision};
-    ChatInput.error("답변을 준비하지 못했어요. 다시 시도해 주세요.",()=>submitConversation(`/api/intakes/${view.id}/answers`,body,token,{who:"me",text:body.text,fu:!!body.follow_up}));
+    ChatInput.error("입력한 답변은 저장되어 있어요. 다시 시도하면 이어서 답변을 준비해요.",()=>submitConversation(`/api/intakes/${view.id}/answers`,body,token,{who:"me",text:body.text,fu:!!body.follow_up}));
   }
+}
+
+function conversationErrorMessage(error){
+  const messages={
+    MODEL_UNAVAILABLE:"답변 서버에 잠시 연결하지 못했어요. 대화 내용은 저장되어 있으니 잠시 후 다시 시도해 주세요.",
+    MODEL_INVALID_RESPONSE:"답변을 다시 확인했지만 아직 준비하지 못했어요. 대화 내용은 저장되어 있으니 다시 시도해 주세요.",
+    MODEL_TIMEOUT:"답변 준비 시간을 초과했어요. 대화 내용은 저장되어 있으니 잠시 후 다시 시도해 주세요.",
+    MODEL_CONTEXT_TOO_LONG:"한 번에 처리할 내용이 많아요. 입력한 답변을 수정한 뒤 다시 시도해 주세요.",
+    MODEL_AUTH_FAILED:"답변 서비스의 연결 설정을 확인해야 해요. 대화 내용은 저장되어 있어요.",
+    MODEL_NOT_CONFIGURED:"답변 서비스의 연결 설정을 확인해야 해요. 대화 내용은 저장되어 있어요.",
+    MODEL_NOT_CONNECTED:"답변 서비스의 연결 설정을 확인해야 해요. 대화 내용은 저장되어 있어요.",
+  };
+  return messages[error.code]||(error.code?.startsWith("MODEL_")?"답변을 준비하지 못했어요. 대화 내용은 저장되어 있으니 다시 시도해 주세요.":error.message);
 }
 
 async function recoverConversation(error,token,retry,present=(message,operation)=>ChatInput.error(message,operation)){
@@ -41,12 +54,12 @@ async function recoverConversation(error,token,retry,present=(message,operation)
         // 같은 질문의 입력창은 유지하여 실패 직후에도 답을 수정할 수 있어요.
         S=view;ChatScreen.sync(view.log);
       }else{
-        if(view.status==="ready"&&view.revision===S.revision){present(error.message,retry);return;}
+        if(view.status==="ready"&&view.revision===S.revision){present(conversationErrorMessage(error),retry);return;}
         renderConversation(view,token);return;
       }
     }catch(readError){error=readError;}
   }
-  if(token===conversationToken)present(error.code?.startsWith("MODEL_")?"답변을 준비하지 못했어요. 다시 시도해 주세요.":error.message,retry);
+  if(token===conversationToken)present(conversationErrorMessage(error),retry);
 }
 
 async function submitConversation(path,body,token,message){
@@ -83,5 +96,5 @@ async function finish(token=conversationToken){
     S.revision=result.revision;
     rememberRec(result.record);
     ResultScreen.open(result.record.profile,result.record.guide,true);
-  }catch(error){await recoverConversation(error,token,()=>finish(token),(_,retry)=>ChatScreen.thinkError(retry));}
+  }catch(error){await recoverConversation(error,token,()=>finish(token),(message,retry)=>ChatScreen.thinkError(retry,message));}
 }

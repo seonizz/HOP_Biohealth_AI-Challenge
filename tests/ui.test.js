@@ -83,7 +83,7 @@ function deferred() {
 
 function conversationHarness(request, { realUI = false } = {}) {
   const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo']);
-  document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden></div>';
+  document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden><p></p></div>';
   const context = vm.createContext({
     document, window:{ scrollTo() {} }, StartScreen: { updRecN() {} }, setTimeout, clearTimeout,
     M: { hello:'hello.png', ponder:'ponder.png', hear:'hear.png' },
@@ -230,6 +230,7 @@ test('final loading shows an error and retries the saved revision before display
   await finishing;
   assert.equal(document.getElementById('thinking').querySelector('.th-err').hidden, false);
   assert.equal(shown.length, 0);
+  assert.equal(document.getElementById('thinking').querySelector('.th-err').querySelector('p').textContent, '모델 연결 실패');
   const retry = document.getElementById('thRetry').click();
   const record = { id:1, profile:{ name:'친구' }, guide:{ script:'곁에 있을게요.' } };
   second.resolve({ revision:2, record }); await retry;
@@ -450,7 +451,7 @@ test('a hidden tab still sends its answer without waiting for a suspended paint'
   assert.equal(document.getElementById('log').querySelectorAll('.me').length, 1);
 });
 
-for (const code of ['MODEL_UNAVAILABLE', 'MODEL_INVALID_RESPONSE']) {
+for (const code of ['MODEL_UNAVAILABLE', 'MODEL_INVALID_RESPONSE', 'MODEL_TIMEOUT', 'MODEL_AUTH_FAILED', 'MODEL_CONTEXT_TOO_LONG']) {
   test(`${code} keeps the current question and user bubble with a retry action`, async () => {
     const response = deferred(), read = deferred(), calls = [];
     const { document, context } = conversationHarness((path, options) => { calls.push([path, options]); return options ? response.promise : read.promise; }, { realUI:true });
@@ -466,7 +467,16 @@ for (const code of ['MODEL_UNAVAILABLE', 'MODEL_INVALID_RESPONSE']) {
     assert.equal(log.textContent.includes(nextPrompt.text), false);
     assert.equal(log.querySelector('.dots'), null);
     assert.equal(document.getElementById('ta').value, '', 'the submitted draft remains empty after model failure');
-    assert.equal(input.querySelector('.api-error').querySelector('p').textContent, '답변을 준비하지 못했어요. 다시 시도해 주세요.');
+    const errorText = input.querySelector('.api-error').querySelector('p').textContent;
+    const expected = {
+      MODEL_UNAVAILABLE:/답변 서버에 잠시 연결하지 못/,
+      MODEL_INVALID_RESPONSE:/답변을 다시 확인했지만/,
+      MODEL_TIMEOUT:/답변 준비 시간을 초과/,
+      MODEL_AUTH_FAILED:/연결 설정을 확인/,
+      MODEL_CONTEXT_TOO_LONG:/한 번에 처리할 내용이 많/,
+    };
+    assert.match(errorText, expected[code]);
+    assert.equal(errorText.includes('내부 모델 오류 설명'), false);
     assert.equal(input.querySelector('.api-error').querySelector('button').textContent, '다시 시도');
   });
 }
