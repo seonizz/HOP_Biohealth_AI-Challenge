@@ -1,0 +1,37 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "regions": ["sin1"],
+  "buildCommand": "npm ci --prefix backend --omit=dev --ignore-scripts --no-audit --no-fund && node scripts/build.mjs",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 60,
+      "includeFiles": "backend/**"
+    },
+    "api/retention.ts": {
+      "maxDuration": 60,
+      "includeFiles": "backend/**"
+    }
+  },
+  "crons": [
+    { "path": "/api/retention", "schedule": "0 0 * * *" }
+  ],
+  "rewrites": [
+    { "source": "/api/auth/:path*", "destination": "/api/index?__hop_path=api/auth/:path*" },
+    { "source": "/api/v2/:path*", "destination": "/api/index?__hop_path=api/v2/:path*" },
+    { "source": "/health/:path*", "destination": "/api/index?__hop_path=health/:path*" },
+    { "source": "/help/safety", "destination": "/api/index?__hop_path=help/safety" },
+    { "source": "/openapi-v2.json", "destination": "/api/index?__hop_path=openapi-v2.json" }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "no-referrer" },
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'" },
+      { "key": "Cache-Control", "value": "no-store" }
+    ] }
+  ]
+}
