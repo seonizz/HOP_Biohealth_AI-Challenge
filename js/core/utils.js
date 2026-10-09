@@ -11,5 +11,5 @@ function josa(word,j){
 const fmt=d=>{const x=new Date(d);return `${x.getFullYear()}.${x.getMonth()+1}.${x.getDate()} ${String(x.getHours()).padStart(2,"0")}:${String(x.getMinutes()).padStart(2,"0")}`;};
 
 // 화면 전환: 한 번에 한 화면만 보임
-const SCREEN_IDS=["start","chat","result","records","about"];
+const SCREEN_IDS=["start","chat","result","records","about","columns"];
 function show(id){SCREEN_IDS.forEach(s=>$(s).hidden=s!==id);if(id==="start")StartScreen.updRecN();}
