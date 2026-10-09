@@ -5,6 +5,12 @@
 !openapi-v2.json
 !docs/
 !docs/MALSSI_QUESTIONNAIRE_V1.json
+!docs/dual-model/
+!docs/dual-model/**
+!data/
+!data/original-frontend.json
+!data/original-model-utils.js
+!data/original-mock-model.js
 !src/
 !src/**
 !migrations/

@@ -9,6 +9,7 @@ WORKDIR /app
 COPY --from=dependencies --chown=node:node /app/node_modules ./node_modules
 COPY --chown=node:node package.json package-lock.json openapi.json openapi-v2.json ./
 COPY --chown=node:node docs/MALSSI_QUESTIONNAIRE_V1.json ./docs/MALSSI_QUESTIONNAIRE_V1.json
+COPY --chown=node:node docs/dual-model ./docs/dual-model
 COPY --chown=node:node src ./src
 COPY --chown=node:node migrations ./migrations
 COPY --chown=node:node public ./public
