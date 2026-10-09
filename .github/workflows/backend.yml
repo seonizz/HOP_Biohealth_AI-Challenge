@@ -1,0 +1,60 @@
+name: Backend checks
+on:
+  push:
+    branches: [main]
+    paths: ['Backend/**', '.github/workflows/backend.yml']
+  pull_request:
+    paths: ['Backend/**', '.github/workflows/backend.yml']
+permissions:
+  contents: read
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: Backend
+    services:
+      postgres:
+        image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+        env:
+          POSTGRES_USER: hop_test
+          POSTGRES_PASSWORD: ci-isolated-password
+          POSTGRES_DB: hop_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U hop_test -d hop_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      HOP_TEST_DATABASE_URL: postgresql://hop_test:ci-isolated-password@127.0.0.1:5432/hop_test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 24.19.0
+          cache: npm
+          cache-dependency-path: Backend/package-lock.json
+      - run: npm ci --ignore-scripts
+      - run: npm run check
+      - run: npm run test:ci
+      - run: npm audit --omit=dev --audit-level=high
+      - run: docker compose --env-file .env.example config --quiet
+      - run: docker build --tag hop-backend:check .
+      - name: Check container startup and database connection
+        env:
+          DATABASE_URL: postgresql://hop_test:ci-isolated-password@127.0.0.1:5432/hop_test
+        run: |
+          docker run --detach --name hop-check --network host --read-only --cap-drop ALL --security-opt no-new-privileges \
+            --env DATABASE_URL --env HOP_MIGRATE_ON_START=true --env HOP_HOST=127.0.0.1 --env HOP_PORT=9100 \
+            --env HOP_PUBLIC_ORIGIN=http://127.0.0.1:9100 hop-backend:check
+          for attempt in $(seq 1 15); do
+            if curl --fail --silent http://127.0.0.1:9100/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs hop-check
+          exit 1

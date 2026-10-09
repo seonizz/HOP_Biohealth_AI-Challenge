@@ -1,0 +1,104 @@
+name: hop-backend
+services:
+  postgres:
+    image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hop
+      POSTGRES_USER: hop_admin
+      POSTGRES_PASSWORD: ${HOP_DB_ADMIN_PASSWORD:?Generate .env first}
+      HOP_DB_MIGRATOR_PASSWORD: ${HOP_DB_MIGRATOR_PASSWORD:?Generate .env first}
+      HOP_DB_APP_PASSWORD: ${HOP_DB_APP_PASSWORD:?Generate .env first}
+    command: ["postgres", "-c", "password_encryption=scram-sha-256"]
+    ports: ["127.0.0.1:5433:5432"]
+    volumes:
+      - ${HOP_STATE_DIR:?Set an absolute state directory}/postgres:/var/lib/postgresql/data
+      - ./deploy/init-postgres.sh:/docker-entrypoint-initdb.d/10-hop.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hop_admin -d hop"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    logging: &logs
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  migrate:
+    build: .
+    image: hop-backend:local
+    network_mode: host
+    restart: "no"
+    environment:
+      HOP_MIGRATION_DATABASE_URL: ${HOP_MIGRATION_DATABASE_URL:?Set the migrator URL}
+      HOP_DATABASE_SCHEMA: ${HOP_DATABASE_SCHEMA:-public}
+      HOP_RUNTIME_ROLE: hop_app
+    command: ["sh", "-c", "node scripts/migrate.ts && node scripts/grant-runtime.ts"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging: *logs
+
+  api:
+    build: .
+    image: hop-backend:local
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set the runtime URL}
+      HOP_DATABASE_SCHEMA: ${HOP_DATABASE_SCHEMA:-public}
+      HOP_MIGRATE_ON_START: "false"
+      HOP_HOST: "127.0.0.1"
+      HOP_PORT: "9000"
+      HOP_PUBLIC_ORIGIN: ${HOP_PUBLIC_ORIGIN:?Set the public origin}
+      HOP_COOKIE_SECURE: ${HOP_COOKIE_SECURE:-true}
+      HOP_COOKIE_SAME_SITE: ${HOP_COOKIE_SAME_SITE:-strict}
+      HOP_CORS_ORIGINS: ${HOP_CORS_ORIGINS:-}
+      HOP_TRUST_PROXY: "true"
+      HOP_ALLOW_REGISTRATION: ${HOP_ALLOW_REGISTRATION:-false}
+      HOP_INVITE_CODE: ${HOP_INVITE_CODE:-}
+      HOP_MODEL_MODE: local
+      HOP_LLM_BACKEND: ${HOP_LLM_BACKEND:-openai}
+      HOP_LLM_BASE_URL: ${HOP_LLM_BASE_URL:?Set the model URL}
+      HOP_LLM_MODEL: ${HOP_LLM_MODEL:?Set the model ID}
+      HOP_LLM_API_KEY: ${HOP_LLM_API_KEY:-}
+      HOP_LLM_TIMEOUT_MS: ${HOP_LLM_TIMEOUT_MS:-180000}
+      HOP_TITLE_BASE_URL: ${HOP_TITLE_BASE_URL:-}
+      HOP_TITLE_MODEL: ${HOP_TITLE_MODEL:-}
+      HOP_KNOWLEDGE: /knowledge/knowledge.jsonl
+      HOP_REQUIRE_KNOWLEDGE: "true"
+    volumes:
+      - type: bind
+        source: ${HOP_KNOWLEDGE:?Set the knowledge JSONL path}
+        target: /knowledge/knowledge.jsonl
+        read_only: true
+        bind: {create_host_path: false}
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 40s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9000/health',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    logging: *logs
+
+  caddy:
+    profiles: [https]
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      HOP_DOMAIN: ${HOP_DOMAIN:?Set the DNS hostname}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${HOP_STATE_DIR:?Set state directory}/caddy/data:/data
+      - ${HOP_STATE_DIR:?Set state directory}/caddy/config:/config
+    depends_on:
+      api: {condition: service_healthy}
+    logging: *logs
