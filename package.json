@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "engines": { "node": "24.x" },
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "setup": "node scripts/init-env.mjs",
     "build": "node scripts/build.mjs",
@@ -17,6 +19,8 @@
     "backup": "node scripts/backup.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.1"
+    "@playwright/test": "1.56.1",
+    "@types/node": "^26.6.4",
+    "typescript": "^7.0.2"
   }
 }

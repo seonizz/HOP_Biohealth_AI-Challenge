@@ -25,7 +25,7 @@ export async function publicV2(req:IncomingMessage,res:ServerResponse,service:Ma
   if(req.method==='GET'&&path==='/help/safety'){respond(res,200,{text:SAFETY_TEXT,phone_numbers:[],country_required:true});return true;}
   if(req.method==='GET'&&path==='/openapi-v2.json'){res.writeHead(200,{'Content-Type':'application/json'});res.end(readFileSync(new URL('../../openapi-v2.json',import.meta.url)));return true;}
   if(req.method==='GET'&&path==='/health/ready'){
-    let ready=Boolean(service);try{await store.pool.query('SELECT 1');assertCatalogPublishable();}catch{ready=false;}
+    let ready=Boolean(service);try{await store.pool.query('SELECT 1');service?.checkCatalog();}catch{ready=false;}
     respond(res,ready?200:503,{ready,api_version:'2.0',reason:ready?null:'V2 policy, published catalog, encryption key and database must be configured.'});return true;
   }
   if(req.method==='GET'&&/^\/api\/v2\/deletions\/[^/]+$/.test(path)&&req.headers.authorization?.startsWith('Deletion ')) {
