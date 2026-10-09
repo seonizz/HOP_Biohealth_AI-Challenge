@@ -56,7 +56,8 @@ async function ask(){
   const cheer=CHEER[S.hist.length-1];if(cheer){await ChatScreen.typing("cheer",600);ChatScreen.aiSay(cheer,"cheer");}
   if(q.intro){await ChatScreen.typing(q.face,600);ChatScreen.aiSay(q.intro,q.face);}
   await ChatScreen.typing(q.face,600);ChatScreen.aiSay(q.rare&&RARE(S)?q.rare:q.q,q.face,q.why);
-  ChatInput.render(q,answer,S.hist.length>1?goBack:null); // 첫 질문만 뒤로 가기 없음
+  const shown=typeof q.ph==="function"?{...q,ph:q.ph(S)}:q; // 답변 예시가 앞의 답에 따라 바뀌는 문항
+  ChatInput.render(shown,answer,S.hist.length>1?goBack:null); // 첫 질문만 뒤로 가기 없음
 }
 // 후속 질문은 건너뛸 수 없고 빈 답도 받지 않음 (required)
 async function followUp(f,face="ponder"){

@@ -172,8 +172,8 @@
       "reason": "칼럼 그림 연결, 환자의 가족이 된다는 것 제목 정리, 글쓴이·사연 표시"
     },
     "js/core/questions.js": {
-      "sha256": "ecdb2808d1edb274648b0effde473c20b99cd5aba11ffaea078688b1afa382fc",
-      "reason": "생활 배경 문구, 이름 필수, 대처+받아 본 도움 합침, 당신의 마음 첫 질문을 사용자 중심으로"
+      "sha256": "6798dc9a762b5db3ffe0a4d6469b72cbe0a8f134faa3b5389be9979405dda4a2",
+      "reason": "생활 배경 문구, 이름 필수, 대처+받아 본 도움 합침, 당신의 마음 첫 질문을 사용자 중심으로, 왜 힘들어하는지 예시를 앞서 고른 일에 맞춤"
     },
     "js/components/TopBar.js": {
       "sha256": "ac2472c87cf9b6c33c1a53d06f971ccd6a65eee16d2c68e0da4d0185bee1db2c",
@@ -184,8 +184,8 @@
       "reason": "로고·내비게이션 바 연결"
     },
     "js/core/conversation.js": {
-      "sha256": "e6a13ad30274ea3159cea9493ab41ff2f1c46d8e6051d62cb942225c0c8b5ed1",
-      "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 7·14문항 응원, 결과 만드는 동안 로딩 단계·다시 시도"
+      "sha256": "f5a5b879fa999046d6edf09e35de5214fe0023f91c9798ef7c775c4906c23d42",
+      "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 7·14문항 응원, 결과 만드는 동안 로딩 단계·다시 시도, 함수형 답변 예시"
     },
     "js/components/ChatInput.js": {
       "sha256": "d6b381236a44a06fd95703f2d1f1c10e72212dc50c4ea6a5f104a8ee6131a117",

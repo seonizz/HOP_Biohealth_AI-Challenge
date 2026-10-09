@@ -6,7 +6,7 @@ import vm from 'node:vm';
 const root=new URL('../',import.meta.url);
 const read=p=>readFileSync(new URL(p,root),'utf8');
 const context=vm.createContext({});
-vm.runInContext(read('frontend/js/core/questions.js')+'\nglobalThis.catalog={Q,FOLLOW,RARE};',context);
+vm.runInContext(read('frontend/js/core/questions.js')+'\nglobalThis.catalog={Q,FOLLOW,RARE,optMeta};',context);
 const {Q,FOLLOW,RARE}=context.catalog;
 test('all 36 frontend source files match the accepted pre-PR3 commit',()=>{
   const manifest=JSON.parse(read('docs/frontend-original-manifest.json'));
@@ -36,4 +36,12 @@ test('conditional questions and rare-contact wording retain the original contrac
   for(const id of ['dur','freq','events','cgchange_more'])assert.equal(byId(id).when(state),true);
   assert.equal(FOLLOW.concern.when({text:'걱정'}),true);
   assert.equal(FOLLOW.concern.when({text:'최근 친구가 식사를 거의 하지 않아서 걱정돼요'}),false);
+});
+test('others_why example follows the events chosen just before',()=>{
+  const ph=Q.find(q=>q.id==='others_why').ph,ev=Q.find(q=>q.id==='events');
+  const idx=r=>ev.opts.findIndex(o=>Array.isArray(o)&&o[1].r===r);
+  assert.match(ph({ans:{}}),/승진/);                                         // 앞 질문이 없거나 건너뜀
+  assert.match(ph({ans:{events:{sel:[idx('bereavement')]}}}),/돌아가신/);
+  assert.match(ph({ans:{events:{sel:[idx('interpersonal_conflict'),idx('breakup')]}}}),/헤어지고/); // 보기 순서상 첫 번째
+  assert.match(ph({ans:{events:{sel:[ev.opts.length-1]}}}),/승진/);          // 없어요
 });

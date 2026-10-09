@@ -3,9 +3,26 @@
 // 보기 메타: d/a/x 우울·불안·중독 가중치, s 증상 라벨, r 위험 요인, p 보호 요인 → 프론트는 계산하지 않고 모델에 그대로 보냄(목업은 이 값으로 계산)
 //           t 흐름 태그(질문 분기·가이드에 씀), none 다른 보기와 함께 고를 수 없음, input 고르면 직접 입력창이 열림
 // 문항 속성: sec 단계 이름, intro 질문 전 안내, when 보일 조건, cue 모델이 신호를 읽을 자유 서술, noOwn 직접 입력 숨김, noSkip 건너뛰기 숨김(네/아니요 질문), rare 자주 못 보는 사이일 때 바꿔 쓸 질문 문구,
-//           required 핵심 정보라 건너뛸 수 없고 빈 답도 받지 않음, ownPh 직접 입력 칸의 예시 문구
+//           required 핵심 정보라 건너뛸 수 없고 빈 답도 받지 않음, ownPh 직접 입력 칸의 예시 문구, ph는 문구 또는 대화 상태를 받아 문구를 돌려주는 함수
 // 연락 빈도에서 "그보다 드물게"를 고르면 요즘 모습을 잘 모를 수 있어 문구를 바꿔 물음
 const RARE=s=>s.tags.has("rare_contact");
+// "왜 힘들어한다고 이야기하나요"(others_why)의 답변 예시: 바로 앞 "최근 1년 사이 있었던 일"(events)에서 고른 일에 맞춰 바꿈
+// 여러 개를 골랐으면 보기 순서상 첫 번째, 고른 일이 없으면 기본 예시
+const OTHERS_WHY_PH={
+  breakup:"예: 헤어지고 나서 많이 무너졌다고들 해요",
+  bereavement:"예: 할머니가 돌아가신 뒤로 기운이 없다고들 해요",
+  job_school_loss:"예: 회사를 그만두고 나서 자신감을 잃었다고 해요",
+  financial_difficulty:"예: 빚 걱정 때문에 잠을 못 잔다고들 해요",
+  environment_change:"예: 이사 온 뒤로 아는 사람이 없어 외로워한대요",
+  illness:"예: 몸이 아프고 나서 마음까지 지쳤다고들 해요",
+  academic_work_stress:"예: 승진에서 떨어지고 나서부터라고들 해요",
+  interpersonal_conflict:"예: 친한 친구와 크게 다툰 뒤로 힘들어한대요"
+};
+function othersWhyPh(s){
+  const ev=Q.find(q=>q.id==="events"),sel=[...(s.ans.events?.sel||[])].sort((x,y)=>x-y);
+  const r=sel.map(i=>optMeta(ev.opts[i]).r).find(r=>OTHERS_WHY_PH[r]);
+  return OTHERS_WHY_PH[r]||OTHERS_WHY_PH.academic_work_stress;
+}
 const Q = [
  {id:"name",required:true,sec:"시작",face:"hello",q:"오늘 이야기할 분을 어떻게 부르면 될까요?\n이름이나 별명, 호칭 무엇이든 괜찮아요.",why:"기록의 제목으로 쓰여요. 이 브라우저에만 저장돼요.",type:"text",ph:"예: 엄마, 친구 지수",short:true},
 
@@ -50,7 +67,7 @@ const Q = [
    ["이별·이혼",{r:"breakup"}],["가까운 사람과의 사별",{r:"bereavement"}],["실직·퇴사·휴학",{r:"job_school_loss"}],["경제적 어려움",{r:"financial_difficulty"}],
    ["이사·환경 변화",{r:"environment_change"}],["본인 또는 가족의 질병",{r:"illness"}],["학업·업무 스트레스",{r:"academic_work_stress"}],["대인관계 갈등",{r:"interpersonal_conflict"}],
    ["없어요",{none:1}]]},
- {id:"others_why",sec:"어려움의 원인과 생활환경",face:"hear",q:"가족이나 주변 사람들은 {name:이} 왜 힘들어한다고 이야기하나요?",type:"text",cue:true,ph:"예: 승진에서 떨어지고 나서부터라고들 해요"},
+ {id:"others_why",sec:"어려움의 원인과 생활환경",face:"hear",q:"가족이나 주변 사람들은 {name:이} 왜 힘들어한다고 이야기하나요?",type:"text",cue:true,ph:othersWhyPh},
  {id:"support",sec:"어려움의 원인과 생활환경",face:"joy",q:"{name}에게 힘이 되어 주는 사람, 관계, 활동이 있나요?",type:"one",noOwn:true,noSkip:true,opts:[
    ["네",{input:true,ph:"예: 교회 친구들, 강아지 산책",p:"social_support"}],["아니요",{r:"lack_of_support"}]]},
  {id:"burden",sec:"어려움의 원인과 생활환경",face:"think",q:"반대로, {name:을} 더 힘들게 하거나 회복을 어렵게 하는 생활 속 부담이 있을까요?",type:"one",noOwn:true,noSkip:true,opts:[
