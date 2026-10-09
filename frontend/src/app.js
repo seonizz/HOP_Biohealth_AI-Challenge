@@ -2,6 +2,7 @@ import {request,v2,allPages} from './api.js';
 import {$,esc,face,GOALS,STATES,date,notice,dialog,guidanceCards} from './ui.js';
 import {questionMarkup,bindQuestion,answerText} from './questions.js';
 import {demoGuidance} from './demo.js';
+import {COLUMN_CATS,COLUMNS} from './columns.js';
 
 let user=null,capabilities=null,consents=null,current=null,project=null,busy=false,pending=null,pollTimer=null,viewId=0,demoEnabled=false;
 const root=$('app');
@@ -32,12 +33,18 @@ async function retryPending(){
 }
 function page(body,id=''){
   stopPoll();viewId++;
-  root.innerHTML=`<section class="screen" ${id?`id="${id}"`:''}><header class="top"><button class="logo" id="home" aria-label="말씨 처음으로">말씨<small>●</small></button><nav aria-label="주 메뉴"><button class="ghost" id="help">안전 도움</button>${user?`<button class="ghost" id="records">내 기록</button><button class="ghost" id="settings">내 설정</button><button class="ghost" id="logout">로그아웃</button>`:'<button class="ghost" id="login">로그인</button>'}</nav></header>${user?.is_demo?'<div class="status-banner">가입 없는 시연 · 24시간 후 접속이 만료되고 기록은 다음 정리 주기에 삭제됩니다. 실제 개인정보는 입력하지 마세요.</div>':capabilities?.internal_draft?'<div class="status-banner">내부 검토용 · 문항과 모델 응답의 출시 검토가 진행 중입니다.</div>':''}<main id="main" tabindex="-1">${body}</main><footer class="footer">말씨는 진단이나 치료를 대신하지 않습니다. 실명보다 별칭으로 이야기해 주세요.</footer></section>`;
-  on('home',()=>{location.hash='';home();});on('login',()=>auth());on('records',records);on('settings',settings);on('help',help);
+  root.innerHTML=`<section class="screen" ${id?`id="${id}"`:''}><header class="top"><button class="logo" id="home" aria-label="말씨 처음으로">말씨<small>●</small></button><nav aria-label="주 메뉴"><button class="ghost" id="columns-nav">칼럼</button><button class="ghost" id="help">안전 도움</button>${user?`<button class="ghost" id="records">내 기록</button><button class="ghost" id="settings">내 설정</button><button class="ghost" id="logout">로그아웃</button>`:'<button class="ghost" id="login">로그인</button>'}</nav></header>${user?.is_demo?'<div class="status-banner">가입 없는 시연 · 24시간 후 접속이 만료되고 기록은 다음 정리 주기에 삭제됩니다. 실제 개인정보는 입력하지 마세요.</div>':capabilities?.internal_draft?'<div class="status-banner">내부 검토용 · 문항과 모델 응답의 출시 검토가 진행 중입니다.</div>':''}<main id="main" tabindex="-1">${body}</main><footer class="footer">말씨는 진단이나 치료를 대신하지 않습니다. 실명보다 별칭으로 이야기해 주세요.</footer></section>`;
+  on('home',()=>{location.hash='';home();});on('columns-nav',()=>columns());on('login',()=>auth());on('records',records);on('settings',settings);on('help',help);
   on('logout',async()=>{await request('/api/auth/logout','POST',{});clearPrivate();home();});
   $('main').focus({preventScroll:true});
 }
 function home(){page(`<div class="hero"><div><p class="eyebrow">누군가의 곁에 있는 당신에게</p><h1>소중한 사람에게 건넬<br><em>첫 마디</em>를 함께 심어요</h1><p class="lead">어떻게 다가가야 할지 막막한 마음, 말씨와 천천히 정리해 보세요. 들려주신 이야기를 바탕으로 말과 작은 행동을 함께 찾아가요.</p><div class="steps"><div class="step">${face('listen')}<span>이야기 나누기<i>아는 만큼, 편한 속도로</i></span></div><div class="step">${face('ponder')}<span>상황 정리<i>함께 확인해요</i></span></div><div class="step">${face('cheer')}<span>말하는 방법<i>나에게 맞는 제안</i></span></div></div><button class="btn" id="begin">${!user&&demoEnabled?'가입 없이 체험하기':'말씨와 시작하기'}</button><p class="note">${!user&&demoEnabled?'체험을 시작하면 질문 기능에 필요한 정보를 처리합니다. 접속은 24시간 후 만료되고 기록은 다음 정리 주기에 자동 삭제됩니다. 언제든 직접 삭제할 수도 있습니다. 실제 개인정보 대신 가상의 사례를 입력해 주세요.':'질문은 건너뛸 수 있어요. 기록 보관과 다음 대화를 위한 기억은 직접 선택하실 수 있어요.'}</p></div><div class="stage"><div class="blob"></div>${face('empathy','orbit o1')}${face('joy','orbit o2')}${face('thanks','orbit o3')}${face('hello','main')}<div class="bubble-tip">말 한마디에도 마음이 닿도록.</div></div></div>`,'start');on('begin',()=>user?newProject():demoEnabled?startDemo():auth());}
+function columns(cat='전체'){
+  const selected=COLUMN_CATS.some(([name])=>name===cat)?cat:'전체';
+  const sections=COLUMN_CATS.filter(([name])=>selected==='전체'||name===selected);
+  page(`<div class="cbody"><div class="chero"><div><p class="eyebrow">곁에 있는 사람을 위한 읽을거리</p><h1>함께 알아보는 <em>마음 돌봄</em></h1><p>가족이나 친구가 힘들어할 때 읽어 볼 외부 글을 모았습니다. 각 글의 요약은 원문과 함께 확인해 주세요.</p></div>${face('cheer')}</div><div class="cfilter" role="group" aria-label="칼럼 분류">${['전체',...COLUMN_CATS.map(([name])=>name)].map(name=>`<button class="chip column-filter" data-cat="${esc(name)}" aria-pressed="${name===selected}">${name==='통합'?'가족 돌봄 전반':esc(name)}</button>`).join('')}</div><div class="cgrid">${sections.map(([name,description,mascot])=>`<section class="csec"><h2 class="t">${face(mascot)}${esc(description)}</h2><div class="clist">${COLUMNS.filter(item=>item.cat===name).map(item=>`<article class="ccard"><span class="pill">${name==='통합'?'가족 돌봄':esc(name)}</span><h3>${esc(item.title)}</h3><p class="clead">${esc(item.lead)}</p><details><summary>핵심 정리</summary><ul>${item.points.map(point=>`<li>${esc(point)}</li>`).join('')}</ul></details><a class="csrc" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.src)} 원문 읽기 ↗</a></article>`).join('')}</div></section>`).join('')}</div><p class="note">원문은 각 언론사와 기관에 있으며, 요약은 진단이나 치료 안내를 대신하지 않습니다.</p></div>`,'columns');
+  root.querySelectorAll('.column-filter').forEach(button=>button.onclick=()=>task(()=>columns(button.dataset.cat)));
+}
 async function startDemo(){
   const data=await request('/api/auth/demo','POST',{});
   user=data.user;
