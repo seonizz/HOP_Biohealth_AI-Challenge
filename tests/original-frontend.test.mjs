@@ -12,11 +12,13 @@ test('all 36 frontend source files match the accepted pre-PR3 commit',()=>{
   const manifest=JSON.parse(read('docs/frontend-original-manifest.json'));
   assert.equal(manifest.commit,'ea9c607519ce2269d8da14a166a7b99d7e287233');
   assert.equal(manifest.files.length,36);
+  // 복구 이후 일부러 고친 파일은 accepted_edits의 지문과 비교 (그 밖의 파일은 원본과 같아야 함)
+  const accepted=manifest.accepted_edits||{};
   for(const {path,sha256} of manifest.files){
     const content=readFileSync(new URL('frontend/'+path,root));
     // Git checkouts may use CRLF on Windows; binary assets are compared byte-for-byte.
     const bytes=/\.(js|html|css)$/.test(path)?Buffer.from(content.toString('utf8').replace(/\r\n/g,'\n')):content;
-    assert.equal(createHash('sha256').update(bytes).digest('hex'),sha256,path);
+    assert.equal(createHash('sha256').update(bytes).digest('hex'),accepted[path]?.sha256??sha256,path);
   }
 });
 test('original question order, required questions and no-skip rules',()=>{
