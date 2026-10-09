@@ -148,8 +148,8 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "1fa4ca7efd09458851b2178f104d4ec40ede652e155f9c7267c08c41dedadb25",
-      "reason": "글꼴을 사이트 안(assets/fonts)에서 불러옴, 화면 가장자리 여백, 로고 버튼"
+      "sha256": "c1ea3399236889c038ff565294495f56a63503aeb488305a0ef28bda56672670",
+      "reason": "사이트 안 글꼴(본문 나눔스퀘어라운드, 제목 주아), 화면 가장자리 여백, 로고 버튼"
     },
     "css/columns.css": {
       "sha256": "a07ac7829d024d810df7daab620d6224cfb3bd13af457ab349f1ac1f299d3038",
