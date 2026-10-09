@@ -148,7 +148,7 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "35a5828f28607ea2f13eaa965be94a9ff3aa6318d9e1475d5d46d00caf323830",
+      "sha256": "885d5183af0195d3bc8af4b9b7921901e2e5d9602e22c6a28681d27b7a015641",
       "reason": "사이트 안 글꼴, 여백, 로고, ✓✕ 목록, 등장 애니메이션, 공통 내비게이션 바, 내비게이션 시작 버튼 작게"
     },
     "css/columns.css": {
