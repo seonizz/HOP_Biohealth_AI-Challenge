@@ -148,8 +148,8 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "126104066a3c613b87a8f1342024c3ba3eecc9938b6f29a5cadd7a906a174270",
-      "reason": "사이트 안 글꼴(본문 나눔스퀘어라운드, 제목 주아), 화면 가장자리 여백, 로고 버튼, 해 보세요/피하면 좋아요 ✓✕ 목록, 카드 글 낱말 단위 줄바꿈, 로고를 오른쪽 버튼 높이에 맞춰 키움"
+      "sha256": "0e7cbc16513913708359497d2dd4e4f3ba896454702fe47d045f4cbf5ecbf481",
+      "reason": "사이트 안 글꼴(본문 나눔스퀘어라운드, 제목 주아), 화면 가장자리 여백, 로고 버튼, 해 보세요/피하면 좋아요 ✓✕ 목록, 카드 글 낱말 단위 줄바꿈, 로고를 오른쪽 버튼 높이에 맞춰 키움, 등장 애니메이션"
     },
     "css/columns.css": {
       "sha256": "45f282abcf9500616ea129ec36806e2e021f93b50a59c5ed89ff91f65e2ead39",
@@ -160,8 +160,8 @@
       "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
     },
     "js/components/AboutScreen.js": {
-      "sha256": "89f54075e3b67cd74d37fc0c2b2bd6df553e53708e1e9b950ec2c1f2f4138e1f",
-      "reason": "서비스 소개 문구 수정, 큰 그림을 고화질 front로"
+      "sha256": "3f995641ef1fd62fcb55d1145f83b6509743eb3fdad192ff8caf5172e7831ab2",
+      "reason": "서비스 소개 문구 수정, 큰 그림을 고화질 front로, 제목 줄바꿈, 스크롤 등장 애니메이션"
     },
     "js/components/ColumnsScreen.js": {
       "sha256": "7b41193eb07cc1c2e1cd616ab020bc7240331eb8cecc682819dd408152c6d8ba",
@@ -214,6 +214,14 @@
     "js/components/GuideCards.js": {
       "sha256": "243ba0f59f8da2d91e88e4d7ee82f126c1b634ffad25d856c04e2d142cb28461",
       "reason": "해 보세요 카드에 표시용 클래스"
+    },
+    "js/core/utils.js": {
+      "sha256": "56d5daf499cbc868af87f4b3093cd2d1628dbdcec3fadf99f00a052bd48c82ed",
+      "reason": "등장 애니메이션 도우미(reveal·popChars·typeText)"
+    },
+    "js/components/ResultScreen.js": {
+      "sha256": "97fe8ed3b2a1e61c759196d74b8a981345ab571f3df54544f8ae24c80058f282",
+      "reason": "결과 화면 등장 애니메이션(글자·카드·첫 문장 타자), 복사는 전체 문장"
     }
   }
 }

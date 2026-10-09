@@ -6,7 +6,7 @@ const AboutScreen={
   <div class="abody">
     <div class="ahero">
       <div>
-        <h2><br><em>어떻게 말해야 할지</em> 몰라 막막할 때가 있어요.</h2>
+        <h2><em>어떻게 말해야 할지</em><br>몰라 막막할 때가 있어요.</h2>
         <p>가족이나 친구가 우울, 불안, 중독으로 힘들어하면 무슨 말을 해줘야 할지 모르겠고, 결국 "힘내"라는 말밖에 떠오르지 않을 때가 있죠. 말씨는 그런 순간에 어떤 말을 건네야 할지 함께 고민해 주는 서비스예요. 상대의 상황을 함께 정리하고, 내 마음을 어떻게 전하면 좋을지 생각하면서 진심을 담은 첫마디를 준비할 수 있도록 도와줘요.
 </p>
       </div>
@@ -50,5 +50,15 @@ const AboutScreen={
     $("aboutHome").onclick=()=>show("start");
     $("aboutGo").onclick=begin;
   },
-  open(){show("about");document.querySelector("#about .abody").scrollTop=0;}
+  open(){show("about");document.querySelector("#about .abody").scrollTop=0;this.animate();},
+  // 열 때마다: 머리 부분은 바로, 아래 부분은 스크롤해서 화면에 들어올 때 차례로 떠오름
+  animate(){
+    const a=$("about"),hero=a.querySelector(".ahero");
+    reveal([hero,...hero.children],{step:160});
+    a.querySelectorAll(".asec").forEach(sec=>{
+      reveal([sec.querySelector("h3.t")],{scroll:true});
+      reveal(sec.querySelectorAll(".acard,.fact,.promise li"),{scroll:true,step:120,start:150});
+      reveal(sec.querySelectorAll(":scope > .note"),{scroll:true,start:500});
+    });
+  }
 };
