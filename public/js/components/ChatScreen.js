@@ -6,7 +6,22 @@ const ChatScreen={
   <div class="body">
     <div class="log" id="log" aria-live="polite"></div>
     <div class="input" id="input"></div>
+    <div class="thinking" id="thinking" hidden role="status" aria-live="polite">
+      <div class="th-card">
+        <img class="th-img" data-m="ponder" alt="">
+        <h3>말을 정리하고 있어요 <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span></h3>
+        <p class="th-sub">들려주신 이야기에 따라 조금 걸릴 수 있어요.</p>
+        <ol class="th-steps"><li>들려주신 이야기를 다시 읽고 있어요</li><li>그분의 상황을 정리하고 있어요</li><li>마음이 잘 닿는 첫 문장을 고르고 있어요</li></ol>
+        <div class="th-err" hidden><p>정리하는 중에 문제가 생겼어요. 답해 주신 내용은 그대로 있으니 다시 시도해 주세요.</p><button class="btn" id="thRetry">다시 시도</button></div>
+      </div>
+    </div>
   </div>
+  <dialog class="leave" id="leaveDlg" aria-labelledby="leaveT">
+    <img data-m="ponder" alt="">
+    <h3 id="leaveT">정말 처음으로 돌아갈까요?</h3>
+    <p>처음으로 돌아가면 이 대화를 이어서 진행할 수 없어요.</p>
+    <div class="acts"><button class="btn" id="leaveStay" autofocus>계속 이야기하기</button><button class="ghost" id="leaveGo">나가기</button></div>
+  </dialog>
 </section>`;},
   mount(){
     // 자동 스크롤: 메시지 추가, 입력 상자 크기 변화(대화창이 줄어듦) 때마다 즉시 맨 아래로
@@ -15,8 +30,24 @@ const ChatScreen={
     new MutationObserver(toBottom).observe(l,{childList:true,subtree:true});
     new ResizeObserver(toBottom).observe(l);
     $("restart1").onclick=leaveConversation;
+    const d=$("leaveDlg");
+    $("leaveStay").onclick=()=>d.close();
+    d.onclick=e=>{if(e.target===d)d.close();};
   },
-  clear(){$("log").innerHTML="";this.messages=[];},
+  started(){
+    if($("chat").hidden||typeof S==="undefined"||!S)return false;
+    return S.log.some(m=>m.who==="me")||[...$("input").querySelectorAll("textarea,input")].some(e=>e.value.trim())||
+      [...$("input").querySelectorAll(".chip")].some(e=>e.getAttribute("aria-pressed")==="true");
+  },
+  leave(go){
+    if(!this.started())return go();
+    $("leaveGo").onclick=()=>{$("leaveDlg").close();go();};
+    $("leaveDlg").showModal();
+  },
+  clear(){$("log").innerHTML="";this.messages=[];this.think(false);},
+  think(on){const t=$("thinking");t.hidden=!on;if(on){t.querySelector(".th-err").hidden=true;this.thinkStep(0);}},
+  thinkStep(i){$("thinking").querySelectorAll("li").forEach((l,k)=>l.className=k<i?"done":k===i?"now":"");},
+  thinkError(retry){$("thinking").querySelector(".th-err").hidden=false;$("thinking").querySelectorAll("li").forEach(l=>l.className="");$("thRetry").onclick=retry;},
   // 이전 질문으로 돌아갈 때 그 뒤에 쌓인 말풍선을 지움
   count(){return $("log").children.length;},
   truncate(n){const l=$("log");while(l.children.length>n)l.lastChild.remove();},

@@ -5,6 +5,10 @@ import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
 
 const SKIP = '(건너뛰었어요)';
 const WELCOME = '안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.';
+const CHEER = {
+  7:'벌써 3분의 1을 함께 왔어요. 들려주신 이야기 하나하나가 큰 도움이 돼요. 조금만 더 함께해 주세요.',
+  14:'거의 다 왔어요! 이제 몇 가지만 더 여쭤볼게요. 끝까지 함께해 주셔서 고마워요.',
+};
 // Old saved intakes keep the original seed; newly created intakes carry their DB snapshot.
 const questionSetOf = state => state.questionSet || initialQuestionSet;
 const subjectOf = question => question.subject;
@@ -20,6 +24,9 @@ function snapshot(state) {
     modelSkipped: state.modelSkipped || {}, nameIndex: state.nameIndex || null, chatTitle: state.chatTitle || '',
   });
 }
+
+// Existing intakes have at most two saved prompts. New intakes keep each prompt.
+const historyOf = state => state.history || [state.prev, state.cur].filter(Boolean);
 
 function addPrompt(state, question, followUp = false) {
   const rendered = renderQuestion(question, state);
@@ -46,6 +53,11 @@ function advance(state, previous) {
   }
   state.prev = previous === undefined ? state.cur : previous;
   state.cur = snapshot(state);
+  state.history ||= [];
+  if (previous === undefined) state.history.push(state.cur);
+  else state.history[state.history.length - 1] = state.cur;
+  const cheer = CHEER[state.history.length - 1];
+  if (cheer) state.log.push({ who:'ai', text:cheer, fu:false, face:'cheer' });
   addPrompt(state, questions[state.i]);
 }
 
@@ -54,7 +66,7 @@ export function createIntake(questionSet = initialQuestionSet) {
     questionSet: structuredClone(questionSet),
     i: 0, ans: {}, tags: [], name: '', fuCount: 0, extraObs: '',
     log: [{ who: 'ai', text: WELCOME, fu: false, face: 'hello' }],
-    prev: null, cur: null, pendingFollow: null, status: 'active',
+    prev: null, cur: null, history: [], pendingFollow: null, status: 'active',
     modelSkipped: {}, nameIndex: null, chatTitle: '',
   };
   advance(state);
@@ -79,7 +91,7 @@ export function currentView(state) {
     question: rendered,
     progress: state.status === 'ready' ? 100 : state.i / questions.length * 100,
     section: rendered?.sec || (state.i >= questions.length ? questions.at(-1).sec : ''),
-    canGoBack: state.status === 'active' && !state.pendingFollow && Boolean(state.prev),
+    canGoBack: state.status === 'active' && (state.pendingFollow ? historyOf(state).length > 0 : historyOf(state).length > 1),
     status: state.status,
     pendingFollow: Boolean(state.pendingFollow),
     totalQuestions: questions.length,
@@ -160,6 +172,7 @@ export function answerIntake(originalState, input) {
   }
   const answer = normalizeAnswer(question, input);
   const state = structuredClone(originalState);
+  state.history = structuredClone(historyOf(originalState));
   state.log.push({ who: 'me', text: answer.text, fu: Boolean(state.pendingFollow) });
 
   if (state.pendingFollow) {
@@ -193,15 +206,19 @@ export function answerIntake(originalState, input) {
 }
 
 export function backIntake(originalState) {
-  if (originalState.status !== 'active' || originalState.pendingFollow || !originalState.prev) {
+  if (!currentView(originalState).canGoBack) {
     invalid('back_unavailable', '지금은 이전 질문으로 돌아갈 수 없어요.', 409);
   }
   const state = structuredClone(originalState);
-  const previous = state.prev;
+  state.history = structuredClone(historyOf(originalState));
+  if (!state.pendingFollow) state.history.pop();
+  const previous = state.history.pop();
   const { logLen, ...values } = previous;
   Object.assign(state, values, { status: 'active', pendingFollow: null, prev: null, cur: null,
     modelSkipped: values.modelSkipped || {}, nameIndex: values.nameIndex || null, chatTitle: values.chatTitle || '' });
   state.log.length = logLen;
+  delete state.agentMemory; delete state.agentResult; delete state.agentRecord;
+  state.modelStatus = 'not_connected';
   advance(state);
   return state;
 }
@@ -213,6 +230,7 @@ export function applyModelUpdate(originalState, output) {
   const nameIndex = validateNameIndex(output.name_index, context);
   const plan = validateQuestionPlan(output.question_plan, context);
   const state = structuredClone(originalState);
+  state.history = structuredClone(historyOf(originalState));
   state.agentMemory = structuredClone(output.patient_state);
   state.modelStatus = 'connected';
   if (nameIndex) {

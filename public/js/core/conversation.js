@@ -4,7 +4,7 @@ let conversationToken=0;
 // 서버에서 호칭을 치환한 문구도 그대로 표시할 수 있어요.
 const nm=t=>String(t).replace(/\{name(?::([^}]+))?\}/g,(_,j)=>{const w=S?.name||"그분";return j?w+josa(w,j):w;});
 
-function leaveConversation(){conversationToken++;show("start");}
+function leaveConversation(){ChatScreen.leave(()=>{conversationToken++;ChatScreen.think(false);show("start");window.scrollTo(0,0);});}
 async function begin(){
   const token=++conversationToken;
   S=null;ChatScreen.clear();ChatScreen.progress(0);ChatScreen.title("");ChatScreen.section("");ChatInput.clear();show("chat");
@@ -16,6 +16,7 @@ async function begin(){
 
 function renderConversation(view,token){
   if(token!==conversationToken)return;
+  ChatScreen.think(false);
   S=view;ChatScreen.sync(view.log);ChatScreen.progress(view.progress);ChatScreen.title(view.chat_title);ChatScreen.section(view.section);
   ChatInput.clear();
   if(view.status==="ready"){finish(token);return;}
@@ -24,18 +25,18 @@ function renderConversation(view,token){
   if(view.model_warning)ChatInput.error(view.model_warning);
 }
 
-async function recoverConversation(error,token,retry){
+async function recoverConversation(error,token,retry,present=(message,operation)=>ChatInput.error(message,operation)){
   if(token!==conversationToken)return;
   // 답변이 서버에 도착했지만 응답을 놓친 경우 현재 버전으로 돌아와요.
   if(error.status===409&&S?.id){
     try{
       const view=await API.request(`/api/intakes/${S.id}`);
-      if(view.status==="ready"&&view.revision===S.revision){if(token===conversationToken)ChatInput.error(error.message,retry);return;}
+      if(view.status==="ready"&&view.revision===S.revision){if(token===conversationToken)present(error.message,retry);return;}
       if(token===conversationToken)renderConversation(view,token);
       return;
     }catch(readError){error=readError;}
   }
-  if(token===conversationToken)ChatInput.error(error.message,retry);
+  if(token===conversationToken)present(error.message,retry);
 }
 
 async function submitConversation(path,body,token){
@@ -60,12 +61,13 @@ function goBack(){
 async function finish(token=conversationToken){
   if(token!==conversationToken||!S?.id)return;
   const id=S.id,revision=S.revision;
-  ChatInput.clear();
+  ChatInput.clear();ChatScreen.think(true);
   try{
-    const result=await ChatScreen.typing("ponder",API.request(`/api/intakes/${id}/result`,{method:"POST",body:{revision}}));
+    const result=await API.request(`/api/intakes/${id}/result`,{method:"POST",body:{revision}});
     if(token!==conversationToken)return;
+    ChatScreen.thinkStep(3);ChatScreen.think(false);
     S.revision=result.revision;
     rememberRec(result.record);
     ResultScreen.open(result.record.profile,result.record.guide,true);
-  }catch(error){await recoverConversation(error,token,()=>finish(token));}
+  }catch(error){await recoverConversation(error,token,()=>finish(token),(_,retry)=>ChatScreen.thinkError(retry));}
 }

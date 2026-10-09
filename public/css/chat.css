@@ -4,7 +4,7 @@
 #chat .body{flex:1;display:flex;flex-direction:column;width:100%;max-width:960px;margin:20px auto 0;min-height:0}
 .prog{height:8px;background:var(--leaf-soft);border-radius:8px;overflow:hidden;flex:1;max-width:360px}
 .prog i{display:block;height:100%;background:var(--leaf);border-radius:8px;transition:width .5s}
-.log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding:8px 4px 24px;min-height:0;height:0}
+.log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding:8px 4px 24px;min-height:150px;height:0} /* 선택지가 많아도 지금 질문 말풍선은 보이게 */
 .ai-row{display:flex;gap:14px;align-items:flex-end;max-width:82%}
 .ai-row img{width:72px;height:72px;object-fit:contain;flex:none}
 .msg{padding:16px 22px;border-radius:26px;white-space:pre-wrap;font-size:18px}
@@ -19,7 +19,7 @@
 
 /* 입력 상자 (ChatInput) */
 .input{background:var(--card);border-radius:28px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 6px 22px rgba(75,122,60,.1)}
-.chipwrap{display:flex;flex-direction:column;gap:10px;max-height:46vh;overflow-y:auto;padding:4px}
+.chipwrap{display:flex;flex-direction:column;gap:10px;max-height:34vh;overflow-y:auto;padding:4px}
 .chip-group{font-family:var(--display);color:var(--stem);font-size:15px;margin-top:4px}
 .chips{display:flex;flex-wrap:wrap;gap:10px}
 .chips.apart{margin-top:14px;padding-top:14px;border-top:2px dashed var(--leaf-soft)}
@@ -43,3 +43,32 @@ textarea{flex:1;min-width:0;resize:none;font:inherit;font-size:17px;padding:12px
 .need{margin:0;font-size:14px;color:#b65c48}
 .back{align-self:flex-start;background:none;border:0;padding:2px 6px;color:var(--muted);font-size:15px;margin:-6px 0 -4px}
 .back:hover{color:var(--stem)}
+
+/* 대화 중 나가기 확인 */
+.leave{border:0;border-radius:28px;padding:30px 34px 28px;width:min(440px,calc(100vw - 32px));background:var(--card);color:var(--ink);text-align:center;box-shadow:0 20px 60px #2d3a2433}
+.leave::backdrop{background:#2d3a2459}
+.leave img{width:96px}
+.leave h3{font-family:var(--display);font-weight:400;font-size:26px;line-height:1.3;margin:6px 0 8px;color:var(--stem)}
+.leave p{margin:0 0 22px;color:var(--muted)}
+.leave .acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.leave .btn{padding:11px 28px;font-size:18px}
+
+/* 결과를 만드는 동안: 대화 영역 위에 로딩 카드 (위쪽 처음으로 버튼은 그대로 누를 수 있음) */
+#chat .body{position:relative}
+.thinking{position:absolute;inset:0;z-index:5;display:grid;place-items:center;background:rgba(246,248,239,.86);backdrop-filter:blur(3px);border-radius:28px}
+.thinking[hidden]{display:none}
+.th-card{background:var(--card);border-radius:32px;padding:30px 38px 28px;width:min(480px,calc(100% - 32px));text-align:center;box-shadow:0 20px 60px rgba(45,58,36,.15)}
+.th-img{width:110px;animation:bob 2.4s ease-in-out infinite}
+.th-card h3{font-family:var(--display);font-weight:400;font-size:28px;color:var(--stem);margin:6px 0 4px}
+.th-card h3 .dots span{width:6px;height:6px;margin:0 2px;vertical-align:middle}
+.th-sub{color:var(--muted);margin:0 0 18px;font-size:15px}
+.th-steps{list-style:none;margin:0;padding:0;display:grid;gap:10px;text-align:left}
+.th-steps li{position:relative;padding:10px 14px 10px 46px;border-radius:14px;background:var(--bg);color:var(--muted);transition:background .3s,color .3s}
+.th-steps li::before{content:"";position:absolute;left:14px;top:50%;width:20px;height:20px;margin-top:-10px;border-radius:50%;border:2px solid #cfd8c4;box-sizing:border-box}
+.th-steps li.now{background:var(--leaf-soft);color:var(--ink)}
+.th-steps li.now::before{border-color:var(--leaf);border-top-color:transparent;animation:spin .8s linear infinite}
+.th-steps li.done{color:var(--stem)}
+.th-steps li.done::before{content:"✓";border:0;background:var(--stem);color:#fff;display:grid;place-items:center;font-size:12px;font-weight:700}
+@keyframes spin{to{transform:rotate(360deg)}}
+.th-err{margin-top:18px}
+.th-err p{color:#9b392d;margin:0 0 12px;font-size:15px}

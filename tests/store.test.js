@@ -4,6 +4,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { Store } from '../src/store.js';
 import { createIntake, answerIntake, backIntake, buildContext, currentView } from '../src/intake.js';
+import { initialQuestionRows, initialQuestionSet } from '../src/question-bank.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const databaseTest = (name, run) => test(name, { skip: !databaseUrl && 'Set TEST_DATABASE_URL to an isolated PostgreSQL test database' }, run);
@@ -152,7 +153,7 @@ databaseTest('restart preserves encrypted data, startup rejects a changed key, a
   f.store = await Store.connect(databaseUrl, f.key, 30, { schema: f.schema });
   assert.deepEqual(await f.store.record(browser.id, 'demo-record'), exampleRecord());
   assert.deepEqual((await f.store.context(browser.id, intake.id)).context, buildContext(intake.state));
-  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 2);
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 3);
   await f.store.pool.query('UPDATE schema_migrations SET checksum=$1', ['tampered-checksum']);
   await assert.rejects(Store.connect(databaseUrl, f.key, 30, { schema: f.schema }), /checksum/);
 });
@@ -188,6 +189,69 @@ databaseTest('database questions seed once and edits, additions, ordering and re
   assert.equal((await f.store.pool.query("SELECT COUNT(*)::INTEGER AS count FROM questions WHERE id='extra'")).rows[0].count, 0);
   assert.equal((await f.store.pool.query("SELECT enabled FROM questions WHERE id='mysupport'")).rows[0].enabled, false);
   assert.equal(currentView((await f.store.intake(browser.id, old.id)).state).question.q, originalPrompt);
+});
+
+databaseTest('frontend name migration upgrades only the default and preserves legacy encrypted intake snapshots', async t => {
+  const f = await fixture(t);
+  const defaultName = initialQuestionRows.find(row => row.id === 'name');
+  const latestName = (await f.store.questionSet()).questions.find(question => question.id === 'name');
+  assert.equal(latestName.required, true);
+  assert.equal(latestName.follow_up, undefined);
+  // Reconstruct an existing 002 database without modifying its legacy seed or snapshot.
+  await f.store.pool.query("DELETE FROM schema_migrations WHERE version='003_frontend_name.sql'");
+  await f.store.pool.query("UPDATE questions SET definition=$1::jsonb WHERE id='name'", [JSON.stringify(defaultName.definition)]);
+  const browser = await f.store.createBrowser();
+  const old = await f.store.createIntake(browser.id, createIntake(initialQuestionSet));
+  const oldContext = await f.store.context(browser.id, old.id);
+  const encryptedBefore = (await f.store.pool.query(`SELECT content FROM intakes WHERE id=$1
+    UNION ALL SELECT content FROM patient_states WHERE intake_id=$1
+    UNION ALL SELECT content FROM patient_state_revisions WHERE intake_id=$1`, [old.id])).rows;
+  await f.store.close();
+  f.store = null;
+  f.store = await Store.connect(databaseUrl, f.key, 30, { schema:f.schema });
+  const migratedName = (await f.store.questionSet()).questions.find(question => question.id === 'name');
+  assert.equal(migratedName.required, true);
+  assert.equal(migratedName.follow_up, undefined);
+  assert.deepEqual((await f.store.intake(browser.id, old.id)).state, old.state);
+  assert.deepEqual(await f.store.context(browser.id, old.id), oldContext);
+  assert.deepEqual((await f.store.pool.query(`SELECT content FROM intakes WHERE id=$1
+    UNION ALL SELECT content FROM patient_states WHERE intake_id=$1
+    UNION ALL SELECT content FROM patient_state_revisions WHERE intake_id=$1`, [old.id])).rows, encryptedBefore);
+  assert.equal(currentView(old.state).question.required, undefined);
+  const fresh = createIntake(await f.store.questionSet());
+  assert.equal(currentView(fresh).question.required, true);
+  const migrationTime = (await f.store.pool.query("SELECT updated_at FROM questions WHERE id='name'")).rows[0].updated_at;
+  // Once applied, 003 cannot overwrite a later administrator's deliberate edit.
+  await f.store.pool.query("UPDATE questions SET definition=$1::jsonb WHERE id='name'", [JSON.stringify(defaultName.definition)]);
+  await f.store.close();
+  f.store = null;
+  f.store = await Store.connect(databaseUrl, f.key, 30, { schema:f.schema });
+  const unchanged = (await f.store.pool.query("SELECT definition,updated_at FROM questions WHERE id='name'")).rows[0];
+  assert.deepEqual(unchanged.definition, defaultName.definition);
+  assert.deepEqual(unchanged.updated_at, migrationTime);
+});
+
+databaseTest('frontend name migration never overwrites customized question definitions or row settings', async t => {
+  const f = await fixture(t);
+  const defaultName = initialQuestionRows.find(row => row.id === 'name');
+  const variants = [
+    { ...defaultName, definition:{ ...defaultName.definition, q:'관리자가 정한 이름 질문' } },
+    { ...defaultName, definition:{ ...defaultName.definition, required:false } },
+    { ...defaultName, sort_order:50 },
+    { ...defaultName, enabled:false },
+  ];
+  for (const row of variants) {
+    await f.store.pool.query("DELETE FROM schema_migrations WHERE version='003_frontend_name.sql'");
+    await f.store.pool.query(`UPDATE questions SET kind=$1,sort_order=$2,enabled=$3,subject=$4,
+      definition=$5::jsonb,updated_at='2026-01-01T00:00:00Z' WHERE id='name'`,
+    [row.kind,row.sort_order,row.enabled,row.subject,JSON.stringify(row.definition)]);
+    const before = (await f.store.pool.query("SELECT * FROM questions WHERE id='name'")).rows[0];
+    await f.store.close();
+    f.store = null;
+    f.store = await Store.connect(databaseUrl, f.key, 30, { schema:f.schema });
+    assert.deepEqual((await f.store.pool.query("SELECT * FROM questions WHERE id='name'")).rows[0], before);
+    assert.equal((await f.store.pool.query("SELECT COUNT(*)::INTEGER AS count FROM schema_migrations WHERE version='003_frontend_name.sql'")).rows[0].count, 1);
+  }
 });
 
 databaseTest('invalid or empty database questions fail instead of substituting the original catalog', async t => {

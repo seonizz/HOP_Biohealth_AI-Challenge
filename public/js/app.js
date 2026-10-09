@@ -6,6 +6,10 @@ async function startApp(){
     await API.bootstrap();
     $("app").innerHTML=SCREENS.map(c=>c.render()).join("\n");
     applyMascots($("app"));SCREENS.forEach(c=>c.mount());
+    document.querySelectorAll("[data-home]").forEach(b=>b.onclick=leaveConversation);
+    const open={about:()=>AboutScreen.open(),columns:()=>ColumnsScreen.open(),records:()=>RecordsScreen.open()};
+    document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>{open[b.dataset.nav]();window.scrollTo(0,0);});
+    document.querySelectorAll("[data-go]").forEach(b=>b.onclick=begin);
   }catch(error){
     $("app").innerHTML=`<p class="note" role="status">${esc(error.message)}</p><button class="btn" id="bootRetry">다시 시도</button>`;
     $("bootRetry").onclick=startApp;

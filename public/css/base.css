@@ -1,25 +1,31 @@
 /* Layout: 1920×1080 한 화면 앱. 시작(좌 글·우 마스코트) → 대화(가운데 대화 열만) → 결과(좌 마스코트·우 가이드 카드) */
+/* 글꼴: 사이트 안에 직접 둠 (보안 설정 font-src 'self'에서도, 인터넷이 없어도 동작). 라이선스 SIL OFL 1.1 — assets/fonts/*-OFL.txt */
+@font-face{font-family:"Jua";src:url("../assets/fonts/Jua-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"NanumSquareRound";src:url("../assets/fonts/NanumSquareRound-Regular.woff2") format("woff2");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"NanumSquareRound";src:url("../assets/fonts/NanumSquareRound-Bold.woff2") format("woff2");font-weight:700;font-style:normal;font-display:swap}
+/* 나눔스퀘어라운드에 없는 드문 한글(2,350자 밖)은 고운돋움으로 보완 */
+@font-face{font-family:"Gowun Dodum";src:url("../assets/fonts/GowunDodum-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
 :root{
   --bg:#f6f8ef; --cream:#fffaea; --card:#ffffff; --leaf:#8cc06b; --leaf-soft:#e6f1d9;
   --stem:#4b7a3c; --ink:#3a2a22; --muted:#7b7266; --cheek:#f6b3a4; --cheek-soft:#fde9e3; --sun:#f3c64b;
-  --display:"Jua","Gowun Dodum",system-ui,sans-serif; --body:"Gowun Dodum",system-ui,sans-serif;
+  --display:"Jua","NanumSquareRound","Gowun Dodum",system-ui,sans-serif; --body:"NanumSquareRound","Gowun Dodum",system-ui,sans-serif;
   color-scheme:light;
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body,#app{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.7;padding-inline:16px;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.7;padding-inline:clamp(16px,6.7vw,128px);overflow-x:hidden;word-break:keep-all;overflow-wrap:break-word} /* 한글은 낱말 단위로 줄바꿈 */
 img{max-width:100%}
 [hidden]:not([hidden=until-found i]){display:none!important}
 button{font:inherit;cursor:pointer}
 button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outline-offset:3px}
 
 /* 화면 틀 + 상단 바 (TopBar) */
-.screen{min-height:100%;max-width:1680px;margin:0 auto;display:flex;flex-direction:column;padding-block:28px}
+.screen{min-height:100%;max-width:1440px;margin:0 auto;display:flex;flex-direction:column;padding-block:clamp(20px,4.6vw,88px)}
 .top{display:flex;align-items:center;gap:20px}
-.logo{font-family:var(--display);color:var(--stem);font-size:34px;line-height:1;display:flex;align-items:flex-start;gap:2px}
-.logo small{font-size:15px;color:var(--leaf);margin-top:-6px}
+.logo{font-family:var(--display);color:var(--stem);font-size:44px;line-height:1;height:53px;display:flex;align-items:center;gap:2px;background:none;border:0;padding:0;cursor:pointer}
+.logo small{font-size:19px;color:var(--leaf);align-self:flex-start;margin-top:2px} /* 로고 높이 = 오른쪽 버튼 높이(53px) */
 .crisis{margin-left:auto;font-size:14px;color:var(--muted);background:var(--card);border:2px solid var(--leaf-soft);padding:6px 14px;border-radius:999px}
 .crisis b{color:var(--stem)}
 
@@ -31,17 +37,27 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 .note{font-size:14px;color:var(--muted)}
 .send{background:var(--stem);color:var(--cream);border:0;border-radius:20px;padding:0 28px;font-family:var(--display);font-size:18px}
 @keyframes bob{50%{transform:translateY(-12px)}}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* 등장 애니메이션 (utils.js reveal) */
+.rv{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .75s cubic-bezier(.2,.75,.2,1)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1!important;transform:none!important}}
 
 /* 가이드 카드 (GuideCards: 결과 화면·기록 화면이 함께 씀) */
-.card{background:var(--card);border-radius:28px;padding:26px 30px}
+.card{background:var(--card);border-radius:28px;padding:26px 30px;word-break:keep-all;overflow-wrap:break-word} /* 한글 낱말 중간에서 줄이 바뀌지 않게 */
 .card h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0 0 12px;color:var(--stem)}
 .script{background:var(--cream);border:2px dashed var(--leaf);font-size:21px;line-height:1.75;position:relative}
-.script .copy{position:absolute;right:20px;top:20px}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.script .copy{position:absolute;right:24px;top:24px;background:none;border:0;padding:4px 2px;font-family:var(--body);font-size:14px;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:color .15s,text-decoration-color .15s} /* 버튼이 아닌 연한 글씨 */
+.script .copy:hover{color:var(--stem);text-decoration-color:currentColor}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start} /* 내용 길이만큼만 (빈 칸 없이) */
 .card ul{margin:0;padding-left:20px;display:grid;gap:6px}
 .avoid{background:var(--cheek-soft)}
 .avoid h3{color:#b65c48}
+/* 해 보세요 ✓ / 피하면 좋아요 ✕ 표시 */
+.do ul,.avoid ul{list-style:none;padding-left:0;gap:12px}
+.do li,.avoid li{position:relative;padding-left:32px;line-height:1.6}
+.do li::before,.avoid li::before{position:absolute;left:0;top:3px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;line-height:1}
+.do li::before{content:"✓";background:var(--leaf-soft);color:var(--stem)}
+.avoid li::before{content:"✕";background:#f8d5cc;color:#b65c48}
 .care{background:var(--leaf-soft);display:flex;gap:20px;align-items:center}
 .care img{width:96px;flex:none}
 .care p{margin:0}
@@ -52,3 +68,17 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 .safety p{margin:0 0 8px}
 .safety b{color:#b65c48}
 @media (max-width:900px){.two{grid-template-columns:1fr}}
+
+/* 내비게이션 바: 스크롤해도 위에 붙어 있음 */
+.nav{position:sticky;top:0;z-index:20;margin:-12px -16px 0;padding:12px 16px;border-radius:0 0 24px 24px;background:rgba(246,248,239,.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.navlinks{display:flex;align-items:center;gap:6px;margin-left:auto}
+.navlink{background:none;border:0;border-radius:999px;padding:10px 18px;font-family:var(--display);font-size:18px;color:var(--stem);cursor:pointer;transition:background .2s}
+.navlink:hover{background:var(--leaf-soft)}
+.navlink[aria-current="page"]{background:var(--leaf-soft);box-shadow:inset 0 0 0 2px var(--leaf)}
+.navcta{padding:8px 18px;font-size:16px;box-shadow:0 3px 0 #355a2a;margin-bottom:3px} /* 아래 그림자(3px)만큼 올려 가운데 맞춤 */
+.crisis-row{display:flex;justify-content:flex-end;margin-top:10px}
+.crisis-row .crisis{margin-left:0}
+/* 결과 카드가 한 칸씩 통째로 등장 */
+.rv.pop{transform:translateY(34px) scale(.97);transition:opacity .55s ease,transform .7s cubic-bezier(.2,.8,.2,1.15)}
+.rv.pop.in{transform:none}
+@media (max-width:900px){.nav{flex-wrap:wrap}.navlinks{margin-left:0;order:3;width:100%;justify-content:space-between}.navlink{padding:8px 10px;font-size:16px}.navcta{margin-left:auto;padding:9px 18px;font-size:16px}}

@@ -54,7 +54,7 @@ const ChatInput={
       b.onclick=()=>{
         if(q.type==="one"){
           // "네 [직접 입력]": 고르면 입력창으로 바뀜
-          if(m.input) return ChatInput.render({type:"text",ph:m.ph,noSkip:true},t=>onDone(t===SKIP?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),onBack);
+          if(m.input) return ChatInput.render({type:"text",ph:m.ph,noSkip:true},t=>onDone(t===SKIP?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),()=>ChatInput.render(q,onDone,onBack));
           btns.forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));
           return submit(optLabel(o),[k],"");
         }
@@ -72,7 +72,7 @@ const ChatInput={
     }
     // 선택형 문항의 직접 입력
     const row=document.createElement("div");row.className="inrow";
-    row.innerHTML=`<div class="own"><label for="own">직접 입력</label><input id="own" type="text" placeholder="${q.type==="multi"?"보기에 없는 내용이 있다면 적어 주세요":"보기에 없다면 적어 주세요"}">${q.type==="one"?'<button class="send" id="ownSend">보내기</button>':""}</div>`;
+    if(!q.noOwn)row.innerHTML=`<div class="own"><label for="own">직접 입력</label><input id="own" type="text" placeholder="${q.type==="multi"?"보기에 없는 내용이 있다면 적어 주세요":"보기에 없다면 적어 주세요"}">${q.type==="one"?'<button class="send" id="ownSend">보내기</button>':""}</div>`;
     if(canSkip)row.appendChild(skipBtn());
     box.appendChild(row);
     const own=$("own");
@@ -82,11 +82,11 @@ const ChatInput={
       $("ownSend").onclick=go;own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}};
     }else{
       const g=document.createElement("button");g.className="btn done";g.textContent="다 골랐어요";
-      g.onclick=()=>{const sel=pick(),v=own.value.trim();
-        if(q.required&&!sel.length&&!v)return need();
+      g.onclick=()=>{const sel=pick(),v=own?.value.trim()||"";
+        if((q.required||q.noOwn)&&!sel.length&&!v)return need();
         const parts=sel.map(k=>optLabel(q.opts[k]));if(v)parts.push(v);
         submit(parts.length?parts.join(", "):"해당 없음",sel,v);};
-      own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();g.click();}};
+      if(own)own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();g.click();}};
       row.appendChild(g);
     }
     addBack();

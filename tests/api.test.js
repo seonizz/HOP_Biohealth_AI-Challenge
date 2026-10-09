@@ -46,6 +46,17 @@ test('UI catalog, browser isolation, CSRF and persisted column interactions', { 
   assert.equal(a.bootstrap.columns.length, 10);
   assert.equal(a.bootstrap.model_connected, true);
   assert.equal((await fetch(f.base + '/')).status, 200);
+  for (const [path, mime] of [
+    ['/assets/fonts/Jua-Regular.ttf', 'font/ttf'],
+    ['/assets/fonts/NanumSquareRound-Regular.woff2', 'font/woff2'],
+    ['/assets/fonts/NanumSquareRound-Bold.woff2', 'font/woff2'],
+  ]) {
+    const font = await fetch(f.base + path);
+    assert.equal(font.status, 200);
+    assert.equal(font.headers.get('content-type'), mime);
+    assert.ok((await font.arrayBuffer()).byteLength > 1000);
+  }
+  assert.equal(a.bootstrap.questions[0].required, true);
   const create = await f.request(a, '/api/intakes', 'POST', {});
   assert.equal(create.status, 201);
   const id = create.data.id;
@@ -64,6 +75,33 @@ test('UI catalog, browser isolation, CSRF and persisted column interactions', { 
   assert.notEqual((await f.request(a, `/api/columns/random?exclude=${today.data.column.art}`)).data.column.art, today.data.column.art);
   const forbidden = await fetch(f.base + '/.env');
   assert.equal(forbidden.status, 404);
+});
+
+test('updated UI backs repeatedly through stored prompts and redoes a pending follow-up with server history', { skip:!databaseUrl }, async t => {
+  const f = await fixture(t, null), session = await f.browser();
+  let view = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  const send = async data => {
+    const result = await f.request(session, `/api/intakes/${view.id}/answers`, 'POST', { revision:view.revision,question_id:view.question.id,follow_up:!!view.question.follow_up,...data });
+    assert.equal(result.status, 200); view = result.data;
+  };
+  await send({text:'시연 친구'}); await send({text:'함께 이야기를 듣고 곁에 있다는 말을 하고 싶어요.'});
+  await send({selected:[0]}); await send({text:'짝',custom:'짝'});
+  assert.equal(view.question.follow_up, true); assert.equal(view.canGoBack, true);
+  const pendingRevision = view.revision;
+  view = (await f.request(session, `/api/intakes/${view.id}/back`, 'POST', {revision:view.revision})).data;
+  assert.equal(view.question.id, 'rel'); assert.equal(view.pendingFollow, false);
+  assert.ok(view.revision > pendingRevision);
+  for (const id of ['goal','want','name']) {
+    const back = await f.request(session, `/api/intakes/${view.id}/back`, 'POST', {revision:view.revision});
+    assert.equal(back.status, 200); view = back.data; assert.equal(view.question.id, id);
+  }
+  assert.equal(view.canGoBack, false);
+  const row = await f.store.pool.query('SELECT content,owner FROM intakes WHERE id=$1', [view.id]);
+  const state = f.store.open(row.rows[0].content, `${row.rows[0].owner}:intake:${view.id}`);
+  assert.deepEqual(state.ans, {}); assert.equal(state.history.length, 1); assert.equal(state.pendingFollow, null);
+  const context = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
+  assert.equal(context.payload.answers.length, 0);
+  assert.equal(context.log.some(item => item.who === 'me'), false);
 });
 
 test('DB question changes reach catalog and new conversations while previous records retain their snapshot', { skip:!databaseUrl }, async t => {

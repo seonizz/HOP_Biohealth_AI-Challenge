@@ -11,13 +11,19 @@ class Element {
   constructor(tag) {
     this.tagName = tag.toLowerCase(); this.children = []; this.dataset = {}; this.attributes = {};
     this.className = ''; this.value = ''; this._text = ''; this.style = {};
-    this.classList = { add: name => { this.className = `${this.className} ${name}`.trim(); } };
+    this.classList = {
+      add: name => { if(!this.className.split(/\s+/).includes(name))this.className = `${this.className} ${name}`.trim(); },
+      remove: name => { this.className = this.className.split(/\s+/).filter(value => value !== name).join(' '); },
+      contains: name => this.className.split(/\s+/).includes(name),
+    };
   }
   appendChild(child) { child.parent = this; this.children.push(child); return child; }
   prepend(child) { child.parent = this; this.children.unshift(child); }
   remove() { if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this); }
   focus() { this.focused = true; }
   click() { return this.onclick?.({ target: this }); }
+  showModal() { this.open = true; }
+  close() { this.open = false; }
   setAttribute(name, value) {
     this.attributes[name] = String(value);
     if (name === 'id') this.id = String(value);
@@ -42,6 +48,7 @@ class Element {
     }
   }
   matches(selector) {
+    if (selector.startsWith('#')) return this.id === selector.slice(1);
     if (selector.startsWith('.')) return this.className.split(/\s+/).includes(selector.slice(1));
     if (selector.startsWith('[')) {
       const [, name, value] = selector.match(/^\[([^=\]]+)(?:="([^"]*)")?\]$/) || [];
@@ -61,6 +68,7 @@ function documentWith(ids) {
   const roots = ids.map(id => { const element = new Element('div'); element.setAttribute('id', id); return element; });
   return {
     createElement: tag => new Element(tag),
+    querySelectorAll: selector => roots.flatMap(root => [...(root.matches(selector) ? [root] : []), ...root.querySelectorAll(selector)]),
     getElementById(id) {
       const find = element => element.id === id ? element : element.children.map(find).find(Boolean);
       return roots.map(find).find(Boolean) ?? null;
@@ -69,17 +77,18 @@ function documentWith(ids) {
 }
 
 function deferred() {
-  let resolve; const promise = new Promise(done => { resolve = done; }); return { promise, resolve };
+  let resolve, reject; const promise = new Promise((done, fail) => { resolve = done; reject = fail; }); return { promise, resolve, reject };
 }
 
 function conversationHarness(request) {
-  const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec']);
+  const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo']);
+  document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden></div>';
   const context = vm.createContext({
-    document, StartScreen: { updRecN() {} },
+    document, window:{ scrollTo() {} }, StartScreen: { updRecN() {} },
     ChatInput: { clear() {}, render() {}, error(message) { throw new Error(message); } },
     API: { request },
   });
-  vm.runInContext(script('core/utils.js') + script('components/ChatScreen.js') + script('core/conversation.js') + '\nglobalThis.ui = ChatScreen; globalThis.flow = { begin, leaveConversation, renderConversation, show };', context);
+  vm.runInContext(script('core/utils.js') + script('components/ChatScreen.js') + script('core/conversation.js') + '\nglobalThis.ui = ChatScreen; globalThis.flow = { begin, leaveConversation, renderConversation, show, finish };', context);
   context.ui.typing = (_, work) => Promise.resolve(work);
   return { document, context };
 }
@@ -187,4 +196,68 @@ test('a record refresh started during deletion cannot restore the deleted record
   assert.deepEqual(Array.from(context.cache.get(), record => record.id), [2]);
   assert.equal(document.getElementById('rlist').querySelector('[data-del="1"]'), null);
   assert.ok(document.getElementById('rlist').querySelector('[data-del="2"]'));
+});
+
+test('leaving a started conversation needs the dialog and ignores an in-flight response after confirmation', async () => {
+  const response = deferred();
+  const { document, context } = conversationHarness(() => response.promise);
+  const view = conversationView('친구'); view.log = [{ who:'me', text:'친구에 대해 이야기할게요.' }];
+  context.flow.renderConversation(view, 0);
+  context.flow.show('chat');
+  context.flow.leaveConversation();
+  assert.equal(document.getElementById('leaveDlg').open, true);
+  assert.equal(document.getElementById('chat').hidden, false);
+  document.getElementById('leaveGo').click();
+  assert.equal(document.getElementById('leaveDlg').open, false);
+  assert.equal(document.getElementById('start').hidden, false);
+  context.flow.renderConversation(conversationView('늦은 답변'), 0);
+  assert.equal(document.title, '말씨');
+});
+
+test('final loading shows an error and retries the saved revision before displaying server records', async () => {
+  const first = deferred(), second = deferred(), calls = [], shown = [];
+  const { document, context } = conversationHarness((path, options) => { calls.push([path, options.body.revision]); return calls.length === 1 ? first.promise : second.promise; });
+  context.ResultScreen = { open(...args) { shown.push(args); } };
+  context.rememberRec = record => { context.saved = record; };
+  const active = conversationView('친구'); context.flow.renderConversation(active, 0);
+  const finishing = context.flow.finish();
+  assert.equal(document.getElementById('thinking').hidden, false);
+  assert.equal(document.getElementById('thinking').querySelector('li').className, 'now');
+  first.reject(Object.assign(new Error('모델 연결 실패'), { status:502 }));
+  await finishing;
+  assert.equal(document.getElementById('thinking').querySelector('.th-err').hidden, false);
+  assert.equal(shown.length, 0);
+  const retry = document.getElementById('thRetry').click();
+  const record = { id:1, profile:{ name:'친구' }, guide:{ script:'곁에 있을게요.' } };
+  second.resolve({ revision:2, record }); await retry;
+  assert.deepEqual(calls, [['/api/intakes/intake-1/result',1],['/api/intakes/intake-1/result',1]]);
+  assert.equal(document.getElementById('thinking').hidden, true);
+  assert.equal(context.saved, record);
+  assert.equal(shown[0][2], true);
+});
+
+test('detail back returns to yes/no choices before using the server previous-question action', () => {
+  const document = documentWith(['input']); let backs = 0, submits = 0;
+  const context = vm.createContext({ document, question:structuredClone(questionCatalog.find(q => q.id === 'support')) });
+  vm.runInContext(script('core/utils.js') + script('core/questions.js') + script('components/ChatInput.js') + '\nglobalThis.ui = ChatInput;', context);
+  context.ui.render(context.question, () => submits++, () => backs++);
+  document.getElementById('input').querySelectorAll('button').find(b => b.textContent === '네').click();
+  assert.ok(document.getElementById('ta'));
+  document.getElementById('input').querySelector('.back').click();
+  assert.equal(document.getElementById('ta'), null);
+  assert.equal(backs, 0); assert.equal(submits, 0);
+  document.getElementById('input').querySelector('.back').click();
+  assert.equal(backs, 1);
+});
+
+test('DB multi choice without own text keeps its done action and only submits selected options', async () => {
+  const document = documentWith(['input']); const context = vm.createContext({ document });
+  vm.runInContext(script('core/utils.js') + script('core/questions.js') + script('components/ChatInput.js') + '\nglobalThis.ui = ChatInput;', context);
+  let submitted;
+  context.ui.render({ type:'multi', noOwn:true, opts:['첫 보기','둘째 보기'] }, (...args) => { submitted = args; });
+  assert.equal(document.getElementById('own'), null);
+  const box = document.getElementById('input');
+  await box.querySelector('.done').click(); assert.equal(submitted, undefined);
+  box.querySelectorAll('.chip')[1].click(); await box.querySelector('.done').click();
+  assert.equal(submitted[0], '둘째 보기'); assert.deepEqual(Array.from(submitted[1]), [1]); assert.equal(submitted[2], '');
 });

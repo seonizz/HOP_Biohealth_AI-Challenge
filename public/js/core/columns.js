@@ -62,7 +62,7 @@ const COLUMNS=[
      "부정적인 생각과 다투기보다, 산책처럼 기분을 바꿀 수 있는 활동을 슬쩍 제안해 보세요.",
      "식사나 움직임은 고민하지 않아도 되도록 구체적으로 권해 주세요.",
      "작은 부탁을 건네서 '나도 쓸모 있는 사람'이라는 느낌을 줄 수 있어요. 돌보는 사람도 전문가의 도움을 받아도 괜찮아요."]},
-  {cat:"통합",title:"[정신건강칼럼 6월] 환자의 가족이 된다는 것",src:"서울아산병원",url:"https://www.amc.seoul.kr/asan/depts/mind/K/bbsDetail.do?menuId=4548&contentId=263379",art:"family",artLabel:"가족의 연대",
+  {cat:"통합",title:"환자의 가족이 된다는 것",src:"서울아산병원",url:"https://www.amc.seoul.kr/asan/depts/mind/K/bbsDetail.do?menuId=4548&contentId=263379",art:"family",artLabel:"가족의 연대",
    lead:"오래 함께하려면, 가족도 자기 삶을 지켜야 해요.",
    points:["치료는 길어질 수 있어요. 하루 종일 붙어 있기보다 각자의 생활을 지키며 돌보는 편이 오래 갈 수 있어요.",
      "해결책보다 \"그랬구나, 많이 힘들었겠다\" 하고 알아주는 말이 더 큰 힘이 돼요.",

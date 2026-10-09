@@ -10,7 +10,7 @@
 | `POST /api/intakes` | `{}`로 새 대화 생성 |
 | `GET /api/intakes/:id` | 현재 질문·진행률·대화 로그 |
 | `POST /api/intakes/:id/answers` | 원문 답변 저장 → 모델 상태 갱신 → 다음 질문 |
-| `POST /api/intakes/:id/back` | `{revision}`로 직전 질문 상태 복원 |
+| `POST /api/intakes/:id/back` | `{revision}`로 이전 질문 상태 복원; 첫 문항까지 반복 가능, 후속 질문에서는 본 질문 복원 |
 | `GET /api/intakes/:id/context` | `{id,revision,context}` 현재 서버 상태 |
 | `POST /api/intakes/:id/result` | `{revision}`로 실제 모델 결과 생성·저장; 완료 재시도는 기존 기록 반환 |
 | `GET /api/records` | `{records}` 최신순 기록 |

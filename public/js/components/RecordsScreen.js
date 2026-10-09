@@ -3,13 +3,10 @@ let curRec=null,pendingDel=null;
 const RecordsScreen={
   render(){return `
 <section class="screen" id="records" hidden>
-  ${TopBar(`<span class="pill">내 기록</span><button class="ghost" id="recHome" style="margin-left:auto">처음으로</button><button class="btn" id="recNew" style="padding:10px 26px;font-size:18px">새 대화</button>`)}
+  ${NavBar("records")}
   <div class="wrapk"><div class="rlist" id="rlist"></div><div class="rdetail" id="rdetail"></div></div>
 </section>`;},
-  mount(){
-    $("recHome").onclick=()=>show("start");
-    $("recNew").onclick=begin;
-  },
+  mount(){},
   async open(id,refresh=true){
     show("records");this.draw(id);
     if(!refresh)return;

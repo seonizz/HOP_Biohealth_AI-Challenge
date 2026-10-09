@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { questions, questionCatalog, columns, categories, optLabel } from '../src/catalog.js';
 import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate } from '../src/intake.js';
+import { initialQuestionRows, createQuestionSet } from '../src/question-bank.js';
 
 const questionIds = ['name', 'want', 'goal', 'rel', 'contact', 'mood', 'dur', 'freq', 'describe', 'concern', 'cause', 'events', 'others_why', 'support', 'burden', 'values', 'values_effect', 'extra', 'coping', 'help', 'barrier', 'need', 'others_help', 'moment', 'moment_freq', 'feeling', 'cgchange', 'cgchange_more', 'mycoping', 'mysupport'];
 
@@ -198,7 +199,7 @@ test('one follow-up uses original merge and preserves original and follow-up evi
   assert.equal(pending.fuCount, concern.fuCount + 1);
   assert.equal(buildContext(pending).patient.fields.concern.rawText, '식사');
   assert.equal(buildContext(pending).patient.fields.concern.follow_up_pending, true);
-  assert.equal(currentView(pending).canGoBack, false);
+  assert.equal(currentView(pending).canGoBack, true);
   assert.throws(() => answerIntake(pending, { question_id: 'concern', text: '식사' }), { code: 'question_mismatch' });
   assert.throws(() => reply(pending, { text: '' }), { code: 'answer_required' });
   const next = reply(pending, { text: '불안' });
@@ -220,7 +221,7 @@ test('follow-up selection labels merge into feeling without carrying invalid bas
   assert.equal(buildContext(next).supporter.fields.feeling.followUp.answer.rawText, '무섭고 걱정됐어요, 지치고 막막했어요');
 });
 
-test('previous-question action restores answers, flow tags, follow-ups and log and is only available once', () => {
+test('previous-question action restores answers, flow tags, follow-ups and log through the first question', () => {
   const mood = advanceTo('mood');
   const pending = reply(mood, { custom: '잠' });
   const duration = reply(pending, { text: '주말 내내 잠만 자는 모습을 봤어요.' });
@@ -231,10 +232,15 @@ test('previous-question action restores answers, flow tags, follow-ups and log a
   assert.equal(back.ans.mood, undefined);
   assert.equal(back.extraObs, '');
   assert.equal(back.fuCount, 0);
-  assert.equal(currentView(back).canGoBack, false);
+  assert.equal(currentView(back).canGoBack, true);
   assert.equal(back.log.some(item => item.fu), false);
-  assert.throws(() => backIntake(back), { code: 'back_unavailable' });
   assert.deepEqual(back.log, mood.log);
+  let first = back;
+  while (currentView(first).canGoBack) first = backIntake(first);
+  assert.equal(currentView(first).question.id, 'name');
+  assert.deepEqual(first.ans, {});
+  assert.deepEqual(first.tags, []);
+  assert.throws(() => backIntake(first), { code:'back_unavailable' });
 
   const durationWithTag = reply(mood, { selected: [0] });
   const frequency = reply(durationWithTag, { selected: [2] });
@@ -286,4 +292,71 @@ test('context separates reported patient state, user goal and supporter feelings
   assert.doesNotThrow(() => structuredClone(context));
   assert.doesNotThrow(() => JSON.stringify(context));
   assert.throws(() => answerIntake(state, { question_id: 'mysupport', text: 'late' }), { code: 'intake_complete' });
+});
+
+test('back from a follow-up reasks its base and a later answer can follow the corrected branch', () => {
+  const concern = advanceTo('concern');
+  const pending = reply(concern, { text:'식사' });
+  assert.equal(currentView(pending).canGoBack, true);
+  const restored = backIntake(pending);
+  assert.equal(currentView(restored).question.id, 'concern');
+  assert.equal(currentView(restored).pendingFollow, false);
+  assert.deepEqual(restored.log, concern.log);
+  assert.equal(restored.fuCount, concern.fuCount);
+  assert.equal(restored.ans.concern, undefined);
+  const corrected = reply(restored, { text:'거의 식사하지 않고 하루 종일 누워 있어 걱정돼요.' });
+  assert.equal(currentView(corrected).question.id, 'cause');
+  assert.equal(currentView(reply(corrected, { selected:[1] })).question.id, 'others_why');
+});
+
+test('legacy intakes retain known back snapshots and start tracking subsequent prompts', () => {
+  const legacy = advanceTo('mood'); delete legacy.history;
+  const back = backIntake(legacy);
+  assert.equal(currentView(back).question.id, 'contact');
+  assert.equal(currentView(back).canGoBack, false);
+  const forward = reply(back, { selected:[0] });
+  assert.equal(currentView(forward).question.id, 'mood');
+  assert.equal(currentView(forward).canGoBack, true);
+  assert.equal(currentView(backIntake(forward)).question.id, 'contact');
+});
+
+test('encouragement at seven and fourteen prompts is persisted once and survives model rerenders and back', () => {
+  let state = createIntake();
+  for (let count = 1; count <= 15; count++) {
+    const historyLength = state.history.length;
+    const before = state.log.filter(message => message.face === 'cheer').length;
+    const next = applyModelUpdate(state, modelOutput());
+    assert.equal(next.history.length, historyLength);
+    assert.equal(next.log.filter(message => message.face === 'cheer').length, before);
+    if (count === 8 || count === 15) {
+      const cheer = next.log.filter(message => message.text.startsWith(count === 8 ? '벌써 3분의 1' : '거의 다 왔어요!'));
+      assert.equal(cheer.length, 1);
+      const previous = backIntake(next);
+      assert.equal(previous.log.some(message => message.text === cheer[0].text), false);
+    }
+    state = defaultReply(next);
+  }
+});
+
+test('back from final supplemental observations restores the last base question and its pending answer', () => {
+  const rows = structuredClone(initialQuestionRows);
+  rows.find(row => row.id === 'mood').definition.required = false;
+  let state = createIntake(createQuestionSet(rows));
+  for (let step = 0; step < 70; step++) {
+    const q = currentView(state).question;
+    if (q.id === 'gap_obs') break;
+    if (q.id === 'mood') state = reply(state, q.follow_up ? { text:'음' } : { selected:[] });
+    else if (q.id === 'concern') state = reply(state, { text:'음' });
+    else state = defaultReply(state);
+  }
+  assert.equal(currentView(state).question.id, 'gap_obs');
+  assert.equal(currentView(state).canGoBack, true);
+  state.agentMemory = { summary:'수정 전 메모리' };
+  const restored = backIntake(state);
+  assert.equal(currentView(restored).question.id, 'mysupport');
+  assert.equal(restored.pendingFollow, null);
+  assert.equal(restored.ans.mysupport, undefined);
+  assert.equal(restored.ans.gap_obs, undefined);
+  assert.equal(restored.agentMemory, undefined);
+  assert.equal(restored.fuCount, state.fuCount - 1);
 });
