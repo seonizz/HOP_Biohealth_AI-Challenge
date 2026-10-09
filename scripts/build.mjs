@@ -10,6 +10,7 @@ for (const name of ['index.html', 'src', 'assets', ...['base', 'start', 'chat', 
   await mkdir(resolve(staged, name, '..'), { recursive: true });
   await cp(resolve(frontend, name), resolve(staged, name), { recursive: true });
 }
+await cp(resolve(root, 'backend/openapi-model.json'), resolve(staged, 'openapi-model.json'));
 const html = await readFile(resolve(staged, 'index.html'), 'utf8');
 if (!html.includes('/src/app.js') || html.includes('mockModel.js') || html.includes('js/core/store.js')) throw new Error('The deployed HTML must use the backend API client');
 let exists = false;

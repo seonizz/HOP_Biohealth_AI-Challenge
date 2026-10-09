@@ -1,5 +1,7 @@
 # HOP Backend
 
+모델 입출력 API는 [HTTP 계약·실행 안내](docs/dual-model/MODEL_API.md), [OpenAPI 명세](openapi-model.json)를 참고하십시오. `npm run model:api`는 인증된 HTTP 프로세스만 실행하며 모델·GPU·워커를 자동으로 시작하지 않습니다. 실제 대화 워커는 `HOP_DUAL_TRANSPORT=api`로 이 경로를 사용합니다.
+
 이 폴더는 프론트와 함께 실행하는 말씨 통합본의 백엔드입니다. **통합 배포는 저장소 루트의 [README](../README.md)와 [배포 안내](../docs/DEPLOYMENT.md)를 사용하세요.** 아래 내용과 이 폴더의 compose는 원본 독립 백엔드의 개발·인계 설명입니다. 통합 화면은 `../frontend/`이며 기본 제공되는 v1 점검 화면과 별개입니다.
 
 서버에 접속해 현재 구현을 실행하는 순서는 [서버 접속·실행·이용 인계서](docs/SERVER_HANDOFF_GUIDE.md)를 확인해 주세요. 기존 서비스와 분리된 스키마·포트, 환경 준비 도구, 실제 검증한 합성 API 예제를 포함합니다.

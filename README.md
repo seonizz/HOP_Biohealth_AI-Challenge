@@ -8,6 +8,8 @@
 
 ## 구조
 
+모델의 입력·출력 HTTP 계약과 서버 실행 설정은 [모델 API 안내](backend/docs/dual-model/MODEL_API.md), [OpenAPI 명세](backend/openapi-model.json)에 있습니다. B 평가와 A 응답은 같은 체크포인트를 사용하며 실제 대화 워커에 연결됩니다. 모델 API 자체는 추론 서버나 GPU를 시작하지 않습니다.
+
 - `frontend/`: 원본 디자인 자산과 백엔드 연동 화면
 - `backend/`: 인증, 말씨 v2 API, PostgreSQL 마이그레이션, 모델 작업자
 - `api/`: Vercel Function 어댑터와 일일 보관 정리

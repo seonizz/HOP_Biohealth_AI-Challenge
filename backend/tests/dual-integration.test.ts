@@ -5,9 +5,29 @@ import {fixture,databaseUrl} from './v2-fixture.ts';
 import {AgentWorker} from '../src/v2/worker.ts';
 import {RunBudget} from '../src/v2/model.ts';
 import {unknownAssessment} from '../src/v2/assessment.ts';
+import {createModelApi} from '../src/model-api/server.ts';
+import {ModelApiClient} from '../src/v2/model-api.ts';
 const integration=databaseUrl?test:test.skip;
 const assessment=(content:string,score=2,index=0)=>({schema_version:1,...unknownAssessment(),anxiety:{score,source:2,timeframe:1,evidence:[{message_index:index,start_cp:0,end_cp:[...content].length}]}});
 const input=(revision:number,text:string,request_id=randomUUID())=>({request_id,expected_revision:revision,action:'message',payload:{text}});
+
+integration('real user turn uses HTTP model API B then A and persists only verified results',async t=>{
+  const keys=['HOP_DUAL_MODEL_ID','HOP_DUAL_MODEL_SHA256','HOP_DUAL_PROMPT_PROFILE','HOP_DUAL_PROMPT_VERSION'],prior=Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+  Object.assign(process.env,{HOP_DUAL_MODEL_ID:'synthetic-api-checkpoint',HOP_DUAL_MODEL_SHA256:'a'.repeat(64),HOP_DUAL_PROMPT_PROFILE:'test',HOP_DUAL_PROMPT_VERSION:'v1'});
+  t.after(()=>{for(const key of keys){if(prior[key]===undefined)delete process.env[key];else process.env[key]=prior[key];}});
+  const f=await fixture(t,true,true),u=await f.user(),calls:string[]=[];
+  const identity={model_id:'synthetic-api-checkpoint',checkpoint_sha256:'a'.repeat(64),prompt_profile:'test',prompt_version:'v1'},token='synthetic-integration-key-1234567890';
+  const api=createModelApi({token,identity,inferenceEnabled:true,model:{countTokens:async()=>100,call:async(kind:string,context:any)=>{calls.push(kind);if(kind==='assess')return assessment(context.messages.at(-1).content,3,context.messages.length-1);assert.equal(context.patient_cue_context.current.anxiety.score,3);return {message:'그분의 이야기를 천천히 확인해 주세요.'};}}});
+  await new Promise<void>(resolve=>api.server.listen(0,'127.0.0.1',resolve));t.after(()=>api.close());
+  const client=new ModelApiClient(`http://127.0.0.1:${(api.server.address() as any).port}`,token,identity);
+  const accepted=await f.service.turn(u.owner,u.cid,input(0,'엄마가 요즘 매우 불안해요'));
+  await new AgentWorker(f.db,f.service,client).tick();
+  assert.equal((await f.service.run(u.owner,accepted.run_id)).status,'SUCCEEDED');assert.deepEqual(calls,['assess','respond']);
+  const messages=(await f.service.messages(u.owner,u.cid)).messages,alerts=(await f.service.alerts(u.owner,u.cid)).alerts;
+  const reply=messages.find((item:any)=>item.kind==='dual_reply');assert.ok(reply);assert.equal(alerts[0].response_id,reply.id);
+  const row=await f.db.transaction(u.owner,async tx=>(await tx.query('SELECT model_id,model_sha256 FROM turn_assessments WHERE owner_id=$1',[u.owner])).rows[0]);
+  assert.equal(row.model_id,identity.model_id);assert.equal(row.model_sha256,identity.checkpoint_sha256);
+});
 
 integration('each accepted turn runs B before A, stores encrypted history and shows one linked alert',async t=>{
   const f=await fixture(t,true,true),u=await f.user(),calls:string[]=[];

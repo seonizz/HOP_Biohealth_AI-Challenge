@@ -17,6 +17,8 @@
     "db:grant": "node --env-file-if-exists=.env scripts/grant-runtime.ts",
     "backup": "node --env-file-if-exists=.env scripts/backup.mjs",
     "worker:v2": "node --env-file-if-exists=.env scripts/malssi-worker.ts",
+    "model:api": "node --env-file-if-exists=.env scripts/malssi-model-api.ts",
+    "openapi:model": "node scripts/generate-model-api-openapi.ts",
     "retention:v2": "node --env-file-if-exists=.env scripts/malssi-retention.ts"
   },
   "dependencies": {

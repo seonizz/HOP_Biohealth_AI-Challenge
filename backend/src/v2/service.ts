@@ -6,6 +6,7 @@ import type { Row } from './db.ts';
 import { fail, keys, record, revision, text, uuid } from './errors.ts';
 import { assessSafety, inputText, SAFETY_TEXT } from './safety.ts';
 import {unknownAssessment,RUBRIC_VERSION,thresholds} from './assessment.ts';
+import {dualModelSettings} from './dual-config.ts';
 
 export const CONSENT_VERSION = 'malssi-consent-v1';
 export const PURPOSES = ['service_processing','sensitive_processing','history_storage','cross_session_memory'];
@@ -183,10 +184,10 @@ export class MalssiService {
     return message.id;
   }
   async unavailableAssessment(tx:Transaction,c:Row,p:Row,turnId:string){
-    const runId=randomUUID(),assessmentId=randomUUID(),setting=thresholds();
+    const runId=randomUUID(),assessmentId=randomUUID(),setting=thresholds(),dual=dualModelSettings();
     const epoch=await tx.query('SELECT consent_epoch FROM users WHERE id=$1',[tx.owner]);
     await tx.query(`INSERT INTO agent_runs(id,owner_id,project_id,conversation_id,status,input_revision,project_revision,memory_revision,safety_revision,consent_epoch,deletion_epoch,encrypted_payload) VALUES($1,$2,$3,$4,'FAILED',$5,$6,$7,$8,$9,$10,$11)`,[runId,tx.owner,p.id,c.id,c.revision,p.revision,p.memory_revision,c.safety_revision,epoch.rows[0].consent_epoch,p.deletion_epoch,tx.seal(p.id,runId,{kind:'dual_turn',message_id:turnId,error:{code:'MODEL_UNAVAILABLE',retryable:true}})]);
-    await tx.query(`INSERT INTO turn_assessments(id,owner_id,project_id,conversation_id,turn_id,run_id,input_revision,evaluation_status,model_id,model_sha256,prompt_profile,prompt_version,schema_version,rubric_version,threshold_version,attempts,encrypted_payload) VALUES($1,$2,$3,$4,$5,$6,$7,3,$8,$9,$10,$11,1,$12,$13,0,$14)`,[assessmentId,tx.owner,p.id,c.id,turnId,runId,c.revision,process.env.HOP_DUAL_MODEL_ID||'not-configured',process.env.HOP_DUAL_MODEL_SHA256||'unverified',process.env.HOP_DUAL_PROMPT_PROFILE||'test',process.env.HOP_DUAL_PROMPT_VERSION||'v1',RUBRIC_VERSION,setting.version,tx.seal(p.id,assessmentId,{raw:null,normalized:unknownAssessment(),reason:'MODEL_UNAVAILABLE'})]);
+    await tx.query(`INSERT INTO turn_assessments(id,owner_id,project_id,conversation_id,turn_id,run_id,input_revision,evaluation_status,model_id,model_sha256,prompt_profile,prompt_version,schema_version,rubric_version,threshold_version,attempts,encrypted_payload) VALUES($1,$2,$3,$4,$5,$6,$7,3,$8,$9,$10,$11,1,$12,$13,0,$14)`,[assessmentId,tx.owner,p.id,c.id,turnId,runId,c.revision,dual.modelId||'not-configured',dual.checkpointSha256||'unverified',dual.profile,dual.version,RUBRIC_VERSION,setting.version,tx.seal(p.id,assessmentId,{raw:null,normalized:unknownAssessment(),reason:'MODEL_UNAVAILABLE'})]);
     await tx.query('INSERT INTO assessment_sources(owner_id,project_id,conversation_id,assessment_id,source_id) VALUES($1,$2,$3,$4,$5)',[tx.owner,p.id,c.id,assessmentId,turnId]);
   }
   async enqueue(tx: Transaction, c: Row, p: Row, kind: string, messageId?: string, guidanceKind?: string) {
@@ -195,8 +196,8 @@ export class MalssiService {
     const count=await tx.query('SELECT count(*)::integer AS n FROM agent_queue');
     if(count.rows[0].n>=3) fail('QUEUE_FULL',503);
     await tx.rate('model',3);
-    const id=randomUUID(), epoch=await tx.query('SELECT consent_epoch FROM users WHERE id=$1',[tx.owner]);
-    const data={kind,message_id:messageId || null,guidance_kind:guidanceKind || null,questionnaire_version:c.data.questionnaire_version,policy_version:'malssi-v1',prompt_version:kind==='dual_turn'?process.env.HOP_DUAL_PROMPT_VERSION||'v1':'malssi-v1',decision_log:[],model_id:kind==='dual_turn'?process.env.HOP_DUAL_MODEL_ID||'not-configured':process.env.HOP_LLM_MODEL || 'local',model_artifact_hash:kind==='dual_turn'?process.env.HOP_DUAL_MODEL_SHA256||'unverified':process.env.HOP_MODEL_ARTIFACT_HASH || 'unverified'};
+    const id=randomUUID(), epoch=await tx.query('SELECT consent_epoch FROM users WHERE id=$1',[tx.owner]),dual=dualModelSettings();
+    const data={kind,message_id:messageId || null,guidance_kind:guidanceKind || null,questionnaire_version:c.data.questionnaire_version,policy_version:'malssi-v1',prompt_profile:dual.profile,prompt_version:kind==='dual_turn'?dual.version:'malssi-v1',decision_log:[],model_id:kind==='dual_turn'?dual.modelId||'not-configured':process.env.HOP_LLM_MODEL || 'local',model_artifact_hash:kind==='dual_turn'?dual.checkpointSha256||'unverified':process.env.HOP_MODEL_ARTIFACT_HASH || 'unverified'};
     await tx.query(`INSERT INTO agent_runs(id,owner_id,project_id,conversation_id,status,input_revision,project_revision,memory_revision,safety_revision,consent_epoch,deletion_epoch,deadline_at,encrypted_payload) VALUES($1,$2,$3,$4,'ACCEPTED',$5,$6,$7,$8,$9,$10,CASE WHEN $12 THEN now()+interval '45 seconds' ELSE now()+interval '180 seconds' END,$11)`,[id,tx.owner,p.id,c.id,c.revision,p.revision,p.memory_revision,c.safety_revision,epoch.rows[0].consent_epoch,p.deletion_epoch,tx.seal(p.id,id,data),kind==='dual_turn']);
     await tx.query('INSERT INTO agent_queue(run_id,owner_id) VALUES($1,$2)',[id,tx.owner]);
     c.active_run_id=id; await tx.event(c,'run.accepted',id);

@@ -8,7 +8,7 @@ let appPromise: ReturnType<typeof createApp> | undefined;
 function logStartupFailure(error: unknown) {
   const value = error as { name?: string; code?: string; message?: string };
   let message = typeof value?.message === 'string' ? value.message : 'Unknown startup failure';
-  for (const secret of [process.env.DATABASE_URL, process.env.HOP_CONTENT_KEY, process.env.CRON_SECRET]) {
+  for (const secret of [process.env.DATABASE_URL, process.env.HOP_CONTENT_KEY, process.env.CRON_SECRET,process.env.OPENAI_API_KEY,process.env.HOP_DUAL_API_KEY,process.env.HOP_MODEL_API_TOKEN]) {
     if (secret) message = message.replaceAll(secret, '[redacted]');
   }
   message = message.replace(/postgres(?:ql)?:\/\/\S+/gi, '[redacted]');
@@ -26,7 +26,6 @@ function application() {
       migrateOnStart: false,
       v2Enabled: true,
       v2AllowDraft: true,
-      v2ModelEnabled: false,
       demoEnabled: true,
       allowRegistration: false,
     })).catch(error => { appPromise = undefined; logStartupFailure(error); throw error; });

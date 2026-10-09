@@ -112,7 +112,9 @@ export class AgentWorker {
   }
   async dualTurn(run:Row,controller:AbortController,budget:RunBudget){
     const loaded=await this.context(run),context=loaded.context;
-    const runData=loaded.run.data,modelHash=runData.model_artifact_hash,promptVersion=runData.prompt_version,profile=process.env.HOP_DUAL_PROMPT_PROFILE||'test',setting=thresholds();
+    const runData=loaded.run.data,modelHash=runData.model_artifact_hash,promptVersion=runData.prompt_version,profile=runData.prompt_profile||process.env.HOP_DUAL_PROMPT_PROFILE||'test',setting=thresholds();
+    const identity=this.model.identity;
+    if(identity&&(identity.model_id!==runData.model_id||identity.checkpoint_sha256.toLowerCase()!==String(modelHash).toLowerCase()||identity.prompt_version!==promptVersion||identity.prompt_profile!==profile))fail('MODEL_IDENTITY_MISMATCH',409);
     const existing=await this.db.transaction(run.owner_id,async tx=>{
       await tx.conversation(run.conversation_id);
       const result=await tx.query('SELECT * FROM turn_assessments WHERE owner_id=$1 AND run_id=$2 AND turn_id=$3',[run.owner_id,run.id,context.message_id]);
@@ -131,7 +133,7 @@ export class AgentWorker {
       attempts++;
       try{
         budget.check();budget.calls++;
-        raw=await this.model.call('assess',evaluationInput,AbortSignal.any([controller.signal,AbortSignal.timeout(Math.max(1,bDeadline-Date.now()))]));
+        raw=await this.model.call('assess',{...evaluationInput,_model_request_id:`${run.id}.B.${run.fence_token}.${attempts}`},AbortSignal.any([controller.signal,AbortSignal.timeout(Math.max(1,bDeadline-Date.now()))]));
         normalized=validateAssessment(raw,messages);bError=null;break;
       }catch(error){bError=error instanceof V2Error?error.code:'MODEL_UNAVAILABLE';raw=null;}
     }
@@ -155,7 +157,7 @@ export class AgentWorker {
   async finishDual(run:Row,context:ModelContext,snapshot:{assessmentId:string;status:number;normalized:Assessment;previous_valid:any;trend:any;responsePolicy:string;reasons:string[];thresholdVersion:string},budget:RunBudget,modelHash:string,promptVersion:string){
     const answerInput={target:{patient_id:run.project_id,speaker:'supporter'},current_message:context.current_message,recent_messages:context.recent_messages.slice(-6),patient_cue_context:{evaluation_status:snapshot.status,current:snapshot.normalized,previous_valid:snapshot.previous_valid,trend:snapshot.trend,response_policy:snapshot.responsePolicy,assessment_available:snapshot.status!==3,rubric_version:RUBRIC_VERSION,model_sha256:modelHash,prompt_version:promptVersion,do_not_diagnose:true}};
     let answer:{message:string}|null=null,aError:string|null=null;
-    try{answer=validateResponse(await budget.call(this.model,'respond',answerInput));}
+    try{answer=validateResponse(await budget.call(this.model,'respond',{...answerInput,_model_request_id:`${run.id}.A.${run.fence_token}`}));}
     catch(error){aError=error instanceof V2Error?error.code:'MODEL_UNAVAILABLE';}
     await this.commitDual(run,snapshot.assessmentId,answer,aError,snapshot.reasons,snapshot.thresholdVersion);
   }

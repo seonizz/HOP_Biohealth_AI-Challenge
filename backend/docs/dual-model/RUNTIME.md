@@ -1,6 +1,8 @@
 # 말씨 B→A 턴 실행 안내
 
-현재 코드에는 이중 모델 실행 경로가 연결되어 있습니다. Vercel의 공개 API는 GPU/워커를 시작하지 않습니다. 운영 모델의 체크포인트와 서버가 확인되지 않았으므로 공개 시연에서 학습 모델의 평가·응답이 수행되었다고 주장하지 않습니다.
+현재 코드에는 이중 모델 실행 경로가 연결되어 있습니다. Vercel의 공개 API는 GPU/워커를 시작하지 않습니다. 사용자 지정 Ollama `gemma4:12b` 서버의 인증·상태·설치 모델 digest는 확인했으며 실제 추론은 실행하지 않았습니다. 공개 시연에서 학습 모델의 평가·응답이 수행되었다고 주장하지 않습니다.
+
+모델 입출력은 `HOP_DUAL_TRANSPORT=api`를 설정하여 별도 인증 HTTP API로 연결할 수 있습니다. 평가 B는 `/v1/assessments`, 응답 A는 `/v1/responses`를 사용합니다. [모델 API 계약·실행 안내](MODEL_API.md)와 `backend/openapi-model.json`에 요청·응답 스키마, 오류, 서버 설정을 정리했습니다. 현재 설정인 `HOP_DUAL_TRANSPORT=direct`는 지정된 OpenAI 호환 `/v1/chat/completions` API를 직접 사용합니다.
 
 ## 실행 구조
 
@@ -14,7 +16,7 @@ A는 `{ "message": "..." }`만 출력합니다. 검증된 `message`만 `v2_messa
 
 ## 설정 및 시작
 
-`backend/.env.example`의 `HOP_DUAL_*` 값을 참고하십시오. 체크포인트는 **아직 확정되지 않았습니다**. 같은 학습 체크포인트에 대해 확인한 모델 ID와 SHA-256을 각각 `HOP_DUAL_MODEL_ID`, `HOP_DUAL_MODEL_SHA256`에 입력해야 워커가 시작됩니다. 평가 B와 응답 A는 기본적으로 동일한 `HOP_DUAL_MODEL_URL`을 사용하며, 필요하면 역할별 URL을 지정할 수 있습니다. 두 URL 모두 워커 호스트의 HTTP 루프백 주소만 허용합니다. 대화 원문을 임의의 원격 모델 API로 보내는 설정은 이 구현에서 허용하지 않습니다. 별도 모델 서버를 쓰려면 보호된 서버의 **같은 호스트**에 워커와 모델을 두고, 워커만 Neon DB에 연결하십시오. 모델 서버는 OpenAI 호환 `/v1/chat/completions`에서 `response_format:json_schema` 제약 생성을 실제로 지원해야 합니다. 프로세스 실행·체크포인트 로딩 명령은 검증된 엔진/파일이 정해진 뒤 해당 서버의 운영 절차로 별도 확정해야 합니다.
+`backend/.env.example`의 `HOP_DUAL_*` 값과 `OPENAI_BASE_URL`, `OPENAI_API_KEY`, `OLLAMA_MODEL`, `GEMMA_API_URL` 별칭을 참고하십시오. 현재 모델 ID는 사용자가 지정한 `gemma4:12b`이고 두 역할이 같은 주소와 ID를 공유합니다. `HOP_DUAL_MODEL_SHA256`에는 설치된 Ollama 모델 manifest digest를 기록하며 별도 학습 여부나 원본 가중치 파일을 검증한 것으로 해석하지 않습니다. HTTP는 루프백만 허용하고 원격 주소는 `HOP_MODEL_ALLOWED_ORIGINS`에 지정한 HTTPS origin과 서버 키가 필요합니다. 모델 서버는 OpenAI 호환 `/v1/chat/completions`의 `response_format:json_schema` 제약 생성을 실제로 지원해야 합니다. 코드가 올바른 제약 요청을 보내는 것은 합성 HTTP 테스트로 확인했지만 해당 Gemma 서버의 실제 생성 결과는 아직 확인하지 않았습니다.
 
 1. DB 관리 연결로 `backend/migrations/006_dual_turn_assessments.sql`을 적용하고 제한 실행 역할에 `backend/scripts/grant-runtime.ts`의 권한을 부여합니다. 배포 전에 기존 DB 백업을 확보합니다.
 2. API와 워커의 환경에 같은 암호화 키·DB 연결을 설정합니다. API는 `HOP_DUAL_ENABLED=true`로 턴 경로를 활성화합니다. 실제 모델 호출은 별도 워커의 `HOP_V2_MODEL_ENABLED=true`와 명시된 이중 모델 설정이 모두 있을 때만 일어납니다.
