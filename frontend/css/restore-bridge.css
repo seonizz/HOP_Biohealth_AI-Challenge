@@ -81,6 +81,9 @@ body{font-family:var(--body);font-size:17px;padding-inline:16px}
 #about .abody{overflow:visible}#about .ahero h2{letter-spacing:0}
 #columns .chero h1{font-weight:400;letter-spacing:0}
 #columns .ccard h3,#columns .csec h2.t{font-weight:400}
+#columns .column-heading{font-family:var(--display);font-size:clamp(28px,3vw,42px);font-weight:400;margin:0}
+#columns .column-heading em{font-style:normal;color:var(--leaf)}
+#columns .creader[hidden],#columns .ctoast[hidden]{display:none}
 
 @media(max-width:1200px){.top .crisis{width:100%;margin-left:0}.top nav{margin-left:auto}}
 @media(max-width:900px){#start .hero{grid-template-columns:1fr}.guide-grid,#result .guide-grid{grid-template-columns:1fr}.guide-grid>*{grid-column:1!important}#records .wrapk{grid-template-columns:1fr}#result .rside{position:static}}

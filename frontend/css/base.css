@@ -1,4 +1,7 @@
 /* Layout: 1920×1080 한 화면 앱. 시작(좌 글·우 마스코트) → 대화(가운데 대화 열만) → 결과(좌 마스코트·우 가이드 카드) */
+/* 글꼴: 사이트 안에 직접 둠 (보안 설정 font-src 'self'에서도, 인터넷이 없어도 동작). 라이선스 SIL OFL 1.1 — assets/fonts/*-OFL.txt */
+@font-face{font-family:"Jua";src:url("../assets/fonts/Jua-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
+@font-face{font-family:"Gowun Dodum";src:url("../assets/fonts/GowunDodum-Regular.ttf") format("truetype");font-weight:400;font-style:normal;font-display:swap}
 :root{
   --bg:#f6f8ef; --cream:#fffaea; --card:#ffffff; --leaf:#8cc06b; --leaf-soft:#e6f1d9;
   --stem:#4b7a3c; --ink:#3a2a22; --muted:#7b7266; --cheek:#f6b3a4; --cheek-soft:#fde9e3; --sun:#f3c64b;

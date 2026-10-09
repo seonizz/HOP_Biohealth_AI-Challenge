@@ -107,7 +107,14 @@ test('columns from current main remain readable without signing in',async({page}
   await expect(page.locator('.ccard')).toHaveCount(10);
   await page.getByRole('button',{name:'불안',exact:true}).click();
   await expect(page.locator('.ccard')).toHaveCount(2);
-  await expect(page.locator('.ccard a[target="_blank"]')).toHaveCount(2);
+  await page.locator('.ccard .cc-open').first().click();
+  await expect(page.locator('#colReader')).toBeVisible();
+  await expect(page.locator('#colReader a[target="_blank"]')).toHaveCount(1);
+  await page.getByRole('button',{name:'🌱 다 읽었어요'}).click();
+  await expect(page.locator('#colGarden')).toContainText('1 / 10');
+  await page.getByRole('button',{name:'닫기'}).click();
+  await page.getByRole('button',{name:'안 읽은 글'}).click();
+  await expect(page.locator('.ccard')).toHaveCount(1);
   await page.getByRole('button',{name:'말씨 처음으로'}).click();
   await expect(page.getByRole('button',{name:'가입 없이 체험하기'})).toBeVisible();
 });

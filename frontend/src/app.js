@@ -2,7 +2,7 @@ import {request,v2,allPages} from './api.js';
 import {$,esc,face,GOALS,STATES,date,notice,dialog,guidanceCards} from './ui.js';
 import {questionMarkup,bindQuestion,answerText} from './questions.js';
 import {demoGuidance} from './demo.js';
-import {COLUMN_CATS,COLUMNS} from './columns.js';
+import {showColumns} from './interactive-columns.js';
 
 let user=null,capabilities=null,consents=null,current=null,project=null,busy=false,pending=null,pollTimer=null,viewId=0,demoEnabled=false;
 const root=$('app');
@@ -32,7 +32,7 @@ async function retryPending(){
   await operation.after(result);
 }
 function page(body,id=''){
-  stopPoll();viewId++;
+  stopPoll();viewId++;document.body.classList.remove('noscroll');
   root.innerHTML=`<section class="screen" ${id?`id="${id}"`:''}><header class="top"><button class="logo" id="home" aria-label="말씨 처음으로">말씨<small>●</small></button><nav aria-label="주 메뉴"><button class="ghost" id="about-nav">서비스 소개</button><button class="ghost" id="columns-nav">칼럼</button><button class="ghost" id="help">안전 도움</button>${user?`<button class="ghost" id="records">내 기록</button><button class="ghost" id="settings">내 설정</button><button class="ghost" id="logout">로그아웃</button>`:'<button class="ghost" id="login">로그인</button>'}</nav><div class="crisis">위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담</div></header>${user?.is_demo?'<div class="status-banner">가입 없는 시연 · 24시간 후 접속이 만료되고 기록은 다음 정리 주기에 삭제됩니다. 실제 개인정보는 입력하지 마세요.</div>':capabilities?.internal_draft?'<div class="status-banner">내부 검토용 · 문항과 모델 응답의 출시 검토가 진행 중입니다.</div>':''}<main id="main" tabindex="-1">${body}</main><footer class="footer">말씨는 진단이나 치료를 대신하지 않습니다. 실명보다 별칭으로 이야기해 주세요.</footer></section>`;
   on('home',()=>{location.hash='';home();});on('about-nav',about);on('columns-nav',()=>columns());on('login',()=>auth());on('records',records);on('settings',settings);on('help',help);
   on('logout',async()=>{await request('/api/auth/logout','POST',{});clearPrivate();home();});
@@ -46,12 +46,7 @@ function sampleGuide(){
   page(`<div class="wrapr"><div class="rside">${face('cheer')}<span class="pill">가이드 화면 예시</span><h2>이렇게 마음을<br>건네 보세요</h2><p>완벽한 말보다, 곁에 있다는 신호가 더 중요해요.</p></div><div class="cards"><article class="card safety-panel"><h3>AI 생성 결과 아님</h3><p>고정된 가상 사례이며 입력한 답변을 분석하거나 개인화하지 않았습니다.</p></article>${guidanceCards(demoGuidance)}<div class="actions"><button class="ghost" id="back-to-conversation">대화로 돌아가기</button></div></div></div>`,'result');
   on('back-to-conversation',()=>openConversation(conversationId));
 }
-function columns(cat='전체'){
-  const selected=COLUMN_CATS.some(([name])=>name===cat)?cat:'전체';
-  const sections=COLUMN_CATS.filter(([name])=>selected==='전체'||name===selected);
-  page(`<div class="cbody"><div class="chero"><div><p class="eyebrow">곁에 있는 사람을 위한 읽을거리</p><h1>함께 알아보는 <em>마음 돌봄</em></h1><p>가족이나 친구가 힘들어할 때 읽어 볼 외부 글을 모았습니다. 각 글의 요약은 원문과 함께 확인해 주세요.</p></div>${face('cheer')}</div><div class="cfilter" role="group" aria-label="칼럼 분류">${['전체',...COLUMN_CATS.map(([name])=>name)].map(name=>`<button class="chip column-filter" data-cat="${esc(name)}" aria-pressed="${name===selected}">${name==='통합'?'가족 돌봄 전반':esc(name)}</button>`).join('')}</div><div class="cgrid">${sections.map(([name,description,mascot])=>`<section class="csec"><h2 class="t">${face(mascot)}${esc(description)}</h2><div class="clist">${COLUMNS.filter(item=>item.cat===name).map(item=>`<article class="ccard"><span class="pill">${name==='통합'?'가족 돌봄':esc(name)}</span><h3>${esc(item.title)}</h3><p class="clead">${esc(item.lead)}</p><details><summary>핵심 정리</summary><ul>${item.points.map(point=>`<li>${esc(point)}</li>`).join('')}</ul></details><a class="csrc" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.src)} 원문 읽기 ↗</a></article>`).join('')}</div></section>`).join('')}</div><p class="note">원문은 각 언론사와 기관에 있으며, 요약은 진단이나 치료 안내를 대신하지 않습니다.</p></div>`,'columns');
-  root.querySelectorAll('.column-filter').forEach(button=>button.onclick=()=>task(()=>columns(button.dataset.cat)));
-}
+function columns(cat='전체'){showColumns(page,()=>user?newProject():demoEnabled?task(startDemo):auth(),cat);}
 async function startDemo(){
   const data=await request('/api/auth/demo','POST',{});
   user=data.user;
