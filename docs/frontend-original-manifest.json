@@ -152,7 +152,7 @@
       "reason": "사이트 안 글꼴, 여백, 로고, ✓✕ 목록, 등장 애니메이션, 공통 내비게이션 바, 내비게이션 시작 버튼 작게"
     },
     "css/columns.css": {
-      "sha256": "76f02e234d763686a6e89860aee1527aa115968c624f1faac44502ac5dd39aef",
+      "sha256": "edad4e2ca1791f923617db9e60ef80f963d811cbfb3b10d4da265aa48073508d",
       "reason": "칼럼 카드·읽기 화면, 배너, 분류 버튼 대비, 배너 숫자·배지"
     },
     "index.html": {
@@ -164,8 +164,8 @@
       "reason": "소개글 개편(막대 그래프, 흐름, 펼침 목록), 스크롤 등장, 내비게이션 바"
     },
     "js/components/ColumnsScreen.js": {
-      "sha256": "70f5c2538073157989b63730f2afdcb6f4f7ff6731fb07e08e4ebeacb0740cc5",
-      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너, 내비게이션 바, 칼럼의 도움 근거(배너 숫자·배지)"
+      "sha256": "21839d033b96a2694dcef4e116e13132af83b47f614e5da32e6fbf4e4b32dd91",
+      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너, 내비게이션 바, 글쓴이·사연 배지"
     },
     "js/core/columns.js": {
       "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626",

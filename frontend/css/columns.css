@@ -70,11 +70,7 @@ body.noscroll{overflow:hidden}
 #columns .chip:hover{border-color:var(--stem)}
 #columns .chip[aria-pressed="true"]{background:var(--stem);border-color:var(--stem);color:#fff}
 
-/* 칼럼이 도움이 되는 이유: 배너 숫자 + 카드 배지 */
-.cvalue{list-style:none;margin:24px 0 0;padding:20px 0 0;border-top:2px solid var(--leaf-soft);display:flex;flex-wrap:wrap;gap:16px 40px}
-.cvalue li{display:flex;align-items:center;gap:12px}
-.cvalue b{font-family:var(--display);font-weight:400;font-size:34px;line-height:1;color:var(--stem);white-space:nowrap}
-.cvalue span{font-size:14px;line-height:1.45;color:var(--muted)}
+/* 카드 배지: 전문의·병원 칼럼, 사연 + 전문의 답변 */
 .ctags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .ctag{display:inline-block;font-family:var(--display);font-size:13px;padding:3px 10px;border-radius:999px}
 .ctag.pro{background:#2d5a23;color:#fff}

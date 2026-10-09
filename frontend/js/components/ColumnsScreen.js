@@ -21,7 +21,6 @@ const ColumnsScreen={
       <div>
         <h2>곁에 있는 사람을 위한 <em>읽을거리</em></h2>
         <p>가족이나 친구가 힘들어할 때 무엇을 할 수 있는지, 전문가들이 쓴 글을 모았어요.<br>카드를 누르면 글 전체를 읽을 수 있어요.</p>
-        <ul class="cvalue" id="colValue"></ul>
       </div>
       <img data-m="cheer" alt="">
     </div>
@@ -42,10 +41,6 @@ const ColumnsScreen={
     $("colFilter").innerHTML=["전체",...COLUMN_CATS.map(c=>c[0])].map(c=>`<button class="chip" data-cat="${c}">${c==="통합"?"가족 돌봄 전반":c}</button>`).join("");
     $("colFilter").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.filter=b.dataset.cat;this.draw();});
     $("colOnly").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.only=this.only===b.dataset.only?"":b.dataset.only;this.draw();});
-    // 배너 숫자: 데이터에서 바로 셈 (글을 바꿔도 맞게)
-    const pro=COLUMNS.filter(a=>a.by).length,qa=COLUMNS.filter(a=>a.qa).length,withBody=COLUMNS.filter(a=>colBody(a));
-    const avg=withBody.length?Math.round(withBody.reduce((s,a)=>s+colMinutes(a),0)/withBody.length):0;
-    $("colValue").innerHTML=`<li><b>${pro}편</b><span>정신건강의학과 전문의와<br>병원이 쓴 글</span></li><li><b>${qa}편</b><span>가족이 보낸 실제 고민에<br>전문의가 답한 글</span></li>${avg?`<li><b>약 ${avg}분</b><span>한 편을 읽는 데<br>걸리는 시간</span></li>`:""}`;
     this.draw();
   },
   // cat을 주면 그 분류만 보여 주며 열기 (예: 결과 화면의 경향)
