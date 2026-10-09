@@ -58,7 +58,7 @@ const ColumnsScreen={
     $("colGrid").innerHTML=list.length?list.map(([a,i])=>`
       <article class="ccard${this.isRead(a)?" read":""}">
         <button class="cc-open" data-i="${i}" aria-label="${esc(a.title)} 읽기">
-          <figure class="cart"><img src="assets/columns/${a.art}.png" alt="" loading="lazy"><figcaption>${esc(a.artLabel)}</figcaption>${this.isRead(a)?'<span class="cc-done">✓ 읽었어요</span>':""}</figure>
+          <figure class="cart"><img src="assets/columns/${a.art}.png" alt=""><figcaption>${esc(a.artLabel)}</figcaption>${this.isRead(a)?'<span class="cc-done">✓ 읽었어요</span>':""}</figure>
           <span class="pill">${esc(catLabel(a.cat))}</span>
           <b>${esc(a.title)}</b>
           <p class="clead">${esc(a.lead)}</p>
