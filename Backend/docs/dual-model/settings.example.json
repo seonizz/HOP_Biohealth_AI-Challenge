@@ -1,0 +1,77 @@
+{
+  "_status": "DESIGN_ONLY_NOT_LOADED_BY_CURRENT_BACKEND",
+  "pipeline": {
+    "enabled": false,
+    "mode": "dual_model",
+    "prompt_profile": "test",
+    "prompt_version": "v1",
+    "default_device": "cpu",
+    "placement": "separate",
+    "gpu_uuid_env": "HOP_DUAL_GPU_UUID",
+    "max_active_turns_per_conversation": 1
+  },
+  "base_model": {
+    "file_env": "HOP_DUAL_MODEL_FILE",
+    "sha256_env": "HOP_DUAL_MODEL_SHA256",
+    "selection": "UNDECIDED"
+  },
+  "models": {
+    "evaluator": {
+      "device": "inherit",
+      "endpoint": "http://127.0.0.1:18021/v1",
+      "threads": 8,
+      "context_tokens": 8192,
+      "max_output_tokens": 768,
+      "temperature": 0,
+      "enable_thinking": false
+    },
+    "responder": {
+      "device": "inherit",
+      "endpoint": "http://127.0.0.1:18022/v1",
+      "threads": 8,
+      "context_tokens": 8192,
+      "max_output_tokens": 384,
+      "temperature": 0.4,
+      "enable_thinking": false
+    }
+  },
+  "execution": {
+    "evaluation_attempts": 2,
+    "evaluation_total_timeout_ms": 10000,
+    "response_timeout_ms": 30000,
+    "turn_timeout_ms": 45000,
+    "unknown_score": -1,
+    "unavailable_status": 3,
+    "stream_after_validation": true
+  },
+  "context": {
+    "recent_turns": 6,
+    "max_evaluation_input_tokens": 4096,
+    "max_verified_summary_tokens": 768,
+    "score_history_turns": 5,
+    "truncate_current_input": false
+  },
+  "alerts": {
+    "policy_version": "draft-v1",
+    "emotion_absolute": 3,
+    "emotion_positive_delta": 2,
+    "risk_absolute": 2,
+    "risk_positive_delta": 1,
+    "emotion_cooldown_turns": 3,
+    "clear_emotion_below": 2,
+    "clear_emotion_after_valid_turns": 2,
+    "auto_clear_risk": false,
+    "show_after": "response_render_completed"
+  },
+  "benchmarks": {
+    "warmup_turns": 5,
+    "measured_turns": 100,
+    "concurrency": 1,
+    "b_p95_target_ms": 2000,
+    "b_p95_conditional_max_ms": 4000,
+    "a_first_visible_p95_target_ms": 5000,
+    "turn_complete_p95_target_ms": 12000,
+    "structural_first_pass_target": 0.99,
+    "quality_gate": "REQUIRES_REVIEWED_KOREAN_PATIENT_CUE_SET"
+  }
+}
