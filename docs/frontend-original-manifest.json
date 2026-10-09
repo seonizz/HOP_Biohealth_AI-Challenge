@@ -172,7 +172,7 @@
       "reason": "칼럼 그림 연결, 환자의 가족이 된다는 것 제목 정리, 글쓴이·사연 표시"
     },
     "js/core/questions.js": {
-      "sha256": "6798dc9a762b5db3ffe0a4d6469b72cbe0a8f134faa3b5389be9979405dda4a2",
+      "sha256": "061fca397148fb992d82eb1075e3e2069691206cb9b34512933c1e953c64884f",
       "reason": "생활 배경 문구, 이름 필수, 대처+받아 본 도움 합침, 당신의 마음 첫 질문을 사용자 중심으로, 왜 힘들어하는지 예시를 앞서 고른 일에 맞춤"
     },
     "js/components/TopBar.js": {
@@ -184,16 +184,16 @@
       "reason": "로고·내비게이션 바 연결"
     },
     "js/core/conversation.js": {
-      "sha256": "f5a5b879fa999046d6edf09e35de5214fe0023f91c9798ef7c775c4906c23d42",
-      "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 7·14문항 응원, 결과 만드는 동안 로딩 단계·다시 시도, 함수형 답변 예시"
+      "sha256": "663dc555bd1aa8c0b2649cc91905b7b0b9115404cf83b7940f57015b6ae2b017",
+      "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 1/3·70% 지점 응원, 결과 만드는 동안 로딩 단계·다시 시도, 함수형 답변 예시"
     },
     "js/components/ChatInput.js": {
-      "sha256": "ee8c642b20cb06c9a076b2beafcc20a27c6b63dfa98392695af8d030fcd13e6c",
+      "sha256": "995056163ec378e5fdf0413eda9bb01f442e7eb597f1202585663dd8e50be90e",
       "reason": "네 → 직접 입력에서도 이전 질문으로, 직접 입력 예시 문구(ownPh), 건너뛰기·주 버튼 자리 통일"
     },
     "js/components/ChatScreen.js": {
-      "sha256": "b6749bef6fd4908a95b03e8933461c4e381e57b94156bc31f3d3942c41045ca6",
-      "reason": "대화 중 나가기 확인 창, 결과 만드는 동안 로딩 카드"
+      "sha256": "ebd2ac864cafd1a13a6b513a4f9efe404f87a0f72b288ded19cfcdaa1644e01d",
+      "reason": "대화 중 나가기 확인 창, 결과 만드는 동안 로딩 카드, 새로고침·탭 닫기 확인"
     },
     "css/chat.css": {
       "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197",
@@ -220,8 +220,8 @@
       "reason": "등장 애니메이션 도우미(reveal)"
     },
     "js/components/ResultScreen.js": {
-      "sha256": "ce49bb8d53274c0c7cd7bdd4030003ee43134079ec40f7991e3564d8c6fd3b38",
-      "reason": "결과 화면 내비게이션 바, 카드 단위 등장 애니메이션, 문장 복사를 연한 글씨로"
+      "sha256": "79d2df0c9f9adef198051395d22da5a0a00effd4e99af1d22830e985fb8d5b70",
+      "reason": "결과 화면 내비게이션 바, 카드 단위 등장 애니메이션, 문장 복사를 연한 글씨로, 위기 상담 번호를 결과 아래로"
     },
     "css/about.css": {
       "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5",
