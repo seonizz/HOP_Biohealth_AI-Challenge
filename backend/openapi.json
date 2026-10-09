@@ -1,0 +1,2153 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "HOP 주변인 코칭 API",
+    "version": "0.1.0",
+    "description": "Node.js 24 및 PostgreSQL 기반 백엔드입니다. 팀 초대 가입과 내부 시연용 임시 방문자 진입을 지원합니다. 정보 확보 수치는 인터뷰 진행 상태이며 진단·임상 척도가 아닙니다."
+  },
+  "servers": [
+    {
+      "url": "/",
+      "description": "OpenAPI 문서를 제공하는 동일 서버입니다. 운영 도메인과 HTTPS 상태는 별도로 확인합니다."
+    },
+    {
+      "url": "http://127.0.0.1:9000",
+      "description": "로컬 개발 기본 주소"
+    }
+  ],
+  "security": [
+    {
+      "cookieAuth": []
+    },
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "상태"
+    },
+    {
+      "name": "인증"
+    },
+    {
+      "name": "인터뷰"
+    },
+    {
+      "name": "프로젝트"
+    },
+    {
+      "name": "대화"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "operationId": "getInspectionUi",
+        "tags": [
+          "상태"
+        ],
+        "summary": "같은 서버의 한국어 점검 UI",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "외부 CDN을 사용하지 않는 UI",
+            "content": {
+              "text/html": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "getHealth",
+        "tags": [
+          "상태"
+        ],
+        "summary": "백엔드 응답과 설정 조회",
+        "description": "model_ready는 unchecked입니다. 모델 추론이나 임상적 검증 성공을 의미하지 않습니다.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "API 설정과 지식 문서 수",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "operationId": "getReadiness",
+        "tags": [
+          "상태"
+        ],
+        "summary": "PostgreSQL·모델 목록 준비 상태",
+        "description": "DB SELECT 1과 모델 목록의 설정 모델 ID 존재 여부를 확인합니다. 추출·코칭·검증 호출을 수행하는 검사와 구분됩니다. mock 모드는 준비 상태를 통과하지 않습니다.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "준비됨",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ready"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "description": "DB 미연결, 모델 미등록·미연결 또는 테스트 모드. 이 경로는 일반 Error 대신 Ready 응답을 사용합니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Ready"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/demo": {
+      "get": {
+        "operationId": "getDemoAvailability",
+        "tags": ["인증"],
+        "summary": "가입 없는 내부 시연 가능 여부",
+        "security": [],
+        "responses": {"200": {"description": "enabled는 HOP_DEMO_ENABLED와 v2 API 사용 가능 여부입니다."}}
+      },
+      "post": {
+        "operationId": "startDemoVisit",
+        "tags": ["인증"],
+        "summary": "24시간 임시 방문자 대화 시작",
+        "description": "HOP_DEMO_ENABLED=true인 내부 시연에서만 사용합니다. 방문자별 임시 계정과 동의 기록, 프로젝트, 첫 대화를 만들고 HttpOnly 세션 쿠키를 설정합니다. 빈 JSON 객체를 전송합니다. 세션은 24시간 뒤 만료되고 계정은 시간당 정리 작업에서 삭제됩니다.",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "maxProperties": 0}}}},
+        "responses": {"201": {"description": "user, project_id, conversation_id 및 세션 쿠키"}, "404": {"description": "시연 모드 비활성화"}, "429": {"$ref": "#/components/responses/RateLimited"}}
+      },
+      "delete": {
+        "operationId": "deleteDemoVisit",
+        "tags": ["인증"],
+        "summary": "현재 임시 방문자와 온라인 기록 즉시 삭제",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "maxProperties": 0}}}},
+        "responses": {"200": {"description": "deleted=true 및 세션 쿠키 삭제"}, "401": {"$ref": "#/components/responses/Unauthorized"}, "403": {"description": "시연 계정이 아님"}}
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "operationId": "registerTeamMember",
+        "tags": [
+          "인증"
+        ],
+        "summary": "초대된 팀원 가입",
+        "description": "HOP_ALLOW_REGISTRATION=true이고 유효한 팀 초대 코드가 있을 때만 가입합니다. 공개 가입은 지원하지 않습니다. 비밀번호는 신규 가입 시 12~128자입니다.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "description": "64 KiB 이하 JSON 본문",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "가입 및 로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; Path=/ 세션 쿠키. SameSite는 HOP_COOKIE_SAME_SITE(strict 기본값)이며 None은 Secure가 필수입니다. 로그인·변경은 7일, 로그아웃은 Max-Age=0.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "operationId": "login",
+        "tags": [
+          "인증"
+        ],
+        "summary": "이메일·비밀번호 로그인",
+        "description": "로그인 시 현재 요청에 기존 세션이 있으면 폐기하고 새 세션을 발급합니다.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "description": "64 KiB 이하 JSON 본문",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "로그인 성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; Path=/ 세션 쿠키. SameSite는 HOP_COOKIE_SAME_SITE(strict 기본값)이며 None은 Secure가 필수입니다. 로그인·변경은 7일, 로그아웃은 Max-Age=0.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/auth/me": {
+      "get": {
+        "operationId": "getCurrentUser",
+        "tags": [
+          "인증"
+        ],
+        "summary": "현재 사용자",
+        "responses": {
+          "200": {
+            "description": "로그인한 사용자",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUser"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "tags": [
+          "인증"
+        ],
+        "summary": "현재 세션 폐기",
+        "requestBody": {
+          "required": true,
+          "description": "빈 JSON 객체를 전송합니다.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "현재 세션 폐기됨",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "logged_out": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "logged_out"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; Path=/ 세션 쿠키. SameSite는 HOP_COOKIE_SAME_SITE(strict 기본값)이며 None은 Secure가 필수입니다. 로그인·변경은 7일, 로그아웃은 Max-Age=0.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "description": " 쿠키 인증은 허용된 Origin이 필요합니다. Bearer 인증은 Origin을 생략할 수 있습니다."
+      }
+    },
+    "/api/questions": {
+      "get": {
+        "operationId": "listQuestions",
+        "tags": [
+          "인터뷰"
+        ],
+        "summary": "주변인 인터뷰 17문항",
+        "description": "현재 서비스의 인터뷰 문항이며 검증된 증상 점수 척도가 아닙니다.",
+        "responses": {
+          "200": {
+            "description": "문항과 scored_scale:false",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Questions"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/projects": {
+      "get": {
+        "operationId": "listProjects",
+        "tags": [
+          "프로젝트"
+        ],
+        "summary": "내 프로젝트 목록",
+        "description": "수정 시각 내림차순 커서 페이지네이션입니다. 목록 조회 중 수정된 프로젝트는 새로고침해야 반영될 수 있으며 id 기준으로 합칩니다.",
+        "responses": {
+          "200": {
+            "description": "프로젝트 목록",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProjectList"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "이전 응답의 next_cursor. 다른 프로젝트 또는 다른 사용자 커서는 거부합니다."
+          }
+        ]
+      },
+      "post": {
+        "operationId": "createProject",
+        "tags": [
+          "프로젝트"
+        ],
+        "summary": "프로젝트 생성",
+        "requestBody": {
+          "required": true,
+          "description": "제목은 선택이며 최대 80자입니다.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateProjectRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "새 프로젝트. 초기 상태 interviewing, pending_question_id=1, revision=0.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "description": " 쿠키 인증은 허용된 Origin이 필요합니다. Bearer 인증은 Origin을 생략할 수 있습니다."
+      }
+    },
+    "/api/projects/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "getProject",
+        "tags": [
+          "프로젝트"
+        ],
+        "summary": "프로젝트와 정보 확보 상태",
+        "description": "다른 사용자의 프로젝트는 반환하지 않습니다.",
+        "responses": {
+          "200": {
+            "description": "프로젝트",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Project"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      },
+      "delete": {
+        "operationId": "deleteProject",
+        "tags": [
+          "프로젝트"
+        ],
+        "summary": "프로젝트와 종속 데이터 삭제",
+        "description": "프로젝트의 대화, 프로필 버전, 요청 캐시도 PostgreSQL의 종속 관계에 따라 삭제됩니다. 쿠키 인증은 허용된 Origin이 필요합니다. Bearer 인증은 Origin을 생략할 수 있습니다.",
+        "responses": {
+          "200": {
+            "description": "삭제됨",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "const": true
+                    }
+                  },
+                  "required": [
+                    "deleted"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/projects/{id}/messages": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ProjectId"
+        }
+      ],
+      "get": {
+        "operationId": "listMessages",
+        "tags": [
+          "대화"
+        ],
+        "summary": "최근 대화 조회",
+        "description": "최근 메시지부터 페이지를 선택하고 페이지 안에서는 시간순으로 반환합니다. cursor로 더 오래된 메시지를 가져와 목록 앞에 붙입니다. limit 기본값 100, 최대 500.",
+        "responses": {
+          "200": {
+            "description": "메시지 목록",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageList"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        },
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 100
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 512
+            },
+            "description": "이전 응답의 next_cursor. 다른 프로젝트 또는 다른 사용자 커서는 거부합니다."
+          }
+        ]
+      },
+      "post": {
+        "operationId": "sendMessage",
+        "tags": [
+          "대화"
+        ],
+        "summary": "답변·건너뛰기·현재 정보로 코칭",
+        "description": "SSE 없이 완성된 JSON 한 건을 반환합니다. request_id와 정규화된 본문은 프로젝트 범위에서 멱등성을 가집니다. 같은 ID·입력은 저장 결과를 반환하고 같은 ID·다른 입력은 409입니다. 추출·코칭·검증 실패 시 부분 턴을 저장하지 않습니다. 전체 HTTP JSON 본문은 64 KiB 이하입니다. 쿠키 인증은 허용된 Origin이 필요합니다. Bearer 인증은 Origin을 생략할 수 있습니다.",
+        "requestBody": {
+          "required": true,
+          "description": "일반 답변은 text가 필요하며, skip:true는 text 또는 coach_now:true와 조합할 수 없습니다.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "완료되거나 캐시에서 재사용된 턴",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResult"
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          },
+          "503": {
+            "$ref": "#/components/responses/ModelFailure"
+          }
+        }
+      }
+    },
+    "/openapi.json": {
+      "get": {
+        "operationId": "getOpenApiDocument",
+        "tags": [
+          "상태"
+        ],
+        "summary": "OpenAPI 3.1 JSON 조회",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "이 API의 OpenAPI 명세",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            },
+            "headers": {
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    },
+    "/api/auth/password": {
+      "post": {
+        "operationId": "changePassword",
+        "tags": [
+          "인증"
+        ],
+        "summary": "비밀번호 변경 및 전체 세션 폐기",
+        "description": "현재 비밀번호를 확인하고 모든 기존 세션을 폐기한 뒤 새 세션을 발급합니다. 쿠키 인증의 변경 요청은 허용된 Origin이 필요합니다. 쿠키 인증은 허용된 Origin이 필요합니다. Bearer 인증은 Origin을 생략할 수 있습니다.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordChangeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "비밀번호 변경과 새 세션 발급 완료",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "headers": {
+              "Set-Cookie": {
+                "description": "HttpOnly; Path=/ 세션 쿠키. SameSite는 HOP_COOKIE_SAME_SITE(strict 기본값)이며 None은 Secure가 필수입니다. 로그인·변경은 7일, 로그아웃은 Max-Age=0.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-Id": {
+                "schema": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "description": "서버 요청 추적 ID. 대화 request_id와 별개입니다."
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          },
+          "415": {
+            "$ref": "#/components/responses/UnsupportedMediaType"
+          },
+          "422": {
+            "$ref": "#/components/responses/InvalidInput"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "cookieAuth": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "hop_session",
+        "description": "브라우저 기본 인증. HttpOnly, SameSite=Strict, 7일 만료. HTTPS에서는 Secure. UI는 localStorage 토큰을 사용하지 않습니다."
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "명령줄 등 비브라우저 클라이언트용 opaque 세션 토큰. JWT가 아닙니다."
+      }
+    },
+    "parameters": {
+      "ProjectId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "description": "현재 사용자가 소유한 프로젝트 UUID",
+        "schema": {
+          "type": "string",
+          "format": "uuid",
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+        }
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "message_saved": {
+            "type": [
+              "boolean",
+              "null"
+            ],
+            "description": "false는 이번 요청의 미저장을 확인한 경우입니다. null은 커밋 여부를 확정할 수 없으므로 동일 request_id·본문으로 다시 조회/요청합니다."
+          }
+        },
+        "required": [
+          "detail",
+          "code",
+          "message_saved"
+        ],
+        "additionalProperties": false
+      },
+      "ModelError": {
+        "type": "object",
+        "properties": {
+          "detail": {
+            "type": "string"
+          },
+          "code": {
+            "type": "string",
+            "description": "connection, timeout, http_error, invalid_output, invalid_evidence, ungrounded_output, verification_failed, configuration, redirect 등 실제 오류 코드입니다."
+          },
+          "retryable": {
+            "type": "boolean",
+            "const": true
+          },
+          "message_saved": {
+            "type": "boolean",
+            "const": false
+          }
+        },
+        "required": [
+          "detail",
+          "code",
+          "retryable",
+          "message_saved"
+        ],
+        "additionalProperties": false
+      },
+      "Health": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "ok"
+          },
+          "model_mode": {
+            "type": "string",
+            "enum": [
+              "local",
+              "mock"
+            ]
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "knowledge_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "model_ready": {
+            "type": "string",
+            "const": "unchecked"
+          },
+          "runtime": {
+            "type": "string",
+            "const": "nodejs"
+          },
+          "database": {
+            "type": "string",
+            "const": "postgresql"
+          },
+          "scope": {
+            "type": "string",
+            "const": "team-invite-only"
+          }
+        },
+        "required": [
+          "status",
+          "model_mode",
+          "model_name",
+          "knowledge_count",
+          "model_ready",
+          "runtime",
+          "database",
+          "scope"
+        ],
+        "additionalProperties": false
+      },
+      "Ready": {
+        "type": "object",
+        "properties": {
+          "ready": {
+            "type": "boolean"
+          },
+          "model_name": {
+            "type": "string"
+          },
+          "model_mode": {
+            "type": "string",
+            "enum": [
+              "local",
+              "mock"
+            ]
+          },
+          "reason": {
+            "type": "string"
+          },
+          "knowledge_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "ready"
+        ],
+        "additionalProperties": false
+      },
+      "User": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ],
+        "additionalProperties": false
+      },
+      "LoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254,
+            "description": "앞뒤 공백 제거 후 소문자로 정규화합니다."
+          },
+          "password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "email",
+          "password"
+        ],
+        "additionalProperties": false
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "format": "email",
+            "maxLength": 254
+          },
+          "password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128,
+            "writeOnly": true
+          },
+          "invite_code": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "writeOnly": true,
+            "description": "가입 허용 설정과 함께 필요한 팀 초대 코드입니다. 없거나 유효하지 않으면 403입니다."
+          }
+        },
+        "required": [
+          "email",
+          "password",
+          "invite_code"
+        ],
+        "additionalProperties": false
+      },
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          },
+          "token": {
+            "type": "string",
+            "description": "7일 만료 opaque 세션 토큰입니다. 브라우저 UI는 이 필드를 보관하지 않고 HttpOnly 쿠키를 사용합니다."
+          },
+          "token_type": {
+            "type": "string",
+            "const": "bearer"
+          }
+        },
+        "required": [
+          "user",
+          "token",
+          "token_type"
+        ],
+        "additionalProperties": false
+      },
+      "CurrentUser": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        },
+        "required": [
+          "user"
+        ],
+        "additionalProperties": false
+      },
+      "Question": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 17
+          },
+          "section": {
+            "type": "string",
+            "enum": [
+              "A",
+              "B",
+              "C",
+              "D",
+              "E",
+              "F"
+            ]
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "section",
+          "text"
+        ],
+        "additionalProperties": false
+      },
+      "Questions": {
+        "type": "object",
+        "properties": {
+          "questions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "minItems": 17,
+            "maxItems": 17
+          },
+          "scored_scale": {
+            "type": "boolean",
+            "const": false
+          }
+        },
+        "required": [
+          "questions",
+          "scored_scale"
+        ],
+        "additionalProperties": false
+      },
+      "ProfileEntry": {
+        "type": "object",
+        "properties": {
+          "question_id": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 17
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "answered",
+              "unknown",
+              "skipped"
+            ]
+          },
+          "value": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "observation",
+              "reported",
+              "interpretation",
+              "unknown"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "description": "추출된 답변의 현재 발화 내 정확한 부분 문자열입니다. 건너뛴 문항은 빈 문자열입니다."
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "previous_reports": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PriorReport"
+            },
+            "maxItems": 8,
+            "description": "같은 문항이 갱신될 때 보존하는 이전 보고 최대 8개입니다. 전체 과거 턴과 프로필 버전은 PostgreSQL에 별도로 남습니다."
+          }
+        },
+        "required": [
+          "status",
+          "value",
+          "source",
+          "evidence",
+          "message_id",
+          "updated_at"
+        ],
+        "additionalProperties": false
+      },
+      "Profile": {
+        "type": "object",
+        "description": "숫자 문항 ID를 문자열 키로 사용하는 프로필입니다. 증상 점수나 진단이 아닙니다.",
+        "propertyNames": {
+          "pattern": "^(?:[1-9]|1[0-7])$"
+        },
+        "additionalProperties": {
+          "$ref": "#/components/schemas/ProfileEntry"
+        }
+      },
+      "Domain": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string",
+            "enum": [
+              "depression",
+              "anxiety",
+              "addiction",
+              "other"
+            ]
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "scope": {
+            "type": "string",
+            "const": "conversation_topic_not_diagnosis"
+          }
+        },
+        "required": [
+          "label",
+          "evidence",
+          "message_id",
+          "scope"
+        ],
+        "additionalProperties": false
+      },
+      "Readiness": {
+        "type": "object",
+        "properties": {
+          "ready": {
+            "type": "boolean",
+            "description": "문항 1·2·4·15와 7·8·12·14·17 중 하나 이상의 답변 확보 여부입니다. 임상적 준비도나 치료 판정이 아닙니다."
+          },
+          "answered_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 17
+          },
+          "addressed_count": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 17,
+            "description": "프로필에 기록된 문항 수입니다. unknown·skipped를 포함합니다."
+          },
+          "total_questions": {
+            "type": "integer",
+            "const": 17
+          },
+          "missing_required_ids": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "enum": [
+                1,
+                2,
+                4,
+                15
+              ]
+            },
+            "uniqueItems": true
+          },
+          "context_present": {
+            "type": "boolean"
+          },
+          "basis": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ready",
+          "answered_count",
+          "addressed_count",
+          "total_questions",
+          "missing_required_ids",
+          "context_present",
+          "basis"
+        ],
+        "additionalProperties": false
+      },
+      "Project": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "interviewing",
+              "coaching"
+            ]
+          },
+          "profile": {
+            "$ref": "#/components/schemas/Profile"
+          },
+          "domains": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Domain"
+            }
+          },
+          "pending_question_id": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 1,
+            "maximum": 17
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "readiness": {
+            "$ref": "#/components/schemas/Readiness"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "status",
+          "profile",
+          "domains",
+          "pending_question_id",
+          "revision",
+          "created_at",
+          "updated_at",
+          "readiness"
+        ],
+        "additionalProperties": false
+      },
+      "CreateProjectRequest": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 80,
+            "description": "생략하거나 공백뿐이면 서버의 기본 제목을 사용합니다."
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "ProjectList": {
+        "type": "object",
+        "properties": {
+          "projects": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Project"
+            },
+            "maxItems": 100
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "다음 페이지가 있으면 cursor로 그대로 전달하는 opaque 값입니다. 없으면 null입니다."
+          }
+        },
+        "required": [
+          "projects",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      },
+      "MessageRequest": {
+        "type": "object",
+        "properties": {
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 8000,
+            "default": "",
+            "description": "앞뒤 공백 제거 후 JavaScript 문자열 길이 기준 최대 8000입니다. 일반 답변은 공백 이외의 문자가 필요합니다. 전체 모델 컨텍스트 수용량을 보장하지 않습니다."
+          },
+          "skip": {
+            "type": "boolean",
+            "default": false,
+            "description": "현재 질문 건너뛰기. 비어 있지 않은 text 또는 coach_now:true와 함께 사용할 수 없습니다."
+          },
+          "coach_now": {
+            "type": "boolean",
+            "default": false,
+            "description": "정보가 부족해도 제한적 코칭을 요청합니다. readiness.ready를 강제로 true로 만들지 않습니다."
+          }
+        },
+        "required": [
+          "request_id"
+        ],
+        "additionalProperties": false,
+        "anyOf": [
+          {
+            "required": [
+              "skip"
+            ],
+            "properties": {
+              "skip": {
+                "const": true
+              }
+            }
+          },
+          {
+            "required": [
+              "coach_now"
+            ],
+            "properties": {
+              "coach_now": {
+                "const": true
+              }
+            }
+          },
+          {
+            "required": [
+              "text"
+            ],
+            "properties": {
+              "text": {
+                "type": "string",
+                "pattern": "\\S"
+              }
+            }
+          }
+        ],
+        "allOf": [
+          {
+            "if": {
+              "required": [
+                "skip"
+              ],
+              "properties": {
+                "skip": {
+                  "const": true
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "pattern": "^\\s*$"
+                },
+                "coach_now": {
+                  "const": false
+                }
+              }
+            }
+          }
+        ]
+      },
+      "Coaching": {
+        "type": "object",
+        "properties": {
+          "reply": {
+            "type": "string",
+            "maxLength": 5000
+          },
+          "suggested_words": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5
+          },
+          "avoid": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5
+          },
+          "citations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 300
+            },
+            "maxItems": 10,
+            "description": "실제로 조회한 sources의 ID입니다. 검색 결과가 없거나 사용하지 않았으면 비어 있을 수 있습니다."
+          }
+        },
+        "required": [
+          "reply",
+          "suggested_words",
+          "actions",
+          "avoid",
+          "citations"
+        ],
+        "additionalProperties": false
+      },
+      "Source": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "guidance",
+              "representative_case"
+            ]
+          },
+          "source_url": {
+            "type": "string",
+            "description": "자료에 기록된 HTTP(S) 출처입니다. 출처 URL이 없으면 빈 문자열입니다."
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "text",
+          "kind",
+          "source_url"
+        ],
+        "additionalProperties": false
+      },
+      "Validation": {
+        "type": "object",
+        "properties": {
+          "approved": {
+            "type": "boolean"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "server_question_selection",
+              "safety_response",
+              "schema_evidence_and_model_review"
+            ]
+          },
+          "attempts": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2
+          },
+          "limited_profile": {
+            "type": "boolean"
+          },
+          "clinical_validation": {
+            "type": "boolean",
+            "const": false
+          },
+          "safety_flag": {
+            "type": "boolean"
+          },
+          "retrieved_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "cited_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "grounding": {
+            "type": "string",
+            "enum": [
+              "retrieved_reference_used",
+              "no_reference_used"
+            ]
+          }
+        },
+        "required": [
+          "approved",
+          "method"
+        ],
+        "additionalProperties": false
+      },
+      "MessageResult": {
+        "type": "object",
+        "properties": {
+          "reply": {
+            "type": "string"
+          },
+          "project": {
+            "$ref": "#/components/schemas/Project"
+          },
+          "question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Question"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coaching": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Coaching"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            },
+            "maxItems": 3
+          },
+          "validation": {
+            "$ref": "#/components/schemas/Validation"
+          },
+          "model_mode": {
+            "type": "string",
+            "enum": [
+              "local",
+              "mock"
+            ]
+          },
+          "request_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          }
+        },
+        "required": [
+          "reply",
+          "project",
+          "question",
+          "coaching",
+          "sources",
+          "validation",
+          "model_mode",
+          "request_id"
+        ],
+        "additionalProperties": false
+      },
+      "MessageMetadata": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Question"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "coaching": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Coaching"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validation": {
+            "$ref": "#/components/schemas/Validation"
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [],
+        "additionalProperties": false
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "system"
+            ]
+          },
+          "content": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "metadata": {
+            "$ref": "#/components/schemas/MessageMetadata"
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "content",
+          "created_at"
+        ],
+        "additionalProperties": false
+      },
+      "MessageList": {
+        "type": "object",
+        "properties": {
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "maxItems": 500,
+            "description": "페이지 안에서는 오래된 메시지부터 반환합니다. 다음 커서는 이 페이지보다 오래된 메시지를 조회합니다."
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "다음 페이지가 있으면 cursor로 그대로 전달하는 opaque 값입니다. 없으면 null입니다."
+          }
+        },
+        "required": [
+          "messages",
+          "next_cursor"
+        ],
+        "additionalProperties": false
+      },
+      "PriorReport": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "answered",
+              "unknown",
+              "skipped"
+            ]
+          },
+          "value": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "observation",
+              "reported",
+              "interpretation",
+              "unknown"
+            ]
+          },
+          "evidence": {
+            "type": "string",
+            "description": "추출된 답변의 현재 발화 내 정확한 부분 문자열입니다. 건너뛴 문항은 빈 문자열입니다."
+          },
+          "message_id": {
+            "type": "string",
+            "format": "uuid",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "status",
+          "value",
+          "source",
+          "evidence",
+          "message_id",
+          "updated_at"
+        ],
+        "additionalProperties": false,
+        "description": "이 문항의 과거 보고 한 건입니다. 최신 정정과 구분하여 사용합니다."
+      },
+      "PasswordChangeRequest": {
+        "type": "object",
+        "properties": {
+          "current_password": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128,
+            "writeOnly": true
+          },
+          "new_password": {
+            "type": "string",
+            "minLength": 12,
+            "maxLength": 128,
+            "writeOnly": true
+          }
+        },
+        "required": [
+          "current_password",
+          "new_password"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "responses": {
+      "BadRequest": {
+        "description": "잘못된 JSON 문법",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "유효한 로그인 세션이 없거나 로그인 정보가 일치하지 않음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "허용되지 않은 Origin, 쿠키 변경 요청의 Origin 누락 또는 유효한 초대 코드 없음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "현재 사용자에게 조회 가능한 프로젝트나 경로가 없음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "Conflict": {
+        "description": "동일 request_id 입력 불일치, 동시 요청(project_busy; retryable:true), 중복 가입 또는 계정 상태 충돌",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "PayloadTooLarge": {
+        "description": "HTTP JSON 본문이 65536 bytes를 초과함",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "UnsupportedMediaType": {
+        "description": "Content-Type: application/json이 필요함",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "InvalidInput": {
+        "description": "입력 형식·문자열 길이·UUID·동작 조합 검증 실패",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "현재 프로세스의 요청 제한을 초과함",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "headers": {
+          "Retry-After": {
+            "schema": {
+              "type": "integer",
+              "const": 60
+            },
+            "description": "재시도 전 대기 시간(초)"
+          }
+        }
+      },
+      "InternalError": {
+        "description": "내부 처리 실패. 내부 오류·자격증명 원문은 응답하지 않음",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        }
+      },
+      "ModelFailure": {
+        "description": "실제 모델 연결·응답·발화 근거·검증 실패. 모든 503이 연결 오류인 것은 아닙니다.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ModelError"
+            }
+          }
+        }
+      }
+    }
+  }
+}

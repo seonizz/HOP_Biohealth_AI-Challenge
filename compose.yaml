@@ -1,0 +1,115 @@
+name: malssi
+x-runtime: &runtime
+  NODE_ENV: production
+  DATABASE_URL: postgresql://hop_app:${HOP_DB_APP_PASSWORD:?Run npm run setup}@postgres:5432/hop
+  HOP_MIGRATE_ON_START: 'false'
+  HOP_RESTORE_PENDING: ${HOP_RESTORE_PENDING:-false}
+  HOP_HOST: 0.0.0.0
+  HOP_PORT: '9000'
+  HOP_PUBLIC_ORIGIN: ${HOP_PUBLIC_ORIGIN:?Run npm run setup}
+  HOP_COOKIE_SECURE: ${HOP_COOKIE_SECURE:-true}
+  HOP_COOKIE_SAME_SITE: strict
+  HOP_ALLOW_REGISTRATION: ${HOP_ALLOW_REGISTRATION:-false}
+  HOP_DEMO_ENABLED: ${HOP_DEMO_ENABLED:-false}
+  HOP_INVITE_CODE: ${HOP_INVITE_CODE:?Set an invite code}
+  HOP_V2_ENABLED: 'true'
+  HOP_V2_ALLOW_DRAFT: ${HOP_V2_ALLOW_DRAFT:-false}
+  HOP_CONTENT_KEY: ${HOP_CONTENT_KEY:?Set a 32-byte base64 key}
+  HOP_V2_MODEL_ENABLED: ${HOP_V2_MODEL_ENABLED:-false}
+  HOP_MODEL_MODE: local
+  HOP_LLM_BASE_URL: ${HOP_LLM_BASE_URL:-http://host.docker.internal:18011/v1}
+  HOP_LLM_MODEL: ${HOP_LLM_MODEL:-configure-your-local-model}
+  HOP_LLM_API_KEY: ${HOP_LLM_API_KEY:-}
+  HOP_MODEL_ALLOWED_ORIGINS: ${HOP_MODEL_ALLOWED_ORIGINS:-}
+  HOP_MODEL_CONTEXT_SIZE: ${HOP_MODEL_CONTEXT_SIZE:-16384}
+  HOP_REQUIRE_KNOWLEDGE: 'false'
+x-backend: &backend
+  build: ./backend
+  image: malssi-backend:local
+  restart: unless-stopped
+  read_only: true
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  init: true
+  logging: &logs
+    driver: json-file
+    options: {max-size: 10m, max-file: '3'}
+services:
+  postgres:
+    image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hop
+      POSTGRES_USER: hop_admin
+      POSTGRES_PASSWORD: ${HOP_DB_ADMIN_PASSWORD:?Run npm run setup}
+      HOP_DB_MIGRATOR_PASSWORD: ${HOP_DB_MIGRATOR_PASSWORD:?Run npm run setup}
+      HOP_DB_APP_PASSWORD: ${HOP_DB_APP_PASSWORD:?Run npm run setup}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./backend/deploy/init-postgres.sh:/docker-entrypoint-initdb.d/10-hop.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U hop_admin -d hop]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logs
+  migrate:
+    <<: *backend
+    restart: 'no'
+    environment:
+      HOP_MIGRATION_DATABASE_URL: postgresql://hop_migrator:${HOP_DB_MIGRATOR_PASSWORD}@postgres:5432/hop
+      HOP_RUNTIME_ROLE: hop_app
+    command: [sh, -c, 'node scripts/migrate.ts && node scripts/grant-runtime.ts']
+    depends_on:
+      postgres: {condition: service_healthy}
+  api:
+    <<: *backend
+    environment: *runtime
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:9000/health/service',{signal:AbortSignal.timeout(3000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+  worker:
+    <<: *backend
+    profiles: [model]
+    environment: *runtime
+    command: [node, scripts/malssi-worker.ts]
+    extra_hosts: [host.docker.internal:host-gateway]
+    stop_grace_period: 200s
+    depends_on:
+      api: {condition: service_healthy}
+  retention:
+    <<: *backend
+    environment: *runtime
+    command: [sh, -c, 'while true; do node scripts/malssi-retention.ts || exit 1; sleep 3600; done']
+    depends_on:
+      api: {condition: service_healthy}
+  web:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    image: malssi-web:local
+    restart: unless-stopped
+    environment:
+      HOP_SITE_ADDRESS: ${HOP_SITE_ADDRESS:-:80}
+    ports:
+      - '${HOP_HTTP_BIND:-127.0.0.1}:${HOP_HTTP_PORT:-8080}:80'
+      - '${HOP_HTTP_BIND:-127.0.0.1}:${HOP_HTTPS_PORT:-8443}:443'
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      api: {condition: service_healthy}
+    healthcheck:
+      test: [CMD, caddy, validate, --config, /etc/caddy/Caddyfile]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    logging: *logs
+volumes:
+  postgres-data:
+  caddy-data:
+  caddy-config:

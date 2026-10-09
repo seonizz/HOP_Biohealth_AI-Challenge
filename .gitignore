@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+node_modules/
+backend/node_modules/
+frontend/dist/
+test-results/
+playwright-report/
+*.log
+.runtime/
+artifacts/

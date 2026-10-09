@@ -1,0 +1,11 @@
+{
+  "date": "2026-10-09",
+  "repository": "https://github.com/seonizz/HOP_Biohealth_AI-Challenge.git",
+  "frontend_commit": "b88342022446ff0402e9907a30e3f980d0a55c51",
+  "backend_commit": "66bc2ac7af3ab6d35583a6e02e216b50a64efadd",
+  "input_archive": "말씨_백엔드_구현_명세_서버이용_20261009.zip",
+  "input_archive_sha256": "9561a0e8fecdbf5116972e3dce2e323ccaf28b14d88cf0ceb8b9bb8c6a5fe8a6",
+  "integration_branch": "feat/malssi-fullstack-integration",
+  "public_release_approved": false,
+  "model_e2e": "synthetic HTTP fixture; actual model quality is not claimed"
+}

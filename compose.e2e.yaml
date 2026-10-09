@@ -1,0 +1,32 @@
+# Isolated synthetic verification only. Never use this override for a deployment.
+services:
+  postgres:
+    ports: ['127.0.0.1:15434:5432']
+  api:
+    environment:
+      HOP_PUBLIC_ORIGIN: http://localhost:18080
+      HOP_COOKIE_SECURE: 'false'
+      HOP_ALLOW_REGISTRATION: 'true'
+      HOP_DEMO_ENABLED: 'true'
+      HOP_INVITE_CODE: synthetic-e2e-invite
+      HOP_V2_ALLOW_DRAFT: 'true'
+      HOP_V2_MODEL_ENABLED: 'true'
+  worker:
+    environment:
+      HOP_V2_MODEL_ENABLED: 'true'
+      HOP_V2_ALLOW_DRAFT: 'true'
+      HOP_LLM_BASE_URL: http://model-test:8081/v1
+      HOP_LLM_MODEL: synthetic-test-only
+      HOP_LLM_API_KEY: ''
+      HOP_MODEL_ALLOWED_ORIGINS: http://model-test:8081
+    depends_on:
+      model-test: {condition: service_started}
+  model-test:
+    image: node:24.19.0-bookworm-slim
+    command: [node, /test/mock-model.mjs]
+    volumes: ['./tests/mock-model.mjs:/test/mock-model.mjs:ro']
+    read_only: true
+  web:
+    ports: !override ['127.0.0.1:18080:80']
+    environment:
+      HOP_SITE_ADDRESS: ':80'

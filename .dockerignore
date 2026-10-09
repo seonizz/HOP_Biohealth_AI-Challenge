@@ -1,0 +1,16 @@
+**
+!package.json
+!scripts/
+!scripts/build.mjs
+!frontend/
+!frontend/index.html
+!frontend/src/
+!frontend/src/**
+!frontend/css/
+!frontend/css/base.css
+!frontend/css/start.css
+!frontend/css/app.css
+!frontend/assets/
+!frontend/assets/**
+!deploy/
+!deploy/Caddyfile

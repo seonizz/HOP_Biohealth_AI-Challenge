@@ -1,0 +1,10 @@
+# Linux: connect to an existing model bound only to host loopback.
+services:
+  postgres:
+    ports: ['127.0.0.1:15433:5432']
+  worker:
+    network_mode: host
+    environment:
+      DATABASE_URL: postgresql://hop_app:${HOP_DB_APP_PASSWORD}@127.0.0.1:15433/hop
+      HOP_LLM_BASE_URL: ${HOP_HOST_MODEL_URL:-http://127.0.0.1:18011/v1}
+      HOP_MODEL_ALLOWED_ORIGINS: ''
