@@ -30,6 +30,8 @@ const ChatScreen={
     new MutationObserver(toBottom).observe(l,{childList:true,subtree:true});
     new ResizeObserver(toBottom).observe(l);
     $("restart1").onclick=()=>this.leave(()=>show("start"));
+    // 새로고침·탭 닫기: 답한 내용이 있으면 브라우저가 나가기 전에 확인 (문구는 브라우저 기본 문구로 나옴)
+    window.addEventListener("beforeunload",e=>{if(this.started()){e.preventDefault();e.returnValue="";}});
     const d=$("leaveDlg");
     $("leaveStay").onclick=()=>d.close();
     d.onclick=e=>{if(e.target===d)d.close();}; // 바깥(배경)을 누르면 계속 이야기하기

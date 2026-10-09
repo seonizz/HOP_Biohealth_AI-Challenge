@@ -21,7 +21,7 @@ function safetyFlag(){
 
 // 모델에 보낼 원래 답: 문항별 질문 문구, 고른 보기(라벨 + 메타), 직접 입력, 건너뜀 여부
 function buildPayload(){
-  const strip=({g,none,input,ph,...m})=>m; // 화면용 메타는 빼고 보냄
+  const strip=({g,none,input,ph,ask,...m})=>m; // 화면용 메타는 빼고 보냄
   const answers=Q.filter(q=>S.ans[q.id]).map(q=>{const a=S.ans[q.id];
     return {id:q.id,question:nm(q.rare&&RARE(S)?q.rare:q.q),type:q.type,freeText:!!q.cue,
       text:a.text,custom:a.custom||"",skipped:!!a.skipped,selected:a.sel.map(k=>({label:optLabel(q.opts[k]),meta:strip(optMeta(q.opts[k]))}))};});
@@ -46,16 +46,17 @@ function begin(){
   ChatScreen.aiSay("안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.","hello");
   setTimeout(ask,700);
 }
-// 응원: 7문항, 14문항에 답할 때마다 끝까지 함께하도록 북돋움 (답한 수 = 쌓인 질문 수 - 1, 뒤로 가면 기록과 함께 사라짐)
-const CHEER={7:"벌써 3분의 1을 함께 왔어요. 들려주신 이야기 하나하나가 큰 도움이 돼요. 조금만 더 함께해 주세요.",14:"거의 다 왔어요! 이제 몇 가지만 더 여쭤볼게요. 끝까지 함께해 주셔서 고마워요."};
+// 응원: 질문지의 1/3 지점, 그리고 답한 질문이 70% 정도 될 때(조건으로 빠지는 질문이 있어 목록 위치는 0.66) 처음 지날 때 한 번씩 (진행 막대와 같은 기준 = 질문 순서상 위치). 뒤로 가면 기록과 함께 사라지고 다시 오면 다시 나옴
+const CHEER=[[1/3,"벌써 3분의 1을 함께 왔어요. 들려주신 이야기 하나하나가 큰 도움이 돼요. 조금만 더 함께해 주세요."],[0.66,"거의 다 왔어요! 이제 몇 가지만 더 여쭤볼게요. 끝까지 함께해 주셔서 고마워요."]];
 async function ask(){
   while(S.i<Q.length&&Q[S.i].when&&!Q[S.i].when(S))S.i++; // 조건에 맞지 않는 문항은 건너뜀
   if(S.i>=Q.length)return finish();
   S.hist.push(snapshot());
   const q=Q[S.i];ChatScreen.progress(S.i/Q.length*100);ChatScreen.section(nm(q.sec));ChatInput.clear();
-  const cheer=CHEER[S.hist.length-1];if(cheer){await ChatScreen.typing("cheer",600);ChatScreen.aiSay(cheer,"cheer");}
+  const prevI=S.hist.length>1?S.hist[S.hist.length-2].i:-1; // 바로 앞에 답한 질문의 위치
+  const cheer=CHEER.map(([r,t])=>[Math.ceil(r*Q.length),t]).find(([at])=>S.i>=at&&prevI<at)?.[1];if(cheer){await ChatScreen.typing("cheer",600);ChatScreen.aiSay(cheer,"cheer");}
   if(q.intro){await ChatScreen.typing(q.face,600);ChatScreen.aiSay(q.intro,q.face);}
-  await ChatScreen.typing(q.face,600);ChatScreen.aiSay(q.rare&&RARE(S)?q.rare:q.q,q.face,q.why);
+  await ChatScreen.typing(q.face,600);ChatScreen.aiSay(q.rare&&RARE(S)?q.rare:q.q,q.face,q.why,"",!!q.fu);
   const shown=typeof q.ph==="function"?{...q,ph:q.ph(S)}:q; // 답변 예시가 앞의 답에 따라 바뀌는 문항
   ChatInput.render(shown,answer,S.hist.length>1?goBack:null); // 첫 질문만 뒤로 가기 없음
 }

@@ -126,4 +126,8 @@ test('leaving mid-conversation asks before discarding answers',async({page})=>{
   await page.locator('#leaveStay').click();await expect(page.locator('#leaveDlg')).toBeHidden();await expect(page.locator('#chat')).toBeVisible();
   await page.locator('#chat [data-home]').click();await expect(page.locator('#leaveDlg')).toBeVisible();
   await page.locator('#leaveGo').click();await expect(page.locator('#start')).toBeVisible();
+  // 답한 뒤 새로고침하면 브라우저가 확인하고, 취소하면 대화가 그대로
+  await page.locator('#go').click();await question(page,'name');await textAnswer(page,'검증친구');await question(page,'want');
+  let asked='';page.once('dialog',d=>{asked=d.type();d.dismiss();});
+  await page.reload({timeout:3000}).catch(()=>{});expect(asked).toBe('beforeunload');await expect(page.locator('#chat')).toBeVisible();
 });
