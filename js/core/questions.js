@@ -1,24 +1,26 @@
 // 질문셋 (질문 정리.txt: CFI·FMI 기반 그분의 상황 + SSCS 기반 당신의 마음 + 전하고 싶은 말)
 // {name} = 호칭, {name:은}/{name:이}/{name:을}/{name:와} = 받침에 맞춰 조사 자동 처리
-// 보기 메타: d/a/x 우울·불안·중독 점수, s 증상 라벨, r 위험 요인, p 보호 요인, t 기타 태그,
-//           none 다른 보기와 함께 고를 수 없음, input 고르면 직접 입력창이 열림
-// 문항 속성: sec 단계 이름, intro 질문 전 안내, when 보일 조건, cue 자유 서술에서 신호어 읽기, noOwn 직접 입력 숨김, noSkip 건너뛰기 숨김(네/아니요 질문),
+// 보기 메타: d/a/x 우울·불안·중독 가중치, s 증상 라벨, r 위험 요인, p 보호 요인 → 프론트는 계산하지 않고 모델에 그대로 보냄(목업은 이 값으로 계산)
+//           t 흐름 태그(질문 분기·가이드에 씀), none 다른 보기와 함께 고를 수 없음, input 고르면 직접 입력창이 열림
+// 문항 속성: sec 단계 이름, intro 질문 전 안내, when 보일 조건, cue 모델이 신호를 읽을 자유 서술, noOwn 직접 입력 숨김, noSkip 건너뛰기 숨김(네/아니요 질문), rare 자주 못 보는 사이일 때 바꿔 쓸 질문 문구,
 //           required 핵심 정보라 건너뛸 수 없고 빈 답도 받지 않음
+// 연락 빈도에서 "그보다 드물게"를 고르면 요즘 모습을 잘 모를 수 있어 문구를 바꿔 물음
+const RARE=s=>s.tags.has("rare_contact");
 const Q = [
  {id:"name",sec:"시작",face:"hello",q:"오늘 이야기할 분을 어떻게 부르면 될까요?\n이름이나 별명, 호칭 무엇이든 괜찮아요.",why:"기록의 제목으로 쓰여요. 이 브라우저에만 저장돼요.",type:"text",ph:"예: 엄마, 친구 지수",short:true},
 
  // 전하고 싶은 말 (모델이 이후 필요한 질문만 고를 수 있도록 맨 앞에서 목적을 먼저 물음)
- {id:"want",sec:"전하고 싶은 말",face:"thanks",intro:"먼저 {name}에게 건네고 싶은 마음부터 여쭤볼게요. 그 마음이 잘 닿도록 필요한 이야기를 이어서 함께 살펴볼게요.",q:"{name}에게 꼭 전하고 싶은 말이 있다면 무엇인가요?",why:"당신의 진심을 그분이 받아들이기 쉬운 말로 옮겨 드릴게요.",type:"text",ph:"예: 네 편이라는 것, 병원에 같이 가 보자는 것"},
+ {id:"want",required:true,sec:"전하고 싶은 말",face:"thanks",intro:"먼저 {name}에게 건네고 싶은 마음부터 여쭤볼게요. 그 마음이 잘 닿도록 필요한 이야기를 이어서 함께 살펴볼게요.",q:"{name}에게 꼭 전하고 싶은 말이 있다면 무엇인가요?",why:"당신의 진심을 그분이 받아들이기 쉬운 말로 옮겨 드릴게요.",type:"text",ph:"예: 네 편이라는 것, 병원에 같이 가 보자는 것"},
  {id:"goal",sec:"전하고 싶은 말",face:"cheer",q:"그 말을 통해 바라는 것은 무엇인가요?",type:"multi",opts:[
    ["내가 곁에 있다는 걸 알리고 싶어요",{t:"goal_near"}],["상담이나 진료를 권하고 싶어요",{t:"goal_treat"}],["술·도박 등을 줄이자고 말하고 싶어요",{t:"goal_reduce"}],
    ["걱정된다는 마음을 전하고 싶어요",{t:"goal_worry"}],["예전 갈등을 풀고 싶어요",{t:"goal_reconcile"}]]},
 
  // A. 관계
  {id:"rel",required:true,sec:"관계",face:"hello",q:"{name:와} 어떤 관계인가요?",type:"one",opts:["부모","자녀","배우자·연인","형제자매","친구","직장 동료"]},
- {id:"contact",sec:"관계",face:"listen",q:"{name:와} 평소 얼마나 자주 만나거나 연락하세요?",type:"one",opts:["함께 살아요","일주일에 몇 번","한 달에 몇 번","그보다 드물게"]},
+ {id:"contact",sec:"관계",face:"listen",q:"{name:와} 평소 얼마나 자주 만나거나 연락하세요?",type:"one",opts:["함께 살아요","일주일에 몇 번","한 달에 몇 번",["그보다 드물게",{t:"rare_contact"}]]},
 
  // B. 현재 겪고 있는 어려움
- {id:"mood",required:true,sec:"현재 겪고 있는 어려움",face:"listen",q:"요즘 {name}에게서 보이는 모습을 모두 골라 주세요.",type:"multi",cue:true,groups:[
+ {id:"mood",required:true,sec:"현재 겪고 있는 어려움",face:"listen",q:"요즘 {name}에게서 보이는 모습을 모두 골라 주세요.",rare:"마지막으로 {name:을} 보거나 연락했을 때 보인 모습을 모두 골라 주세요.\n다른 사람에게 전해 들은 모습도 괜찮아요.",type:"multi",cue:true,groups:[
    ["기분과 의욕",[
      ["자주 우울하거나 가라앉아 보여요",{d:2,s:"depressive_mood"}],["좋아하던 일에 흥미를 잃었어요",{d:2,s:"anhedonia"}],
      ["잠을 잘 못 자거나, 반대로 너무 많이 자요",{d:1,s:"sleep_disturbance"}],["늘 피곤해하고 기운이 없어 보여요",{d:1,s:"fatigue"}],
@@ -35,12 +37,12 @@ const Q = [
      ["못 하게 되면 예민해지거나 몸이 불편해 보여요",{x:2,s:"withdrawal"}],["그것 때문에 일, 학업, 집안일을 소홀히 해요",{x:1,s:"role_failure"}],
      ["그것 때문에 가족이나 주변 사람과 갈등이 생겨요",{x:1,s:"social_problems"}]]],
    ["",[["특별히 관찰된 변화가 없음",{none:1,t:"no_change"}]]]]},
- {id:"dur",required:true,sec:"현재 겪고 있는 어려움",face:"listen",when:s=>!s.tags.has("no_change")||!!s.ans.mood?.custom,q:"이런 모습이 보인 지 얼마나 됐나요?",type:"one",noOwn:true,
+ {id:"dur",required:true,sec:"현재 겪고 있는 어려움",face:"listen",when:s=>!s.tags.has("no_change")||!!s.ans.mood?.custom,q:"이런 모습이 보인 지 얼마나 됐나요?",rare:"이런 모습을 처음 알게 된 지 얼마나 됐나요?",type:"one",noOwn:true,
    opts:["2주 미만","2주~1개월",["1~6개월",{t:"dur_long"}],["6개월~1년",{t:"dur_long"}],["1년 이상",{t:"dur_long"}],"잘 모르겠어요"]},
- {id:"freq",required:true,sec:"현재 겪고 있는 어려움",face:"listen",when:s=>!s.tags.has("no_change")||!!s.ans.mood?.custom,q:"최근 2주 동안 이런 모습은 얼마나 자주 보였나요?",type:"one",noOwn:true,
-   opts:[["거의 없었어요",{t:"freq_low"}],"며칠 정도",["절반 이상",{t:"freq_high"}],["거의 매일",{t:"freq_high"}]]},
+ {id:"freq",required:true,sec:"현재 겪고 있는 어려움",face:"listen",when:s=>!s.tags.has("no_change")||!!s.ans.mood?.custom,q:"최근 2주 동안 이런 모습은 얼마나 자주 보였나요?",rare:"최근 2주 동안 이런 모습을 얼마나 자주 보거나 전해 들었나요?",type:"one",noOwn:true,
+   opts:[["거의 없었어요",{t:"freq_low"}],"며칠 정도",["절반 이상",{t:"freq_high"}],["거의 매일",{t:"freq_high"}],["최근에 보거나 연락하지 못해서 잘 모르겠어요",{t:"freq_unknown"}]]},
  {id:"describe",sec:"현재 겪고 있는 어려움",face:"hear",q:"다른 가족이나 친구에게 {name:의} 상황을 설명한다면, 어떻게 말씀하시겠어요?",type:"text",cue:true,ph:"예: 요즘 회사 일로 많이 지쳐서 주말엔 잠만 자요"},
- {id:"concern",required:true,sec:"현재 겪고 있는 어려움",face:"empathy",q:"{name:의} 모습 중 가장 걱정되거나 마음에 걸리는 부분은 무엇인가요?",type:"text",cue:true,ph:"예: 밥을 거의 안 먹는 게 제일 걱정돼요"},
+ {id:"concern",required:true,sec:"현재 겪고 있는 어려움",face:"empathy",q:"{name:의} 모습 중 가장 걱정되거나 마음에 걸리는 부분은 무엇인가요?",rare:"{name:의} 모습 중 가장 걱정되거나 마음에 걸리는 부분은 무엇인가요?\n마지막으로 봤을 때의 모습이나 전해 들은 이야기도 괜찮아요.",type:"text",cue:true,ph:"예: 밥을 거의 안 먹는 게 제일 걱정돼요"},
 
  // C. 어려움의 원인과 생활환경
  {id:"cause",sec:"어려움의 원인과 생활환경",face:"ponder",q:"{name:이} 현재 어려움에 영향을 준 경험이나 상황이 있었을까요?",type:"one",noOwn:true,noSkip:true,opts:["네","아니요"]},
@@ -110,5 +112,5 @@ const FOLLOW={
     merge:(a,r)=>isThin(r.text,1)||r.text==="해당 없음"?a:{text:r.text,sel:[]}}
 };
 
-// 자유 서술에서 찾을 신호어: [정규식, 점수 키, 점수, 라벨] (자체 모델로 교체할 부분)
-const CUES=[[/우울|무기력|눈물|울어|의욕/,"d",2,"depressive_mood"],[/잠|못 자|안 자|자기만/,"d",1,"sleep_disturbance"],[/안 먹|밥|식욕/,"d",1,"weight_appetite"],[/방에|안 나와|안 만나|피해/,"d",1,"avoidance"],[/불안|걱정|초조|떨/,"a",2,"anxiety_mood"],[/짜증|예민|화를/,"a",1,"irritability"],[/술|게임|도박|폰|스마트폰|담배|약/,"x",2,"loss_of_control"],[/죽|사라지|없어지/,null,0,"suicidal"]];
+// 보기 읽기 도우미: 보기는 "라벨" 또는 ["라벨", 메타]
+const optLabel=o=>Array.isArray(o)?o[0]:o, optMeta=o=>Array.isArray(o)?o[1]||{}:{};
