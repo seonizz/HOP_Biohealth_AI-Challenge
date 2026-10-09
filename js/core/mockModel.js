@@ -1,5 +1,41 @@
-// 백엔드 연결 지점: 지금은 규칙 기반 목업, 이후 fetch('/api/guide') → LLM → 자체 모델로 교체
-// p.tags: 질문 보기에서 모은 태그 (questions.js의 t 메타)
+// ── 모델 연결 지점 (지금은 규칙 기반 목업) ──
+// 실제 모델이 준비되면 Model의 세 함수 안만 fetch로 바꾸면 돼요. 화면·대화 흐름 코드는 그대로 둬요.
+//   Model.extractContext(payload) → 모델 1: 답변에서 맥락(증상·위험·보호 요인) 추출
+//   Model.scoreAnswers(payload,ctx) → 모델 2: 답변 수치화 (우울·불안·중독 점수)
+//   Model.guide(profile)            → 결과 가이드 생성
+// payload: conversation.js의 buildPayload() — 문항별 원래 답(고른 보기 + 보기 라벨 메타, 직접 입력, 건너뜀 여부)
+const Model={
+  async extractContext(payload){
+    // return (await fetch("/api/context",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})).json();
+    const sym=new Set(),risk=new Set(),prot=new Set(),textSignals=[];
+    for(const a of payload.answers){
+      a.selected.forEach(({meta})=>{if(meta.s)sym.add(meta.s);if(meta.r)risk.add(meta.r);if(meta.p)prot.add(meta.p);});
+      // 글로 쓴 부분만 읽음: 글 입력 문항은 text, 보기 문항은 직접 입력(custom). 고른 보기 문장은 위에서 라벨로 처리
+      const t=a.type==="text"?a.text:a.custom;
+      if(a.freeText&&!a.skipped&&t) CUES.forEach(([re,dim,w,s])=>{if(re.test(t)){sym.add(s);if(dim)textSignals.push({dim,w,s});}});
+    }
+    return {symptoms:[...sym],risks:[...risk],protect:[...prot],textSignals,safety:sym.has("suicidal")};
+  },
+  async scoreAnswers(payload,ctx){
+    // return (await fetch("/api/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({payload,ctx})})).json();
+    const sum={d:0,a:0,x:0};
+    payload.answers.forEach(a=>a.selected.forEach(({meta})=>{sum.d+=meta.d||0;sum.a+=meta.a||0;sum.x+=meta.x||0;}));
+    ctx.textSignals.forEach(({dim,w})=>sum[dim]+=w);
+    // 최근 2주 빈도(2-2)로 보정
+    const f=payload.tags.includes("freq_high")?1.3:payload.tags.includes("freq_low")?0.6:1;
+    const clamp=v=>Math.min(3,Math.round(v*10)/10);
+    return {우울:clamp(sum.d/5*f),불안:clamp(sum.a/4*f),중독:clamp(sum.x/5*f)};
+  },
+  async guide(profile){
+    // return (await fetch("/api/guide",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(profile)})).json();
+    return mockGuide(profile);
+  }
+};
+
+// 목업용: 자유 서술에서 찾을 신호어 [정규식, 점수 차원, 점수, 라벨]
+const CUES=[[/우울|무기력|눈물|울어|의욕/,"d",2,"depressive_mood"],[/잠|못 자|안 자|자기만/,"d",1,"sleep_disturbance"],[/안 먹|밥|식욕/,"d",1,"weight_appetite"],[/방에|안 나와|안 만나|피해/,"d",1,"avoidance"],[/불안|걱정|초조|떨/,"a",2,"anxiety_mood"],[/짜증|예민|화를/,"a",1,"irritability"],[/술|게임|도박|폰|스마트폰|담배|약/,"x",2,"loss_of_control"],[/죽|사라지|없어지/,null,0,"suicidal"]];
+
+// 목업용 가이드 생성 (p.tags: 질문 보기에서 모은 태그, questions.js의 t 메타)
 const GOAL_LINES={
   goal_near:"무슨 일이 있어도 내가 옆에 있을게.",
   goal_worry:"네가 걱정돼서 하는 말이야. 탓하려는 게 아니야.",
@@ -17,7 +53,7 @@ const BARRIER_TIPS={
   bar_where:"어디로 갈지 함께 찾아보기 (1577-0199에서 가까운 기관을 안내받을 수 있어요)",
   bar_bad:"전에 받은 도움이 맞지 않았다면, 다른 곳이나 다른 상담사도 있다고 알려 주기"
 };
-async function generateGuide(p){
+function mockGuide(p){
   const has=t=>(p.tags||[]).includes(t);
   const top=Object.entries(p.scores).sort((a,b)=>b[1]-a[1])[0][0];
   const who=p.name||"그분";

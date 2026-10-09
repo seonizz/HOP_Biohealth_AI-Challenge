@@ -1,10 +1,11 @@
-// 입력 UI: 질문 객체 하나를 받아 답을 onDone(text, sel, custom, skipped)으로 돌려줌
+// 입력 UI: 질문 객체 하나를 받아 답을 onDone(text, sel, custom, skipped)으로 돌려줌. onBack이 있으면 "이전 질문" 버튼을 보임
 const SKIP="(건너뛰었어요)";
-const optLabel=o=>Array.isArray(o)?o[0]:o, optMeta=o=>Array.isArray(o)?o[1]||{}:{};
 const ChatInput={
   clear(){$("input").innerHTML="";},
-  render(q,onDone){
+  render(q,onDone,onBack){
     const box=$("input");box.innerHTML="";
+    const addBack=()=>{if(!onBack)return;const b=document.createElement("button");b.className="back";b.textContent="← 이전 질문으로";
+      b.onclick=()=>{box.innerHTML="";onBack();};box.prepend(b);};
     // 건너뛰기 (네/아니요 질문은 q.noSkip, 핵심 문항은 q.required로 숨김)
     const canSkip=!q.noSkip&&!q.required;
     // 핵심 문항에 빈 답을 보내려 하면 안내 문구를 띄움
@@ -18,7 +19,7 @@ const ChatInput={
       if(canSkip)box.querySelector(".row").appendChild(skipBtn());
       const ta=$("ta");ta.focus();
       $("send").onclick=()=>{const v=ta.value.trim();if(!v&&q.required)return need(ta);box.innerHTML="";onDone(v||SKIP,[]);};
-      ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("send").click();}};return;
+      ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("send").click();}};addBack();return;
     }
     // 보기 버튼 (묶음 이름 g가 있으면 묶음별 제목을 붙임)
     const wrap=document.createElement("div");wrap.className="chipwrap";
@@ -27,7 +28,10 @@ const ChatInput={
       const m=optMeta(o);
       if(!chips||m.g!==lastG){
         if(m.g){const h=document.createElement("div");h.className="chip-group";h.textContent=m.g;wrap.appendChild(h);}
-        chips=document.createElement("div");chips.className="chips";wrap.appendChild(chips);lastG=m.g;
+        chips=document.createElement("div");chips.className="chips";
+        // 묶음 뒤에 오는 묶음 없는 보기(예: "특별히 관찰된 변화가 없음")는 앞 묶음과 떨어뜨려 보여 줌
+        if(!m.g&&lastG)chips.classList.add("apart");
+        wrap.appendChild(chips);lastG=m.g;
       }
       const b=document.createElement("button");b.className="chip";b.textContent=optLabel(o);b.setAttribute("aria-pressed","false");
       b.onclick=()=>{
@@ -46,7 +50,7 @@ const ChatInput={
     box.appendChild(wrap);
     if(q.noOwn&&q.type==="one"){
       if(canSkip){const r=document.createElement("div");r.className="inrow only";r.appendChild(skipBtn());box.appendChild(r);}
-      return;
+      addBack();return;
     }
     // 선택형 문항의 직접 입력
     const row=document.createElement("div");row.className="inrow";
@@ -67,5 +71,6 @@ const ChatInput={
       own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();g.click();}};
       row.appendChild(g);
     }
+    addBack();
   }
 };

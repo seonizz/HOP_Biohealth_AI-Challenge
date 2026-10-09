@@ -16,6 +16,9 @@ const ChatScreen={
     $("restart1").onclick=()=>show("start");
   },
   clear(){$("log").innerHTML="";},
+  // 이전 질문으로 돌아갈 때 그 뒤에 쌓인 말풍선을 지움
+  count(){return $("log").children.length;},
+  truncate(n){const l=$("log");while(l.children.length>n)l.lastChild.remove();},
   progress(pct){$("prog").style.width=pct+"%";},
   // 지금 어떤 단계의 질문인지 (예: 관계, 당신의 마음)
   section(label){$("sec").hidden=!label;$("sec").textContent=label||"";},
