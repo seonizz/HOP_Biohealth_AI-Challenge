@@ -64,7 +64,6 @@ const AboutScreen={
         <p class="learn-t">말씨는 이 데이터에서 <b>두 가지</b>를 배우고 있어요</p>
         <div class="learn-row"><div><span>1</span><b>어떤 신호가 보이는지</b><p>당신의 답변에서 증상·위험·버팀목 같은 신호를 알아봐요.</p></div><i aria-hidden="true">→</i><div><span>2</span><b>얼마나 뚜렷한지</b><p>그 신호가 얼마나 뚜렷한지 가늠해요.</p></div></div>
       </div>
-      <p class="note it">현재 시범 운영 중인 버전은 일반 AI로 답을 만들고 있으며, 상담 데이터로 학습한 말씨 모델로 바꿔 가는 중이에요.</p>
     </section>
 
     <section class="asec">

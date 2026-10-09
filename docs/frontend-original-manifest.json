@@ -160,7 +160,7 @@
       "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
     },
     "js/components/AboutScreen.js": {
-      "sha256": "402c333df651d0808aef123ede55112502d4528b3d67f775858b6e662e4b4dfc",
+      "sha256": "6e9828ccb9d7fa918fa6bac7bd6de3b2fdd9a66a3d8469f59d6970bc9527da7c",
       "reason": "소개글 개편(막대 그래프, 흐름, 펼침 목록), 스크롤 등장, 내비게이션 바"
     },
     "js/components/ColumnsScreen.js": {
@@ -224,7 +224,7 @@
       "reason": "결과 화면 내비게이션 바, 카드 단위 등장 애니메이션, 문장 복사를 연한 글씨로"
     },
     "css/about.css": {
-      "sha256": "5e9e45eb9a045f92869c320b8f42ab89030b144b71d7797f59f342d3e01bc849",
+      "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5",
       "reason": "소개글 개편, 번호·제목 정렬, 도와드려요 그림 가운데 + 점선"
     },
     "css/start.css": {

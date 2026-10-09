@@ -23,9 +23,9 @@
 
 /* 01 도와드리는 흐름: 상자 없이 1 → 2 → 3 */
 .flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;counter-reset:f;position:relative}
-.flow::before{content:"";position:absolute;left:0;right:0;top:44px;border-top:2px dashed var(--leaf)} /* 그림을 잇는 점선 (양끝까지) */
+.flow::before{content:"";position:absolute;left:0;right:0;top:50px;border-top:2px dashed var(--leaf)} /* 그림을 잇는 점선 (양끝까지) */
 .flow li{position:relative;counter-increment:f;text-align:center}
-.flow img{position:relative;width:88px;height:88px;object-fit:contain;background:var(--card);border-radius:50%;padding:8px;box-shadow:0 6px 18px rgba(75,122,60,.12);display:block;margin:0 auto}
+.flow img{position:relative;width:100px;height:100px;object-fit:contain;background:var(--card);border-radius:50%;padding:18px; /* 그림이 동그라미 안쪽 정사각형(지름÷√2)에 다 들어가게 */box-shadow:0 6px 18px rgba(75,122,60,.12);display:block;margin:0 auto}
 .flow p{max-width:24em;margin-left:auto!important;margin-right:auto!important}
 .flow h4{font-family:var(--display);font-weight:400;font-size:23px;color:var(--stem);margin:16px 0 8px}
 .flow h4::before{content:counter(f)". ";color:var(--leaf)}
