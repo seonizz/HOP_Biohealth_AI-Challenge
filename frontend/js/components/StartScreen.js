@@ -21,7 +21,7 @@ const StartScreen={
       <img class="orbit o1" data-m="empathy" alt="">
       <img class="orbit o2" data-m="joy" alt="">
       <img class="orbit o3" data-m="thanks" alt="">
-      <img class="main" data-m="hello" alt="손을 흔드는 말씨">
+      <img class="main" data-m="hello_high" alt="손을 흔드는 말씨">
       <div class="bubble-tip">안녕하세요, 저는 말씨예요!</div>
     </div>
   </div>

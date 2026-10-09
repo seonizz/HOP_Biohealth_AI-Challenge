@@ -160,8 +160,8 @@
       "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
     },
     "js/components/AboutScreen.js": {
-      "sha256": "ee86787df475d7157a9d69de37918861118ef823fef1e2553a85a6430ace7dad",
-      "reason": "서비스 소개 문구 수정"
+      "sha256": "89f54075e3b67cd74d37fc0c2b2bd6df553e53708e1e9b950ec2c1f2f4138e1f",
+      "reason": "서비스 소개 문구 수정, 큰 그림을 고화질 front로"
     },
     "js/components/ColumnsScreen.js": {
       "sha256": "8b976ad51ea9404b1e5a5de873c44e65a258dfd97ae9b785c3a0200cedb43277",
@@ -198,6 +198,14 @@
     "css/chat.css": {
       "sha256": "9b4f1566974782a8fd99a974cc2b0fe6d6e33a2f6360b55576df20b784addef3",
       "reason": "대화 중 나가기 확인 창"
+    },
+    "js/core/assets.js": {
+      "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12",
+      "reason": "고화질 hello·front 추가"
+    },
+    "js/components/StartScreen.js": {
+      "sha256": "dae1ed44db910a358243010bdcbc7c0c221d5e80417c8c06acf4b7de5ed3e54a",
+      "reason": "시작 화면 큰 그림을 고화질 hello로"
     }
   }
 }
