@@ -4,6 +4,8 @@
 node_modules/
 backend/node_modules/
 frontend/dist/
+frontend/dist.previous-*/
+frontend/.build-*/
 test-results/
 playwright-report/
 *.log
