@@ -148,8 +148,8 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "c1ea3399236889c038ff565294495f56a63503aeb488305a0ef28bda56672670",
-      "reason": "사이트 안 글꼴(본문 나눔스퀘어라운드, 제목 주아), 화면 가장자리 여백, 로고 버튼"
+      "sha256": "126104066a3c613b87a8f1342024c3ba3eecc9938b6f29a5cadd7a906a174270",
+      "reason": "사이트 안 글꼴(본문 나눔스퀘어라운드, 제목 주아), 화면 가장자리 여백, 로고 버튼, 해 보세요/피하면 좋아요 ✓✕ 목록, 카드 글 낱말 단위 줄바꿈, 로고를 오른쪽 버튼 높이에 맞춰 키움"
     },
     "css/columns.css": {
       "sha256": "45f282abcf9500616ea129ec36806e2e021f93b50a59c5ed89ff91f65e2ead39",
@@ -204,8 +204,16 @@
       "reason": "고화질 hello·front 추가"
     },
     "js/components/StartScreen.js": {
-      "sha256": "dae1ed44db910a358243010bdcbc7c0c221d5e80417c8c06acf4b7de5ed3e54a",
-      "reason": "시작 화면 큰 그림을 고화질 hello로"
+      "sha256": "136a1b71ed5363d729445d278a0bb02364172fa247a791405b18bc2103d09895",
+      "reason": "시작 화면 큰 그림을 고화질 hello로, 상단 문구·개인정보 안내 문장 제거"
+    },
+    "css/result.css": {
+      "sha256": "13cd1ca094c115675721ddce78dc3a0bf8ce6c4284c5a88249fe9d83fe881dcb",
+      "reason": "결과 화면 말씨를 위쪽에 고정"
+    },
+    "js/components/GuideCards.js": {
+      "sha256": "243ba0f59f8da2d91e88e4d7ee82f126c1b634ffad25d856c04e2d142cb28461",
+      "reason": "해 보세요 카드에 표시용 클래스"
     }
   }
 }

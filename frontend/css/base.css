@@ -24,8 +24,8 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 /* 화면 틀 + 상단 바 (TopBar) */
 .screen{min-height:100%;max-width:1440px;margin:0 auto;display:flex;flex-direction:column;padding-block:clamp(20px,4.6vw,88px)}
 .top{display:flex;align-items:center;gap:20px}
-.logo{font-family:var(--display);color:var(--stem);font-size:34px;line-height:1;display:flex;align-items:flex-start;gap:2px;background:none;border:0;padding:0;cursor:pointer}
-.logo small{font-size:15px;color:var(--leaf);margin-top:-6px}
+.logo{font-family:var(--display);color:var(--stem);font-size:44px;line-height:1;height:53px;display:flex;align-items:center;gap:2px;background:none;border:0;padding:0;cursor:pointer}
+.logo small{font-size:19px;color:var(--leaf);align-self:flex-start;margin-top:2px} /* 로고 높이 = 오른쪽 버튼 높이(53px) */
 .crisis{margin-left:auto;font-size:14px;color:var(--muted);background:var(--card);border:2px solid var(--leaf-soft);padding:6px 14px;border-radius:999px}
 .crisis b{color:var(--stem)}
 
@@ -40,14 +40,20 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 /* 가이드 카드 (GuideCards: 결과 화면·기록 화면이 함께 씀) */
-.card{background:var(--card);border-radius:28px;padding:26px 30px}
+.card{background:var(--card);border-radius:28px;padding:26px 30px;word-break:keep-all;overflow-wrap:break-word} /* 한글 낱말 중간에서 줄이 바뀌지 않게 */
 .card h3{font-family:var(--display);font-weight:400;font-size:22px;margin:0 0 12px;color:var(--stem)}
 .script{background:var(--cream);border:2px dashed var(--leaf);font-size:21px;line-height:1.75;position:relative}
 .script .copy{position:absolute;right:20px;top:20px}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start} /* 내용 길이만큼만 (빈 칸 없이) */
 .card ul{margin:0;padding-left:20px;display:grid;gap:6px}
 .avoid{background:var(--cheek-soft)}
 .avoid h3{color:#b65c48}
+/* 해 보세요 ✓ / 피하면 좋아요 ✕ 표시 */
+.do ul,.avoid ul{list-style:none;padding-left:0;gap:12px}
+.do li,.avoid li{position:relative;padding-left:32px;line-height:1.6}
+.do li::before,.avoid li::before{position:absolute;left:0;top:3px;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;line-height:1}
+.do li::before{content:"✓";background:var(--leaf-soft);color:var(--stem)}
+.avoid li::before{content:"✕";background:#f8d5cc;color:#b65c48}
 .care{background:var(--leaf-soft);display:flex;gap:20px;align-items:center}
 .care img{width:96px;flex:none}
 .care p{margin:0}
