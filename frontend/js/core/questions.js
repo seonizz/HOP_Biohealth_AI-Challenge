@@ -63,7 +63,7 @@ const Q = [
 
  // C. 어려움의 원인과 생활환경
  {id:"cause",sec:"어려움의 원인과 생활환경",face:"ponder",q:"{name:이} 현재 어려움에 영향을 준 경험이나 상황이 있었을까요?",type:"one",noOwn:true,noSkip:true,opts:["네","아니요"]},
- {id:"events",sec:"어려움의 원인과 생활환경",face:"ponder",fu:true,q:"어떤 일이 있었나요?\n최근 1년 사이 {name}에게 있었던 일을 모두 골라 주세요. 고르지 않아도 괜찮아요.",type:"multi",when:s=>s.ans.cause?.sel[0]===0,opts:[
+ {id:"events",sec:"어려움의 원인과 생활환경",face:"ponder",fu:true,q:"어떤 일이 있었나요?\n최근 1년 사이 {name}에게 있었던 일을 모두 골라 주세요.",type:"multi",when:s=>s.ans.cause?.sel[0]===0,opts:[
    ["이별·이혼",{r:"breakup"}],["가까운 사람과의 사별",{r:"bereavement"}],["실직·퇴사·휴학",{r:"job_school_loss"}],["경제적 어려움",{r:"financial_difficulty"}],
    ["이사·환경 변화",{r:"environment_change"}],["본인 또는 가족의 질병",{r:"illness"}],["학업·업무 스트레스",{r:"academic_work_stress"}],["대인관계 갈등",{r:"interpersonal_conflict"}],
    ["없어요",{none:1}]]},
@@ -76,7 +76,7 @@ const Q = [
  // D. 생활 배경과 가치관
  {id:"values",sec:"{name:의} 생활 배경과 가치관",face:"ponder",q:"{name:을} 이해하려면 알아 두면 좋을 생활 배경이나 중요하게 여기는 가치가 있을까요?\n(예: 가족 안에서의 역할, 종교, 직업, \"약한 모습을 보이면 안 된다\"는 생각 등)",type:"text",ph:"예: 맏이라서 집안을 책임져야 한다고 생각해요"},
  {id:"values_effect",sec:"{name:의} 생활 배경과 가치관",face:"think",q:"이러한 생활 배경이나 가치관이 {name:의} 현재 어려움에 어떤 영향을 주는 것 같나요?",type:"text",ph:"예: 힘들다는 말을 못 하고 혼자 참는 것 같아요"},
- {id:"extra",sec:"{name:의} 생활 배경과 가치관",face:"empathy",q:"{name:와} 관련해서 추가적으로 걱정되는 부분이 있다면 들려주세요.",type:"text",cue:true,ph:"없으면 \"없어요\"라고 적어도 괜찮아요"},
+ {id:"extra",sec:"{name:의} 생활 배경과 가치관",face:"empathy",q:"{name:와} 관련해서 추가적으로 걱정되는 부분이 있다면 들려주세요.",type:"text",cue:true,ph:"예: 요즘 술 마시는 날이 부쩍 늘어서 걱정돼요"},
 
  // E. 지금까지의 대처와 도움
  // 대처 방법(서술)과 받아 본 도움(보기)을 한 질문으로: 보기를 고르고, 그 밖의 방법은 직접 입력 칸에
