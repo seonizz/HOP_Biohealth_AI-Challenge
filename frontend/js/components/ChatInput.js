@@ -43,7 +43,7 @@ const ChatInput={
           // 이전 질문으로를 누르면 되묻기 말풍선을 지우고 네/아니요로 돌아감
           if(m.input){
             const n=ChatScreen.count(),logLen=S.log.length;
-            if(m.ask)ChatScreen.aiSay(m.ask+"\n적지 않아도 괜찮아요.",q.face,"","",true);
+            if(m.ask)ChatScreen.aiSay(m.ask,q.face,"","",true);
             return ChatInput.render({type:"text",ph:m.ph,noSkip:!m.ask},t=>onDone(t.startsWith("(")?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),
               ()=>{ChatScreen.truncate(n);S.log.length=logLen;ChatInput.render(q,onDone,onBack);});
           }

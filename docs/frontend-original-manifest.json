@@ -188,7 +188,7 @@
       "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 1/3·70% 지점 응원, 결과 만드는 동안 로딩 단계·다시 시도, 함수형 답변 예시"
     },
     "js/components/ChatInput.js": {
-      "sha256": "995056163ec378e5fdf0413eda9bb01f442e7eb597f1202585663dd8e50be90e",
+      "sha256": "45f80cd6a19a4afaad791b7ab328b747fbc348b5ad2d370a03e93efa76648a16",
       "reason": "네 → 직접 입력에서도 이전 질문으로, 직접 입력 예시 문구(ownPh), 건너뛰기·주 버튼 자리 통일"
     },
     "js/components/ChatScreen.js": {
