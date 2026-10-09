@@ -11,9 +11,10 @@ const ownerUrl = process.env.HOP_MIGRATION_DATABASE_URL;
 if (!ownerUrl || !/^postgres(?:ql)?:\/\//.test(ownerUrl)) throw new Error('HOP_MIGRATION_DATABASE_URL must be the Neon owner connection URL');
 const owner = new URL(ownerUrl);
 if (!['localhost', '127.0.0.1', '::1'].includes(owner.hostname) && !['require', 'verify-ca', 'verify-full'].includes(owner.searchParams.get('sslmode'))) throw new Error('Remote PostgreSQL must require TLS');
+if (!['localhost', '127.0.0.1', '::1'].includes(owner.hostname)) owner.searchParams.set('sslmode', 'verify-full');
 let saved = {};
 try { saved = JSON.parse(await readFile(file, 'utf8')); } catch (error) { if (error.code !== 'ENOENT') throw error; }
-const runtime = new URL(ownerUrl);
+const runtime = new URL(owner.toString());
 runtime.username = 'hop_app';
 runtime.password = saved.DATABASE_URL ? new URL(saved.DATABASE_URL).password : randomBytes(32).toString('base64url');
 const secrets = {
@@ -21,21 +22,21 @@ const secrets = {
   HOP_CONTENT_KEY: saved.HOP_CONTENT_KEY || randomBytes(32).toString('base64'),
   CRON_SECRET: saved.CRON_SECRET || randomBytes(32).toString('base64url'),
 };
-const client = new pg.Client({ connectionString: ownerUrl, connectionTimeoutMillis: 10000 });
+const client = new pg.Client({ connectionString: owner.toString(), connectionTimeoutMillis: 10000 });
 await client.connect();
 try {
   const role = await client.query("SELECT 1 FROM pg_roles WHERE rolname='hop_app'");
   // PostgreSQL role DDL does not support a bind parameter for PASSWORD.
   const quoted = await client.query('SELECT quote_literal($1) AS password', [runtime.password]);
-  const command = role.rowCount ? 'ALTER ROLE hop_app WITH' : 'CREATE ROLE hop_app';
-  await client.query(`${command} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT PASSWORD ${quoted.rows[0].password}`);
+  if (role.rowCount) await client.query(`ALTER ROLE hop_app PASSWORD ${quoted.rows[0].password}`);
+  else await client.query(`CREATE ROLE hop_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOBYPASSRLS NOINHERIT PASSWORD ${quoted.rows[0].password}`);
   await client.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC');
 } finally { await client.end(); }
 
 for (const script of ['migrate.ts', 'grant-runtime.ts']) {
   const result = spawnSync(process.execPath, [`scripts/${script}`], {
     cwd: backend,
-    env: { ...process.env, HOP_MIGRATION_DATABASE_URL: ownerUrl, HOP_RUNTIME_ROLE: 'hop_app' },
+    env: { ...process.env, HOP_MIGRATION_DATABASE_URL: owner.toString(), HOP_RUNTIME_ROLE: 'hop_app' },
     stdio: 'inherit',
   });
   if (result.status !== 0) throw new Error(`${script} failed`);
