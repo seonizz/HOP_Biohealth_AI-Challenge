@@ -12,28 +12,15 @@
 <link rel="stylesheet" href="css/about.css">
 <link rel="stylesheet" href="css/columns.css">
 <link rel="stylesheet" href="css/records.css">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/restore-bridge.css">
 </head>
 <body>
-<!-- 화면 컴포넌트는 js/components/*.js 가 여기에 그려요 -->
-<div id="app"></div>
-
-<!-- 일반 스크립트로 불러와서 index.html을 파일로 바로 열어도 동작해요 (순서 중요) -->
-<script src="js/core/assets.js"></script>
-<script src="js/core/utils.js"></script>
-<script src="js/core/store.js"></script>
-<script src="js/core/questions.js"></script>
-<script src="js/core/columns.js"></script>
-<script src="js/core/mockModel.js"></script>
-<script src="js/core/conversation.js"></script>
-<script src="js/components/TopBar.js"></script>
-<script src="js/components/GuideCards.js"></script>
-<script src="js/components/StartScreen.js"></script>
-<script src="js/components/ChatInput.js"></script>
-<script src="js/components/ChatScreen.js"></script>
-<script src="js/components/ResultScreen.js"></script>
-<script src="js/components/AboutScreen.js"></script>
-<script src="js/components/RecordsScreen.js"></script>
-<script src="js/components/ColumnsScreen.js"></script>
-<script src="js/app.js"></script>
+<a class="skip-link" href="#main">본문으로 이동</a>
+<div id="app"><main class="loading">말씨를 준비하고 있어요.</main></div>
+<div id="notice" role="status" aria-live="polite" hidden></div>
+<dialog id="dialog" aria-labelledby="dialog-title"></dialog>
+<noscript>말씨를 이용하려면 JavaScript를 켜 주세요.</noscript>
+<script type="module" src="/src/app.js"></script>
 </body>
 </html>

@@ -45,9 +45,10 @@ test('one-click demo opens a private temporary conversation without registration
   const capabilities=await (await page.request.get('/api/v2/capabilities')).json();
   if(!capabilities.model_execution_enabled){
     await page.getByRole('button',{name:'가이드 화면 예시 보기'}).click();
-    await expect(page.locator('#dialog')).toContainText('AI 생성 결과 아님');
-    await expect(page.locator('#dialog')).toContainText('입력한 답변을 분석하거나 개인화하지 않았습니다.');
-    await page.locator('#dialog').getByRole('button',{name:'닫기',exact:true}).click();
+    await expect(page.locator('#result')).toContainText('AI 생성 결과 아님');
+    await expect(page.locator('#result')).toContainText('입력한 답변을 분석하거나 개인화하지 않았습니다.');
+    await page.getByRole('button',{name:'대화로 돌아가기'}).click();
+    await expect(page.getByRole('heading',{name:'친구의 이야기'})).toBeVisible();
   }
   const me=await (await page.request.get('/api/auth/me')).json();
   expect(me.user.is_demo).toBe(true);

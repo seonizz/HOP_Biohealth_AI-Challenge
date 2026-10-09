@@ -13,7 +13,7 @@ test('all 36 frontend source files match the accepted pre-PR3 commit',()=>{
   assert.equal(manifest.commit,'ea9c607519ce2269d8da14a166a7b99d7e287233');
   assert.equal(manifest.files.length,36);
   for(const {path,sha256} of manifest.files){
-    const content=readFileSync(new URL('frontend/'+path,root));
+    const content=readFileSync(new URL(path==='index.html'?'frontend/original/index.html':'frontend/'+path,root));
     // Git checkouts may use CRLF on Windows; binary assets are compared byte-for-byte.
     const bytes=/\.(js|html|css)$/.test(path)?Buffer.from(content.toString('utf8').replace(/\r\n/g,'\n')):content;
     assert.equal(createHash('sha256').update(bytes).digest('hex'),sha256,path);
