@@ -148,8 +148,8 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "0e7cbc16513913708359497d2dd4e4f3ba896454702fe47d045f4cbf5ecbf481",
-      "reason": "사이트 안 글꼴(본문 나눔스퀘어라운드, 제목 주아), 화면 가장자리 여백, 로고 버튼, 해 보세요/피하면 좋아요 ✓✕ 목록, 카드 글 낱말 단위 줄바꿈, 로고를 오른쪽 버튼 높이에 맞춰 키움, 등장 애니메이션"
+      "sha256": "946648398f5979589da20211786432ed1c1e4166180151fccc25b1b2ec1568eb",
+      "reason": "사이트 안 글꼴, 여백, 로고, ✓✕ 목록, 등장 애니메이션, 공통 내비게이션 바"
     },
     "css/columns.css": {
       "sha256": "6b98c5369806a7f0b995951b7bb1197571e20c7346f7c2022a4030de45c27dda",
@@ -160,12 +160,12 @@
       "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
     },
     "js/components/AboutScreen.js": {
-      "sha256": "5fd2a113287e44c3916aae1ab75f32671f787f30c4fcf3f5166c01f92dbacbb4",
-      "reason": "소개글 개편(2026HOP/소개글_정립.txt), 큰 그림 고화질 front, 스크롤 등장 애니메이션"
+      "sha256": "532ce1a71d128f0c6703e6da62535ea56612dff85195e008f15d2ad3a80ae7e3",
+      "reason": "소개글 개편, 스크롤 등장 애니메이션, 내비게이션 바"
     },
     "js/components/ColumnsScreen.js": {
-      "sha256": "7b41193eb07cc1c2e1cd616ab020bc7240331eb8cecc682819dd408152c6d8ba",
-      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구"
+      "sha256": "9b64672f6a37645a27ed0163473df932abca06d1c8733f8ecdc53dc50f92f086",
+      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너, 내비게이션 바"
     },
     "js/core/columns.js": {
       "sha256": "6f03ed3592ceec8e2ce86fc8a018585a75eea189ebeea12bc4a0a97ae52596c5",
@@ -176,12 +176,12 @@
       "reason": "생활 배경 질문 문구 수정, 이름 질문 건너뛰기·되묻기 제거"
     },
     "js/components/TopBar.js": {
-      "sha256": "99e1e6bf7b1e90ab0fd62b3ff62859de6a687a29cc75c4265f6e500dc8be73f3",
-      "reason": "로고를 누르면 처음 화면"
+      "sha256": "ac2472c87cf9b6c33c1a53d06f971ccd6a65eee16d2c68e0da4d0185bee1db2c",
+      "reason": "로고 버튼, 공통 내비게이션 바(NavBar)"
     },
     "js/app.js": {
-      "sha256": "448d7da085d80e36a26311ff74b3d3a1086efc0103bd71e9c45ba31058da9dbc",
-      "reason": "로고를 누르면 처음 화면 (대화 중이면 나가기 확인)"
+      "sha256": "66fdb677f82953d3793f565dded368472c15e32245b53d6acd83da635cef0248",
+      "reason": "로고·내비게이션 바 연결"
     },
     "js/core/conversation.js": {
       "sha256": "e6a13ad30274ea3159cea9493ab41ff2f1c46d8e6051d62cb942225c0c8b5ed1",
@@ -204,28 +204,36 @@
       "reason": "고화질 hello·front 추가"
     },
     "js/components/StartScreen.js": {
-      "sha256": "136a1b71ed5363d729445d278a0bb02364172fa247a791405b18bc2103d09895",
-      "reason": "시작 화면 큰 그림을 고화질 hello로, 상단 문구·개인정보 안내 문장 제거"
+      "sha256": "c17fd7684b2202b0b476a99133418790c2bec87fd0f0ff9fb31ce5343b3bce97",
+      "reason": "고화질 hello, 문구 정리, 내비게이션 바, 시작하기 버튼 위치"
     },
     "css/result.css": {
-      "sha256": "13cd1ca094c115675721ddce78dc3a0bf8ce6c4284c5a88249fe9d83fe881dcb",
-      "reason": "결과 화면 말씨를 위쪽에 고정"
+      "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41",
+      "reason": "결과 화면 말씨를 위쪽에 고정(내비게이션 아래)"
     },
     "js/components/GuideCards.js": {
       "sha256": "243ba0f59f8da2d91e88e4d7ee82f126c1b634ffad25d856c04e2d142cb28461",
       "reason": "해 보세요 카드에 표시용 클래스"
     },
     "js/core/utils.js": {
-      "sha256": "e318ee55d89f0031d54c7c1fe6864649b5a506b6ba7c0d67235ec96a651ec4e1",
-      "reason": "등장 애니메이션 도우미(reveal·popChars·typeText)"
+      "sha256": "e849ca257ee6d3f831825f8c1c40dd0cf90702e4e3ce626d790398b89d724fe6",
+      "reason": "등장 애니메이션 도우미(reveal)"
     },
     "js/components/ResultScreen.js": {
-      "sha256": "97fe8ed3b2a1e61c759196d74b8a981345ab571f3df54544f8ae24c80058f282",
-      "reason": "결과 화면 등장 애니메이션(글자·카드·첫 문장 타자), 복사는 전체 문장"
+      "sha256": "fdb34611beee2c39a780c2c1de85c7ff18068761df2a76f883a755ad5f9ff223",
+      "reason": "결과 화면 내비게이션 바, 카드 단위 등장 애니메이션"
     },
     "css/about.css": {
       "sha256": "45be70c574959befc1dd0dfd6ce0d077affad3c07bc0b32b0b01709ff1ff8d15",
       "reason": "소개글 개편(데이터·질문 근거·웹·꼭 알아 두세요, 자세히 보기), 안쪽 이중 스크롤 제거"
+    },
+    "css/start.css": {
+      "sha256": "96c7443ed57123ab17b06c065b02c5715a09f3c356a42f9377cdd2c78ee099e3",
+      "reason": "시작하기 버튼을 단계 위로, 빛나는 효과"
+    },
+    "js/components/RecordsScreen.js": {
+      "sha256": "05b50407f7135e4e347e586c606f9d98cefc3fa2dadf01db407b772e9a76f2d4",
+      "reason": "내비게이션 바"
     }
   }
 }

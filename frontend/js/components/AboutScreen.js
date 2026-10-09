@@ -2,7 +2,7 @@
 const AboutScreen={
   render(){return `
 <section class="screen" id="about" hidden>
-  ${TopBar(`<span class="pill">서비스 소개</span><button class="ghost" id="aboutHome" style="margin-left:auto">처음으로</button><button class="btn" id="aboutGo" style="padding:10px 26px;font-size:18px">말씨와 시작하기</button>`)}
+  ${NavBar("about")}
   <div class="abody">
     <div class="ahero">
       <div>
@@ -121,10 +121,7 @@ const AboutScreen={
     </div>
   </div>
 </section>`;},
-  mount(){
-    $("aboutHome").onclick=()=>show("start");
-    $("aboutGo").onclick=begin;
-  },
+  mount(){},
   open(){show("about");window.scrollTo(0,0);this.animate();},
   // 열 때마다: 머리 부분은 바로, 아래 부분은 스크롤해서 화면에 들어올 때 차례로 떠오름
   animate(){

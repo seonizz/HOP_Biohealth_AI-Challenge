@@ -15,7 +15,7 @@ const ColumnsScreen={
 
   render(){return `
 <section class="screen" id="columns" hidden>
-  ${TopBar(`<span class="pill">칼럼</span><button class="ghost" id="colHome" style="margin-left:auto">처음으로</button><button class="btn" id="colGo" style="padding:10px 26px;font-size:18px">말씨와 시작하기</button>`)}
+  ${NavBar("columns")}
   <div class="cbody">
     <div class="chero">
       <div>
@@ -38,8 +38,6 @@ const ColumnsScreen={
 
   mount(){
     this.load();
-    $("colHome").onclick=()=>show("start");
-    $("colGo").onclick=begin;
     $("colFilter").innerHTML=["전체",...COLUMN_CATS.map(c=>c[0])].map(c=>`<button class="chip" data-cat="${c}">${c==="통합"?"가족 돌봄 전반":c}</button>`).join("");
     $("colFilter").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.filter=b.dataset.cat;this.draw();});
     $("colOnly").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.only=this.only===b.dataset.only?"":b.dataset.only;this.draw();});

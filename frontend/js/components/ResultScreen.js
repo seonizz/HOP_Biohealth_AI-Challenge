@@ -2,7 +2,8 @@
 const ResultScreen={
   render(){return `
 <section class="screen" id="result" hidden>
-  ${TopBar(`<div class="crisis">위급할 땐 <b>109</b> · <b>1577-0199</b> · <b>112 / 119</b></div>`)}
+  ${NavBar()}
+  ${CrisisLine("위급할 땐 <b>109</b> · <b>1577-0199</b> · <b>112 / 119</b>")}
   <div class="wrapr" id="rbody"></div>
 </section>`;},
   mount(){},
@@ -19,22 +20,17 @@ const ResultScreen={
        <div class="card next"><img src="${M.think}" alt=""><div><h3 style="margin-bottom:4px">다음 단계</h3>${esc(g.next)}<p class="note" style="margin:8px 0 0">당신을 위해서도: ${esc(g.care.tips.slice(1).join(" "))}</p></div></div>
        <div class="actions"><span class="note" style="margin-right:auto;align-self:center">${saved?`"${esc(p.name||"그분")}" 기록으로 저장했어요.`:"이 브라우저에서는 기록을 저장할 수 없어요."}</span><button class="ghost" id="toCol">${esc(g.top)} 관련 칼럼</button><button class="ghost" id="toRec">내 기록 보기</button><button class="ghost" id="again">처음부터 다시</button></div>
      </div>`;
-    show("result");this.animate(g);
+    show("result");this.animate();
     $("toRec").onclick=()=>RecordsScreen.open();
     $("toCol").onclick=()=>ColumnsScreen.open(g.top);
     $("cp").onclick=()=>navigator.clipboard.writeText(g.script).then(()=>$("cp").textContent="복사했어요",()=>{const r=document.createRange();r.selectNodeContents($("scr"));getSelection().removeAllRanges();getSelection().addRange(r);});
     $("again").onclick=()=>show("start");
   },
-  // 등장 효과: 말씨 → 제목 글자가 한 자씩 → 카드가 차례로 떠오르고, 첫 문장은 타자 치듯, 목록은 한 줄씩
-  animate(g){
-    const b=$("rbody"),side=b.querySelector(".rside"),h2=side.querySelector("h2");
-    reveal([side.querySelector("img"),side.querySelector(".pill")],{step:140});
-    const chars=h2.textContent.length;popChars(h2,{start:280,step:55});
-    reveal([side.querySelector("p")],{start:280+chars*55});
+  // 등장 효과: 왼쪽 말씨·제목이 먼저, 이어서 오른쪽 카드가 한 칸씩 통째로 떠오름
+  animate(){
+    const b=$("rbody"),side=b.querySelector(".rside");
+    reveal(side.children,{step:120});
     const order=[];[...b.querySelector(".cards").children].forEach(c=>c.classList.contains("two")?order.push(...c.children):order.push(c));
-    const START=350,STEP=150;reveal(order,{start:START,step:STEP});
-    order.forEach((c,i)=>{const t=START+i*STEP+250;
-      if(c.classList.contains("script"))typeText($("scr"),g.script,{start:t});
-      reveal(c.querySelectorAll("li"),{start:t,step:110});});
+    order.forEach(c=>c.classList.add("pop"));reveal(order,{start:300,step:170});
   }
 };

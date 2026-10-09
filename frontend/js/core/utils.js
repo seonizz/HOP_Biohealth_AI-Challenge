@@ -26,19 +26,3 @@ function reveal(els,{step=90,start=0,scroll=false}={}){
   const io=new IntersectionObserver(es=>es.filter(x=>x.isIntersecting).forEach((x,k)=>{x.target.style.transitionDelay=(start+k*step)+"ms";x.target.classList.add("in");io.unobserve(x.target);}),{threshold:.12});
   els.forEach(e=>io.observe(e));
 }
-// 제목 글자를 한 자씩 톡톡 (줄바꿈 <br>은 그대로 둠)
-function popChars(el,{start=0,step=45}={}){
-  if(REDUCED||!el)return;let i=0;
-  [...el.childNodes].forEach(function walk(n){
-    if(n.nodeType===3){const f=document.createDocumentFragment();
-      [...n.textContent].forEach(c=>{const s=document.createElement("span");s.className="ch";s.textContent=c;s.style.animationDelay=(start+i++*step)+"ms";f.appendChild(s);});
-      n.replaceWith(f);}
-    else if(n.nodeType===1&&n.tagName!=="BR")[...n.childNodes].forEach(walk);
-  });
-}
-// 문장을 타자 치듯 빠르게 (긴 문장도 maxMs 안에 끝남)
-function typeText(el,text,{start=0,maxMs=1800}={}){
-  if(REDUCED||!el){if(el)el.textContent=text;return;}
-  el.textContent="";const per=Math.max(1,Math.ceil(text.length/(maxMs/16)));let i=0;
-  setTimeout(function tick(){i=Math.min(text.length,i+per);el.textContent=text.slice(0,i);if(i<text.length)requestAnimationFrame(tick);},start);
-}

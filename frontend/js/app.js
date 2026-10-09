@@ -5,3 +5,8 @@ applyMascots($("app"));
 SCREENS.forEach(c=>c.mount());
 // 왼쪽 위 말씨 로고: 어느 화면에서든 처음 화면으로
 document.querySelectorAll("[data-home]").forEach(b=>b.onclick=()=>ChatScreen.leave(()=>{show("start");window.scrollTo(0,0);}));
+// 내비게이션 바: 서비스 소개·칼럼·내 기록, 말씨와 시작하기
+const NAV_OPEN={about:()=>AboutScreen.open(),columns:()=>ColumnsScreen.open(),records:()=>RecordsScreen.open()};
+document.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>{NAV_OPEN[b.dataset.nav]();window.scrollTo(0,0);});
+document.querySelectorAll("[data-go]").forEach(b=>b.onclick=begin);
+StartScreen.updRecN();

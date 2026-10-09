@@ -69,7 +69,7 @@ test('original 30-question journey, back, guide, deferred safety, local history 
   expect(record.guide.doList.length).toBeGreaterThan(0);expect(record.guide.avoid.length).toBeGreaterThan(0);
   await page.screenshot({path:'artifacts/restored-result.png',fullPage:true});
   await page.locator('#toRec').click();await expect(page.locator('#rdetail')).toContainText(record.guide.script);
-  await page.reload();await page.locator('#openRec').click();await expect(page.locator('#rlist .rcard')).toHaveCount(1);
+  await page.reload();await page.locator('#start [data-nav="records"]').click();await expect(page.locator('#rlist .rcard')).toHaveCount(1);
   await expect(page.locator('#rdetail .safety')).toBeVisible();
   await page.locator('[data-del]').click();await expect(page.locator('[data-del]')).toHaveText('정말 삭제');
   await page.locator('[data-del]').click();await expect(page.locator('#rlist .rcard')).toHaveCount(0);
@@ -98,14 +98,14 @@ test('original columns, links, service introduction and mobile interaction',asyn
   await page.setViewportSize({width:1920,height:1080});
   await page.goto('/');await expect(page.locator('#start')).toBeVisible();
   await page.screenshot({path:'artifacts/restored-home.png',fullPage:true});
-  await page.locator('#openCol').click();await expect(page.locator('.ccard')).toHaveCount(10);
+  await page.locator('#start [data-nav="columns"]').click();await expect(page.locator('.ccard')).toHaveCount(10);
   await page.locator('#colFilter [data-cat="불안"]').click();await expect(page.locator('.ccard')).toHaveCount(2);
   await expect(page.locator('#columns .chero')).toBeVisible();
   // 카드를 누르면 읽기 화면에 기사 전문과 새 탭 원문 링크
   await page.locator('.ccard .cc-open').first().click();await expect(page.locator('#colReader .cr-body p').nth(3)).toBeVisible();
   await expect(page.locator('#colReader a[target="_blank"][rel="noopener noreferrer"]')).toHaveCount(1);
   await page.locator('#crClose').click();await expect(page.locator('#colReader')).toBeHidden();
-  await page.locator('#colHome').click();await page.locator('#openAbout').click();await expect(page.locator('#about')).toBeVisible();
+  await page.locator('#columns [data-home]').click();await page.locator('#start [data-nav="about"]').click();await expect(page.locator('#about')).toBeVisible();
   // 왼쪽 위 말씨 로고로 처음 화면
   await page.locator('#about [data-home]').click();await expect(page.locator('#start')).toBeVisible();await page.setViewportSize({width:390,height:844});
   // The accepted original targets 1920×1080 and overflows on narrow screens.

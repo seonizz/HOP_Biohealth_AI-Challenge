@@ -3,14 +3,11 @@ let curRec=null,pendingDel=null;
 const RecordsScreen={
   render(){return `
 <section class="screen" id="records" hidden>
-  ${TopBar(`<span class="pill">내 기록</span><button class="ghost" id="recHome" style="margin-left:auto">처음으로</button><button class="btn" id="recNew" style="padding:10px 26px;font-size:18px">새 대화</button>`)}
+  ${NavBar("records")}
   <div class="wrapk"><div class="rlist" id="rlist"></div><div class="rdetail" id="rdetail"></div></div>
   <p class="note" style="margin:12px 0 0">기록은 이 브라우저에만 저장돼요. 다른 기기에서는 보이지 않아요.</p>
 </section>`;},
-  mount(){
-    $("recHome").onclick=()=>show("start");
-    $("recNew").onclick=begin;
-  },
+  mount(){},
   open(id){
     const recs=loadRecs();show("records");
     if(!recs.length){$("rlist").innerHTML="";$("rdetail").innerHTML=`<div class="emptyr" style="height:100%"><div><img src="${M.hear}" alt=""><p>아직 저장된 기록이 없어요.<br>말씨와 대화를 마치면 여기에 모여요.</p></div></div>`;return;}
