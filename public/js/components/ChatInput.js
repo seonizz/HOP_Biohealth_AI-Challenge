@@ -34,9 +34,11 @@ const ChatInput={
       focusEl?.focus();};
     const skipBtn=()=>{const s=document.createElement("button");s.className="ghost skip";s.textContent="건너뛰기";
       s.onclick=()=>submit(SKIP,[],"",true);return s;};
+    const acts=primary=>{const a=document.createElement("div");a.className="acts";if(canSkip)a.appendChild(skipBtn());if(primary)a.appendChild(primary);return a;};
+    const mainBtn=(id,label)=>{const b=document.createElement("button");b.className="send";if(id)b.id=id;b.textContent=label;return b;};
     if(q.type==="text"){
-      box.innerHTML=`<div class="row"><textarea id="ta" rows="${q.short?1:2}" placeholder="${esc(q.ph||"")}"></textarea><button class="send" id="send">보내기</button></div>`;
-      if(canSkip)box.querySelector(".row").appendChild(skipBtn());
+      box.innerHTML=`<div class="row"><textarea id="ta" rows="${q.short?1:2}" placeholder="${esc(q.ph||"")}"></textarea></div>`;
+      box.querySelector(".row").appendChild(acts(mainBtn("send","보내기")));
       const ta=$("ta");ta.focus();
       $("send").onclick=()=>{const v=ta.value.trim();if(!v&&q.required)return need(ta);submit(v||SKIP,[]);};
       ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("send").click();}};addBack();return;
@@ -56,8 +58,15 @@ const ChatInput={
       const b=document.createElement("button");b.className="chip";b.textContent=optLabel(o);b.setAttribute("aria-pressed","false");
       b.onclick=()=>{
         if(q.type==="one"){
-          // "네 [직접 입력]": 고르면 입력창으로 바뀜
-          if(m.input) return ChatInput.render({type:"text",ph:m.ph,noSkip:true},t=>onDone(t===SKIP?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),()=>ChatInput.render(q,onDone,onBack));
+          // 세부 설명은 옵션의 ask가 있으면 건너뛸 수 있고, 이전 질문은 원래 보기로 돌아가요.
+          if(m.input){
+            const log=m.ask?ChatScreen.messages.map(message=>({...message})):null;
+            if(m.ask)ChatScreen.sync([...pendingConversationLog(),{who:"ai",text:m.ask,face:q.face||"ponder",fu:true}]);
+            return ChatInput.render({type:"text",ph:m.ph,noSkip:!m.ask},t=>onDone(t===SKIP?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),()=>{
+              if(log)ChatScreen.sync(log);
+              ChatInput.render(q,onDone,onBack);
+            });
+          }
           btns.forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));
           return submit(optLabel(o),[k],"");
         }
@@ -70,13 +79,14 @@ const ChatInput={
     });
     box.appendChild(wrap);
     if(q.noOwn&&q.type==="one"){
-      if(canSkip){const r=document.createElement("div");r.className="inrow only";r.appendChild(skipBtn());box.appendChild(r);}
+      if(canSkip){const r=document.createElement("div");r.className="inrow only";r.appendChild(acts());box.appendChild(r);}
       addBack();return;
     }
     // 선택형 문항의 직접 입력
     const row=document.createElement("div");row.className="inrow";
-    if(!q.noOwn)row.innerHTML=`<div class="own"><label for="own">직접 입력</label><input id="own" type="text" placeholder="${q.type==="multi"?"보기에 없는 내용이 있다면 적어 주세요":"보기에 없다면 적어 주세요"}">${q.type==="one"?'<button class="send" id="ownSend">보내기</button>':""}</div>`;
-    if(canSkip)row.appendChild(skipBtn());
+    if(!q.noOwn)row.innerHTML=`<div class="own"><label for="own">직접 입력</label><input id="own" type="text" placeholder="${esc(q.ownPh||(q.type==="multi"?"보기에 없는 내용이 있다면 적어 주세요":"보기에 없다면 적어 주세요"))}"></div>`;
+    const g=q.type==="one"?mainBtn("ownSend","보내기"):mainBtn("","다 골랐어요");if(q.type!=="one")g.classList.add("done");
+    row.appendChild(acts(g));
     box.appendChild(row);
     const own=$("own");
     const pick=()=>btns.map((c,k)=>c.getAttribute("aria-pressed")==="true"?k:-1).filter(k=>k>=0);
@@ -84,13 +94,11 @@ const ChatInput={
       const go=()=>{const v=own.value.trim();if(!v){own.focus();return;}submit(v,[],v);};
       $("ownSend").onclick=go;own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}};
     }else{
-      const g=document.createElement("button");g.className="btn done";g.textContent="다 골랐어요";
       g.onclick=()=>{const sel=pick(),v=own?.value.trim()||"";
         if((q.required||q.noOwn)&&!sel.length&&!v)return need();
         const parts=sel.map(k=>optLabel(q.opts[k]));if(v)parts.push(v);
         submit(parts.length?parts.join(", "):"해당 없음",sel,v);};
       if(own)own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();g.click();}};
-      row.appendChild(g);
     }
     addBack();
   }

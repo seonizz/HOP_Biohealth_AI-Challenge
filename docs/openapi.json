@@ -97,7 +97,7 @@
     },
     "/api/questions": {
       "get": {
-        "summary": "현재 UI의 정확한 30개 문항",
+        "summary": "DB의 현재 질문 목록 (기본 구성 29문항)",
         "responses": {
           "200": {
             "description": "성공",

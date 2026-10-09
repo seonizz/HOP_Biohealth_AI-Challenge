@@ -71,3 +71,9 @@ body.noscroll{overflow:hidden}
 #columns .chip[aria-pressed="true"]{background:var(--stem);border-color:var(--stem);color:#fff}
 
 .ctoast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%);z-index:30;background:var(--stem);color:var(--cream);font-family:var(--display);font-size:18px;padding:12px 26px;border-radius:999px;box-shadow:0 8px 24px rgba(58,42,34,.2);animation:crin .25s ease}
+
+/* 카드 배지: 전문의·병원 칼럼, 사연 + 전문의 답변 */
+.ctags{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.ctag{display:inline-block;font-family:var(--display);font-size:13px;padding:3px 10px;border-radius:999px}
+.ctag.pro{background:#2d5a23;color:#fff}
+.ctag.qa{background:var(--cream);color:#8a5a00;box-shadow:inset 0 0 0 1.5px #e7c66a}

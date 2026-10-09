@@ -82,17 +82,19 @@ function deferred() {
 }
 
 function conversationHarness(request, { realUI = false } = {}) {
-  const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo']);
+  const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo', 'leaveStay', 'restart1']);
   document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden><p></p></div>';
+  const listeners={};
   const context = vm.createContext({
-    document, window:{ scrollTo() {} }, StartScreen: { updRecN() {} }, setTimeout, clearTimeout,
+    document, window:{ scrollTo() {}, addEventListener(event,listener){listeners[event]=listener;} }, StartScreen: { updRecN() {} }, setTimeout, clearTimeout,
+    MutationObserver:class { observe() {} }, ResizeObserver:class { observe() {} },
     M: { hello:'hello.png', ponder:'ponder.png', hear:'hear.png' },
     ...(!realUI ? { ChatInput: { clear() {}, render() {}, error(message) { throw new Error(message); } } } : {}),
     API: { request },
   });
   vm.runInContext(script('core/utils.js') + (realUI ? script('core/questions.js') + script('components/ChatInput.js') : '') + script('components/ChatScreen.js') + script('core/conversation.js') + '\nglobalThis.ui = ChatScreen; globalThis.flow = { begin, leaveConversation, renderConversation, show, finish, answer, goBack };', context);
   if (!realUI) context.ui.typing = (_, work) => Promise.resolve(typeof work === 'function' ? work() : work);
-  return { document, context };
+  return { document, context, listeners };
 }
 
 const conversationView = chatTitle => ({
@@ -266,6 +268,69 @@ test('DB multi choice without own text keeps its done action and only submits se
   assert.equal(submitted[0], '둘째 보기'); assert.deepEqual(Array.from(submitted[1]), [1]); assert.equal(submitted[2], '');
 });
 
+test('closing or refreshing an active conversation warns and completed screens do not', () => {
+  const { document, context, listeners } = conversationHarness(() => Promise.resolve(), { realUI:true });
+  context.ui.mount();
+  context.flow.renderConversation(conversationView('친구'), 0);context.flow.show('chat');
+  let warnings=0;
+  const event=()=>({preventDefault(){warnings++;},returnValue:undefined});
+  listeners.beforeunload(event());assert.equal(warnings,0);
+  document.getElementById('ta').value='작성 중인 답변';
+  const draft=event();listeners.beforeunload(draft);assert.equal(warnings,1);assert.equal(draft.returnValue,'');
+  context.ui.sync([{who:'me',text:'전송한 답변'}]);document.getElementById('ta').value='';
+  listeners.beforeunload(event());assert.equal(warnings,2);
+  context.flow.show('result');listeners.beforeunload(event());assert.equal(warnings,2);
+});
+
+for(const detail of ['(예전에는) 친구들과 산책했어요.','']) {
+  test(`optional yes detail ${detail?'submits its full text':'can be skipped'} and remains a base answer`,async()=>{
+    const response=deferred(),calls=[];
+    const { document,context }=conversationHarness((path,options)=>{calls.push(options.body);return response.promise;},{realUI:true});
+    const q={id:'support',type:'one',face:'hear',noOwn:true,noSkip:true,opts:[['네',{input:true,ask:'어떤 사람이나 관계, 활동인가요?',ph:'예: 친구들과 산책해요'}],'아니요']};
+    const base={who:'ai',text:'버팀목이 있나요?',face:'hear',fu:false},ask={who:'ai',text:q.opts[0][1].ask,face:'hear',fu:true};
+    const view={...conversationView('친구'),question:q,log:[base],canGoBack:true};context.flow.renderConversation(view,0);
+    const log=document.getElementById('log'),box=document.getElementById('input');
+    box.querySelectorAll('.chip')[0].click();assert.equal(log.querySelectorAll('.fu-tag').length,1);
+    await box.querySelector('.back').click();assert.equal(log.querySelector('.fu-tag'),null);assert.equal(calls.length,0);
+    box.querySelectorAll('.chip')[0].click();document.getElementById('ta').value=detail;
+    const action=detail?document.getElementById('send'):box.querySelector('.skip');
+    assert.deepEqual(box.querySelector('.acts').children.map(child=>child.textContent),['건너뛰기','보내기']);
+    const pending=action.click();assert.equal(calls.length,1);assert.equal(calls[0].follow_up,false);assert.equal(calls[0].skipped,false);
+    assert.deepEqual(Array.from(calls[0].selected),[0]);assert.equal(calls[0].text,detail?`네, ${detail}`:'네');
+    assert.equal(document.getElementById('ta').value,'');assert.ok(log.querySelector('.dots'));assert.equal(log.querySelectorAll('.fu-tag').length,1);
+    response.resolve({...view,revision:3,log:[base,ask,{who:'me',text:calls[0].text,fu:false},nextPrompt],question:{id:'values',type:'text'}});
+    await pending;await settleUI();assert.equal(log.querySelectorAll('.fu-tag').length,1);assert.equal(log.querySelectorAll('.me').length,1);assert.equal(log.querySelector('.dots'),null);
+  });
+}
+
+for(const mode of ['retry','change-to-no','edit-detail']) {
+  test(`pending optional detail ${mode} reconciles the saved prompt without duplication`,async()=>{
+    const response=deferred(),calls=[];
+    const { document,context }=conversationHarness((path,options)=>{calls.push(options.body);return response.promise;},{realUI:true});
+    const q={id:'support',type:'one',face:'hear',noOwn:true,noSkip:true,opts:[['네',{input:true,ask:'어떤 활동인가요?'}],'아니요']};
+    const base={who:'ai',text:'버팀목이 있나요?',face:'hear',fu:false};
+    const ask={who:'ai',text:q.opts[0][1].ask,fu:true,face:'hear'};
+    const saved={question_id:'support',selected:[0],text:'네, 친구와 산책해요.',custom:'',skipped:false,follow_up:false};
+    const view={...conversationView('친구'),question:q,model_pending:true,pending_answer:saved,revision:2,log:[base,ask,{who:'me',text:saved.text,fu:false}]};
+    context.flow.renderConversation(view,0);
+    const log=document.getElementById('log'),box=document.getElementById('input');
+    let pending;
+    if(mode==='retry')pending=box.querySelector('.api-error').querySelector('button').click();
+    else if(mode==='change-to-no')pending=box.querySelectorAll('.chip')[1].click();
+    else {
+      box.querySelectorAll('.chip')[0].click();assert.equal(log.querySelectorAll('.fu-tag').length,1);assert.equal(log.querySelectorAll('.me').length,0);
+      await box.querySelector('.back').click();assert.equal(log.querySelectorAll('.fu-tag').length,1);assert.equal(log.querySelectorAll('.me').length,1);
+      box.querySelectorAll('.chip')[0].click();document.getElementById('ta').value='가족과 함께 식사해요.';pending=document.getElementById('send').click();
+    }
+    assert.equal(calls.length,1);assert.equal(calls[0].revision,2);
+    assert.equal(log.querySelectorAll('.fu-tag').length,mode==='change-to-no'?0:1);
+    assert.equal(log.querySelectorAll('.me').length,1);assert.ok(log.querySelector('.dots'));
+    const messages=[base,...(mode==='change-to-no'?[]:[ask]),{who:'me',text:calls[0].text,fu:false},nextPrompt];
+    response.resolve({...view,model_pending:false,pending_answer:undefined,revision:4,log:messages,question:{id:'values',type:'text'}});
+    await pending;await settleUI();assert.equal(log.querySelectorAll('.fu-tag').length,mode==='change-to-no'?0:1);assert.equal(log.querySelectorAll('.me').length,1);
+  });
+}
+
 const settleUI = () => new Promise(resolve => setImmediate(resolve));
 const prompt = { who:'ai', text:'어떤 이야기를 나누고 싶으세요?', face:'ponder', fu:false };
 const nextPrompt = { who:'ai', text:'그분과 어떤 관계인가요?', face:'hear', fu:false };
@@ -279,7 +344,7 @@ for (const kind of ['text', 'one', 'one-own', 'multi', 'multi-own', 'follow-up',
       calls.push([path, options.body]); return response.promise;
     }, { realUI:true });
     const view = conversationView('친구'); view.log = [prompt];
-    if (kind === 'one') view.question = { id:'want', type:'one', opts:['대화를 시작하고 싶어요'], noOwn:true, required:true };
+    if (kind === 'one') view.question = { id:'want', type:'one', opts:[['대화를 시작하고 싶어요',{input:false,ask:'표시하지 않는 세부 질문'}]], noOwn:true, required:true };
     if (kind === 'one-own') view.question = { id:'want', type:'one', opts:['대화를 시작하고 싶어요'], required:true };
     if (kind === 'multi') view.question = { id:'want', type:'multi', opts:['대화를 시작하고 싶어요'], noOwn:true, required:true };
     if (kind === 'multi-own') view.question = { id:'want', type:'multi', opts:['대화를 시작하고 싶어요'], required:true };
@@ -302,6 +367,7 @@ for (const kind of ['text', 'one', 'one-own', 'multi', 'multi-own', 'follow-up',
     send.click(); send.click();
     assert.equal(calls.length, 1, 'duplicate sends are blocked while waiting');
     const bubble = log.querySelector('.me');
+    if(kind==='one')assert.equal(log.querySelector('.fu-tag'),null,'disabled detail inputs do not display an ask');
     assert.equal(bubble.textContent, calls[0][1].text);
     assert.ok(input.querySelectorAll('input,textarea').every(element=>element.value===''), 'submitted text clears before the model response');
     assert.equal(bubble.children.length, 0, 'user text is never interpreted as HTML');

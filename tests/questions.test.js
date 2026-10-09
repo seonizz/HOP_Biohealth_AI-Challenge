@@ -106,3 +106,25 @@ test('identity and supplemental observations cannot be assigned to the supporter
     assert.throws(() => createQuestionSet(rows), {code:'QUESTION_BANK_INVALID'});
   }
 });
+
+test('dynamic examples and optional detail metadata remain validated data only', () => {
+  for (const ph of [
+    'process.exit()',
+    {question_id:'events',values:{breakup:() => '실행 코드'}},
+    {question_id:'events',values:{breakup:'예시'},execute:'anything'},
+    {question_id:'__proto__',values:{breakup:'예시'}},
+    {question_id:'events',values:{}},
+  ]) {
+    const rows = structuredClone(initialQuestionRows);
+    rows.find(q => q.id === 'others_why').definition.ph_by_option = ph;
+    assert.throws(() => createQuestionSet(rows), {code:'QUESTION_BANK_INVALID'});
+  }
+  for (const key of ['ownPh','fu']) {
+    const rows = structuredClone(initialQuestionRows);
+    rows.find(q => q.id === 'help').definition[key] = {execute:'anything'};
+    assert.throws(() => createQuestionSet(rows), {code:'QUESTION_BANK_INVALID'});
+  }
+  const rows = structuredClone(initialQuestionRows);
+  rows.find(q => q.id === 'support').definition.opts[0][1].ask = {execute:'anything'};
+  assert.throws(() => createQuestionSet(rows), {code:'QUESTION_BANK_INVALID'});
+});

@@ -153,7 +153,7 @@ databaseTest('restart preserves encrypted data, startup rejects a changed key, a
   f.store = await Store.connect(databaseUrl, f.key, 30, { schema: f.schema });
   assert.deepEqual(await f.store.record(browser.id, 'demo-record'), exampleRecord());
   assert.deepEqual((await f.store.context(browser.id, intake.id)).context, buildContext(intake.state));
-  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 3);
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 4);
   await f.store.pool.query('UPDATE schema_migrations SET checksum=$1', ['tampered-checksum']);
   await assert.rejects(Store.connect(databaseUrl, f.key, 30, { schema: f.schema }), /checksum/);
 });
@@ -161,7 +161,7 @@ databaseTest('restart preserves encrypted data, startup rejects a changed key, a
 databaseTest('database questions seed once and edits, additions, ordering and removals survive restart', async t => {
   const f = await fixture(t);
   const before = await f.store.questionSet();
-  assert.equal(before.questions.length, 30);
+  assert.equal(before.questions.length, 29);
   assert.equal(before.gapQuestion.id, 'gap_obs');
   const browser = await f.store.createBrowser();
   const old = await f.store.createIntake(browser.id, createIntake(before));

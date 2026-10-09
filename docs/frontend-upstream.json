@@ -1,9 +1,9 @@
 {
   "repository": "https://github.com/seonizz/HOP_Biohealth_AI-Challenge",
   "branch": "feat/column-full-text",
-  "commit": "9fbd159340fe0231feee08f70c341e86b2c2f074",
-  "upstream_committed_at": "2026-10-10T01:34:22+09:00",
-  "previous_commit": "aa144758fdcece6a01a69d9e0507d51e9dc1a9ff",
+  "commit": "e811e871e5da95d429ee4ad1fec2cc6a0ad07268",
+  "upstream_committed_at": "2026-10-10T03:37:59+09:00",
+  "previous_commit": "9fbd159340fe0231feee08f70c341e86b2c2f074",
   "exact_files": [
     {
       "path": "public/assets/columns/beside.png",
@@ -76,6 +76,11 @@
       "applied_sha256": "1118a9706ab4097deb02afcd76a6299096e1dc3ba7a93d908e9f5e22645ecb03"
     },
     {
+      "path": "public/assets/logo.png",
+      "upstream_sha256": "a873001205c39c7d173d50eee135bb4bf12c1f33cdbe4d965b834e12c9b9e970",
+      "applied_sha256": "a873001205c39c7d173d50eee135bb4bf12c1f33cdbe4d965b834e12c9b9e970"
+    },
+    {
       "path": "public/assets/mascot/basic.png",
       "upstream_sha256": "6a6bca511c7a403acce61591a5500cbd4a6931332ffa66923b2d703cfdd262d4",
       "applied_sha256": "6a6bca511c7a403acce61591a5500cbd4a6931332ffa66923b2d703cfdd262d4"
@@ -142,18 +147,18 @@
     },
     {
       "path": "public/css/about.css",
-      "upstream_sha256": "d699c30c4fcfa244abaa47703d6893bbfe5e0f7bdc64f41bd6002e3bf6005c96",
-      "applied_sha256": "d699c30c4fcfa244abaa47703d6893bbfe5e0f7bdc64f41bd6002e3bf6005c96"
+      "upstream_sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5",
+      "applied_sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
     },
     {
       "path": "public/css/base.css",
-      "upstream_sha256": "35a5828f28607ea2f13eaa965be94a9ff3aa6318d9e1475d5d46d00caf323830",
-      "applied_sha256": "35a5828f28607ea2f13eaa965be94a9ff3aa6318d9e1475d5d46d00caf323830"
+      "upstream_sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e",
+      "applied_sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
     },
     {
       "path": "public/css/chat.css",
-      "upstream_sha256": "bea8eb9d826ca9ace2e0d8a966337da239e63bf629db0d7d27560f8f959d6471",
-      "applied_sha256": "bea8eb9d826ca9ace2e0d8a966337da239e63bf629db0d7d27560f8f959d6471"
+      "upstream_sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197",
+      "applied_sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
     },
     {
       "path": "public/css/records.css",
@@ -171,6 +176,11 @@
       "applied_sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
     },
     {
+      "path": "public/js/components/AboutScreen.js",
+      "upstream_sha256": "6e9828ccb9d7fa918fa6bac7bd6de3b2fdd9a66a3d8469f59d6970bc9527da7c",
+      "applied_sha256": "6e9828ccb9d7fa918fa6bac7bd6de3b2fdd9a66a3d8469f59d6970bc9527da7c"
+    },
+    {
       "path": "public/js/components/GuideCards.js",
       "upstream_sha256": "243ba0f59f8da2d91e88e4d7ee82f126c1b634ffad25d856c04e2d142cb28461",
       "applied_sha256": "243ba0f59f8da2d91e88e4d7ee82f126c1b634ffad25d856c04e2d142cb28461"
@@ -182,8 +192,8 @@
     },
     {
       "path": "public/js/components/TopBar.js",
-      "upstream_sha256": "ac2472c87cf9b6c33c1a53d06f971ccd6a65eee16d2c68e0da4d0185bee1db2c",
-      "applied_sha256": "ac2472c87cf9b6c33c1a53d06f971ccd6a65eee16d2c68e0da4d0185bee1db2c"
+      "upstream_sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3",
+      "applied_sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
     },
     {
       "path": "public/js/core/assets.js",
@@ -197,8 +207,8 @@
     },
     {
       "path": "public/js/core/columns.js",
-      "upstream_sha256": "6f03ed3592ceec8e2ce86fc8a018585a75eea189ebeea12bc4a0a97ae52596c5",
-      "applied_sha256": "6f03ed3592ceec8e2ce86fc8a018585a75eea189ebeea12bc4a0a97ae52596c5"
+      "upstream_sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626",
+      "applied_sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
     }
   ],
   "adapted_files": [
@@ -219,8 +229,8 @@
     },
     {
       "path": "public/css/columns.css",
-      "upstream_sha256": "d315348eeb6c367e9e7a63a6f23aac47ec2814db695211190e19f9b0327d3d64",
-      "applied_sha256": "77b01bb1d67254c30393630291afce1072b2602a3a59b9f72a2684406c6b4054"
+      "upstream_sha256": "edad4e2ca1791f923617db9e60ef80f963d811cbfb3b10d4da265aa48073508d",
+      "applied_sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
     },
     {
       "path": "public/index.html",
@@ -233,24 +243,19 @@
       "applied_sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
     },
     {
-      "path": "public/js/components/AboutScreen.js",
-      "upstream_sha256": "402c333df651d0808aef123ede55112502d4528b3d67f775858b6e662e4b4dfc",
-      "applied_sha256": "6e9828ccb9d7fa918fa6bac7bd6de3b2fdd9a66a3d8469f59d6970bc9527da7c"
-    },
-    {
       "path": "public/js/components/ChatInput.js",
-      "upstream_sha256": "4664a798748e2a3701613ec6e29f52a7f881c773c4b33bd3bf6906517cb0ccfd",
-      "applied_sha256": "b598f8be44a2a782106ca8a85f590cfb341225a2dfc91590cc77e47a09375b4a"
+      "upstream_sha256": "45f80cd6a19a4afaad791b7ab328b747fbc348b5ad2d370a03e93efa76648a16",
+      "applied_sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
     },
     {
       "path": "public/js/components/ChatScreen.js",
-      "upstream_sha256": "b6749bef6fd4908a95b03e8933461c4e381e57b94156bc31f3d3942c41045ca6",
-      "applied_sha256": "ea638783da498489219f22cbd43e5999f2595307207a65d68780f5304be36b32"
+      "upstream_sha256": "ebd2ac864cafd1a13a6b513a4f9efe404f87a0f72b288ded19cfcdaa1644e01d",
+      "applied_sha256": "60bd2f1b8fc4570ea0d0c7bcda0a0087258b726f8c758ca70a5a63c9e936feb5"
     },
     {
       "path": "public/js/components/ColumnsScreen.js",
-      "upstream_sha256": "9b64672f6a37645a27ed0163473df932abca06d1c8733f8ecdc53dc50f92f086",
-      "applied_sha256": "bfeecd09d0f85d37d250bf06afaec59cc2473621a143ce194680e30d0d939868"
+      "upstream_sha256": "21839d033b96a2694dcef4e116e13132af83b47f614e5da32e6fbf4e4b32dd91",
+      "applied_sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
     },
     {
       "path": "public/js/components/RecordsScreen.js",
@@ -259,17 +264,17 @@
     },
     {
       "path": "public/js/components/ResultScreen.js",
-      "upstream_sha256": "ce49bb8d53274c0c7cd7bdd4030003ee43134079ec40f7991e3564d8c6fd3b38",
-      "applied_sha256": "7b318863f227ec849dd7d50e6ee25abfce8c9c632f4c39cb3d970bbcff73c860"
+      "upstream_sha256": "79d2df0c9f9adef198051395d22da5a0a00effd4e99af1d22830e985fb8d5b70",
+      "applied_sha256": "43232b61cd7653e7121528cf50e0545f89a436a98e1361cf679960507e33ea2e"
     },
     {
       "path": "public/js/core/conversation.js",
-      "upstream_sha256": "e6a13ad30274ea3159cea9493ab41ff2f1c46d8e6051d62cb942225c0c8b5ed1",
-      "applied_sha256": "6a0a536ce24867ab6c8198f3c16426c20d7c46b3c47e21a62fe7b035b703e6eb"
+      "upstream_sha256": "663dc555bd1aa8c0b2649cc91905b7b0b9115404cf83b7940f57015b6ae2b017",
+      "applied_sha256": "0f790dabb356e6f7d9a6d0a9a4287a57adcae0473f52ac85f1a3535a694b3ce6"
     },
     {
       "path": "public/js/core/questions.js",
-      "upstream_sha256": "96d2ecd3344bca4e97b472affb2307d709a8a05fc32ba8026bd2e05c226ad6ab",
+      "upstream_sha256": "b17f7b591111df24727b0a3d548cd5d5e849557c95571dbd6e39342feb79332e",
       "applied_sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
     },
     {
@@ -298,6 +303,10 @@
     "Font license text is preserved; trailing spaces normalized for repository whitespace checks.",
     "Sent answers appear immediately; the next prompt waits for the server/model response. Retries reconcile with server logs without duplicate bubbles, and internal model-state warnings are not shown in the UI.",
     "User messages and waiting dots paint before requests. Model failures retain the saved pending answer and current prompt; only validated model output advances the conversation, with retry/edit/correction revision checks.",
-    "Validated submissions immediately clear textarea/direct-input drafts while retaining the captured answer in the user bubble and retry request."
+    "Validated submissions immediately clear textarea/direct-input drafts while retaining the captured answer in the user bubble and retry request.",
+    "Latest 29-question defaults migrate only untouched rows; merged help disables default coping while prior intake snapshots and administrator changes remain intact.",
+    "Event-dependent examples use validated DB ph_by_option data; UI ownPh/fu/ask metadata is supported without executing DB code. Display fu is distinct from answer follow_up.",
+    "Optional yes-detail prompts are shown locally and saved with submitted answers; retries and corrections reconcile prompt/answer pairs without duplicate or obsolete detail prompts.",
+    "Question-position encouragement uses 1/3 and 0.66 thresholds. Active draft/answer conversations warn on browser refresh or closing; completed screens do not."
   ]
 }

@@ -25,7 +25,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 .screen{min-height:100%;max-width:1440px;margin:0 auto;display:flex;flex-direction:column;padding-block:clamp(20px,4.6vw,88px)}
 .top{display:flex;align-items:center;gap:20px}
 .logo{font-family:var(--display);color:var(--stem);font-size:44px;line-height:1;height:53px;display:flex;align-items:center;gap:2px;background:none;border:0;padding:0;cursor:pointer}
-.logo small{font-size:19px;color:var(--leaf);align-self:flex-start;margin-top:2px} /* 로고 높이 = 오른쪽 버튼 높이(53px) */
+.logo img{height:52px;width:auto;display:block} /* 로고 그림 높이 ≈ 오른쪽 버튼 높이 */
 .crisis{margin-left:auto;font-size:14px;color:var(--muted);background:var(--card);border:2px solid var(--leaf-soft);padding:6px 14px;border-radius:999px}
 .crisis b{color:var(--stem)}
 
@@ -40,7 +40,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 /* 등장 애니메이션 (utils.js reveal) */
 .rv{opacity:0;transform:translateY(28px);transition:opacity .6s ease,transform .75s cubic-bezier(.2,.75,.2,1)}
 .rv.in{opacity:1;transform:none}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1!important;transform:none!important}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1!important;transform:none!important}.rv.pop{clip-path:none!important}}
 
 /* 가이드 카드 (GuideCards: 결과 화면·기록 화면이 함께 씀) */
 .card{background:var(--card);border-radius:28px;padding:26px 30px;word-break:keep-all;overflow-wrap:break-word} /* 한글 낱말 중간에서 줄이 바뀌지 않게 */
@@ -79,6 +79,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 .crisis-row{display:flex;justify-content:flex-end;margin-top:10px}
 .crisis-row .crisis{margin-left:0}
 /* 결과 카드가 한 칸씩 통째로 등장 */
-.rv.pop{transform:translateY(34px) scale(.97);transition:opacity .55s ease,transform .7s cubic-bezier(.2,.8,.2,1.15)}
-.rv.pop.in{transform:none}
+/* 결과 카드: 사선 경계가 왼쪽 아래 → 오른쪽 위로 쓸고 지나가며 칸 전체가 드러남 */
+.rv.pop{transform:translate(-28px,28px);clip-path:polygon(-10% -10%,-10% -10%,-45% 110%,-45% 110%);transition:opacity .45s ease,transform .8s cubic-bezier(.2,.8,.2,1),clip-path .85s cubic-bezier(.55,.05,.25,1)}
+.rv.pop.in{transform:none;clip-path:polygon(-10% -10%,145% -10%,110% 110%,-45% 110%)}
 @media (max-width:900px){.nav{flex-wrap:wrap}.navlinks{margin-left:0;order:3;width:100%;justify-content:space-between}.navlink{padding:8px 10px;font-size:16px}.navcta{margin-left:auto;padding:9px 18px;font-size:16px}}

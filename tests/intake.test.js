@@ -395,22 +395,26 @@ test('legacy intakes retain known back snapshots and start tracking subsequent p
   assert.equal(currentView(backIntake(forward)).question.id, 'contact');
 });
 
-test('encouragement at seven and fourteen prompts is persisted once and survives model rerenders and back', () => {
+test('encouragement follows question positions once and survives model rerenders and back', () => {
   let state = createIntake();
-  for (let count = 1; count <= 15; count++) {
+  const thresholds = [Math.ceil(questions.length / 3), Math.ceil(0.66 * questions.length)];
+  const checked = new Set();
+  for (let count = 0; state.status === 'active' && count < 70; count++) {
     const historyLength = state.history.length;
     const before = state.log.filter(message => message.face === 'cheer').length;
     const next = applyModelUpdate(state, modelOutput());
     assert.equal(next.history.length, historyLength);
     assert.equal(next.log.filter(message => message.face === 'cheer').length, before);
-    if (count === 8 || count === 15) {
-      const cheer = next.log.filter(message => message.text.startsWith(count === 8 ? '벌써 3분의 1' : '거의 다 왔어요!'));
+    if (thresholds.includes(next.i) && !checked.has(next.i)) {
+      checked.add(next.i);
+      const cheer = next.log.filter(message => message.text.startsWith(next.i === thresholds[0] ? '벌써 3분의 1' : '거의 다 왔어요!'));
       assert.equal(cheer.length, 1);
       const previous = backIntake(next);
       assert.equal(previous.log.some(message => message.text === cheer[0].text), false);
     }
     state = defaultReply(next);
   }
+  assert.equal(checked.size, 2);
 });
 
 test('back from final supplemental observations restores the last base question and its pending answer', () => {

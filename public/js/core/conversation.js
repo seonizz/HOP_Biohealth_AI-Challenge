@@ -62,22 +62,40 @@ async function recoverConversation(error,token,retry,present=(message,operation)
   if(token===conversationToken)present(conversationErrorMessage(error),retry);
 }
 
-async function submitConversation(path,body,token,message){
+async function submitConversation(path,body,token,message,detailPrompt){
   if(token!==conversationToken)return;
   // 전송한 말은 즉시 보여 주고, 다음 질문은 모델 응답 뒤 서버 기록으로 확정해요.
   // 재시도나 답변 수정도 같은 서버 기록 뒤에 표시하므로 말풍선이 중복되지 않아요.
-  const log=S.model_pending&&S.log.at(-1)?.who==="me"?S.log.slice(0,-1):S.log;
+  let log=pendingConversationLog();
+  if(message&&!detailPrompt)detailPrompt=answerDetailPrompt(S.question,body.selected||[]);
+  if(detailPrompt&&!sameDetailPrompt(log.at(-1),detailPrompt))log=[...log,detailPrompt];
   if(message)ChatScreen.sync([...log,message]);
   try{
     const view=await ChatScreen.typing(S?.question?.face||"ponder",()=>token===conversationToken?API.request(path,{method:"POST",body}):null);
     if(token===conversationToken)renderConversation(view,token);
-  }catch(error){await recoverConversation(error,token,()=>submitConversation(path,{...body,revision:S.revision},token,message));}
+  }catch(error){await recoverConversation(error,token,()=>submitConversation(path,{...body,revision:S.revision},token,message,detailPrompt));}
 }
+
+function pendingConversationLog(){
+  let log=S.model_pending&&S.log.at(-1)?.who==="me"?S.log.slice(0,-1):S.log;
+  if(S.model_pending){
+    const previous=answerDetailPrompt(S.question,S.pending_answer?.selected||[]);
+    if(previous&&sameDetailPrompt(log.at(-1),previous))log=log.slice(0,-1);
+  }
+  return log;
+}
+
+function answerDetailPrompt(question,selected){
+  const meta=question?.type==="one"&&selected.length===1?optMeta(question.opts[selected[0]]):{};
+  return meta.input&&meta.ask?{who:"ai",text:meta.ask,face:question.face||"ponder",fu:true}:null;
+}
+const sameDetailPrompt=(message,prompt)=>message?.who==="ai"&&message.text===prompt.text&&message.face===prompt.face&&message.fu===true;
 
 function answer(text,selected,custom="",skipped=false){
   if(!S?.question)return;
   const body={revision:S.revision,question_id:S.question.id,text,selected,custom,skipped,follow_up:!!S.question.follow_up};
-  return submitConversation(`/api/intakes/${S.id}/answers`,body,conversationToken,{who:"me",text,fu:body.follow_up});
+  const detailPrompt=answerDetailPrompt(S.question,selected);
+  return submitConversation(`/api/intakes/${S.id}/answers`,body,conversationToken,{who:"me",text,fu:body.follow_up},detailPrompt);
 }
 
 function goBack(){

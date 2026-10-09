@@ -27,12 +27,24 @@ export function renderText(text, state) {
 }
 
 export function renderQuestion(question, state = { tags: [], name: '' }) {
-  const { when, rare, rare_when, follow_up, subject, ...definition } = question;
+  const { when, rare, rare_when, follow_up, subject, ph_by_option, ...definition } = question;
   const rendered = JSON.parse(JSON.stringify(definition));
   if (follow_up === true) rendered.follow_up = true;
   rendered.q = renderText(rare && conditionMatches(rare_when || { tag:'rare_contact' }, state) ? rare : question.q, state);
-  for (const key of ['sec', 'intro', 'why', 'ph']) {
+  if (ph_by_option) {
+    const source = (state.questionSet || initialQuestionSet).questions.find(q => q.id === ph_by_option.question_id);
+    const selection = [...(state.ans?.[ph_by_option.question_id]?.sel || [])].sort((a, b) => a - b);
+    const key = selection.map(index => optMeta(source?.opts?.[index]).r).find(value => Object.hasOwn(ph_by_option.values, value));
+    rendered.ph = key ? ph_by_option.values[key] : question.ph;
+  }
+  for (const key of ['sec', 'intro', 'why', 'ph', 'ownPh']) {
     if (rendered[key]) rendered[key] = renderText(rendered[key], state);
+  }
+  for (const option of rendered.opts || []) {
+    if (!Array.isArray(option)) continue;
+    for (const key of ['ask', 'ph']) {
+      if (option[1][key]) option[1][key] = renderText(option[1][key], state);
+    }
   }
   return rendered;
 }

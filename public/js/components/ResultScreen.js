@@ -3,7 +3,6 @@ const ResultScreen={
   render(){return `
 <section class="screen" id="result" hidden>
   ${NavBar()}
-  ${CrisisLine("위급할 땐 <b>109</b> · <b>1577-0199</b> · <b>112 / 119</b>")}
   <div class="wrapr" id="rbody"></div>
 </section>`;},
   mount(){},
@@ -19,6 +18,7 @@ const ResultScreen={
        ${GuideCards.doAvoid(g)}
        <div class="card next"><img src="${M.think}" alt=""><div><h3 style="margin-bottom:4px">다음 단계</h3>${esc(g.next)}<p class="note" style="margin:8px 0 0">당신을 위해서도: ${esc(g.care.tips.slice(1).join(" "))}</p></div></div>
        <div class="actions"><span class="note" style="margin-right:auto;align-self:center">${saved?`"${esc(p.name||"그분")}" 기록으로 저장했어요.`:"기록을 저장하지 못했어요."}</span><button class="ghost" id="toCol">${esc(g.top)} 관련 칼럼</button><button class="ghost" id="toRec">내 기록 보기</button><button class="ghost" id="again">처음부터 다시</button></div>
+       ${CrisisLine("위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담 · <b>112 / 119</b>")}
      </div>`;
     show("result");this.animate();
     $("toRec").onclick=()=>RecordsScreen.open();

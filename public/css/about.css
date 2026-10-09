@@ -9,18 +9,24 @@
 /* 단계(섹션): 위쪽 큰 여백 + 가는 선, 번호 01·02… */
 .asec{display:grid;gap:26px;margin-top:96px;padding-top:44px;border-top:2px solid var(--leaf-soft)}
 .asec:last-child{border-top:0;padding-top:0;margin-top:72px}
-.ahead{display:flex;align-items:flex-start;gap:22px}
-.anum{font-family:var(--display);font-size:22px;color:var(--leaf);line-height:1;padding-top:8px;min-width:36px}
-.ahead .kicker{display:block;font-family:var(--display);color:var(--stem);font-size:16px;margin-bottom:6px}
+/* 머리: [번호][제목]을 같은 기준선에. 작은 제목(kicker)은 제목 위, 번호 칸은 비움 */
+.ahead{display:grid;grid-template-columns:64px 1fr;align-items:baseline}
+.ahead > div{display:contents}
+.anum{grid-column:1;font-family:var(--display);font-size:34px;line-height:1.35;color:var(--leaf);font-variant-numeric:tabular-nums}
+.ahead .kicker{grid-column:2;grid-row:1;font-family:var(--display);color:var(--stem);font-size:16px;margin-bottom:4px}
+.ahead:has(.kicker) .anum,.ahead:has(.kicker) h3.t{grid-row:2}
+.ahead h3.t{grid-column:2}
 .asec h3.t{font-family:var(--display);font-weight:400;font-size:34px;line-height:1.35;margin:0;text-wrap:balance}
+.asec > :not(.ahead):not(.notice){margin-left:64px} /* 본문도 제목 글자 줄에 맞춤 (번호 칸만큼 들여쓰기) */
 .alead{font-size:19px;line-height:1.85;margin:0;max-width:46em}
 .asec .note{margin:0}
 
 /* 01 도와드리는 흐름: 상자 없이 1 → 2 → 3 */
-.flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;counter-reset:f}
-.flow li{position:relative;counter-increment:f}
-.flow li:not(:last-child)::after{content:"";position:absolute;top:44px;left:112px;right:-28px;border-top:2px dashed var(--leaf)}
-.flow img{width:88px;height:88px;object-fit:contain;background:var(--card);border-radius:50%;padding:8px;box-shadow:0 6px 18px rgba(75,122,60,.12)}
+.flow{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px;counter-reset:f;position:relative}
+.flow::before{content:"";position:absolute;left:0;right:0;top:50px;border-top:2px dashed var(--leaf)} /* 그림을 잇는 점선 (양끝까지) */
+.flow li{position:relative;counter-increment:f;text-align:center}
+.flow img{position:relative;width:100px;height:100px;object-fit:contain;background:var(--card);border-radius:50%;padding:18px; /* 그림이 동그라미 안쪽 정사각형(지름÷√2)에 다 들어가게 */box-shadow:0 6px 18px rgba(75,122,60,.12);display:block;margin:0 auto}
+.flow p{max-width:24em;margin-left:auto!important;margin-right:auto!important}
 .flow h4{font-family:var(--display);font-weight:400;font-size:23px;color:var(--stem);margin:16px 0 8px}
 .flow h4::before{content:counter(f)". ";color:var(--leaf)}
 .flow p{margin:0;font-size:16px}
@@ -115,5 +121,5 @@
 .notice p{margin:0}
 
 @media (max-width:1100px){.charts{grid-template-columns:1fr}.bignums{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:22px}.bignums div:nth-child(3){padding-left:0;border-left:0}}
-@media (max-width:900px){.ahero,.flow,.web{grid-template-columns:1fr}.flow li::after{display:none}.ahero{padding:30px}.asec{margin-top:64px}.asec h3.t{font-size:27px}.sscs,.more dl.pr{grid-template-columns:1fr}.sscs li::after{display:none}.learn-row{grid-template-columns:1fr}.learn-row i{display:none}.basis > li{grid-template-columns:44px 1fr}.qnum{font-size:40px}}
+@media (max-width:900px){.ahero,.flow,.web{grid-template-columns:1fr}.flow::before{display:none}.ahead{grid-template-columns:48px 1fr}.anum{font-size:27px}.asec > :not(.ahead):not(.notice){margin-left:0}.ahero{padding:30px}.asec{margin-top:64px}.asec h3.t{font-size:27px}.sscs,.more dl.pr{grid-template-columns:1fr}.sscs li::after{display:none}.learn-row{grid-template-columns:1fr}.learn-row i{display:none}.basis > li{grid-template-columns:44px 1fr}.qnum{font-size:40px}}
 @media (max-width:600px){.bignums{grid-template-columns:1fr}.bignums div{padding-left:0;border-left:0}.bar{grid-template-columns:1fr auto}.bar .bk{grid-column:1/-1}}

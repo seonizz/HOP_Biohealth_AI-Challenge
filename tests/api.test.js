@@ -43,7 +43,7 @@ async function fixture(t, gateway = { model:'gemma4:12b', updateState:async () =
 
 test('UI catalog, browser isolation, CSRF and persisted column interactions', { skip:!databaseUrl }, async t => {
   const f = await fixture(t), a = await f.browser(), b = await f.browser();
-  assert.equal(a.bootstrap.questions.length, 30);
+  assert.equal(a.bootstrap.questions.length, 29);
   assert.equal(a.bootstrap.columns.length, 10);
   assert.equal(a.bootstrap.model_connected, true);
   assert.equal((await fetch(f.base + '/')).status, 200);

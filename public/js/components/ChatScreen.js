@@ -30,6 +30,7 @@ const ChatScreen={
     new MutationObserver(toBottom).observe(l,{childList:true,subtree:true});
     new ResizeObserver(toBottom).observe(l);
     $("restart1").onclick=leaveConversation;
+    window.addEventListener("beforeunload",e=>{if(this.started()){e.preventDefault();e.returnValue="";}});
     const d=$("leaveDlg");
     $("leaveStay").onclick=()=>d.close();
     d.onclick=e=>{if(e.target===d)d.close();};

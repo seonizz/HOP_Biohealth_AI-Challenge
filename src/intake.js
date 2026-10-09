@@ -1,14 +1,14 @@
-import { isThin, optLabel, optMeta, renderQuestion } from './catalog.js';
+import { isThin, optLabel, optMeta, renderQuestion, renderText } from './catalog.js';
 import { initialQuestionSet, conditionMatches, followMatches, mergeFollow, branchGateIds } from './question-bank.js';
 import { HttpError } from './errors.js';
 import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
 
 const SKIP = '(건너뛰었어요)';
 const WELCOME = '안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.';
-const CHEER = {
-  7:'벌써 3분의 1을 함께 왔어요. 들려주신 이야기 하나하나가 큰 도움이 돼요. 조금만 더 함께해 주세요.',
-  14:'거의 다 왔어요! 이제 몇 가지만 더 여쭤볼게요. 끝까지 함께해 주셔서 고마워요.',
-};
+const CHEER = [
+  [1 / 3, '벌써 3분의 1을 함께 왔어요. 들려주신 이야기 하나하나가 큰 도움이 돼요. 조금만 더 함께해 주세요.'],
+  [0.66, '거의 다 왔어요! 이제 몇 가지만 더 여쭤볼게요. 끝까지 함께해 주셔서 고마워요.'],
+];
 // Old saved intakes keep the original seed; newly created intakes carry their DB snapshot.
 const questionSetOf = state => state.questionSet || initialQuestionSet;
 const subjectOf = question => question.subject;
@@ -33,7 +33,7 @@ function addPrompt(state, question, followUp = false) {
   if (rendered.intro && !followUp) {
     state.log.push({ who: 'ai', text: rendered.intro, fu: false, face: rendered.face });
   }
-  state.log.push({ who: 'ai', text: rendered.q, fu: followUp, face: rendered.face || 'ponder', ...(rendered.why ? { why: rendered.why } : {}) });
+  state.log.push({ who: 'ai', text: rendered.q, fu: followUp || Boolean(rendered.fu), face: rendered.face || 'ponder', ...(rendered.why ? { why: rendered.why } : {}) });
 }
 
 function advance(state, previous) {
@@ -56,7 +56,8 @@ function advance(state, previous) {
   state.history ||= [];
   if (previous === undefined) state.history.push(state.cur);
   else state.history[state.history.length - 1] = state.cur;
-  const cheer = CHEER[state.history.length - 1];
+  const previousIndex = state.history.at(-2)?.i ?? -1;
+  const cheer = CHEER.find(([ratio]) => state.i >= Math.ceil(ratio * questions.length) && previousIndex < Math.ceil(ratio * questions.length))?.[1];
   if (cheer) state.log.push({ who:'ai', text:cheer, fu:false, face:'cheer' });
   addPrompt(state, questions[state.i]);
 }
@@ -174,6 +175,10 @@ export function answerIntake(originalState, input) {
   const answer = normalizeAnswer(question, input);
   const state = structuredClone(originalState);
   state.history = structuredClone(historyOf(originalState));
+  const detail = question.type === 'one' && answer.sel.length === 1 && optMeta(question.opts[answer.sel[0]]);
+  if (detail?.input && detail.ask) {
+    state.log.push({ who:'ai', text:renderText(detail.ask, state), face:question.face || 'ponder', fu:true });
+  }
   state.log.push({ who: 'me', text: answer.text, fu: Boolean(state.pendingFollow) });
 
   if (state.pendingFollow) {
@@ -222,7 +227,8 @@ export function prepareModelAnswer(originalState, input, sourceRevision) {
   const state = discardModelAnswer(originalState);
   const prepared = answerIntake(state, input);
   const logLen = state.log.length;
-  state.log.push(structuredClone(prepared.log[logLen]));
+  const evidenceEnd = prepared.log.findIndex((item, index) => index >= logLen && item.who === 'me') + 1;
+  state.log.push(...structuredClone(prepared.log.slice(logLen, evidenceEnd)));
   // The question snapshot is already held by the base state.
   delete prepared.questionSet;
   state.modelPending = { sourceRevision, input:structuredClone(input), logLen, prepared };
@@ -295,7 +301,7 @@ export function applyModelUpdate(originalState, output) {
   return state;
 }
 
-function stripUiMeta({ g, none, input, ph, ...meta }) { return meta; }
+function stripUiMeta({ g, none, input, ph, ask, ...meta }) { return meta; }
 
 function payloadAnswer(question, answer, state) {
   return {

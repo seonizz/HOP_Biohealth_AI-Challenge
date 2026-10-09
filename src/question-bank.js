@@ -23,10 +23,16 @@ function validateCondition(value, depth = 0) {
 }
 
 function validateDefinition(q, follow = false) {
-  const keys = ['sec','face','q','why','type','ph','short','required','noOwn','noSkip','cue','intro','rare','rare_when','when','opts','follow_up'];
+  const keys = ['sec','face','q','why','type','ph','ph_by_option','ownPh','fu','short','required','noOwn','noSkip','cue','intro','rare','rare_when','when','opts','follow_up'];
   if (!exact(q, keys) || !string(q.q) || !['text','one','multi'].includes(q.type)) fail();
-  for (const key of ['sec','face','why','ph','intro','rare']) if (q[key] !== undefined && !string(q[key])) fail();
-  for (const key of ['short','required','noOwn','noSkip','cue']) if (q[key] !== undefined && typeof q[key] !== 'boolean') fail();
+  for (const key of ['sec','face','why','ph','ownPh','intro','rare']) if (q[key] !== undefined && !string(q[key])) fail();
+  for (const key of ['fu','short','required','noOwn','noSkip','cue']) if (q[key] !== undefined && typeof q[key] !== 'boolean') fail();
+  if (q.ph_by_option !== undefined) {
+    const ph = q.ph_by_option;
+    if (q.type !== 'text' || !string(q.ph) || !exact(ph, ['question_id','values']) ||
+      !slug(ph.question_id) || !plain(ph.values) || !Object.keys(ph.values).length || Object.keys(ph.values).length > 100 ||
+      Object.entries(ph.values).some(([key, value]) => !slug(key) || !string(value))) fail();
+  }
   for (const key of ['when','rare_when']) if (q[key] !== undefined) validateCondition(q[key]);
   if (q.type === 'text') { if (q.opts !== undefined) fail(); }
   else {
@@ -34,7 +40,7 @@ function validateDefinition(q, follow = false) {
     for (const option of q.opts) {
       if (typeof option === 'string') { if (!string(option)) fail(); continue; }
       if (!Array.isArray(option) || option.length !== 2 || !string(option[0]) ||
-        !exact(option[1], ['d','a','x','s','r','p','t','g','none','input','ph'])) fail();
+        !exact(option[1], ['d','a','x','s','r','p','t','g','none','input','ph','ask'])) fail();
       for (const [key, value] of Object.entries(option[1])) {
         if (['d','a','x'].includes(key)) { if (!Number.isFinite(value)) fail(); }
         else if (['none','input'].includes(key)) { if (![true,false,0,1].includes(value)) fail(); }
