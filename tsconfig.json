@@ -8,6 +8,7 @@
     "strict": true,
     "skipLibCheck": true,
     "types": ["node"],
+    "typeRoots": ["./node_modules/@types", "./backend/node_modules/@types"],
     "erasableSyntaxOnly": true
   },
   "include": ["api/**/*.ts", "backend/src/**/*.ts", "backend/scripts/**/*.ts"]

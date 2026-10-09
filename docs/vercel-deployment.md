@@ -23,6 +23,10 @@ Vercel 프로젝트의 **Production 환경변수**에 `.runtime/vercel-secrets.j
 
 이중 모델 경로는 Production 환경변수 `HOP_DUAL_ENABLED=true`로 켭니다. Vercel Function은 모델 워커나 GPU를 시작하지 않습니다. `HOP_V2_MODEL_ENABLED`를 켜지 않은 현재 구성에서는 수락된 입력마다 평가 불가(`-1`)를 DB에 기록하지만 실제 A 응답과 점수 알림은 만들지 않습니다. 같은 체크포인트를 B·A에 연결하는 별도 워커의 설정과 실행법은 [이중 모델 안내](../backend/docs/dual-model/RUNTIME.md)를 참고하십시오. 체크포인트·추론 서버가 확인되기 전에는 실제 모델 평가가 되는 것처럼 표시하지 않습니다.
 
+현재 사용자 지정 Gemma HTTPS 주소, 서버 키, `gemma4:12b` 모델 ID와 설치 모델 digest가 Production 환경변수에 등록되어 있습니다. `HOP_V2_MODEL_ENABLED=false`, `HOP_MODEL_API_INFERENCE_ENABLED=false`를 유지하며, 원격 서버의 상태·모델 목록만 확인했습니다. [모델 입출력 API 안내](../backend/docs/dual-model/MODEL_API.md)에 역할별 계약과 실행 설정이 있으며 공개 명세는 `/openapi-model.json`으로 제공합니다. 역할별 API 서버와 작업 워커는 별도 프로세스이며 Vercel 배포로 시작되지 않습니다.
+
+Vercel의 TypeScript 7 변환은 임시 디렉터리의 설정을 사용하므로 루트와 백엔드 `tsconfig.json`에 상대 `typeRoots`를 명시합니다. 이를 생략하면 의존성이 설치되어 있어도 `TS2688` Node 타입 오류가 발생할 수 있습니다. 검사는 저장소 루트의 `tsc --noEmit`과 임시 설정을 통한 변환으로 수행했습니다.
+
 배포 완료 후 `https://malssi-demo.vercel.app/health/ready`가 `ready:true`를 반환하고, `/api/v2/capabilities`의 `dual_turn_enabled`와 `model_execution_enabled`가 의도한 설정과 같은지 확인합니다. 첫 화면에서 가입 없이 시연을 시작할 수 있는지도 확인합니다. 시연 모드가 아닌 환경에서는 초안 카탈로그가 승인 전이므로 준비 경로가 503을 반환합니다. 브라우저 개발자 도구에서 인증 쿠키에 `Secure`가 붙는지 확인합니다.
 
 ## 3. DB 운영과 무료 플랜 제한
