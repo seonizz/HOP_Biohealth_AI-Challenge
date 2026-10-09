@@ -37,7 +37,7 @@ const ChatInput={
       b.onclick=()=>{
         if(q.type==="one"){
           // "네 [직접 입력]": 고르면 입력창으로 바뀜
-          if(m.input) return ChatInput.render({type:"text",ph:m.ph,noSkip:true},t=>onDone(t.startsWith("(")?optLabel(o):`${optLabel(o)}, ${t}`,[k],""));
+          if(m.input) return ChatInput.render({type:"text",ph:m.ph,noSkip:true},t=>onDone(t.startsWith("(")?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),()=>ChatInput.render(q,onDone,onBack));
           box.innerHTML="";return onDone(optLabel(o),[k],"");
         }
         const on=b.getAttribute("aria-pressed")!=="true";

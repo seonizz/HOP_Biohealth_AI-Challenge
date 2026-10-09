@@ -29,34 +29,39 @@ function buildPayload(){
   return {name:S.name,answers,tags:[...S.tags]};
 }
 
-// ── 이전 질문으로 (바로 직전 1문항까지만) ──
-// 질문을 보여 주기 직전 상태(답·흐름 태그·대화 기록)를 저장해 두었다가 되돌릴 때 복원
+// ── 이전 질문으로 (첫 질문까지 몇 번이든) ──
+// 질문마다 보여 주기 직전 상태(답·흐름 태그·대화 기록)를 S.hist에 쌓아 두었다가 되돌릴 때 복원
 function snapshot(){return {i:S.i,tags:[...S.tags],ans:JSON.parse(JSON.stringify(S.ans)),name:S.name,fuCount:S.fuCount,extraObs:S.extraObs,logLen:S.log.length,dom:ChatScreen.count()};}
 function restore(s){
   Object.assign(S,{i:s.i,tags:new Set(s.tags),ans:s.ans,name:s.name,fuCount:s.fuCount,extraObs:s.extraObs});
   S.log.length=s.logLen;ChatScreen.truncate(s.dom);
 }
-function goBack(){const p=S.prev;if(!p)return;S.prev=S.cur=null;restore(p);ask();}
+function goBack(){if(S.hist.length<2)return;S.hist.pop();restore(S.hist.pop());ask();}
+// 후속·보충 질문에서 뒤로: 방금 답한 본 질문을 다시 물음
+function redo(){restore(S.hist.pop());ask();}
 
 function begin(){
-  S={ans:{},tags:new Set(),i:0,log:[],name:"",fuCount:0,extraObs:"",prev:null,cur:null};
+  S={ans:{},tags:new Set(),i:0,log:[],name:"",fuCount:0,extraObs:"",hist:[]};
   ChatScreen.clear();show("chat");
   ChatScreen.aiSay("안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.","hello");
   setTimeout(ask,700);
 }
+// 응원: 7문항, 14문항에 답할 때마다 끝까지 함께하도록 북돋움 (답한 수 = 쌓인 질문 수 - 1, 뒤로 가면 기록과 함께 사라짐)
+const CHEER={7:"벌써 3분의 1을 함께 왔어요. 들려주신 이야기 하나하나가 큰 도움이 돼요. 조금만 더 함께해 주세요.",14:"거의 다 왔어요! 이제 몇 가지만 더 여쭤볼게요. 끝까지 함께해 주셔서 고마워요."};
 async function ask(){
   while(S.i<Q.length&&Q[S.i].when&&!Q[S.i].when(S))S.i++; // 조건에 맞지 않는 문항은 건너뜀
   if(S.i>=Q.length)return finish();
-  S.prev=S.cur;S.cur=snapshot(); // 되돌린 직후에는 prev가 비어 한 번 더 뒤로 갈 수 없음
+  S.hist.push(snapshot());
   const q=Q[S.i];ChatScreen.progress(S.i/Q.length*100);ChatScreen.section(nm(q.sec));ChatInput.clear();
+  const cheer=CHEER[S.hist.length-1];if(cheer){await ChatScreen.typing("cheer",600);ChatScreen.aiSay(cheer,"cheer");}
   if(q.intro){await ChatScreen.typing(q.face,600);ChatScreen.aiSay(q.intro,q.face);}
   await ChatScreen.typing(q.face,600);ChatScreen.aiSay(q.rare&&RARE(S)?q.rare:q.q,q.face,q.why);
-  ChatInput.render(q,answer,S.prev?goBack:null);
+  ChatInput.render(q,answer,S.hist.length>1?goBack:null); // 첫 질문만 뒤로 가기 없음
 }
 // 후속 질문은 건너뛸 수 없고 빈 답도 받지 않음 (required)
 async function followUp(f,face="ponder"){
   S.fuCount++;await ChatScreen.typing(face,700);ChatScreen.aiSay(f.q,face,"","",true);
-  return new Promise(res=>ChatInput.render({...f,required:true},(text,sel,custom="")=>{ChatScreen.meSay(text);res({text,sel,custom});}));
+  return new Promise(res=>ChatInput.render({...f,required:true},(text,sel,custom="")=>{ChatScreen.meSay(text);res({text,sel,custom});},redo));
 }
 async function answer(text,sel,custom="",skipped=false){
   const q=Q[S.i];ChatScreen.meSay(text);
