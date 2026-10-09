@@ -1,4 +1,4 @@
-// 6. 칼럼 화면: 오늘의 한 편, 말씨 정원(읽은 글 모으기), 분류·안 읽은 글·담아 둔 글 골라 보기, 읽기 화면
+// 6. 칼럼 화면: 머리 배너, 분류·안 읽은 글·담아 둔 글 골라 보기, 카드를 누르면 읽기 화면(본문 전체)
 // 읽음·담음 기록은 이 브라우저에만 저장 (localStorage)
 const COL_KEY="malssi.columns.v1";
 const colKey=a=>a.url.replace(/^https?:\/\//,"");          // 본문(COLUMN_BODIES) 찾는 열쇠
@@ -17,9 +17,12 @@ const ColumnsScreen={
 <section class="screen" id="columns" hidden>
   ${TopBar(`<span class="pill">칼럼</span><button class="ghost" id="colHome" style="margin-left:auto">처음으로</button><button class="btn" id="colGo" style="padding:10px 26px;font-size:18px">말씨와 시작하기</button>`)}
   <div class="cbody">
-    <div class="ctop">
-      <div class="ctoday" id="colToday"></div>
-      <div class="cgarden" id="colGarden"></div>
+    <div class="chero">
+      <div>
+        <h2>곁에 있는 사람을 위한 <em>읽을거리</em></h2>
+        <p>가족이나 친구가 힘들어할 때 무엇을 할 수 있는지, 전문가들이 쓴 글을 모았어요. 카드를 누르면 글 전체를 읽을 수 있어요.</p>
+      </div>
+      <img data-m="cheer" alt="">
     </div>
     <div class="cbar">
       <div class="chips" id="colFilter" role="group" aria-label="분류"></div>
@@ -31,7 +34,6 @@ const ColumnsScreen={
     <p class="note" style="margin:0">글의 저작권은 각 언론사와 기관에 있어요. 원문 링크는 새 탭으로 열려요. 읽은 글과 담아 둔 글은 이 브라우저에만 기억돼요.</p>
   </div>
   <div class="creader" id="colReader" hidden role="dialog" aria-modal="true" aria-labelledby="crTitle"></div>
-  <div class="ctoast" id="colToast" role="status" hidden></div>
 </section>`;},
 
   mount(){
@@ -41,43 +43,15 @@ const ColumnsScreen={
     $("colFilter").innerHTML=["전체",...COLUMN_CATS.map(c=>c[0])].map(c=>`<button class="chip" data-cat="${c}">${c==="통합"?"가족 돌봄 전반":c}</button>`).join("");
     $("colFilter").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.filter=b.dataset.cat;this.draw();});
     $("colOnly").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.only=this.only===b.dataset.only?"":b.dataset.only;this.draw();});
-    this.pick=this.todayIndex();
     this.draw();
   },
   // cat을 주면 그 분류만 보여 주며 열기 (예: 결과 화면의 경향)
   open(cat){this.filter=cat&&COLUMN_CATS.some(c=>c[0]===cat)?cat:"전체";this.only="";this.draw();show("columns");document.querySelector("#columns .cbody").scrollTop=0;window.scrollTo(0,0);},
 
-  // 오늘의 한 편: 날짜마다 다른 글 (같은 날에는 같은 글)
-  todayIndex(){const d=new Date();return (d.getFullYear()*372+d.getMonth()*31+d.getDate())%COLUMNS.length;},
-  shuffle(){let i;do{i=Math.floor(Math.random()*COLUMNS.length);}while(COLUMNS.length>1&&i===this.pick);this.pick=i;this.drawToday(true);},
-
   draw(){
     $("colFilter").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cat===this.filter));
     $("colOnly").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.only===this.only));
-    this.drawToday();this.drawGarden();this.drawGrid();
-  },
-  drawToday(anim){
-    const a=COLUMNS[this.pick];
-    $("colToday").innerHTML=`
-      <div class="ct-art${anim?" pop":""}"><img src="assets/columns/${a.art}.png" alt=""></div>
-      <div class="ct-text">
-        <span class="ct-kicker">오늘의 한 편</span>
-        <h2>${esc(a.title)}</h2>
-        <p>${esc(a.lead)}</p>
-        <div class="ct-act"><button class="btn" id="ctRead">읽어 보기</button><button class="ghost" id="ctShuffle">🎲 다른 글 뽑기</button></div>
-      </div>`;
-    $("ctRead").onclick=()=>this.read(COLUMNS.indexOf(a));
-    $("ctShuffle").onclick=()=>this.shuffle();
-  },
-  // 말씨 정원: 끝까지 읽은 글의 말씨가 하나씩 찾아와요
-  drawGarden(){
-    const n=COLUMNS.filter(a=>this.isRead(a)).length;
-    $("colGarden").innerHTML=`
-      <div class="cg-head"><b>말씨 정원</b><span>${n} / ${COLUMNS.length}</span></div>
-      <div class="cg-bar" aria-hidden="true"><i style="width:${n/COLUMNS.length*100}%"></i></div>
-      <div class="cg-pots">${COLUMNS.map((a,i)=>`<button class="cg-pot${this.isRead(a)?" on":""}" data-i="${i}" title="${esc(a.artLabel)} · ${esc(a.title)}" aria-label="${esc(a.title)} ${this.isRead(a)?"(읽음)":"(아직 안 읽음)"}"><img src="assets/columns/${a.art}.png" alt=""></button>`).join("")}</div>
-      <p>${n===COLUMNS.length?"정원이 가득 찼어요! 모든 글을 읽어 주셔서 고마워요.":n?"글을 끝까지 읽으면 말씨 친구가 정원에 찾아와요.":"글을 끝까지 읽으면 말씨 친구가 하나씩 정원에 찾아와요. 첫 친구를 만나 보세요!"}</p>`;
-    $("colGarden").querySelectorAll(".cg-pot").forEach(b=>b.onclick=()=>this.read(+b.dataset.i));
+    this.drawGrid();
   },
   drawGrid(){
     const list=COLUMNS.map((a,i)=>[a,i]).filter(([a])=>(this.filter==="전체"||a.cat===this.filter)&&(this.only!=="unread"||!this.isRead(a))&&(this.only!=="saved"||this.isSaved(a)));
@@ -96,9 +70,7 @@ const ColumnsScreen={
     $("colGrid").querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>this.toggleSave(COLUMNS[+b.dataset.save]));
   },
   toggleSave(a){const s=this.st.saved;s.includes(a.art)?s.splice(s.indexOf(a.art),1):s.push(a.art);this.save();this.draw();if(this.cur!=null)this.drawReaderFoot();},
-  markRead(a){if(this.isRead(a))return;this.st.read.push(a.art);this.save();this.draw();this.toast(`정원에 '${a.artLabel}' 말씨가 찾아왔어요!`);},
-  toast(t){const el=$("colToast");el.textContent=t;el.hidden=false;clearTimeout(this._tt);this._tt=setTimeout(()=>el.hidden=true,2600);},
-
+  markRead(a){if(this.isRead(a))return;this.st.read.push(a.art);this.save();this.draw();},
   // ── 읽기 화면 ──
   size:1,
   read(i){
@@ -134,7 +106,7 @@ const ColumnsScreen={
   drawReaderFoot(){
     const i=this.cur,a=COLUMNS[i],n=COLUMNS.length,prev=COLUMNS[(i-1+n)%n],next=COLUMNS[(i+1)%n];
     $("crFoot").innerHTML=`
-      <div class="cr-end"><img src="${M[this.isRead(a)?"cheer":"listen"]}" alt=""><p>${this.isRead(a)?`끝까지 읽어 주셔서 고마워요. '${esc(a.artLabel)}' 말씨가 정원에 있어요.`:"여기까지 읽으셨다면, 다 읽었다고 알려 주세요."}</p></div>
+      <div class="cr-end"><img src="${M[this.isRead(a)?"cheer":"listen"]}" alt=""><p>${this.isRead(a)?"끝까지 읽어 주셔서 고마워요.":"여기까지 읽으셨다면, 다 읽었다고 알려 주세요."}</p></div>
       <div class="cr-act">
         ${this.isRead(a)?"":`<button class="btn" id="crDone">🌱 다 읽었어요</button>`}
         <button class="ghost" id="crSave" aria-pressed="${this.isSaved(a)}">${this.isSaved(a)?"♥ 담아 뒀어요":"♡ 마음에 담기"}</button>
