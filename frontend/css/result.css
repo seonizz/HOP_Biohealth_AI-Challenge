@@ -1,6 +1,6 @@
 /* 결과 (ResultScreen) */
-#result .wrapr{flex:1;display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:56px;align-items:center;margin-top:16px}
-.rside{text-align:center}
+#result .wrapr{flex:1;display:grid;grid-template-columns:minmax(0,.7fr) minmax(0,1.3fr);gap:56px;align-items:start;margin-top:16px}
+.rside{text-align:center;position:sticky;top:24px} /* 말씨는 위쪽에 두고, 카드를 내려 읽어도 따라옴 */
 .rside img{width:min(78%,380px);animation:bob 3.4s ease-in-out infinite}
 .rside h2{font-family:var(--display);font-weight:400;font-size:40px;line-height:1.3;margin:14px 0 8px;text-wrap:balance}
 .rside p{color:var(--muted);margin:0}
@@ -8,4 +8,4 @@
 .next{display:flex;gap:18px;align-items:center}
 .next img{width:72px;flex:none}
 .actions{display:flex;gap:12px;justify-content:flex-end}
-@media (max-width:900px){#result .wrapr{grid-template-columns:1fr}}
+@media (max-width:900px){#result .wrapr{grid-template-columns:1fr}.rside{position:static}}
