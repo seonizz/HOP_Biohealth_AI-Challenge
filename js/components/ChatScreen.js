@@ -9,10 +9,11 @@ const ChatScreen={
   </div>
 </section>`;},
   mount(){
-    // 자동 스크롤: 메시지 추가, 입력창 크기 변화 때마다 맨 아래로
-    const scrollDown=()=>{const l=$("log");requestAnimationFrame(()=>l.scrollTo({top:l.scrollHeight,behavior:matchMedia("(prefers-reduced-motion:reduce)").matches?"auto":"smooth"}));};
-    new MutationObserver(scrollDown).observe($("log"),{childList:true,subtree:true});
-    new ResizeObserver(scrollDown).observe($("log"));
+    // 자동 스크롤: 메시지 추가, 입력 상자 크기 변화(대화창이 줄어듦) 때마다 즉시 맨 아래로
+    // (부드러운 스크롤은 진행 중에 입력 상자가 커지면 예전 위치에서 멈춰 맨 아래까지 가지 못해서 쓰지 않음)
+    const l=$("log"),toBottom=()=>{l.scrollTop=l.scrollHeight;};
+    new MutationObserver(toBottom).observe(l,{childList:true,subtree:true});
+    new ResizeObserver(toBottom).observe(l);
     $("restart1").onclick=()=>show("start");
   },
   clear(){$("log").innerHTML="";},
