@@ -85,13 +85,13 @@ function conversationHarness(request, { realUI = false } = {}) {
   const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo']);
   document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden></div>';
   const context = vm.createContext({
-    document, window:{ scrollTo() {} }, StartScreen: { updRecN() {} },
+    document, window:{ scrollTo() {} }, StartScreen: { updRecN() {} }, setTimeout, clearTimeout,
     M: { hello:'hello.png', ponder:'ponder.png', hear:'hear.png' },
     ...(!realUI ? { ChatInput: { clear() {}, render() {}, error(message) { throw new Error(message); } } } : {}),
     API: { request },
   });
   vm.runInContext(script('core/utils.js') + (realUI ? script('core/questions.js') + script('components/ChatInput.js') : '') + script('components/ChatScreen.js') + script('core/conversation.js') + '\nglobalThis.ui = ChatScreen; globalThis.flow = { begin, leaveConversation, renderConversation, show, finish, answer, goBack };', context);
-  if (!realUI) context.ui.typing = (_, work) => Promise.resolve(work);
+  if (!realUI) context.ui.typing = (_, work) => Promise.resolve(typeof work === 'function' ? work() : work);
   return { document, context };
 }
 
@@ -360,6 +360,7 @@ test('a lost answer response is reconciled from server records after a revision 
   document.getElementById('ta').value = '곁에 있고 싶어요.'; document.getElementById('send').click();
   answerResponse.reject(Object.assign(new Error('현재 기록을 확인해 주세요.'), { status:409 })); await settleUI();
   assert.equal(document.getElementById('log').querySelectorAll('.me').length, 1);
+  assert.ok(document.getElementById('log').querySelector('.dots'), 'waiting remains visible during the recovery GET');
   readResponse.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:'곁에 있고 싶어요.', fu:false }, nextPrompt] }); await settleUI();
   assert.deepEqual(calls, [['/api/intakes/intake-1/answers','POST'], ['/api/intakes/intake-1','GET']]);
   assert.equal(document.getElementById('log').querySelectorAll('.me').length, 1);
@@ -399,3 +400,134 @@ test('leaving while the first answer is pending confirms exit and old replies do
   assert.equal(log.querySelector('.dots'), null);
   assert.equal(log.querySelectorAll('.me').length, 0);
 });
+
+test('user bubble and waiting indicator get a paint before the HTTP request starts', async () => {
+  const response = deferred(), frames = []; let calls = 0;
+  const { document, context } = conversationHarness(() => { calls++; return response.promise; }, { realUI:true });
+  context.requestAnimationFrame = callback => frames.push(callback);
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+  document.getElementById('ta').value = '먼저 인사하고 싶어요.'; document.getElementById('send').click();
+  const log = document.getElementById('log');
+  assert.equal(log.querySelector('.me').textContent, '먼저 인사하고 싶어요.');
+  assert.ok(log.querySelector('.dots')); assert.equal(calls, 0);
+  frames.shift()(); await settleUI(); assert.equal(calls, 0);
+  frames.shift()(); await settleUI(); assert.equal(calls, 1);
+  response.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:'먼저 인사하고 싶어요.', fu:false }, nextPrompt] }); await settleUI();
+  assert.equal(log.querySelector('.dots'), null);
+  assert.equal(log.querySelectorAll('.me').length, 1);
+});
+
+test('leaving before the first paint cancels a request that has not started', async () => {
+  const frames = []; let calls = 0;
+  const { document, context } = conversationHarness(() => { calls++; return Promise.resolve(); }, { realUI:true });
+  context.requestAnimationFrame = callback => frames.push(callback);
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0); context.flow.show('chat');
+  document.getElementById('ta').value = '보내기 전 입력'; document.getElementById('send').click();
+  context.flow.leaveConversation(); document.getElementById('leaveGo').click();
+  frames.shift()(); frames.shift()(); await settleUI();
+  assert.equal(calls, 0);
+  assert.equal(document.getElementById('log').querySelector('.dots'), null);
+  assert.equal(document.getElementById('start').hidden, false);
+});
+
+test('a hidden tab still sends its answer without waiting for a suspended paint', async () => {
+  const response = deferred(); let calls = 0;
+  const { document, context } = conversationHarness(() => { calls++; return response.promise; }, { realUI:true });
+  document.visibilityState = 'hidden';
+  context.requestAnimationFrame = () => assert.fail('hidden tabs must not depend on paint scheduling');
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+  document.getElementById('ta').value = '화면을 떠나도 저장할 입력'; document.getElementById('send').click();
+  assert.equal(calls, 1); assert.ok(document.getElementById('log').querySelector('.dots'));
+  response.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:'화면을 떠나도 저장할 입력', fu:false }, nextPrompt] }); await settleUI();
+  assert.equal(document.getElementById('log').querySelectorAll('.me').length, 1);
+});
+
+for (const code of ['MODEL_UNAVAILABLE', 'MODEL_INVALID_RESPONSE']) {
+  test(`${code} keeps the current question and user bubble with a retry action`, async () => {
+    const response = deferred(), read = deferred(), calls = [];
+    const { document, context } = conversationHarness((path, options) => { calls.push([path, options]); return options ? response.promise : read.promise; }, { realUI:true });
+    const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+    document.getElementById('ta').value = '저장하고 기다릴 답변'; document.getElementById('send').click();
+    response.reject(Object.assign(new Error('내부 모델 오류 설명'), { status:code === 'MODEL_UNAVAILABLE' ? 503 : 502, code })); await settleUI();
+    const log = document.getElementById('log'), input = document.getElementById('input');
+    assert.ok(log.querySelector('.dots'), 'recovery GET also keeps the waiting indicator');
+    assert.equal(input.dataset.busy, 'true');
+    read.resolve({ ...view, revision:2, model_pending:true, pending_answer:calls[0][1].body, log:[prompt,{who:'me',text:'저장하고 기다릴 답변',fu:false}] }); await settleUI();
+    assert.equal(log.querySelector('.me').textContent, '저장하고 기다릴 답변');
+    assert.equal(log.querySelectorAll('.me').length, 1);
+    assert.equal(log.textContent.includes(nextPrompt.text), false);
+    assert.equal(log.querySelector('.dots'), null);
+    assert.equal(document.getElementById('ta').value, '저장하고 기다릴 답변', 'failed input remains editable');
+    assert.equal(input.querySelector('.api-error').querySelector('p').textContent, '답변을 준비하지 못했어요. 다시 시도해 주세요.');
+    assert.equal(input.querySelector('.api-error').querySelector('button').textContent, '다시 시도');
+  });
+}
+
+test('editing after a model failure uses the recovered pending revision and rejects old input reuse', async () => {
+  const first = deferred(), read = deferred(), second = deferred(), calls = [];
+  const { document, context } = conversationHarness((path, options) => {
+    calls.push([path, options]);
+    return !options ? read.promise : calls.length === 1 ? first.promise : second.promise;
+  }, { realUI:true });
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+  document.getElementById('ta').value = '첫 입력'; document.getElementById('send').click();
+  first.reject(Object.assign(new Error('모델 실패'), { status:503, code:'MODEL_UNAVAILABLE' })); await settleUI();
+  read.resolve({ ...view, revision:2, model_pending:true, pending_answer:calls[0][1].body, log:[prompt,{who:'me',text:'첫 입력',fu:false}] }); await settleUI();
+  document.getElementById('ta').value = '수정한 입력'; document.getElementById('send').click();
+  assert.equal(calls[2][1].body.revision, 2);
+  const log = document.getElementById('log');
+  assert.equal(log.querySelectorAll('.me').length, 1);
+  assert.equal(log.querySelector('.me').textContent, '수정한 입력');
+  assert.ok(log.querySelector('.dots'));
+  second.resolve({ ...view, revision:4, log:[prompt,{who:'me',text:'수정한 입력',fu:false},nextPrompt] }); await settleUI();
+  assert.equal(log.querySelectorAll('.me').length, 1);
+  assert.equal(log.textContent.includes(nextPrompt.text), true);
+});
+
+test('a pending conflict after a lost response preserves the edited draft and retries with the latest revision', async () => {
+  const first = deferred(), conflict = deferred(), read = deferred(), retry = deferred(), calls = [];
+  const { document, context } = conversationHarness((path, options) => {
+    calls.push([path, options]); return [first,conflict,read,retry][calls.length-1].promise;
+  }, { realUI:true });
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+  document.getElementById('ta').value = '응답을 놓친 입력'; document.getElementById('send').click();
+  first.reject(Object.assign(new Error('연결 실패'),{status:0})); await settleUI();
+  document.getElementById('ta').value = '보존할 수정 입력'; document.getElementById('send').click();
+  conflict.reject(Object.assign(new Error('현재 질문을 다시 확인해 주세요.'),{status:409})); await settleUI();
+  read.resolve({ ...view, revision:2, model_pending:true, pending_answer:calls[0][1].body, log:[prompt,{who:'me',text:'응답을 놓친 입력',fu:false}] }); await settleUI();
+  assert.equal(document.getElementById('ta').value, '보존할 수정 입력');
+  const input=document.getElementById('input'), log=document.getElementById('log');
+  input.querySelector('.api-error').querySelector('button').click();
+  assert.equal(calls[3][1].body.revision, 2);
+  assert.equal(calls[3][1].body.text, '보존할 수정 입력');
+  assert.equal(log.querySelectorAll('.me').length,1);
+  assert.equal(log.querySelector('.me').textContent,'보존할 수정 입력');
+  retry.resolve({ ...view, revision:4, log:[prompt,{who:'me',text:'보존할 수정 입력',fu:false},nextPrompt] }); await settleUI();
+  assert.equal(log.textContent.includes(nextPrompt.text),true);
+});
+
+for (const edit of [false, true]) {
+  test(`server model-pending answer ${edit ? 'edits' : 'retries'} without a duplicate and waits for success`, async () => {
+    const response = deferred(), calls = [];
+    const { document, context } = conversationHarness((path, options) => { calls.push([path, options.body]); return response.promise; }, { realUI:true });
+    const view = conversationView('친구');
+    view.revision = 2; view.model_pending = true;
+    view.pending_answer = { revision:1, question_id:'want', text:'먼저 안부를 물을게요.', selected:[], custom:'', skipped:false, follow_up:false };
+    view.log = [prompt, { who:'me', text:view.pending_answer.text, fu:false }];
+    context.flow.renderConversation(view, 0);
+    const input = document.getElementById('input'), log = document.getElementById('log');
+    assert.ok(input.querySelector('.api-error'));
+    if (edit) { document.getElementById('ta').value = '수정해서 기다리는 입력'; document.getElementById('send').click(); }
+    else input.querySelector('.api-error').querySelector('button').click();
+    assert.equal(calls.length, 1); assert.equal(calls[0][1].revision, 2);
+    assert.equal(log.querySelectorAll('.me').length, 1);
+    assert.equal(log.querySelector('.me').textContent, edit ? '수정해서 기다리는 입력' : view.pending_answer.text);
+    assert.ok(log.querySelector('.dots'));
+    assert.equal(log.textContent.includes(nextPrompt.text), false);
+    response.resolve({ ...conversationView('친구'), revision:4, log:[prompt, { who:'me', text:calls[0][1].text, fu:false }, nextPrompt] }); await settleUI();
+    assert.equal(log.querySelector('.dots'), null);
+    assert.equal(log.querySelectorAll('.me').length, 1);
+    assert.equal(log.textContent.includes(nextPrompt.text), true);
+    assert.equal(input.querySelector('.api-error'), null);
+  });
+}

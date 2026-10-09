@@ -75,7 +75,18 @@ const ChatScreen={
   },
   meSay(t){const d=document.createElement("div");d.className="msg me";d.textContent=t;$("log").appendChild(d);$("log").scrollTop=1e9;},
   // 서버/모델을 기다리는 동안 입력 중… 점 애니메이션을 보여 줘요.
-  typing(face,work){const r=document.createElement("div");r.className="ai-row";
+  async typing(face,work){const r=document.createElement("div");r.className="ai-row";
     r.innerHTML=`<img src="${M[face]}" alt=""><div class="msg" role="status" aria-label="답변을 기다리고 있어요"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span></div>`;
-    $("log").appendChild(r);$("log").scrollTop=1e9;return Promise.resolve(work).finally(()=>r.remove());}
+    $("log").appendChild(r);$("log").scrollTop=1e9;
+    try{
+      if(typeof work==="function"){
+        // 말풍선과 대기 표시를 한 번 그린 뒤 요청을 시작해요.
+        if(typeof requestAnimationFrame==="function"&&document.visibilityState!=="hidden")await new Promise(resolve=>{
+          const timer=setTimeout(resolve,100);
+          requestAnimationFrame(()=>requestAnimationFrame(()=>{clearTimeout(timer);resolve();}));
+        });
+        return await work();
+      }
+      return await work;
+    }finally{r.remove();}}
 };

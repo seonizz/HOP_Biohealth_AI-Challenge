@@ -7,7 +7,8 @@ import { Store, loadContentKey } from './store.js';
 import { HttpError, object } from './errors.js';
 import { columns, categories } from './catalog.js';
 import { questionCatalogOf } from './question-bank.js';
-import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate } from './intake.js';
+import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate,
+  prepareModelAnswer, completeModelAnswer, discardModelAnswer } from './intake.js';
 import { ModelGateway } from './model.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
@@ -34,6 +35,12 @@ const revisionOf = value => {
   if (!Number.isInteger(value) || value < 0) throw new HttpError(422, 'INVALID_REVISION', '현재 대화 버전을 확인해 주세요.');
   return value;
 };
+const sameAnswer = (a, b) => JSON.stringify([
+  a.question_id, a.text ?? '', a.selected ?? [], a.custom ?? '', a.skipped === undefined ? false : a.skipped, a.follow_up === undefined ? false : a.follow_up,
+]) === JSON.stringify([
+  b.question_id, b.text ?? '', b.selected ?? [], b.custom ?? '', b.skipped === undefined ? false : b.skipped, b.follow_up === undefined ? false : b.follow_up,
+]);
+const revisionConflict = () => new HttpError(409, 'REVISION_CONFLICT', '다른 요청이 먼저 반영됐어요. 현재 질문을 다시 확인해 주세요.');
 
 export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema = 'public', key, sessionDays = 30, publicOrigin, allowedOrigins = [], rateLimit = 600, gateway } = {}) {
   if (!Array.isArray(allowedOrigins) || allowedOrigins.some(value => {
@@ -49,6 +56,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   }) : null;
   const limits = new Map();
   const resultRuns = new Map();
+  const modelRuns = new Map();
   const view = row => ({ id: row.id, revision: row.revision, name:row.state.name, chat_title:row.state.chatTitle || '', ...currentView(row.state), log: row.state.log });
   const server = createServer(async (req, res) => {
     const requestId = randomUUID();
@@ -150,28 +158,47 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if (method === 'POST' && ['answers','back'].includes(action)) {
           const input = object(await body(req), action === 'back' ? ['revision'] : ['revision','question_id','text','selected','custom','skipped','follow_up']);
           const revision = revisionOf(input.revision);
-          let row = await store.updateIntake(owner, id, revision, state => {
-            const next = action === 'back' ? backIntake(state) : answerIntake(state, input);
+          if (gateway && action === 'answers' && !input.skipped) {
+            let row = await store.intake(owner, id);
+            const retry = row.state.modelPending && sameAnswer(row.state.modelPending.input, input);
+            if (revision !== row.revision && !(retry && revision === row.state.modelPending.sourceRevision)) throw revisionConflict();
+            if (!retry) {
+              try {
+                row = await store.updateIntake(owner, id, row.revision,
+                  state => prepareModelAnswer(state, input, revision), 'user_answer');
+              } catch (error) {
+                if (!(error instanceof HttpError) || error.code !== 'REVISION_CONFLICT') throw error;
+                // Identical concurrent submissions share the saved pending turn.
+                const latest = await store.intake(owner, id);
+                if (latest.state.modelPending?.sourceRevision !== revision || !sameAnswer(latest.state.modelPending.input, input)) throw error;
+                row = latest;
+              }
+            }
+            const runKey = `${owner}:${id}:${row.revision}`;
+            const run = async () => {
+              const context = buildContext(row.state);
+              const memory = await gateway.updateState(context, row.state.agentMemory || null);
+              return store.updateIntake(owner, id, row.revision,
+                state => completeModelAnswer(state, memory), 'model_update');
+            };
+            if (!modelRuns.has(runKey)) modelRuns.set(runKey, run().finally(() => modelRuns.delete(runKey)));
+            try {
+              return json(res, 200, view(await modelRuns.get(runKey)));
+            } catch (error) {
+              if (error instanceof HttpError && error.code.startsWith('MODEL_')) {
+                console.error(`[${requestId}] model state update failed (${error.code})`);
+              }
+              // The pending input remains saved; an error cannot advance a prompt.
+              throw error;
+            }
+          }
+          const row = await store.updateIntake(owner, id, revision, state => {
+            const next = action === 'back' ? backIntake(state) : answerIntake(discardModelAnswer(state), input);
             // A correction invalidates model interpretations of the reverted answers.
             if (action === 'back') { delete next.agentMemory; delete next.agentResult; delete next.agentRecord; }
             return next;
           }, action === 'back' ? 'correction' : 'user_answer');
-          let warning;
-          if (gateway && action === 'answers' && !input.skipped) {
-            const context = (await store.context(owner, id)).context;
-            let memory;
-            try {
-              memory = await gateway.updateState(context, row.state.agentMemory || null);
-            } catch (error) {
-              if (!(error instanceof HttpError) || !error.code.startsWith('MODEL_')) throw error;
-              // Input was committed before the external call, so an outage cannot lose it.
-              console.error(`[${requestId}] model state update failed (${error.code})`);
-              warning = '답변은 저장했어요. 모델 상태 정리는 다음 답변에서 다시 시도해요.';
-            }
-            row = warning ? await store.intake(owner, id)
-              : await store.updateIntake(owner, id, row.revision, state => applyModelUpdate(state, memory), 'model_update');
-          }
-          return json(res, 200, { ...view(row), ...(warning ? { model_warning:warning } : {}) });
+          return json(res, 200, view(row));
         }
         if (method === 'POST' && action === 'result') {
           const input = object(await body(req), ['revision']);

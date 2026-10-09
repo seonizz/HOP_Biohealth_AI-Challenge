@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { questions, questionCatalog, columns, categories, optLabel } from '../src/catalog.js';
-import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate } from '../src/intake.js';
+import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate,
+  prepareModelAnswer, completeModelAnswer, discardModelAnswer } from '../src/intake.js';
 import { initialQuestionRows, createQuestionSet } from '../src/question-bank.js';
 
 const questionIds = ['name', 'want', 'goal', 'rel', 'contact', 'mood', 'dur', 'freq', 'describe', 'concern', 'cause', 'events', 'others_why', 'support', 'burden', 'values', 'values_effect', 'extra', 'coping', 'help', 'barrier', 'need', 'others_help', 'moment', 'moment_freq', 'feeling', 'cgchange', 'cgchange_more', 'mycoping', 'mysupport'];
@@ -31,6 +32,80 @@ function advanceTo(id, overrides = {}) {
 const modelOutput = (skip = [], nameIndex = null) => ({
   patient_state:{ summary:'사용자가 보고한 현재 상황', facts:[], unknowns:[], user_goal:'확인되지 않음' },
   name_index:nameIndex, question_plan:{ skip },
+});
+
+test('pending model answers preserve the current prompt while context holds the submitted evidence', () => {
+  const original = createIntake();
+  const input = { revision:0, question_id:'name', text:'내 동생 지수' };
+  const pending = prepareModelAnswer(original, input, 0);
+  assert.equal(currentView(pending).question.id, 'name');
+  assert.equal(currentView(pending).progress, 0);
+  assert.equal(currentView(pending).status, 'active');
+  assert.equal(currentView(pending).model_pending, true);
+  assert.deepEqual(currentView(pending).pending_answer, input);
+  assert.deepEqual(pending.ans, {});
+  assert.equal(pending.name, '');
+  assert.equal(pending.log.length, original.log.length + 1);
+  assert.deepEqual(pending.log.at(-1), { who:'me', text:'내 동생 지수', fu:false });
+  assert.equal(pending.modelPending.prepared.questionSet, undefined);
+  const context = buildContext(pending);
+  assert.equal(context.patient.fields.name.rawText, '내 동생 지수');
+  assert.deepEqual(context.log, pending.log);
+  const completed = completeModelAnswer(pending, modelOutput([], { alias:'지수', source_question_id:'name', quote:'지수' }));
+  assert.equal(completed.modelPending, undefined);
+  assert.equal(currentView(completed).question.id, 'want');
+  assert.equal(completed.chatTitle, '지수');
+  assert.equal(completed.log.filter(item => item.who === 'me').length, 1);
+  assert.deepEqual(discardModelAnswer(pending), original);
+  assert.deepEqual(original.ans, {});
+});
+
+test('replacing a pending model answer uses the original question state and replaces its chat entry', () => {
+  const original = advanceTo('want');
+  const first = prepareModelAnswer(original, { question_id:'want', text:'이전 문장입니다.' }, 2);
+  const replacement = prepareModelAnswer(first, { question_id:'want', text:'수정한 문장입니다.' }, 3);
+  assert.equal(replacement.log.at(-1).text, '수정한 문장입니다.');
+  assert.equal(replacement.log.some(item => item.text === '이전 문장입니다.'), false);
+  assert.equal(buildContext(replacement).user_goal.message.rawText, '수정한 문장입니다.');
+  assert.equal(currentView(replacement).question.id, 'want');
+  assert.deepEqual(replacement.ans, original.ans);
+  const corrected = backIntake(replacement);
+  assert.equal(currentView(corrected).question.id, 'name');
+  assert.equal(corrected.modelPending, undefined);
+  assert.equal(corrected.log.some(item => item.who === 'me'), false);
+});
+
+test('pending model turns defer both a follow-up prompt and its completion safely', () => {
+  const base = advanceTo('rel');
+  const first = prepareModelAnswer(base, { question_id:'rel', text:'짝', custom:'짝' }, 6);
+  assert.equal(currentView(first).question.follow_up, undefined);
+  assert.equal(currentView(first).pendingFollow, false);
+  assert.equal(buildContext(first).patient.fields.rel.rawText, '짝');
+  assert.equal(buildContext(first).patient.fields.rel.follow_up_pending, true);
+  const follow = completeModelAnswer(first, modelOutput());
+  assert.equal(currentView(follow).question.follow_up, true);
+  const pending = prepareModelAnswer(follow, { question_id:'rel', follow_up:true, text:'회사에서 매일 만나는 동료예요.' }, 8);
+  assert.equal(currentView(pending).question.follow_up, true);
+  assert.equal(pending.log.at(-1).fu, true);
+  assert.equal(buildContext(pending).patient.fields.rel.followUp.answer.rawText, '회사에서 매일 만나는 동료예요.');
+  const next = completeModelAnswer(pending, modelOutput());
+  assert.equal(currentView(next).question.id, 'contact');
+  assert.equal(currentView(next).pendingFollow, false);
+  assert.equal(backIntake(pending).modelPending, undefined);
+  assert.equal(currentView(backIntake(pending)).question.id, 'rel');
+  assert.equal(currentView(backIntake(pending)).pendingFollow, false);
+});
+
+test('the final submitted answer remains active until a model turn succeeds', () => {
+  const last = advanceTo('mysupport');
+  const pending = prepareModelAnswer(last, { question_id:'mysupport', selected:[0] }, 50);
+  assert.equal(currentView(pending).status, 'active');
+  assert.equal(currentView(pending).question.id, 'mysupport');
+  assert.ok(currentView(pending).progress < 100);
+  assert.equal(buildContext(pending).supporter.fields.mysupport.status, 'answered');
+  const completed = completeModelAnswer(pending, modelOutput());
+  assert.equal(currentView(completed).status, 'ready');
+  assert.equal(currentView(completed).question, null);
 });
 
 test('model indexes an explicit alias and rebuilds the next prompt without changing the name evidence', () => {

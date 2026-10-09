@@ -4,7 +4,7 @@ import { randomBytes } from 'node:crypto';
 import pg from 'pg';
 import { request as httpRequest } from 'node:http';
 import { createApp } from '../src/server.js';
-import { createIntake } from '../src/intake.js';
+import { createIntake, answerIntake, currentView } from '../src/intake.js';
 import { HttpError } from '../src/errors.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -212,17 +212,254 @@ test('server intake updates model memory and records; back/correct and deletion 
   assert.equal((await f.request(session, `/api/intakes/${id}/context`)).status, 404);
 });
 
-test('model failure retains original input, and revision conflict prevents duplicate answer', { skip:!databaseUrl }, async t => {
-  const f = await fixture(t, { updateState:async () => { throw new HttpError(503, 'MODEL_UNAVAILABLE', '모델에 연결하지 못했어요.'); } }), session = await f.browser();
+test('model failures retain the submitted evidence and current prompt; retries commit only one answer', { skip:!databaseUrl }, async t => {
+  let calls = 0;
+  const f = await fixture(t, { updateState:async context => {
+    calls++;
+    assert.equal(context.patient.fields.name.rawText, '친구');
+    if (calls === 1) throw new HttpError(503, 'MODEL_UNAVAILABLE', '모델에 연결하지 못했어요.');
+    if (calls === 2) throw new HttpError(502, 'MODEL_INVALID_RESPONSE', '모델의 답변을 확인하지 못했어요.');
+    return update(memory);
+  } }), session = await f.browser();
   const row = (await f.request(session, '/api/intakes', 'POST', {})).data;
   const input = { revision:0, question_id:'name', text:'친구', selected:[] };
   const saved = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', input);
-  assert.equal(saved.status, 200);
-  assert.ok(saved.data.model_warning);
-  assert.equal(saved.data.name, '친구');
-  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', input)).status, 409);
+  assert.equal(saved.status, 503);
+  assert.equal(saved.data.error.code, 'MODEL_UNAVAILABLE');
+  assert.equal(saved.data.question, undefined);
+  const pending = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  assert.equal(pending.question.id, 'name');
+  assert.equal(pending.status, 'active');
+  assert.equal(pending.progress, row.progress);
+  assert.equal(pending.name, '');
+  assert.equal(pending.model_pending, true);
+  assert.deepEqual(pending.pending_answer, input);
+  assert.deepEqual(pending.log, [...row.log, { who:'me',text:'친구',fu:false }]);
   const ctx = await f.request(session, `/api/intakes/${row.id}/context`);
   assert.equal(ctx.data.context.patient.fields.name.rawText, '친구');
+  assert.deepEqual(ctx.data.context.log, pending.log);
+  const repeatedFailure = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', input);
+  assert.equal(repeatedFailure.status, 502);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}`)).data.revision, 1);
+  const completed = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', { ...input,revision:pending.revision });
+  assert.equal(completed.status, 200);
+  assert.equal(completed.data.question.id, 'want');
+  assert.equal(completed.data.model_pending, undefined);
+  assert.equal(completed.data.log.filter(item => item.who === 'me').length, 1);
+  assert.equal(calls, 3);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', input)).status, 409);
+  const history = await f.store.pool.query('SELECT revision,reason FROM patient_state_revisions WHERE intake_id=$1 ORDER BY revision', [row.id]);
+  assert.deepEqual(history.rows, [{revision:0,reason:'created'},{revision:1,reason:'user_answer'},{revision:2,reason:'model_update'}]);
+});
+
+test('editing a failed pending answer replaces its current evidence and keeps both encrypted revisions', { skip:!databaseUrl }, async t => {
+  let calls = 0;
+  const f = await fixture(t, { updateState:async context => {
+    if (++calls === 1) throw new HttpError(503, 'MODEL_UNAVAILABLE', '잠시 후 다시 시도해 주세요.');
+    assert.equal(context.patient.fields.name.rawText, '내 동생 지수');
+    assert.equal(context.log.some(item => item.text === '친구'), false);
+    return update(memory);
+  } }), session = await f.browser();
+  const owner = (await f.store.browser(session.cookie.slice(15))).id;
+  const row = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  const first = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:0,question_id:'name',text:'친구'});
+  assert.equal(first.status, 503);
+  const pending = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  const replacement = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:pending.revision,question_id:'name',text:'내 동생 지수'});
+  assert.equal(replacement.status, 200);
+  assert.equal(replacement.data.question.id, 'want');
+  assert.deepEqual(replacement.data.log.filter(item => item.who === 'me').map(item => item.text), ['내 동생 지수']);
+  const history = (await f.store.pool.query('SELECT revision,content FROM patient_state_revisions WHERE intake_id=$1 ORDER BY revision', [row.id])).rows;
+  assert.equal(history.length, 4);
+  assert.equal(f.store.open(history[1].content, `${owner}:patient-history:${row.id}:1`).patient.fields.name.rawText, '친구');
+  assert.equal(f.store.open(history[2].content, `${owner}:patient-history:${row.id}:2`).patient.fields.name.rawText, '내 동생 지수');
+  assert.equal(history[1].content.includes('친구'), false);
+  assert.equal(history[2].content.includes('내 동생 지수'), false);
+});
+
+test('stale answer, back and skip requests cannot replace or cancel a newer pending answer', { skip:!databaseUrl }, async t => {
+  let calls = 0;
+  const f = await fixture(t, {updateState:async () => {calls++;throw new HttpError(503,'MODEL_UNAVAILABLE','잠시 후 다시 시도해 주세요.');}});
+  const session = await f.browser();
+  const row = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  const first = {revision:0,question_id:'name',text:'처음 친구'};
+  const second = {question_id:'name',text:'수정 친구'};
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', first)).status, 503);
+  const pending = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  // sourceRevision is only a retry allowance, not authority to change input.
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {...second,revision:first.revision})).status, 409);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {...second,revision:pending.revision})).status, 503);
+  const replaced = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  assert.equal(replaced.revision, 2);
+  assert.equal(replaced.pending_answer.text, second.text);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', first)).status, 409);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/back`, 'POST', {revision:pending.revision})).status, 409);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:pending.revision,question_id:'name',skipped:true})).status, 409);
+  assert.equal(calls, 2);
+  const latest = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  assert.deepEqual(latest, replaced);
+  const context = (await f.request(session, `/api/intakes/${row.id}/context`)).data.context;
+  assert.equal(context.patient.fields.name.rawText, second.text);
+  const history = await f.store.pool.query('SELECT revision FROM patient_state_revisions WHERE intake_id=$1 ORDER BY revision', [row.id]);
+  assert.deepEqual(history.rows.map(item => item.revision), [0,1,2]);
+  // The replacement's exact input can still be retried at its source revision.
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {...second,revision:pending.revision})).status, 503);
+  assert.equal(calls, 3);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}`)).data.revision, replaced.revision);
+});
+
+test('identical concurrent pending requests share one model call and do not append a second message', { skip:!databaseUrl }, async t => {
+  let entered, release, calls = 0;
+  const modelEntered = new Promise(resolve => { entered = resolve; });
+  const modelReleased = new Promise(resolve => { release = resolve; });
+  const f = await fixture(t, {updateState:async () => { calls++; entered(); await modelReleased; return update(memory); }});
+  const session = await f.browser();
+  const row = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  const input = {revision:0,question_id:'name',text:'시연 친구'};
+  const first = f.request(session, `/api/intakes/${row.id}/answers`, 'POST', input);
+  await modelEntered;
+  let seen;
+  const secondSeen = new Promise(resolve => { seen = resolve; });
+  const intake = f.store.intake;
+  t.mock.method(f.store, 'intake', async function (...args) {
+    const result = await intake.apply(this, args);
+    if (result.state.modelPending) seen();
+    return result;
+  });
+  const second = f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {...input,selected:[]});
+  try { await secondSeen; await new Promise(resolve => setImmediate(resolve)); }
+  finally { release(); }
+  const results = await Promise.all([first,second]);
+  assert.equal(calls, 1);
+  for (const result of results) {
+    assert.equal(result.status, 200);
+    assert.equal(result.data.revision, 2);
+    assert.equal(result.data.question.id, 'want');
+    assert.equal(result.data.log.filter(item => item.who === 'me').length, 1);
+  }
+});
+
+test('an in-flight replacement rejects late model output and preserves the replacement answer', { skip:!databaseUrl }, async t => {
+  let entered, release;
+  const modelEntered = new Promise(resolve => { entered = resolve; });
+  const modelReleased = new Promise(resolve => { release = resolve; });
+  const f = await fixture(t, {updateState:async context => {
+    if (context.patient.fields.name.rawText === '처음 친구') { entered(); await modelReleased; }
+    return update(memory);
+  }});
+  const session = await f.browser();
+  const row = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  const first = f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:0,question_id:'name',text:'처음 친구'});
+  await modelEntered;
+  let replacement;
+  try {
+    const pending = (await f.request(session, `/api/intakes/${row.id}`)).data;
+    replacement = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:pending.revision,question_id:'name',text:'수정 친구'});
+  } finally { release(); }
+  const late = await first;
+  assert.equal(replacement.status, 200);
+  assert.equal(replacement.data.revision, 3);
+  assert.equal(late.status, 409);
+  assert.equal(late.data.error.code, 'REVISION_CONFLICT');
+  const latest = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  assert.equal(latest.question.id, 'want');
+  assert.equal(latest.model_pending, undefined);
+  assert.deepEqual(latest.log.filter(item => item.who === 'me').map(item => item.text), ['수정 친구']);
+  const context = (await f.request(session, `/api/intakes/${row.id}/context`)).data.context;
+  assert.equal(context.patient.fields.name.rawText, '수정 친구');
+});
+
+test('failed base and follow-up model turns retain their exact current prompts until retry succeeds', { skip:!databaseUrl }, async t => {
+  let calls = 0;
+  const f = await fixture(t, {updateState:async context => {
+    if (++calls % 2) throw new HttpError(503,'MODEL_UNAVAILABLE','잠시 후 다시 시도해 주세요.');
+    assert.ok(context.patient.fields.rel.rawText);
+    return update(memory);
+  }});
+  const session = await f.browser();
+  const owner = (await f.store.browser(session.cookie.slice(15))).id;
+  let state = createIntake();
+  for (let i = 0; currentView(state).question?.id !== 'rel' && i < 10; i++) {
+    const q = currentView(state).question;
+    state = answerIntake(state,{question_id:q.id,...(q.type === 'text' ? {text:'시연 친구에게 충분히 자세히 이야기하고 싶어요.'} : {selected:[0]})});
+  }
+  assert.equal(currentView(state).question.id, 'rel');
+  const row = await f.store.createIntake(owner,state);
+  const baseInput = {revision:0,question_id:'rel',text:'짝',custom:'짝'};
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', baseInput)).status, 503);
+  const pendingBase = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  assert.equal(pendingBase.question.follow_up, undefined);
+  assert.equal(pendingBase.pendingFollow, false);
+  assert.equal(pendingBase.log.at(-1).text, '짝');
+  const follow = (await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', baseInput)).data;
+  assert.equal(follow.question.follow_up, true);
+  const followInput = {revision:follow.revision,question_id:'rel',follow_up:true,text:'직장에서 함께 근무하는 동료예요.'};
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', followInput)).status, 503);
+  const pendingFollow = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  assert.deepEqual(pendingFollow.question, follow.question);
+  assert.deepEqual(pendingFollow.log.at(-1), {who:'me',text:followInput.text,fu:true});
+  const context = (await f.request(session, `/api/intakes/${row.id}/context`)).data.context;
+  assert.equal(context.patient.fields.rel.followUp.answer.rawText, followInput.text);
+  const next = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', followInput);
+  assert.equal(next.status, 200);
+  assert.equal(next.data.question.id, 'contact');
+  assert.equal(next.data.model_pending, undefined);
+  assert.equal(next.data.log.filter(item => item.who === 'me' && item.text === followInput.text).length, 1);
+});
+
+test('back and explicit skip use the latest pending revision and discard its uncommitted answer', { skip:!databaseUrl }, async t => {
+  let calls = 0;
+  const f = await fixture(t, {updateState:async () => {calls++;throw new HttpError(503,'MODEL_UNAVAILABLE','잠시 후 다시 시도해 주세요.');}});
+  const session = await f.browser();
+  const owner = (await f.store.browser(session.cookie.slice(15))).id;
+  const first = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  assert.equal((await f.request(session, `/api/intakes/${first.id}/answers`, 'POST', {revision:0,question_id:'name',text:'취소할 이름'})).status, 503);
+  assert.equal((await f.request(session, `/api/intakes/${first.id}/back`, 'POST', {revision:0})).status, 409);
+  const pendingFirst = (await f.request(session, `/api/intakes/${first.id}`)).data;
+  const back = await f.request(session, `/api/intakes/${first.id}/back`, 'POST', {revision:pendingFirst.revision});
+  assert.equal(back.status, 200);
+  assert.equal(back.data.question.id, 'name');
+  assert.equal(back.data.model_pending, undefined);
+  assert.equal(back.data.log.some(item => item.who === 'me'), false);
+  let state = createIntake();
+  for (const text of ['시연 친구','곁에 있다는 말을 충분히 전하고 싶어요.']) {
+    state = answerIntake(state,{question_id:currentView(state).question.id,text});
+  }
+  assert.equal(currentView(state).question.id, 'goal');
+  const row = await f.store.createIntake(owner,state);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:0,question_id:'goal',selected:[0]})).status, 503);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:0,question_id:'goal',skipped:true})).status, 409);
+  const pendingGoal = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  const skipped = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:pendingGoal.revision,question_id:'goal',skipped:true});
+  assert.equal(skipped.status, 200);
+  assert.equal(skipped.data.question.id, 'rel');
+  assert.equal(skipped.data.model_pending, undefined);
+  const context = (await f.request(session, `/api/intakes/${row.id}/context`)).data.context;
+  assert.equal(context.user_goal.desired_outcomes.status, 'skipped');
+  assert.equal(context.user_goal.desired_outcomes.selected.length, 0);
+  assert.equal(calls, 2);
+});
+
+test('a failed final model update cannot expose a ready view or start final result generation', { skip:!databaseUrl }, async t => {
+  let resultCalls = 0;
+  const f = await fixture(t, {updateState:async () => {throw new HttpError(503,'MODEL_UNAVAILABLE','잠시 후 다시 시도해 주세요.');},respond:async () => {resultCalls++;}});
+  const session = await f.browser();
+  const owner = (await f.store.browser(session.cookie.slice(15))).id;
+  let state = createIntake();
+  for (let i = 0; currentView(state).question?.id !== 'mysupport' && i < 40; i++) {
+    const q = currentView(state).question;
+    state = answerIntake(state,{question_id:q.id,follow_up:!!q.follow_up,...(q.type === 'text' ? {text:'시연을 위한 충분한 상황 설명을 입력합니다.'} : {selected:[0]})});
+  }
+  assert.equal(currentView(state).question.id, 'mysupport');
+  const row = await f.store.createIntake(owner,state);
+  const failed = await f.request(session, `/api/intakes/${row.id}/answers`, 'POST', {revision:0,question_id:'mysupport',selected:[0]});
+  assert.equal(failed.status, 503);
+  const pending = (await f.request(session, `/api/intakes/${row.id}`)).data;
+  assert.equal(pending.status, 'active');
+  assert.equal(pending.question.id, 'mysupport');
+  assert.ok(pending.progress < 100);
+  assert.equal((await f.request(session, `/api/intakes/${row.id}/result`, 'POST', {revision:pending.revision})).status, 409);
+  assert.equal(resultCalls, 0);
 });
 
 test('indexed chat names and grounded skips persist through API and correction restores the prior plan', { skip:!databaseUrl }, async t => {
@@ -268,8 +505,9 @@ test('model memory storage failure returns 500 and retains the committed answer'
   assert.equal(failed.data.model_warning, undefined);
   const saved = await f.request(session, `/api/intakes/${row.id}`);
   assert.equal(saved.data.revision, 1);
-  assert.equal(saved.data.name, '친구');
-  assert.equal(saved.data.question.id, 'want');
+  assert.equal(saved.data.name, '');
+  assert.equal(saved.data.question.id, 'name');
+  assert.equal(saved.data.model_pending, true);
   const ctx = await f.request(session, `/api/intakes/${row.id}/context`);
   assert.equal(ctx.data.revision, 1);
   assert.equal(ctx.data.context.patient.fields.name.rawText, '친구');

@@ -96,6 +96,7 @@ export function currentView(state) {
     pendingFollow: Boolean(state.pendingFollow),
     totalQuestions: questions.length,
     questionIndex: state.i,
+    ...(state.modelPending ? { model_pending:true, pending_answer:structuredClone(state.modelPending.input) } : {}),
   };
 }
 
@@ -205,8 +206,49 @@ export function answerIntake(originalState, input) {
   return state;
 }
 
+// A model turn persists the submitted text while leaving the visible question
+// and its history at the state before the answer. Only validated model output
+// commits the prepared next prompt.
+export function discardModelAnswer(originalState) {
+  const state = structuredClone(originalState);
+  if (state.modelPending) {
+    state.log.length = state.modelPending.logLen;
+    delete state.modelPending;
+  }
+  return state;
+}
+
+export function prepareModelAnswer(originalState, input, sourceRevision) {
+  const state = discardModelAnswer(originalState);
+  const prepared = answerIntake(state, input);
+  const logLen = state.log.length;
+  state.log.push(structuredClone(prepared.log[logLen]));
+  // The question snapshot is already held by the base state.
+  delete prepared.questionSet;
+  state.modelPending = { sourceRevision, input:structuredClone(input), logLen, prepared };
+  return state;
+}
+
+function preparedModelState(state) {
+  return { ...structuredClone(state.modelPending.prepared), questionSet:questionSetOf(state) };
+}
+
+export function completeModelAnswer(state, output) {
+  if (!state.modelPending) invalid('REVISION_CONFLICT', '현재 질문을 다시 확인해 주세요.', 409);
+  return applyModelUpdate(preparedModelState(state), output);
+}
+
 export function backIntake(originalState) {
+  const hadPendingModel = Boolean(originalState.modelPending);
+  originalState = discardModelAnswer(originalState);
   if (!currentView(originalState).canGoBack) {
+    // The first question has no preceding prompt; cancelling its uncommitted
+    // answer still lets a concurrent correction invalidate the model request.
+    if (hadPendingModel) {
+      delete originalState.agentMemory; delete originalState.agentResult; delete originalState.agentRecord;
+      originalState.modelStatus = 'not_connected';
+      return originalState;
+    }
     invalid('back_unavailable', '지금은 이전 질문으로 돌아갈 수 없어요.', 409);
   }
   const state = structuredClone(originalState);
@@ -280,6 +322,9 @@ function evidenceField(question, state) {
 }
 
 export function buildContext(state) {
+  // Verification history and model evidence include the saved pending answer,
+  // but never expose the prepared next prompt before the model accepts it.
+  if (state.modelPending) state = { ...preparedModelState(state), log:state.log };
   const { questions, gapQuestion, version } = questionSetOf(state);
   const gates = branchGateIds(questionSetOf(state));
   // A thin first answer is already evidence even while its follow-up is pending.
