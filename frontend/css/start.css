@@ -17,7 +17,10 @@
 .bubble-tip{position:absolute;left:8%;bottom:14%;background:var(--card);border-radius:22px 22px 22px 6px;padding:14px 20px;font-family:var(--display);font-size:19px;color:var(--stem);box-shadow:0 6px 18px rgba(75,122,60,.12)}
 @media (max-width:900px){#start .hero{grid-template-columns:1fr}}
 
-/* 말씨와 시작하기: 진한 초록 + 흰 글자로 대비를 크게 (움직이는 효과 없음) */
-#go{font-size:24px;padding:18px 48px;background:#2d5a23;color:#fff;box-shadow:0 5px 0 #1d3d16;transition:transform .15s,box-shadow .15s}
+/* 말씨와 시작하기: 진한 초록 + 흰 글자로 대비를 크게 */
+#go{position:relative;overflow:hidden;font-size:24px;padding:18px 48px;background:#2d5a23;color:#fff;box-shadow:0 5px 0 #1d3d16;transition:transform .15s,box-shadow .15s}
+/* 밝은 빛줄기가 사선으로 한 번씩 지나감 (크기는 그대로) */
+#go::after{content:"";position:absolute;top:-20%;bottom:-20%;left:-45%;width:38%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);transform:skewX(-22deg);animation:shine 3.2s ease-in-out infinite;pointer-events:none}
+@keyframes shine{0%{left:-45%}45%,100%{left:130%}}
 #go:hover{transform:translateY(-2px);box-shadow:0 7px 0 #1d3d16}
 #go:active{transform:translateY(3px);box-shadow:0 2px 0 #1d3d16}
