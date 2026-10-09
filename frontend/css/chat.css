@@ -4,7 +4,7 @@
 #chat .body{flex:1;display:flex;flex-direction:column;width:100%;max-width:960px;margin:20px auto 0;min-height:0}
 .prog{height:8px;background:var(--leaf-soft);border-radius:8px;overflow:hidden;flex:1;max-width:360px}
 .prog i{display:block;height:100%;background:var(--leaf);border-radius:8px;transition:width .5s}
-.log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding:8px 4px 24px;min-height:0;height:0}
+.log{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding:8px 4px 24px;min-height:150px;height:0} /* 선택지가 많아도 지금 질문 말풍선은 보이게 */
 .ai-row{display:flex;gap:14px;align-items:flex-end;max-width:82%}
 .ai-row img{width:72px;height:72px;object-fit:contain;flex:none}
 .msg{padding:16px 22px;border-radius:26px;white-space:pre-wrap;font-size:18px}
@@ -19,7 +19,7 @@
 
 /* 입력 상자 (ChatInput) */
 .input{background:var(--card);border-radius:28px;padding:18px;display:flex;flex-direction:column;gap:14px;box-shadow:0 6px 22px rgba(75,122,60,.1)}
-.chipwrap{display:flex;flex-direction:column;gap:10px;max-height:46vh;overflow-y:auto;padding:4px}
+.chipwrap{display:flex;flex-direction:column;gap:10px;max-height:34vh;overflow-y:auto;padding:4px}
 .chip-group{font-family:var(--display);color:var(--stem);font-size:15px;margin-top:4px}
 .chips{display:flex;flex-wrap:wrap;gap:10px}
 .chips.apart{margin-top:14px;padding-top:14px;border-top:2px dashed var(--leaf-soft)}

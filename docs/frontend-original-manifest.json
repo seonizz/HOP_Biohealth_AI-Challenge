@@ -196,8 +196,8 @@
       "reason": "대화 중 나가기 확인 창"
     },
     "css/chat.css": {
-      "sha256": "9b4f1566974782a8fd99a974cc2b0fe6d6e33a2f6360b55576df20b784addef3",
-      "reason": "대화 중 나가기 확인 창"
+      "sha256": "23d8a28018412c4980d73a4d77864e78cc71238fcfac07dfdba216e77b4ddfba",
+      "reason": "대화 중 나가기 확인 창, 선택지 칸을 줄여 질문이 보이게"
     },
     "js/core/assets.js": {
       "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12",
