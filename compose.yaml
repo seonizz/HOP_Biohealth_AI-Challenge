@@ -1,0 +1,48 @@
+name: malssi-personal-demo
+services:
+  postgres:
+    image: postgres:16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: malssi
+      POSTGRES_USER: malssi
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run npm run setup first}
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U malssi -d malssi"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      HOST: 0.0.0.0
+      PORT: 9000
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://127.0.0.1:9000}
+      DATABASE_URL: postgresql://malssi:${POSTGRES_PASSWORD:?Run npm run setup first}@postgres:5432/malssi
+      CONTENT_KEY: ${CONTENT_KEY:?Run npm run setup first}
+      SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
+      DEMO_CONTAINER: "true"
+      MODEL_BASE_URL: ${MODEL_BASE_URL:-}
+      MODEL_API_KEY: ${MODEL_API_KEY:-}
+      MODEL_NAME: ${MODEL_NAME:-gemma4:12b}
+      MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-180000}
+    ports:
+      - "127.0.0.1:${PORT:-9000}:9000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9000/health',{headers:{Host:new URL(process.env.PUBLIC_ORIGIN).host}}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+volumes:
+  postgres-data:

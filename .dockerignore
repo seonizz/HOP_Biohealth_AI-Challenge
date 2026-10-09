@@ -1,0 +1,7 @@
+.git
+.omx
+.env
+runtime
+node_modules
+tests
+docs

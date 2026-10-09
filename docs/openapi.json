@@ -1,0 +1,936 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "말씨 개인 시연 API",
+    "version": "1.0.0",
+    "description": "feat/columns-interactive 기반. 모델 키는 서버에만 존재합니다. 상세 요청/응답 계약은 API.md 참고."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:9000"
+    }
+  ],
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "API 프로세스 상태",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/bootstrap": {
+      "get": {
+        "summary": "익명 브라우저 세션 및 UI 초기 데이터",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "security": []
+      }
+    },
+    "/api/questions": {
+      "get": {
+        "summary": "현재 UI의 정확한 30개 문항",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        }
+      }
+    },
+    "/api/intakes": {
+      "post": {
+        "summary": "새 대화 시작",
+        "responses": {
+          "201": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/intakes/{id}": {
+      "get": {
+        "summary": "대화 진행 상태",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/intakes/{id}/answers": {
+      "post": {
+        "summary": "답변 저장 및 모델 내부 상태 갱신",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/intakes/{id}/back": {
+      "post": {
+        "summary": "직전 문항으로 복원 및 상태 정정",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/intakes/{id}/context": {
+      "get": {
+        "summary": "서버의 현재 환자/주변인 상태와 근거",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/intakes/{id}/result": {
+      "post": {
+        "summary": "누적 상태를 읽어 실제 모델 가이드 생성 및 기록 저장",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/records": {
+      "get": {
+        "summary": "브라우저별 기록 목록",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        }
+      }
+    },
+    "/api/records/{id}": {
+      "get": {
+        "summary": "기록 상세",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "기록 및 연결된 대화/상태 이력 삭제",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/columns": {
+      "get": {
+        "summary": "칼럼 분류/읽음/담음 필터 및 정원",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        }
+      }
+    },
+    "/api/columns/today": {
+      "get": {
+        "summary": "브라우저 날짜 기준 오늘의 한 편",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "date",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          }
+        ]
+      }
+    },
+    "/api/columns/random": {
+      "get": {
+        "summary": "직전 글을 제외한 무작위 칼럼",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "parameters": [
+          {
+            "in": "query",
+            "name": "exclude",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/columns/{article}": {
+      "get": {
+        "summary": "칼럼 상세 및 상태",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "article",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/columns/{article}/state": {
+      "patch": {
+        "summary": "읽음 완료 및 담기/해제",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "article",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "browserSession": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "malssi_session"
+      }
+    }
+  },
+  "security": [
+    {
+      "browserSession": []
+    }
+  ]
+}
