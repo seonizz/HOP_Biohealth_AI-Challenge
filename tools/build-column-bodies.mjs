@@ -1,5 +1,5 @@
 // 칼럼 본문 파일 만들기
-// 사용법 (저장소 폴더에서): node tools/build-column-bodies.mjs "../../정신건강_기사본문_정리본.txt"
+// 사용법 (저장소 폴더에서): node tools/build-column-bodies.mjs tools/column-bodies.txt
 // 정리본 형식: ===== 구분선 / 제목 / 출처: … / 원문 링크: … / (빈 줄) / 본문
 // 결과: frontend/js/core/columnBodies.js (COLUMN_BODIES = { "원문 링크(http(s):// 뺀 주소)": ["문단", …] })
 import fs from "node:fs";
@@ -10,18 +10,26 @@ if (!src) { console.error('정리본 경로를 넣어 주세요: node tools/buil
 const txt = fs.readFileSync(src, "utf8").replace(/\r\n/g, "\n");
 const blocks = txt.split(/\n=+\n/).slice(1); // 첫 덩어리는 파일 설명
 const bodies = {};
+// 한글끼리 이어 붙일 때 띄어쓰기: 앞 줄이 조사·어미로 끝나고 다음 줄이 조사·어미로 시작하지 않으면 띄움
+// (예: "전까지는|비록" → 띄움, "자해|와"·"보|입니다" → 붙임)
+const joiner = (a, b) => {
+  if (!/[가-힣]$/.test(a) || !/^[가-힣]/.test(b)) return " ";
+  return /[는은을를이가의에서고며도로게면와과할될던한된인지]$/.test(a) && !/^[와과을를은는의에가로곤니다요라으]/.test(b) ? " " : "";
+};
 for (const block of blocks) {
   const lines = block.split("\n");
   const linkAt = lines.findIndex(l => l.startsWith("원문 링크:"));
   if (linkAt < 0) continue;
   const key = lines[linkAt].replace("원문 링크:", "").trim().replace(/^https?:\/\//, "");
   // 문단: 빈 줄에서 나누고, PDF에서 끊긴 줄(문장이 끝나지 않은 줄)은 앞 줄에 이어 붙임
+  // 이메일이 있는 필자 줄에서 본문을 끝냄 (그 뒤는 웹페이지의 관련 기사 목록)
   const paras = []; let cur = "";
   for (const raw of lines.slice(linkAt + 1)) {
     const l = raw.trim();
     if (!l) { if (cur) paras.push(cur); cur = ""; continue; }
-    if (cur && !/[.?!…"'”’)\]>다요]$/.test(cur)) cur += (/[가-힣]$/.test(cur) && /^[가-힣]/.test(l) ? "" : " ") + l;
+    if (cur && !/[.?!…"'”’)\]>다요]$/.test(cur)) cur += joiner(cur, l) + l;
     else { if (cur) paras.push(cur); cur = l; }
+    if (/\S+@\S+\.\S+/.test(l)) break;
   }
   if (cur) paras.push(cur);
   if (paras.length) bodies[key] = paras;
