@@ -7,7 +7,7 @@ const nm=t=>String(t).replace(/\{name(?::([^}]+))?\}/g,(_,j)=>{const w=S?.name||
 function leaveConversation(){conversationToken++;show("start");}
 async function begin(){
   const token=++conversationToken;
-  S=null;ChatScreen.clear();ChatScreen.progress(0);ChatScreen.section("");ChatInput.clear();show("chat");
+  S=null;ChatScreen.clear();ChatScreen.progress(0);ChatScreen.title("");ChatScreen.section("");ChatInput.clear();show("chat");
   try{
     const view=await ChatScreen.typing("hello",API.request("/api/intakes",{method:"POST",body:{}}));
     if(token===conversationToken)renderConversation(view,token);
@@ -16,7 +16,7 @@ async function begin(){
 
 function renderConversation(view,token){
   if(token!==conversationToken)return;
-  S=view;ChatScreen.sync(view.log);ChatScreen.progress(view.progress);ChatScreen.section(view.section);
+  S=view;ChatScreen.sync(view.log);ChatScreen.progress(view.progress);ChatScreen.title(view.chat_title);ChatScreen.section(view.section);
   ChatInput.clear();
   if(view.status==="ready"){finish(token);return;}
   const q=view.question;

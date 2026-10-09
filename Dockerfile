@@ -4,6 +4,7 @@ COPY package*.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 COPY --chown=node:node src ./src
 COPY --chown=node:node migrations ./migrations
+COPY --chown=node:node seeds ./seeds
 COPY --chown=node:node public ./public
 USER node
 EXPOSE 9000

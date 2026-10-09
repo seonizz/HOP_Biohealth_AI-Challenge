@@ -23,14 +23,16 @@ services:
       HOST: 0.0.0.0
       PORT: 9000
       PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://127.0.0.1:9000}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-}
       DATABASE_URL: postgresql://malssi:${POSTGRES_PASSWORD:?Run npm run setup first}@postgres:5432/malssi
       CONTENT_KEY: ${CONTENT_KEY:?Run npm run setup first}
       SESSION_TTL_DAYS: ${SESSION_TTL_DAYS:-30}
       DEMO_CONTAINER: "true"
-      MODEL_BASE_URL: ${MODEL_BASE_URL:-}
+      MODEL_BASE_URL: ${MODEL_DOCKER_BASE_URL:-${MODEL_BASE_URL:-}}
       MODEL_API_KEY: ${MODEL_API_KEY:-}
       MODEL_NAME: ${MODEL_NAME:-gemma4:12b}
       MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-180000}
+      MODEL_PROTOCOL: ${MODEL_PROTOCOL:-json_schema}
     ports:
       - "127.0.0.1:${PORT:-9000}:9000"
     depends_on:

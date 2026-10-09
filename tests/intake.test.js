@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { questions, questionCatalog, columns, categories, optLabel } from '../src/catalog.js';
-import { createIntake, currentView, answerIntake, backIntake, buildContext } from '../src/intake.js';
+import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate } from '../src/intake.js';
 
 const questionIds = ['name', 'want', 'goal', 'rel', 'contact', 'mood', 'dur', 'freq', 'describe', 'concern', 'cause', 'events', 'others_why', 'support', 'burden', 'values', 'values_effect', 'extra', 'coping', 'help', 'barrier', 'need', 'others_help', 'moment', 'moment_freq', 'feeling', 'cgchange', 'cgchange_more', 'mycoping', 'mysupport'];
 
@@ -26,6 +26,87 @@ function advanceTo(id, overrides = {}) {
   }
   throw new Error(`Question ${id} not reached`);
 }
+
+const modelOutput = (skip = [], nameIndex = null) => ({
+  patient_state:{ summary:'사용자가 보고한 현재 상황', facts:[], unknowns:[], user_goal:'확인되지 않음' },
+  name_index:nameIndex, question_plan:{ skip },
+});
+
+test('model indexes an explicit alias and rebuilds the next prompt without changing the name evidence', () => {
+  const raw = reply(createIntake(), { text:'내 동생 지수' });
+  const next = applyModelUpdate(raw, modelOutput([], { alias:'지수', source_question_id:'name', quote:'지수' }));
+  assert.equal(next.name, '지수');
+  assert.equal(next.chatTitle, '지수');
+  assert.equal(buildContext(next).patient.fields.name.rawText, '내 동생 지수');
+  assert.match(currentView(next).question.q, /지수에게/);
+  assert.equal(next.log.filter(item => item.text.includes('꼭 전하고 싶은 말')).length, 1);
+  assert.equal(raw.name, '내 동생 지수');
+  const previous = backIntake(next);
+  assert.equal(currentView(previous).question.id, 'name');
+  assert.equal(previous.chatTitle, '');
+  assert.equal(previous.nameIndex, null);
+});
+
+test('model skips a covered current question without fabricating an answer and back removes that decision', () => {
+  const goal = advanceTo('goal', { want:{ text:'내가 곁에 있다는 것을 전하고 싶어요.' } });
+  const skip = { question_id:'goal', reason:'already_covered', explanation:'전하고 싶은 말에 원하는 결과를 알려 주었습니다.',
+    evidence:[{ subject:'user_goal', question_id:'want', quote:'내가 곁에 있다는 것' }] };
+  const next = applyModelUpdate(goal, modelOutput([skip]));
+  assert.equal(currentView(next).question.id, 'rel');
+  assert.equal(next.ans.goal, undefined);
+  assert.equal(buildContext(next).user_goal.desired_outcomes.status, 'auto_skipped');
+  assert.equal(next.log.some(item => item.text === '그 말을 통해 바라는 것은 무엇인가요?'), false);
+  assert.deepEqual(next.modelSkipped.goal, skip);
+  const previous = backIntake(next);
+  assert.equal(currentView(previous).question.id, 'want');
+  assert.equal(previous.ans.want, undefined);
+  assert.deepEqual(previous.modelSkipped, {});
+});
+
+test('an unresolved name follow-up clears the previous model title', () => {
+  const pending = reply(createIntake(), { text:'잘 모르겠지만 친구' });
+  assert.equal(Boolean(pending.pendingFollow), true);
+  const indexed = applyModelUpdate(pending, modelOutput([], { alias:'친구', source_question_id:'name', quote:'친구' }));
+  assert.equal(indexed.chatTitle, '친구');
+  const resolved = reply(indexed, { text:'없어' });
+  const next = applyModelUpdate(resolved, modelOutput());
+  assert.equal(next.name, '그분');
+  assert.equal(next.chatTitle, '');
+  assert.equal(next.nameIndex, null);
+  assert.match(currentView(next).question.q, /그분에게/);
+});
+
+test('skipping the last optional question completes the intake without leaving an unseen prompt', () => {
+  const last = advanceTo('mysupport');
+  const skip = { question_id:'mysupport', reason:'not_needed', explanation:'주변인의 대처와 도움에 대한 현재 답변으로 안내할 수 있습니다.',
+    evidence:[{ subject:'supporter', question_id:'mycoping', quote:last.ans.mycoping.text }] };
+  const ready = applyModelUpdate(last, modelOutput([skip]));
+  assert.equal(ready.status, 'ready');
+  assert.equal(currentView(ready).question, null);
+  assert.equal(ready.ans.mysupport, undefined);
+  assert.equal(buildContext(ready).supporter.fields.mysupport.status, 'auto_skipped');
+  assert.equal(ready.log.some(item => item.text === currentView(last).question.q), false);
+});
+
+test('future skip decisions survive intervening answers and never hide conditional branch gates', () => {
+  const duration = advanceTo('dur', { mood:{ selected:[0] } });
+  const context = buildContext(duration);
+  assert.ok(context.answered_count >= 5);
+  assert.equal(context.question_candidates.some(candidate => ['name','want','cause'].includes(candidate.id)), false);
+  const skip = { question_id:'describe', reason:'not_needed', explanation:'현재 모습에 대한 보고로 안내를 구성할 수 있습니다.',
+    evidence:[{ subject:'patient', question_id:'mood', quote:'자주 우울하거나 가라앉아 보여요' }] };
+  let state = applyModelUpdate(duration, modelOutput([skip]));
+  assert.equal(currentView(state).question.id, 'dur');
+  state = reply(state, { selected:[2] });
+  state = reply(state, { selected:[2] });
+  assert.equal(currentView(state).question.id, 'concern');
+  assert.equal(state.ans.describe, undefined);
+  assert.equal(buildContext(state).patient.fields.describe.status, 'auto_skipped');
+  assert.equal(state.log.some(item => item.text.includes('상황을 설명한다면')), false);
+  const previous = backIntake(state);
+  assert.equal(currentView(previous).question.id, 'freq');
+  assert.deepEqual(previous.modelSkipped.describe, skip);
+});
 
 test('catalog reuses all 30 UI question IDs, wording, option metadata and columns', () => {
   assert.deepEqual(questions.map(question => question.id), questionIds);

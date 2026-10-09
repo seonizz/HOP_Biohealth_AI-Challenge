@@ -2,7 +2,7 @@
 const ChatScreen={
   render(){return `
 <section class="screen" id="chat" hidden>
-  ${TopBar(`<div class="prog" aria-label="진행"><i id="prog" style="width:0"></i></div><span class="pill" id="sec" hidden></span><button class="ghost" id="restart1" style="margin-left:auto">처음으로</button>`)}
+  ${TopBar(`<div class="prog" aria-label="진행"><i id="prog" style="width:0"></i></div><span class="pill" id="chatTitle" hidden></span><span class="pill" id="sec" hidden></span><button class="ghost" id="restart1" style="margin-left:auto">처음으로</button>`)}
   <div class="body">
     <div class="log" id="log" aria-live="polite"></div>
     <div class="input" id="input"></div>
@@ -21,6 +21,11 @@ const ChatScreen={
   count(){return $("log").children.length;},
   truncate(n){const l=$("log");while(l.children.length>n)l.lastChild.remove();},
   progress(pct){$("prog").style.width=pct+"%";},
+  title(label){
+    const name=typeof label==="string"?label.trim():"";
+    $("chatTitle").textContent=name;$("chatTitle").hidden=!name;
+    document.title=name?`${name} · 말씨`:"말씨";
+  },
   // 지금 어떤 단계의 질문인지 (예: 관계, 당신의 마음)
   section(label){$("sec").hidden=!label;$("sec").textContent=label||"";},
   // 서버 기록의 공통 부분은 유지하고, 되돌리기/새 메시지만 화면에 반영해요.

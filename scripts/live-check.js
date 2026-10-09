@@ -22,9 +22,9 @@ const context = buildContext(state);
 const gateway = new ModelGateway({ baseUrl:process.env.MODEL_BASE_URL, apiKey:process.env.MODEL_API_KEY, model:process.env.MODEL_NAME });
 const start = Date.now();
 try {
-  const memory = await gateway.updateState(context);
-  console.log(JSON.stringify({ phase:'state', ok:true, grounded_facts:memory.facts.length, elapsed_ms:Date.now() - start }));
-  const result = await gateway.respond(context, memory);
+  const update = await gateway.updateState(context);
+  console.log(JSON.stringify({ phase:'state', ok:true, grounded_facts:update.patient_state.facts.length, name_indexed:Boolean(update.name_index), skipped:update.question_plan.skip.length, elapsed_ms:Date.now() - start }));
+  const result = await gateway.respond(context, update.patient_state);
   console.log(JSON.stringify({ phase:'guide', ok:true, category:result.guide.top, script_chars:result.guide.script.length, grounded_facts:result.patient_state.facts.length, elapsed_ms:Date.now() - start }));
 } catch (error) {
   console.log(JSON.stringify({ ok:false, code:error.code, status:error.status, elapsed_ms:Date.now() - start }));

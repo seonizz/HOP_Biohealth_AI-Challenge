@@ -12,4 +12,11 @@ const fmt=d=>{const x=new Date(d);return `${x.getFullYear()}.${x.getMonth()+1}.$
 
 // 화면 전환: 한 번에 한 화면만 보임
 const SCREEN_IDS=["start","chat","result","records","about","columns"];
-function show(id){SCREEN_IDS.forEach(s=>$(s).hidden=s!==id);if(id==="start")StartScreen.updRecN();}
+function show(id){
+  SCREEN_IDS.forEach(s=>$(s).hidden=s!==id);
+  if(id!=="chat"){
+    document.title="말씨";
+    if(typeof ChatScreen!=="undefined")ChatScreen.title("");
+  }
+  if(id==="start")StartScreen.updRecN();
+}

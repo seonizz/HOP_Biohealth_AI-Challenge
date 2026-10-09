@@ -4,6 +4,7 @@ import { mkdirSync, readFileSync, writeFileSync, chmodSync, existsSync } from 'n
 import { dirname, resolve } from 'node:path';
 import { HttpError } from './errors.js';
 import { buildContext } from './intake.js';
+import { initialQuestionRows, createQuestionSet } from './question-bank.js';
 
 const { Pool } = pg;
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -51,14 +52,22 @@ export class Store {
         await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
           version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`);
-        const version = '001_initial.sql';
-        const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8');
-        const checksum = digest(source);
-        const applied = await client.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
-        if (applied.rowCount && applied.rows[0].checksum !== checksum) throw new Error('Applied database migration checksum does not match');
-        if (!applied.rowCount) {
-          await client.query(source);
-          await client.query('INSERT INTO schema_migrations(version,checksum) VALUES ($1,$2)', [version, checksum]);
+        for (const version of ['001_initial.sql', '002_questions.sql']) {
+          const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8');
+          const checksum = digest(source);
+          const applied = await client.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
+          if (applied.rowCount && applied.rows[0].checksum !== checksum) throw new Error('Applied database migration checksum does not match');
+          if (!applied.rowCount) {
+            await client.query(source);
+            if (version === '002_questions.sql') {
+              for (const row of initialQuestionRows) {
+                await client.query(`INSERT INTO questions(id,kind,sort_order,enabled,subject,definition)
+                  VALUES ($1,$2,$3,$4,$5,$6::jsonb)`,
+                [row.id, row.kind, row.sort_order, row.enabled, row.subject, JSON.stringify(row.definition)]);
+              }
+            }
+            await client.query('INSERT INTO schema_migrations(version,checksum) VALUES ($1,$2)', [version, checksum]);
+          }
         }
         // A replaced/lost content key must fail startup rather than make old data unreadable later.
         const sample = await client.query(`SELECT owner,id,content,'intake' AS kind FROM intakes
@@ -77,6 +86,12 @@ export class Store {
   }
 
   async close() { await this.pool.end(); }
+
+  async questionSet() {
+    const result = await this.pool.query(`SELECT id,kind,sort_order,enabled,subject,definition FROM questions
+      WHERE enabled ORDER BY sort_order,id`);
+    return createQuestionSet(result.rows);
+  }
 
   async transaction(operation) {
     const client = await this.pool.connect();
@@ -118,10 +133,6 @@ export class Store {
     if (!/^[A-Za-z0-9_-]{43}$/.test(token || '')) return null;
     const result = await this.pool.query('SELECT id,csrf FROM browsers WHERE token_hash=$1 AND expires_at>CURRENT_TIMESTAMP', [digest(token)]);
     return result.rows[0] || null;
-  }
-
-  async purgeExpired() {
-    return (await this.pool.query('DELETE FROM browsers WHERE expires_at<=CURRENT_TIMESTAMP')).rowCount;
   }
 
   async writeContext(client, owner, id, revision, state, reason) {

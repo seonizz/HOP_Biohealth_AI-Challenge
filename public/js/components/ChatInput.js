@@ -54,7 +54,7 @@ const ChatInput={
       b.onclick=()=>{
         if(q.type==="one"){
           // "네 [직접 입력]": 고르면 입력창으로 바뀜
-          if(m.input) return ChatInput.render({type:"text",ph:m.ph,noSkip:true},t=>onDone(t.startsWith("(")?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),onBack);
+          if(m.input) return ChatInput.render({type:"text",ph:m.ph,noSkip:true},t=>onDone(t===SKIP?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),onBack);
           btns.forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));
           return submit(optLabel(o),[k],"");
         }

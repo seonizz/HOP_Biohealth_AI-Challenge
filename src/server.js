@@ -5,8 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { randomUUID, timingSafeEqual } from 'node:crypto';
 import { Store, loadContentKey } from './store.js';
 import { HttpError, object } from './errors.js';
-import { questionCatalog, columns, categories } from './catalog.js';
-import { createIntake, currentView, answerIntake, backIntake, buildContext } from './intake.js';
+import { columns, categories } from './catalog.js';
+import { questionCatalogOf } from './question-bank.js';
+import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate } from './intake.js';
 import { ModelGateway } from './model.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
@@ -34,16 +35,20 @@ const revisionOf = value => {
   return value;
 };
 
-export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema = 'public', key, sessionDays = 30, publicOrigin, rateLimit = 600, gateway } = {}) {
+export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema = 'public', key, sessionDays = 30, publicOrigin, allowedOrigins = [], rateLimit = 600, gateway } = {}) {
+  if (!Array.isArray(allowedOrigins) || allowedOrigins.some(value => {
+    try { const url = new URL(value); return url.origin !== value || !['http:', 'https:'].includes(url.protocol) || url.username || url.password; }
+    catch { return true; }
+  })) throw new Error('ALLOWED_ORIGINS must contain exact HTTP(S) origins');
   const store = await Store.connect(databaseUrl, key || loadContentKey(resolve('./runtime/content.key')), sessionDays, { schema });
   if (gateway === undefined) gateway = process.env.MODEL_BASE_URL && process.env.MODEL_API_KEY ? new ModelGateway({
     baseUrl:process.env.MODEL_BASE_URL, apiKey:process.env.MODEL_API_KEY,
-    model:process.env.MODEL_NAME || 'gemma4:12b', timeoutMs:Number(process.env.MODEL_TIMEOUT_MS || 180000)
+    model:process.env.MODEL_NAME || 'gemma4:12b', timeoutMs:Number(process.env.MODEL_TIMEOUT_MS || 180000),
+    protocol:process.env.MODEL_PROTOCOL
   }) : null;
   const limits = new Map();
   const resultRuns = new Map();
-  let lastPurge = 0;
-  const view = row => ({ id: row.id, revision: row.revision, name:row.state.name, ...currentView(row.state), log: row.state.log });
+  const view = row => ({ id: row.id, revision: row.revision, name:row.state.name, chat_title:row.state.chatTitle || '', ...currentView(row.state), log: row.state.log });
   const server = createServer(async (req, res) => {
     const requestId = randomUUID();
     res.setHeader('X-Request-Id', requestId);
@@ -54,8 +59,10 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
     res.setHeader('Content-Security-Policy', "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
     try {
       const expectedOrigin = publicOrigin || `http://127.0.0.1:${server.address()?.port}`;
-      if (req.headers.host !== new URL(expectedOrigin).host) throw new HttpError(403, 'HOST_REJECTED', '이 주소에서는 접근할 수 없어요.');
-      if (req.headers.origin && req.headers.origin !== expectedOrigin) throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
+      const origins = [expectedOrigin, ...allowedOrigins];
+      const hostOrigin = origins.find(value => new URL(value).host === req.headers.host);
+      if (!hostOrigin) throw new HttpError(403, 'HOST_REJECTED', '이 주소에서는 접근할 수 없어요.');
+      if (req.headers.origin && !origins.includes(req.headers.origin)) throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
       if (req.headers['sec-fetch-site'] === 'cross-site') throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
       const url = new URL(req.url, expectedOrigin), path = url.pathname, method = req.method;
       if (path === '/health' && method === 'GET') return json(res, 200, { status:'ok', model_configured:Boolean(gateway), mode:'personal_demo' });
@@ -80,24 +87,25 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (!entry || entry.until < Date.now()) limits.set(ip, { count:1, until:Date.now() + 60000 });
       else if (++entry.count > rateLimit) { res.setHeader('Retry-After', '60'); throw new HttpError(429, 'RATE_LIMITED', '잠시 후 다시 시도해 주세요.'); }
       if (limits.size > 1000) for (const [address, limit] of limits) if (limit.until < Date.now()) limits.delete(address);
-      if (Date.now() - lastPurge > 3600000) { await store.purgeExpired(); lastPurge = Date.now(); }
       let browser = await store.browser(tokenFrom(req));
       if (method === 'GET' && path === '/api/bootstrap') {
         if (!browser) {
           browser = await store.createBrowser();
-          res.setHeader('Set-Cookie', `malssi_session=${browser.token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${sessionDays * 86400}${expectedOrigin.startsWith('https:') ? '; Secure' : ''}`);
+          const secure = (req.headers.origin || hostOrigin).startsWith('https:') ||
+            (req.headers['x-forwarded-proto'] === 'https' && origins.some(value => value.startsWith('https:')));
+          res.setHeader('Set-Cookie', `malssi_session=${browser.token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${sessionDays * 86400}${secure ? '; Secure' : ''}`);
         }
         return json(res, 200, {
           schema_version:'1.0', csrf_token:browser.csrf,
           mode:'personal_demo', model_connected:Boolean(gateway),
           records:await store.records(browser.id), column_state:await store.columnState(browser.id),
-          columns, categories, questions:questionCatalog
+          columns, categories, questions:questionCatalogOf(await store.questionSet())
         });
       }
       if (!browser) throw new HttpError(401, 'SESSION_REQUIRED', '앱을 새로고침해 주세요.');
       if (!['GET','HEAD'].includes(method) && !safeEqual(req.headers['x-csrf-token'], browser.csrf)) throw new HttpError(403, 'CSRF_REJECTED', '앱을 새로고침한 뒤 다시 시도해 주세요.');
       const owner = browser.id;
-      if (method === 'GET' && path === '/api/questions') return json(res, 200, { questions:questionCatalog });
+      if (method === 'GET' && path === '/api/questions') return json(res, 200, { questions:questionCatalogOf(await store.questionSet()) });
       if (method === 'GET' && path === '/api/columns') {
         const category = url.searchParams.get('category') || '전체', only = url.searchParams.get('only') || '';
         if (!['전체', ...categories.map(c => c[0])].includes(category) || !['','unread','saved'].includes(only)) throw new HttpError(422, 'INVALID_FILTER', '분류를 확인해 주세요.');
@@ -130,7 +138,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       }
       if (method === 'POST' && path === '/api/intakes') {
         object(await body(req), []);
-        return json(res, 201, view(await store.createIntake(owner, createIntake())));
+        return json(res, 201, view(await store.createIntake(owner, createIntake(await store.questionSet()))));
       }
       const intakeMatch = /^\/api\/intakes\/([^/]+)(?:\/(answers|back|context|result))?$/.exec(path);
       if (intakeMatch) {
@@ -149,15 +157,18 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           }, action === 'back' ? 'correction' : 'user_answer');
           let warning;
           if (gateway && action === 'answers' && !input.skipped) {
+            const context = (await store.context(owner, id)).context;
+            let memory;
             try {
-              const context = (await store.context(owner, id)).context;
-              const memory = await gateway.updateState(context, row.state.agentMemory || null);
-              row = await store.updateIntake(owner, id, row.revision, state => ({ ...state, agentMemory:memory, modelStatus:'connected' }), 'model_update');
+              memory = await gateway.updateState(context, row.state.agentMemory || null);
             } catch (error) {
+              if (!(error instanceof HttpError) || !error.code.startsWith('MODEL_')) throw error;
               // Input was committed before the external call, so an outage cannot lose it.
-              row = await store.intake(owner, id);
+              console.error(`[${requestId}] model state update failed (${error.code})`);
               warning = '답변은 저장했어요. 모델 상태 정리는 다음 답변에서 다시 시도해요.';
             }
+            row = warning ? await store.intake(owner, id)
+              : await store.updateIntake(owner, id, row.revision, state => applyModelUpdate(state, memory), 'model_update');
           }
           return json(res, 200, { ...view(row), ...(warning ? { model_warning:warning } : {}) });
         }
@@ -178,11 +189,12 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             // Keep the existing UI's explicit self-harm-option safety card safeguard.
             p.safety ||= context.payload.answers.some(a => a.selected.some(o => o.meta.s === 'suicidal') || /죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|자해/.test(a.type === 'text' ? a.text : a.custom));
             row = await store.updateIntake(owner, id, revision, state => {
-              const next = { ...state, agentMemory:result.patient_state, agentResult:result, modelStatus:'connected' };
+              const next = { ...applyModelUpdate(state, { patient_state:result.patient_state,
+                name_index:result.name_index, question_plan:{ skip:[] } }), agentResult:result };
               next.log = [...state.log, { who:'ai', text:'고마워요. 들려주신 이야기를 바탕으로 말하는 방법을 정리했어요.', fu:false, face:'thanks' }];
               next.agentRecord = {
-                id:recordId, title:p.name || '그분', date:new Date().toISOString(),
-                profile:p, guide:result.guide, log:next.log, followUps:state.fuCount,
+                id:recordId, title:next.chatTitle || next.name || '그분', date:new Date().toISOString(),
+                profile:{ ...p, name:next.name }, guide:result.guide, log:next.log, followUps:state.fuCount,
                 provenance:{ kind:'model', model:gateway.model || 'gemma4:12b', clinically_validated:false }
               };
               next.agentRecord.context = buildContext(next);
@@ -224,7 +236,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const sessionDays = Number(process.env.SESSION_TTL_DAYS || 30);
   if (!Number.isInteger(sessionDays) || sessionDays < 1 || sessionDays > 90) throw new Error('SESSION_TTL_DAYS must be 1..90');
   const key = loadContentKey(resolve('./runtime/content.key'));
-  const { server } = await createApp({ sessionDays, publicOrigin, key });
-  server.listen(port, host, () => console.log(`말씨 개인 시연: ${publicOrigin} (모델 API 미연결)`));
+  const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',').map(value => value.trim()).filter(Boolean);
+  const { server } = await createApp({ sessionDays, publicOrigin, allowedOrigins, key });
+  const modelStatus = process.env.MODEL_BASE_URL && process.env.MODEL_API_KEY ? '설정 완료' : '설정 없음';
+  server.listen(port, host, () => console.log(`말씨 개인 시연: ${publicOrigin} (모델 API ${modelStatus})`));
   for (const signal of ['SIGINT','SIGTERM']) process.once(signal, () => { server.close(); server.closeIdleConnections(); });
 }

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { Store } from '../src/store.js';
-import { createIntake, answerIntake, backIntake, buildContext } from '../src/intake.js';
+import { createIntake, answerIntake, backIntake, buildContext, currentView } from '../src/intake.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const databaseTest = (name, run) => test(name, { skip: !databaseUrl && 'Set TEST_DATABASE_URL to an isolated PostgreSQL test database' }, run);
@@ -28,7 +28,7 @@ async function fixture(t) {
 const exampleRecord = (id = 'demo-record') => ({ id, date: '2026-10-09T01:00:00.000Z', name: '동생', text: '요즘 식사량이 줄었어요.' });
 const answer = (state, question_id, text) => answerIntake(state, { question_id, text });
 
-databaseTest('anonymous browser tokens are hashed, expire, and isolate all stored resources', async t => {
+databaseTest('anonymous browser tokens expire while server verification records remain and stay isolated', async t => {
   const { store } = await fixture(t);
   const first = await store.createBrowser();
   const other = await store.createBrowser();
@@ -49,10 +49,11 @@ databaseTest('anonymous browser tokens are hashed, expire, and isolate all store
   await assert.rejects(store.saveRecord(other.id, exampleRecord('foreign'), intake.id), { status: 404 });
   await store.pool.query('UPDATE browsers SET expires_at=CURRENT_TIMESTAMP-INTERVAL \'1 second\' WHERE id=$1', [first.id]);
   assert.equal(await store.browser(first.token), null);
-  assert.equal(await store.purgeExpired(), 1);
   for (const table of ['intakes', 'patient_states', 'patient_state_revisions', 'records', 'column_states']) {
-    assert.equal((await store.pool.query(`SELECT COUNT(*)::INTEGER AS count FROM ${table} WHERE owner=$1`, [first.id])).rows[0].count, 0);
+    assert.equal((await store.pool.query(`SELECT COUNT(*)::INTEGER AS count FROM ${table} WHERE owner=$1`, [first.id])).rows[0].count, 1);
   }
+  assert.deepEqual(await store.record(first.id, 'demo-record'), exampleRecord());
+  assert.deepEqual((await store.context(first.id, intake.id)).context, buildContext(intake.state));
   assert.ok(await store.browser(other.token));
 });
 
@@ -151,9 +152,54 @@ databaseTest('restart preserves encrypted data, startup rejects a changed key, a
   f.store = await Store.connect(databaseUrl, f.key, 30, { schema: f.schema });
   assert.deepEqual(await f.store.record(browser.id, 'demo-record'), exampleRecord());
   assert.deepEqual((await f.store.context(browser.id, intake.id)).context, buildContext(intake.state));
-  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 1);
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 2);
   await f.store.pool.query('UPDATE schema_migrations SET checksum=$1', ['tampered-checksum']);
   await assert.rejects(Store.connect(databaseUrl, f.key, 30, { schema: f.schema }), /checksum/);
+});
+
+databaseTest('database questions seed once and edits, additions, ordering and removals survive restart', async t => {
+  const f = await fixture(t);
+  const before = await f.store.questionSet();
+  assert.equal(before.questions.length, 30);
+  assert.equal(before.gapQuestion.id, 'gap_obs');
+  const browser = await f.store.createBrowser();
+  const old = await f.store.createIntake(browser.id, createIntake(before));
+  const originalPrompt = currentView(old.state).question.q;
+  await f.store.pool.query(`UPDATE questions SET definition=jsonb_set(definition,'{q}',to_jsonb($1::text)),
+    updated_at=CURRENT_TIMESTAMP WHERE id='name'`, ['수정된 이름 질문입니다.']);
+  await f.store.pool.query(`INSERT INTO questions(id,kind,sort_order,enabled,subject,definition)
+    VALUES ('demo_note','base',-10,TRUE,'patient',$1::jsonb)`,
+  [JSON.stringify({ type:'text', q:'시연 메모를 알려 주세요.', sec:'추가 메모', face:'listen' })]);
+  await f.store.pool.query("UPDATE questions SET sort_order=-20 WHERE id='contact'");
+  await f.store.pool.query("UPDATE questions SET enabled=FALSE WHERE id='mysupport'");
+  await f.store.pool.query("DELETE FROM questions WHERE id='extra'");
+  const changed = await f.store.questionSet();
+  assert.notEqual(changed.version, before.version);
+  assert.deepEqual(changed.questions.slice(0, 2).map(question => question.id), ['contact', 'demo_note']);
+  assert.equal(changed.questions.find(question => question.id === 'name').q, '수정된 이름 질문입니다.');
+  assert.equal(changed.questions.some(question => ['extra','mysupport'].includes(question.id)), false);
+  const fresh = await f.store.createIntake(browser.id, createIntake(changed));
+  assert.equal(currentView(fresh.state).question.id, 'contact');
+  assert.equal(currentView((await f.store.intake(browser.id, old.id)).state).question.q, originalPrompt);
+  await f.store.close();
+  f.store = null;
+  f.store = await Store.connect(databaseUrl, f.key, 30, { schema:f.schema });
+  assert.deepEqual(await f.store.questionSet(), changed);
+  assert.equal((await f.store.pool.query("SELECT COUNT(*)::INTEGER AS count FROM questions WHERE id='extra'")).rows[0].count, 0);
+  assert.equal((await f.store.pool.query("SELECT enabled FROM questions WHERE id='mysupport'")).rows[0].enabled, false);
+  assert.equal(currentView((await f.store.intake(browser.id, old.id)).state).question.q, originalPrompt);
+});
+
+databaseTest('invalid or empty database questions fail instead of substituting the original catalog', async t => {
+  const { store } = await fixture(t);
+  await assert.rejects(store.pool.query("UPDATE questions SET definition='{}'::jsonb WHERE id='name'"), { code:'23514' });
+  await assert.rejects(store.pool.query("UPDATE questions SET subject='invented' WHERE id='name'"), { code:'23514' });
+  await store.pool.query(`UPDATE questions SET definition=jsonb_set(definition,'{when}',
+    '{"execute":"process.exit()"}'::jsonb) WHERE id='name'`);
+  await assert.rejects(store.questionSet(), { code:'QUESTION_BANK_INVALID' });
+  await store.pool.query("UPDATE questions SET definition=definition-'when' WHERE id='name'");
+  await store.pool.query('UPDATE questions SET enabled=FALSE');
+  await assert.rejects(store.questionSet(), { code:'QUESTION_BANK_INVALID' });
 });
 
 test('PostgreSQL schema names reject connection-option or identifier injection', async () => {

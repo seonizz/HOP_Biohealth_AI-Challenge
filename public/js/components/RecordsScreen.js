@@ -41,7 +41,7 @@ const RecordsScreen={
       if(this._deleting!=null)return;
       if(pendingDel!==id){pendingDel=id;this.draw();return;}
       this._deleting=id;this._openSequence=(this._openSequence||0)+1;this.draw();
-      try{await deleteRec(id);pendingDel=null;if(curRec===id)curRec=null;this._deleting=null;this.draw();}
+      try{await deleteRec(id);this._openSequence=(this._openSequence||0)+1;pendingDel=null;if(curRec===id)curRec=null;this._deleting=null;this.draw();}
       catch(error){this._deleting=null;this.draw();this.error(error.message);}
     });
   },

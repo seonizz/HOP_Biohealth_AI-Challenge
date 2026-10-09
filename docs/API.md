@@ -6,7 +6,7 @@
 |---|---|
 | `GET /health` | 프로세스 상태와 모델 설정 유무; 실제 모델 준비 여부를 보증하지 않음 |
 | `GET /api/bootstrap` | 기록, 칼럼 상태·목록·분류, 정확한 질문 목록, CSRF 토큰 |
-| `GET /api/questions` | 30개 문항 카탈로그 |
+| `GET /api/questions` | DB의 현재 활성 문항 카탈로그(초기 30개) |
 | `POST /api/intakes` | `{}`로 새 대화 생성 |
 | `GET /api/intakes/:id` | 현재 질문·진행률·대화 로그 |
 | `POST /api/intakes/:id/answers` | 원문 답변 저장 → 모델 상태 갱신 → 다음 질문 |
@@ -21,6 +21,8 @@
 | `GET /api/columns/random?exclude=listen` | 제외한 글과 다른 글 뽑기 |
 | `GET /api/columns/:article` | 칼럼과 상태 |
 | `PATCH /api/columns/:article/state` | `{read:true}` 또는 `{saved:true/false}`; 읽음 취소는 기존 UI에 없어 받지 않음 |
+
+질문 카탈로그와 새 상담은 `questions` 테이블에서 읽습니다. 진행 중 상담은 시작 시 질문 스냅샷을 사용합니다. 문맥의 `question_set_version`으로 당시 구성을 확인할 수 있습니다. 관리 방법은 [질문 관리](QUESTIONS.md)를 참고하세요.
 
 ## 답변
 
@@ -38,7 +40,7 @@
 
 `selected`는 해당 질문 보기의 0 기반 번호입니다. 서버가 보기 문구·메타를 제공하고 검증합니다. 단일 보기에는 하나, 단독 보기에는 다른 선택을 함께 보낼 수 없습니다. “네, 직접 입력” 보기의 부가 문구는 `text`로 보냅니다. `follow_up:true`인 현재 질문에는 동일 플래그로 답해야 합니다.
 
-응답은 `id,revision,name,status,question,progress,section,canGoBack,log`를 포함합니다. `status=ready`이면 현재 질문은 `null`입니다. 답변 저장 후 모델 실패 시 HTTP 200과 `model_warning`을 반환합니다. 입력은 이미 저장되어 있으며 다음 질문을 진행할 수 있습니다. 항상 반환된 `revision`을 다음 요청에 사용합니다. 409가 발생하면 현재 상태를 다시 조회합니다.
+응답은 `id,revision,name,chat_title,status,question,progress,section,canGoBack,log`를 포함합니다. `chat_title`은 모델이 이름 답변의 실제 원문에서 추출한 호칭이며 식별되지 않으면 빈 문자열입니다. `status=ready`이면 현재 질문은 `null`입니다. 답변 저장 후 모델 실패 시 HTTP 200과 `model_warning`을 반환합니다. 입력은 이미 저장되어 있으며 다음 질문을 진행할 수 있습니다. 항상 반환된 `revision`을 다음 요청에 사용합니다. 409가 발생하면 현재 상태를 다시 조회합니다.
 
 ## 서버 내부 상태
 
@@ -53,6 +55,12 @@
 모델 상태의 각 `facts`에는 `subject`, `question_id`, `quote`, `interpretation`, `certainty`가 있습니다. 서버는 현재 답변에 실제로 포함된 인용만 허용하고 당사자/주변인 필드를 섞지 않습니다. 모델의 이전 메모리만으로 근거를 만들 수 없습니다. `unknown` 보기를 확정된 내용으로 승격하지 않습니다. 건너뛴 답변과 미질문에는 사실을 만들 수 없습니다.
 
 원문 상태와 모델 메모리를 동일 트랜잭션에서 버전으로 보존합니다. 외부 모델 호출은 DB 잠금을 잡은 채 실행하지 않습니다. 늦게 도착한 모델 응답은 원래 버전이 달라졌다면 현재 상태에 덮어쓰지 않습니다. 되돌리기는 이후 답변·태그·후속 질문·로그와 그에 따른 모델 해석을 무효화합니다.
+
+세션 쿠키와 상담 보관은 분리합니다. 세션이 만료돼도 원문·결과·버전 이력을 자동 삭제하지 않습니다. `DELETE /api/records/:id`로 명시적으로 삭제한 기록만 연결된 상담 자료와 함께 제거합니다. 관리자 검증은 브라우저 세션에 의존하지 않는 로컬 `npm run export:verification`으로 수행합니다.
+
+상태 모델은 `{patient_state,name_index,question_plan:{skip:[]}}`를 JSON으로 반환합니다. 이름 인덱스는 `{alias,source_question_id:"name",quote}`이며 실제 이름 입력·후속 답변만 인용할 수 있습니다. `skip` 항목은 `{question_id,reason,explanation,evidence:[{subject,question_id,quote}]}`입니다. 현재 미응답 후보만 선택하고 `already_covered`는 이미 답한 원문 근거를 요구합니다. `not_needed`는 5개 이상 답변 이후의 선택 질문만 허용합니다. 이름·전하고 싶은 말·원인 분기 기준은 제외하고 필수 질문은 `already_covered`만 허용합니다. 결정은 `auto_skipped` 상태와 근거로 저장하며 `payload.answers`에 답변을 만들지 않습니다. 최종 내부 결과는 `{guide,patient_state,assessment,name_index}`입니다.
+
+`MODEL_PROTOCOL=json_prompt`인 학습 모델은 지원하는 텍스트 Chat Completions 필드만 사용합니다. 출력 최대 1,024토큰에 맞춰 모델 상태의 `user_goal`은 서버 원문으로 채우고, 최종 모델 JSON의 `guide,assessment`에 검증된 상태·이름 인덱스를 결합한 뒤 동일 검증을 적용합니다. 모델 입력에 전체 대화 로그를 중복 전송하지 않습니다. `json_schema`인 Ollama 경로는 JSON Schema 출력 제약을 사용합니다. 두 경로 모두 근거 없는 JSON을 저장하지 않습니다.
 
 ## 결과와 오류
 

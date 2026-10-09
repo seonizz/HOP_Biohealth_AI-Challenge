@@ -1,15 +1,13 @@
-import { questions, follows, isThin, optLabel, optMeta, ruleState, renderQuestion } from './catalog.js';
+import { isThin, optLabel, optMeta, renderQuestion } from './catalog.js';
+import { initialQuestionSet, conditionMatches, followMatches, mergeFollow, branchGateIds } from './question-bank.js';
 import { HttpError } from './errors.js';
+import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
 
 const SKIP = '(건너뛰었어요)';
 const WELCOME = '안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.';
-const GAP_QUESTION = {
-  id: 'gap_obs', type: 'text', cue: true, required: true, face: 'think',
-  q: '말하는 방법을 정확히 맞추려면 {name:의} 요즘 모습을 조금 더 알아야 해요. 가장 마음에 걸리는 장면을 떠올려 적어 주세요.',
-  ph: '예: 밥을 거의 안 먹고 잠만 자요',
-};
-const SUPPORTER_IDS = new Set(['moment', 'moment_freq', 'feeling', 'cgchange', 'cgchange_more', 'mycoping', 'mysupport']);
-const GOAL_IDS = new Set(['want', 'goal']);
+// Old saved intakes keep the original seed; newly created intakes carry their DB snapshot.
+const questionSetOf = state => state.questionSet || initialQuestionSet;
+const subjectOf = question => question.subject;
 
 function invalid(code, message, status = 400) {
   throw new HttpError(status, code, message);
@@ -19,6 +17,7 @@ function snapshot(state) {
   return structuredClone({
     i: state.i, ans: state.ans, tags: state.tags, name: state.name,
     fuCount: state.fuCount, extraObs: state.extraObs, logLen: state.log.length,
+    modelSkipped: state.modelSkipped || {}, nameIndex: state.nameIndex || null, chatTitle: state.chatTitle || '',
   });
 }
 
@@ -30,43 +29,50 @@ function addPrompt(state, question, followUp = false) {
   state.log.push({ who: 'ai', text: rendered.q, fu: followUp, face: rendered.face || 'ponder', ...(rendered.why ? { why: rendered.why } : {}) });
 }
 
-function advance(state) {
-  while (state.i < questions.length && questions[state.i].when && !questions[state.i].when(ruleState(state))) state.i++;
+function advance(state, previous) {
+  const { questions, gapQuestion } = questionSetOf(state);
+  while (state.i < questions.length && (state.modelSkipped?.[questions[state.i].id] ||
+    (questions[state.i].when && !conditionMatches(questions[state.i].when, state)))) state.i++;
   if (state.i >= questions.length) {
-    if (!state.ans.mood?.sel.length && !state.extraObs && isThin(state.ans.concern?.text, 1)) {
+    if (gapQuestion && !state.ans.mood?.sel.length && !state.extraObs && isThin(state.ans.concern?.text, 1) &&
+      !['mood', 'concern'].some(id => state.modelSkipped?.[id]?.reason === 'already_covered')) {
       state.pendingFollow = { kind: 'gap', questionId: 'gap_obs' };
       state.fuCount++;
-      addPrompt(state, GAP_QUESTION, true);
+      addPrompt(state, gapQuestion, true);
     } else {
       state.status = 'ready';
     }
     return;
   }
-  state.prev = state.cur;
+  state.prev = previous === undefined ? state.cur : previous;
   state.cur = snapshot(state);
   addPrompt(state, questions[state.i]);
 }
 
-export function createIntake() {
+export function createIntake(questionSet = initialQuestionSet) {
   const state = {
+    questionSet: structuredClone(questionSet),
     i: 0, ans: {}, tags: [], name: '', fuCount: 0, extraObs: '',
     log: [{ who: 'ai', text: WELCOME, fu: false, face: 'hello' }],
     prev: null, cur: null, pendingFollow: null, status: 'active',
+    modelSkipped: {}, nameIndex: null, chatTitle: '',
   };
   advance(state);
   return state;
 }
 
 function activeQuestion(state) {
-  if (state.pendingFollow?.kind === 'gap') return { ...GAP_QUESTION, follow_up: true };
+  const { questions, gapQuestion } = questionSetOf(state);
+  if (state.pendingFollow?.kind === 'gap') return { ...gapQuestion, follow_up: true };
   if (state.pendingFollow) {
-    return { ...follows[state.pendingFollow.questionId].q, id: state.pendingFollow.questionId,
+    return { ...questions[state.i].follow_up.question, id: state.pendingFollow.questionId,
       sec: questions[state.i].sec, required: true, face: 'ponder', follow_up: true };
   }
   return state.status === 'active' ? questions[state.i] : null;
 }
 
 export function currentView(state) {
+  const { questions } = questionSetOf(state);
   const question = activeQuestion(state);
   const rendered = question ? renderQuestion(question, state) : null;
   return {
@@ -131,7 +137,7 @@ function normalizeAnswer(question, input) {
 }
 
 function commitAnswer(state, question, answer) {
-  // FOLLOW merge functions execute in the catalog VM; keep stored arrays native and JSON-safe.
+  // Keep merged selections native and JSON-safe.
   answer = { ...answer, sel: Array.from(answer.sel) };
   state.ans[question.id] = answer;
   if (question.id === 'name') state.name = isThin(answer.text, 1) ? '그분' : answer.text.slice(0, 20);
@@ -143,6 +149,7 @@ function commitAnswer(state, question, answer) {
 }
 
 export function answerIntake(originalState, input) {
+  const { questions } = questionSetOf(originalState);
   if (originalState.status !== 'active') invalid('intake_complete', '이미 모든 질문에 답했어요.', 409);
   const question = activeQuestion(originalState);
   if (input?.follow_up !== undefined && typeof input.follow_up !== 'boolean') {
@@ -165,14 +172,14 @@ export function answerIntake(originalState, input) {
       return state;
     }
     const baseQuestion = questions[state.i];
-    const merged = follows[pending.questionId].merge(pending.answer, answer);
+    const merged = mergeFollow(baseQuestion.follow_up, pending.answer, answer);
     commitAnswer(state, baseQuestion, {
       ...merged, custom: merged.custom || '', skipped: false, rawText: pending.answer.rawText,
       followUp: { question: renderQuestion(question, state).q, answer },
     });
   } else {
-    const follow = follows[question.id];
-    if (follow && !answer.skipped && follow.when(answer)) {
+    const follow = question.follow_up;
+    if (follow && !answer.skipped && followMatches(follow, answer)) {
       state.pendingFollow = { kind: 'question', questionId: question.id, answer };
       state.fuCount++;
       addPrompt(state, activeQuestion(state), true);
@@ -192,9 +199,39 @@ export function backIntake(originalState) {
   const state = structuredClone(originalState);
   const previous = state.prev;
   const { logLen, ...values } = previous;
-  Object.assign(state, values, { status: 'active', pendingFollow: null, prev: null, cur: null });
+  Object.assign(state, values, { status: 'active', pendingFollow: null, prev: null, cur: null,
+    modelSkipped: values.modelSkipped || {}, nameIndex: values.nameIndex || null, chatTitle: values.chatTitle || '' });
   state.log.length = logLen;
   advance(state);
+  return state;
+}
+
+// Decisions are grounded in the same persisted input as the memory update.
+// Skipping a question never creates a user answer or an inferred option selection.
+export function applyModelUpdate(originalState, output) {
+  const context = buildContext(originalState);
+  const nameIndex = validateNameIndex(output.name_index, context);
+  const plan = validateQuestionPlan(output.question_plan, context);
+  const state = structuredClone(originalState);
+  state.agentMemory = structuredClone(output.patient_state);
+  state.modelStatus = 'connected';
+  if (nameIndex) {
+    state.name = nameIndex.alias;
+    state.chatTitle = nameIndex.alias;
+    state.nameIndex = nameIndex;
+  } else {
+    state.nameIndex = null;
+    state.chatTitle = '';
+  }
+  state.modelSkipped ||= {};
+  for (const decision of plan.skip) state.modelSkipped[decision.question_id] = structuredClone(decision);
+  if (state.status === 'active' && !state.pendingFollow) {
+    // The next prompt was prepared before the external model call and has not been displayed yet.
+    const previous = state.prev;
+    state.log.length = state.cur.logLen;
+    state.cur = null;
+    advance(state, previous);
+  }
   return state;
 }
 
@@ -211,7 +248,9 @@ function payloadAnswer(question, answer, state) {
 
 function evidenceField(question, state) {
   const answer = state.ans[question.id];
-  if (!answer) return { id: question.id, question: renderQuestion(question, state).q, status: 'not_asked', source: 'app_user_report' };
+  if (!answer) return { id: question.id, question: renderQuestion(question, state).q,
+    status: state.modelSkipped?.[question.id] ? 'auto_skipped' : 'not_asked', source: 'app_user_report',
+    ...(state.modelSkipped?.[question.id] ? { skip_decision: structuredClone(state.modelSkipped[question.id]) } : {}) };
   const payload = payloadAnswer(question, answer, state);
   // Unknown status only reflects an explicit UI option; short free text is retained as reported.
   const explicitlyUnknown = payload.selected.some(option => option.label.includes('잘 모르겠어요'));
@@ -223,12 +262,14 @@ function evidenceField(question, state) {
 }
 
 export function buildContext(state) {
+  const { questions, gapQuestion, version } = questionSetOf(state);
+  const gates = branchGateIds(questionSetOf(state));
   // A thin first answer is already evidence even while its follow-up is pending.
   const pending = state.pendingFollow?.kind === 'question' ? state.pendingFollow : null;
   const evidenceState = pending ? { ...state, ans:{ ...state.ans, [pending.questionId]:pending.answer } } : state;
   const answers = questions.filter(question => evidenceState.ans[question.id])
     .map(question => payloadAnswer(question, evidenceState.ans[question.id], evidenceState));
-  if (state.ans.gap_obs) answers.push(payloadAnswer(GAP_QUESTION, state.ans.gap_obs, state));
+  if (state.ans.gap_obs && gapQuestion) answers.push(payloadAnswer(gapQuestion, state.ans.gap_obs, state));
   const fields = Object.fromEntries(questions.map(question => [question.id, {
     ...evidenceField(question, evidenceState),
     ...(pending?.questionId === question.id ? { follow_up_pending:true } : {})
@@ -236,17 +277,27 @@ export function buildContext(state) {
   const value = id => state.ans[id]?.skipped ? '' : state.ans[id]?.text || '';
   return {
     schema_version: '1.0',
+    question_set_version:version,
+    answered_count: Object.values(evidenceState.ans).filter(answer => !answer.skipped).length,
+    question_candidates: state.status === 'active' ? questions.slice(state.i)
+      .filter(question => !['name','want','cause'].includes(question.id) && !gates.has(question.id) && !evidenceState.ans[question.id] &&
+        !state.modelSkipped?.[question.id] && (!question.when || conditionMatches(question.when, evidenceState)))
+      .map(question => ({ id:question.id, question:renderQuestion(question, evidenceState).q,
+        subject:subjectOf(question),
+        required:Boolean(question.required), noSkip:Boolean(question.noSkip) })) : [],
+    name_index: state.nameIndex || null,
+    chat_title: state.chatTitle || '',
     user_goal: { message: fields.want, desired_outcomes: fields.goal },
     patient: {
       alias: state.name || '그분', relationship: fields.rel,
       fields: {
-        ...Object.fromEntries(questions.filter(question => !SUPPORTER_IDS.has(question.id) && !GOAL_IDS.has(question.id)).map(question => [question.id, fields[question.id]])),
-        ...(state.ans.gap_obs ? { gap_obs:evidenceField(GAP_QUESTION, state) } : {}),
+        ...Object.fromEntries(questions.filter(question => subjectOf(question) === 'patient').map(question => [question.id, fields[question.id]])),
+        ...(state.ans.gap_obs && gapQuestion ? { gap_obs:evidenceField(gapQuestion, state) } : {}),
       },
     },
     supporter: {
       role: 'informant',
-      fields: Object.fromEntries(questions.filter(question => SUPPORTER_IDS.has(question.id)).map(question => [question.id, fields[question.id]])),
+      fields: Object.fromEntries(questions.filter(question => subjectOf(question) === 'supporter').map(question => [question.id, fields[question.id]])),
     },
     payload: { name: state.name, tags: [...state.tags], answers },
     profileInput: {
