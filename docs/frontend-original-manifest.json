@@ -180,8 +180,8 @@
       "reason": "로고를 누르면 처음 화면"
     },
     "js/app.js": {
-      "sha256": "195029c99b8261a60228e016c14075c5c35e225a0ab54c27fc4126657a01ac8d",
-      "reason": "로고를 누르면 처음 화면"
+      "sha256": "448d7da085d80e36a26311ff74b3d3a1086efc0103bd71e9c45ba31058da9dbc",
+      "reason": "로고를 누르면 처음 화면 (대화 중이면 나가기 확인)"
     },
     "js/core/conversation.js": {
       "sha256": "ffa5b475076cc723edbd24bd048fcfe0423484b6a1d7c1cfaf1bcb06ec901140",
@@ -190,6 +190,14 @@
     "js/components/ChatInput.js": {
       "sha256": "4664a798748e2a3701613ec6e29f52a7f881c773c4b33bd3bf6906517cb0ccfd",
       "reason": "네 → 직접 입력 창에서도 이전 질문으로"
+    },
+    "js/components/ChatScreen.js": {
+      "sha256": "17e314641894288c33612a09b6cd3c434bf6766173fa5fad5c71ce3e2835770f",
+      "reason": "대화 중 나가기 확인 창"
+    },
+    "css/chat.css": {
+      "sha256": "9b4f1566974782a8fd99a974cc2b0fe6d6e33a2f6360b55576df20b784addef3",
+      "reason": "대화 중 나가기 확인 창"
     }
   }
 }

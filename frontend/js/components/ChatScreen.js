@@ -7,6 +7,12 @@ const ChatScreen={
     <div class="log" id="log" aria-live="polite"></div>
     <div class="input" id="input"></div>
   </div>
+  <dialog class="leave" id="leaveDlg" aria-labelledby="leaveT">
+    <img data-m="ponder" alt="">
+    <h3 id="leaveT">정말 처음으로 돌아갈까요?</h3>
+    <p>지금 나가면 이 대화는 저장되지 않아요.<br>지금까지 답해 주신 내용이 모두 사라져요.</p>
+    <div class="acts"><button class="btn" id="leaveStay" autofocus>계속 이야기하기</button><button class="ghost" id="leaveGo">나가기</button></div>
+  </dialog>
 </section>`;},
   mount(){
     // 자동 스크롤: 메시지 추가, 입력 상자 크기 변화(대화창이 줄어듦) 때마다 즉시 맨 아래로
@@ -14,7 +20,20 @@ const ChatScreen={
     const l=$("log"),toBottom=()=>{l.scrollTop=l.scrollHeight;};
     new MutationObserver(toBottom).observe(l,{childList:true,subtree:true});
     new ResizeObserver(toBottom).observe(l);
-    $("restart1").onclick=()=>show("start");
+    $("restart1").onclick=()=>this.leave(()=>show("start"));
+    const d=$("leaveDlg");
+    $("leaveStay").onclick=()=>d.close();
+    d.onclick=e=>{if(e.target===d)d.close();}; // 바깥(배경)을 누르면 계속 이야기하기
+  },
+  // 답을 하나라도 했거나 입력 중이면 저장되지 않는다고 확인한 뒤 나감 (마무리되면 기록이 저장되므로 묻지 않음)
+  started(){
+    if($("chat").hidden||typeof S==="undefined"||!S)return false;
+    return Object.keys(S.ans).length>0||[...document.querySelectorAll("#input textarea,#input input")].some(e=>e.value.trim())||!!document.querySelector("#input .chip[aria-pressed=true]");
+  },
+  leave(go){
+    if(!this.started())return go();
+    $("leaveGo").onclick=()=>{$("leaveDlg").close();go();};
+    $("leaveDlg").showModal();
   },
   clear(){$("log").innerHTML="";},
   // 이전 질문으로 돌아갈 때 그 뒤에 쌓인 말풍선을 지움

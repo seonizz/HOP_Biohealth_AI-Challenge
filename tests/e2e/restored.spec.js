@@ -116,3 +116,14 @@ test('original columns, links, service introduction and mobile interaction',asyn
   await page.screenshot({path:'artifacts/restored-mobile.png',fullPage:true});
   await throughContact(page);await expect(page.locator('#input .done')).toBeEnabled();
 });
+test('leaving mid-conversation asks before discarding answers',async({page})=>{
+  await page.goto('/');await page.locator('#go').click();await question(page,'name');
+  // 아직 아무 답도 없으면 바로 나감
+  await page.locator('#restart1').click();await expect(page.locator('#start')).toBeVisible();
+  await page.locator('#go').click();await question(page,'name');await textAnswer(page,'검증친구');await question(page,'want');
+  await page.locator('#restart1').click();await expect(page.locator('#leaveDlg')).toBeVisible();
+  await expect(page.locator('#leaveDlg')).toContainText('저장되지 않아요');
+  await page.locator('#leaveStay').click();await expect(page.locator('#leaveDlg')).toBeHidden();await expect(page.locator('#chat')).toBeVisible();
+  await page.locator('#chat [data-home]').click();await expect(page.locator('#leaveDlg')).toBeVisible();
+  await page.locator('#leaveGo').click();await expect(page.locator('#start')).toBeVisible();
+});
