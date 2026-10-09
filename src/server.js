@@ -43,7 +43,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   const store = await Store.connect(databaseUrl, key || loadContentKey(resolve('./runtime/content.key')), sessionDays, { schema });
   if (gateway === undefined) gateway = process.env.MODEL_BASE_URL && process.env.MODEL_API_KEY ? new ModelGateway({
     baseUrl:process.env.MODEL_BASE_URL, apiKey:process.env.MODEL_API_KEY,
-    model:process.env.MODEL_NAME || 'gemma4:12b', timeoutMs:Number(process.env.MODEL_TIMEOUT_MS || 180000),
+    model:process.env.MODEL_NAME || 'malssi-gemma4-31b-step100',
+    timeoutMs:process.env.MODEL_TIMEOUT_MS ? Number(process.env.MODEL_TIMEOUT_MS) : undefined,
     protocol:process.env.MODEL_PROTOCOL
   }) : null;
   const limits = new Map();

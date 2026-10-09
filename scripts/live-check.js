@@ -19,7 +19,11 @@ while (state.status === 'active') {
   state = answerIntake(state, input);
 }
 const context = buildContext(state);
-const gateway = new ModelGateway({ baseUrl:process.env.MODEL_BASE_URL, apiKey:process.env.MODEL_API_KEY, model:process.env.MODEL_NAME });
+const gateway = new ModelGateway({
+  baseUrl:process.env.MODEL_BASE_URL, apiKey:process.env.MODEL_API_KEY, model:process.env.MODEL_NAME,
+  protocol:process.env.MODEL_PROTOCOL,
+  timeoutMs:process.env.MODEL_TIMEOUT_MS ? Number(process.env.MODEL_TIMEOUT_MS) : undefined,
+});
 const start = Date.now();
 try {
   const update = await gateway.updateState(context);

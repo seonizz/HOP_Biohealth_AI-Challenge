@@ -60,7 +60,7 @@
 
 상태 모델은 `{patient_state,name_index,question_plan:{skip:[]}}`를 JSON으로 반환합니다. 이름 인덱스는 `{alias,source_question_id:"name",quote}`이며 실제 이름 입력·후속 답변만 인용할 수 있습니다. `skip` 항목은 `{question_id,reason,explanation,evidence:[{subject,question_id,quote}]}`입니다. 현재 미응답 후보만 선택하고 `already_covered`는 이미 답한 원문 근거를 요구합니다. `not_needed`는 5개 이상 답변 이후의 선택 질문만 허용합니다. 이름·전하고 싶은 말·원인 분기 기준은 제외하고 필수 질문은 `already_covered`만 허용합니다. 결정은 `auto_skipped` 상태와 근거로 저장하며 `payload.answers`에 답변을 만들지 않습니다. 최종 내부 결과는 `{guide,patient_state,assessment,name_index}`입니다.
 
-`MODEL_PROTOCOL=json_prompt`인 학습 모델은 지원하는 텍스트 Chat Completions 필드만 사용합니다. 출력 최대 1,024토큰에 맞춰 모델 상태의 `user_goal`은 서버 원문으로 채우고, 최종 모델 JSON의 `guide,assessment`에 검증된 상태·이름 인덱스를 결합한 뒤 동일 검증을 적용합니다. 모델 입력에 전체 대화 로그를 중복 전송하지 않습니다. `json_schema`인 Ollama 경로는 JSON Schema 출력 제약을 사용합니다. 두 경로 모두 근거 없는 JSON을 저장하지 않습니다.
+`MODEL_PROTOCOL=json_prompt`인 학습 모델은 지원하는 텍스트 Chat Completions 필드만 사용합니다. 출력 최대 2,048토큰에 맞춰 모델 상태의 `user_goal`은 서버 원문으로 채우고, 최종 모델 JSON의 `guide,assessment`에 검증된 상태·이름 인덱스를 결합한 뒤 동일 검증을 적용합니다. 모델 입력에 전체 대화 로그를 중복 전송하지 않습니다. `json_schema`인 Ollama 경로는 JSON Schema 출력 제약을 사용합니다. 두 경로 모두 근거 없는 JSON을 저장하지 않습니다.
 
 ## 결과와 오류
 

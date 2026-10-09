@@ -413,7 +413,7 @@ test('trained profile only sends supported request fields and assembles the orig
   const model = trainedGateway(async (_url, request) => {
     const body = JSON.parse(request.body);
     assert.deepEqual(Object.keys(body).sort(), ['max_tokens', 'messages', 'model', 'n', 'stream', 'temperature']);
-    assert.equal(body.max_tokens, 1024); assert.equal(body.n, 1); assert.equal(body.stream, false);
+    assert.equal(body.max_tokens, 2048); assert.equal(body.n, 1); assert.equal(body.stream, false);
     assert.equal(body.temperature, 0); assert.equal(body.model, 'malssi-gemma4-31b-step100');
     assert.deepEqual(body.messages.map(message => message.role), ['system', 'user', 'assistant', 'user']);
     assert.deepEqual(Object.keys(JSON.parse(body.messages[2].content)), ['patient_state', 'name_index', 'question_plan']);
@@ -425,7 +425,7 @@ test('trained profile only sends supported request fields and assembles the orig
     assert.equal(request.body.includes(ctx.user_goal.message.text), false);
     return envelope(JSON.stringify(trainedState()));
   });
-  assert.equal(model.protocol, 'json_prompt'); assert.equal(model.timeoutMs, 600000);
+  assert.equal(model.protocol, 'json_prompt'); assert.equal(model.timeoutMs, 1800000);
   const output = await model.updateState(ctx);
   assert.equal(output.patient_state.user_goal, ctx.user_goal.message.text);
   assert.deepEqual(output.name_index, nameIndex());
@@ -437,6 +437,7 @@ test('trained final output reuses validated state and name while receiving guide
   const model = trainedGateway(async (_url, request) => {
     calls++;
     const body = JSON.parse(request.body);
+    assert.equal(body.max_tokens, 2048);
     const input = JSON.parse(body.messages.at(-1).content);
     assert.ok(input.patient.some(row => row[0] === 'mood'));
     assert.ok(input.supporter.some(row => row[0] === 'feeling'));
@@ -479,24 +480,24 @@ test('trained final projection retains core patient and supporter evidence withi
   }
 });
 
-test('trained profile retries the exact context-budget 400 once with a smaller projection', async () => {
+for (const limit of [4096, 131072]) test(`trained profile retries the ${limit}-token context-budget 400 once with a smaller projection`, async () => {
   const bodies = [];
   const model = trainedGateway(async (_url, request) => {
     bodies.push(JSON.parse(request.body));
-    if (bodies.length === 1) return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: 'Prompt (4097) plus max_tokens (1024) exceeds the 4096-token context budget; no text was truncated' } }), { status: 400 });
+    if (bodies.length === 1) return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: `Prompt (${limit}) plus max_tokens (2048) exceeds the ${limit}-token context budget; no text was truncated` } }), { status: 400 });
     return envelope(JSON.stringify(trainedState()));
   });
   assert.deepEqual(await model.updateState(context()), stateResult());
   assert.equal(bodies.length, 2);
   assert.ok(bodies[1].messages.at(-1).content.length < bodies[0].messages.at(-1).content.length);
-  assert.equal(bodies[1].max_tokens, 1024);
+  assert.equal(bodies[1].max_tokens, 2048);
 });
 
 test('trained retry stops after two budget errors and never retries unsupported fields or malformed output', async () => {
   let calls = 0;
   const model = trainedGateway(async () => {
     calls++;
-    return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: 'Prompt (4097) plus max_tokens (1024) exceeds the 4096-token context budget; no text was truncated' } }), { status: 400 });
+    return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: 'Prompt (4097) plus max_tokens (2048) exceeds the 4096-token context budget; no text was truncated' } }), { status: 400 });
   });
   await assert.rejects(model.updateState(context()), { code: 'MODEL_CONTEXT_TOO_LONG', status: 502 });
   assert.equal(calls, 2);

@@ -46,6 +46,6 @@ if (trainedFlag !== -1) {
     MODEL_API_KEY:apiKey,
     MODEL_NAME:'malssi-gemma4-31b-step100',
     MODEL_PROTOCOL:'json_prompt',
-    MODEL_TIMEOUT_MS:'600000',
+    MODEL_TIMEOUT_MS:'1800000',
   });
 }

@@ -30,9 +30,9 @@ services:
       DEMO_CONTAINER: "true"
       MODEL_BASE_URL: ${MODEL_DOCKER_BASE_URL:-${MODEL_BASE_URL:-}}
       MODEL_API_KEY: ${MODEL_API_KEY:-}
-      MODEL_NAME: ${MODEL_NAME:-gemma4:12b}
-      MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-180000}
-      MODEL_PROTOCOL: ${MODEL_PROTOCOL:-json_schema}
+      MODEL_NAME: ${MODEL_NAME:-malssi-gemma4-31b-step100}
+      MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-1800000}
+      MODEL_PROTOCOL: ${MODEL_PROTOCOL:-}
     ports:
       - "127.0.0.1:${PORT:-9000}:9000"
     depends_on:
