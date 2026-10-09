@@ -17,7 +17,7 @@ node --env-file=.runtime/neon-owner.env backend/scripts/provision-neon.mjs
 
 ## 2. Vercel 프로젝트 배포
 
-Vercel에서 이 저장소를 Import합니다. 프로젝트 루트는 저장소 루트로 두고, Node.js는 24.x를 선택합니다. `vercel.json`이 빌드 명령, `frontend/dist` 출력, API 재작성, 일일 정리 작업을 설정합니다. 현재 코드는 GitHub PR #3의 `feat/malssi-fullstack-integration` 브랜치에 있으므로 이 브랜치를 배포 대상으로 선택하거나 PR을 검토 후 `main`에 병합합니다.
+Vercel에서 이 저장소를 Import합니다. 프로젝트 루트는 저장소 루트로 두고, Node.js는 24.x를 선택합니다. `vercel.json`이 빌드 명령, `frontend/dist` 출력, API 재작성, 일일 정리 작업을 설정합니다. Vercel 설정이 `main`에 병합되기 전에는 `feat/malssi-fullstack-integration` 브랜치를 배포 대상으로 선택합니다.
 
 Vercel 프로젝트의 **Production 환경변수**에 `.runtime/vercel-secrets.json`의 세 값을 등록합니다. 값에 따옴표를 추가하지 마십시오. `HOP_PUBLIC_ORIGIN`은 Vercel의 `VERCEL_PROJECT_PRODUCTION_URL` 시스템 변수가 노출되어 있으면 자동으로 `https://...`로 설정됩니다. 이 변수를 사용할 수 없다면 발급된 공유 주소를 `HOP_PUBLIC_ORIGIN=https://프로젝트.vercel.app` 형식으로 직접 등록하십시오. 환경변수를 변경한 후 재배포합니다.
 
