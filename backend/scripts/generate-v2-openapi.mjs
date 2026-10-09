@@ -20,7 +20,7 @@ const schemas={
  Revision:request({expected_revision:integer}),Request:request({}),MemoryPatch:request({expected_revision:integer,corrected_value:{...str,maxLength:2000}}),MemoryDelete:request({expected_revision:integer,scope:{const:'forget_memory'}}),SourceDelete:request({expected_revision:integer,scope:{const:'delete_source'}}),
  Plan:request({guidance_id:id,action_index:integer,user_edited_text:{...str,maxLength:500}},['guidance_id']),
  Feedback:request({expected_revision:integer,status:{enum:['tried','paused','completed','discarded']},reported_outcome:{enum:['helpful','unhelpful','mixed','unknown','not_tried']},burden_change:{enum:['increased','decreased','same','unknown']},notes:{...str,maxLength:2000}},['expected_revision','status','reported_outcome','burden_change']),
- AccountDelete:request({current_password:str}),
+ AccountDelete:request({current_password:str}),AlertShown:obj({response_id:id}),
  Run:{type:'object',required:['id','status','input_saved','result','error'],properties:{id,status:{enum:['ACCEPTED','RUNNING','SUCCEEDED','FAILED','CANCELLED','SUPERSEDED']},input_saved:{const:true},result:{type:['object','null']},error:{type:['object','null']}}}
 };
 const paths={};
@@ -33,8 +33,11 @@ function route(method,path,summary,schema,success=200){
 schemas.Response={type:'object',description:'Versioned resource snapshot; see client/v2.ts and MALSSI_IMPLEMENTATION.md for fields.'};
 route('get','/api/v2/projects/{id}/conversations','Owned, unexpired project conversations; UUID cursor pagination');
 paths['/api/v2/projects/{id}/conversations'].get.parameters.push({in:'query',name:'limit',schema:{type:'integer',minimum:1,maximum:50,default:50}},{in:'query',name:'cursor',schema:id});
-for(const [path,summary] of [['capabilities','Feature availability'],['consents','Current consent purposes'],['projects','Owned projects'],['projects/{id}','Project'],['conversations/{id}','Conversation snapshot and question'],['conversations/{id}/messages','Messages in sequence order'],['runs/{id}','Saved input and run outcome'],['projects/{id}/memories','Memories, provenance and freshness'],['questionnaires/{version}','Immutable catalog'],['resources','Approved regional resources'],['deletions/{id}','Online and backup deletion state']])route('get','/api/v2/'+path,summary);
+for(const [path,summary] of [['capabilities','Feature availability'],['consents','Current consent purposes'],['projects','Owned projects'],['projects/{id}','Project'],['conversations/{id}','Conversation snapshot and question'],['conversations/{id}/messages','Messages in sequence order'],['conversations/{id}/alerts','Assessment alerts and display state'],['runs/{id}','Saved input and run outcome'],['projects/{id}/memories','Memories, provenance and freshness'],['questionnaires/{version}','Immutable catalog'],['resources','Approved regional resources'],['deletions/{id}','Online and backup deletion state']])route('get','/api/v2/'+path,summary);
 for(const [path,schema,status] of [['consents','Consents',201],['consents/withdraw','Withdraw',202],['projects','ProjectCreate',201],['projects/{id}/conversations','ConversationCreate',201],['conversations/{id}/turns','Turn',200],['runs/{id}/cancel','Request',200],['memories/{id}/confirm','Revision',200],['conversations/{id}/plans','Plan',201],['plans/{id}/feedback','Feedback',201]])route('post','/api/v2/'+path,path,schema,status);
+route('post','/api/v2/runs/{id}/retry','Retry A response with the saved B assessment','Request');
+route('post','/api/v2/alerts/{id}/shown','Acknowledge the linked alert after response rendering','AlertShown');
+paths['/api/v2/alerts/{id}/shown'].post.responses[200].content['application/json'].schema=ref('Response');
 route('patch','/api/v2/projects/{id}','Update display metadata','ProjectPatch');route('patch','/api/v2/memories/{id}','Correct remembered report','MemoryPatch');
 for(const [path,schema] of [['projects/{id}','Revision'],['memories/{id}','MemoryDelete'],['messages/{id}','SourceDelete'],['account','AccountDelete']])route('delete','/api/v2/'+path,path,schema,202);
 paths['/api/v2/conversations/{id}/turns'].post.responses[202]={description:'Input committed; model run accepted',content:{'application/json':{schema:ref('WriteResult')}}};

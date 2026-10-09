@@ -2,6 +2,8 @@ import { strictJson } from '../llm.ts';
 import { evidence } from './crypto.ts';
 import { fail, keys, record, text, V2Error } from './errors.ts';
 import { question, questions } from './questions.ts';
+import { readFileSync } from 'node:fs';
+import { assessmentSchema, responseSchema } from './assessment.ts';
 
 const string = {type:'string',minLength:1};
 const strings = (maxItems=3) => ({type:'array',maxItems,items:string});
@@ -44,6 +46,32 @@ export class LocalAgentModel implements AgentModel {
     const data=await this.request(this.base+'/chat/completions',{model:this.model,messages:[{role:'system',content:POLICY+'\n'+prompts[kind]},{role:'user',content:JSON.stringify(context)}],temperature:0,max_tokens:2048,chat_template_kwargs:{enable_thinking:false},response_format:{type:'json_schema',json_schema:{name:'malssi_'+kind,strict:true,schema:SCHEMAS[kind]}}},signal);
     if(data.choices?.[0]?.finish_reason!=='stop' || typeof data.choices[0].message?.content!=='string')fail('INVALID_MODEL_OUTPUT');
     try{return strictJson(data.choices[0].message.content);}catch{fail('INVALID_MODEL_OUTPUT');}
+  }
+}
+export class DualRoleModel implements AgentModel {
+  readonly evaluator:LocalAgentModel;readonly responder:LocalAgentModel;
+  readonly profile:string;readonly version:string;
+  constructor(evaluatorBase:string,responderBase:string,model:string,apiKey:string,profile:string,version:string){
+    if(!['test','production'].includes(profile)||version!=='v1'||!model.trim())throw new Error('Dual model identity and prompt profile/version must be configured');
+    for(const endpoint of [evaluatorBase,responderBase]){
+      const url=new URL(endpoint);
+      if(url.protocol!=='http:'||!['127.0.0.1','localhost','[::1]'].includes(url.hostname)||url.username||url.password||url.search||url.hash)throw new Error('Dual model endpoint must be HTTP loopback on the worker host');
+    }
+    this.evaluator=new LocalAgentModel(evaluatorBase,model,apiKey,[]);
+    this.responder=new LocalAgentModel(responderBase,model,apiKey,[]);
+    this.profile=profile;this.version=version;
+  }
+  countTokens(value:string,signal:AbortSignal){return this.evaluator.countTokens(value,signal);}
+  async call(kind:string,context:ModelContext,signal:AbortSignal){
+    if(kind!=='assess'&&kind!=='respond')return this.responder.call(kind,context,signal);
+    const model=kind==='assess'?this.evaluator:this.responder;
+    const prompt=readFileSync(new URL(`../../docs/dual-model/prompts/${this.profile}/${this.version}/${kind==='assess'?'evaluator':'responder'}.txt`,import.meta.url),'utf8');
+    const source=kind==='assess'?assessmentSchema:responseSchema;
+    const {$schema,title,...schema}=source;
+    const data=await model.request(model.base+'/chat/completions',{model:model.model,messages:[{role:'system',content:prompt},{role:'user',content:JSON.stringify(context)}],temperature:0,max_tokens:kind==='assess'?768:384,chat_template_kwargs:{enable_thinking:false},response_format:{type:'json_schema',json_schema:{name:kind==='assess'?'patient_cues_v1':'malssi_response_v1',strict:true,schema}}},signal);
+    const choice=data.choices?.[0],reply=choice?.message;
+    if(choice?.finish_reason!=='stop'||typeof reply?.content!=='string'||reply.reasoning_content)fail('INVALID_MODEL_OUTPUT');
+    try{return strictJson(reply.content);}catch{fail('INVALID_MODEL_OUTPUT');}
   }
 }
 export function validateExtraction(raw:any,context:ModelContext) {

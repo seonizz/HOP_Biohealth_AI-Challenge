@@ -66,7 +66,7 @@ export async function createApp(settings: Settings = getSettings(), gateway: Mod
     if (settings.v2Enabled) {
       const db = new V2Database(store.pool,new ContentCipher(settings.contentKey));
       await db.assertRuntimeRole();
-      malssi = new MalssiService(db,{allowDraft:settings.v2AllowDraft,modelEnabled:settings.v2ModelEnabled});
+      malssi = new MalssiService(db,{allowDraft:settings.v2AllowDraft,modelEnabled:settings.v2ModelEnabled,dualEnabled:settings.dualEnabled});
     }
   } catch(error) {await store.close();throw error;}
   const limiter = new Limiter();

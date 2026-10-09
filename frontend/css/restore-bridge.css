@@ -46,6 +46,13 @@ body{font-family:var(--body);font-size:17px;padding-inline:16px}
 .field textarea{min-height:100px}
 .form-body>.actions{justify-content:flex-start}
 .history{max-height:440px}.history-item{border:0;border-radius:20px;background:var(--bg);padding:16px;margin-bottom:10px}
+.chat-transcript{display:grid;gap:12px}
+.chat-transcript h3{font-family:var(--display);font-weight:400;margin:0}
+.chat-bubble{max-width:min(720px,92%);padding:13px 18px;border-radius:20px;background:var(--leaf-soft)}
+.chat-bubble.from-user{justify-self:end;background:var(--cream);border:1px solid var(--leaf-soft)}
+.chat-bubble b{font-family:var(--display);font-weight:400;color:var(--stem)}
+.chat-bubble p{margin:5px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-bubble .score-alert{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--cheek-soft);font-size:14px;color:var(--ink)}
 .history-item .question-text{font-family:var(--display);font-size:17px;color:var(--stem)}
 .guide-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
 .guide-grid>.care,.guide-grid>.script,.guide-grid>.avoid,.guide-grid>.card:last-child{grid-column:1/-1}

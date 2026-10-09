@@ -12,6 +12,7 @@ export function getSettings(overrides: Record<string, unknown> = {}) {
     v2Enabled: process.env.HOP_V2_ENABLED === 'true',
     v2AllowDraft: process.env.HOP_V2_ALLOW_DRAFT === 'true',
     v2ModelEnabled: process.env.HOP_V2_MODEL_ENABLED === 'true',
+    dualEnabled: process.env.HOP_DUAL_ENABLED === 'true',
     contentKey: process.env.HOP_CONTENT_KEY || '',
     restorePending: process.env.HOP_RESTORE_PENDING === 'true',
     requireKnowledge: process.env.HOP_REQUIRE_KNOWLEDGE === 'true',

@@ -5,3 +5,4 @@
 *.yaml text eol=lf
 Dockerfile text eol=lf
 backend/migrations/005_demo_guests.sql text eol=lf
+backend/migrations/006_dual_turn_assessments.sql text eol=lf

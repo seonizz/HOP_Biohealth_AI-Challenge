@@ -1,5 +1,5 @@
 {
-  "_status": "DESIGN_ONLY_NOT_LOADED_BY_CURRENT_BACKEND",
+  "_status": "REFERENCE_ONLY; active runtime settings are HOP_DUAL_* in backend/.env.example",
   "pipeline": {
     "enabled": false,
     "mode": "dual_model",

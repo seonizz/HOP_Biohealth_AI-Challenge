@@ -47,7 +47,7 @@ integration('migration is repeatable and runtime validation performs no schema c
   await Promise.all([connect(true), connect(true), connect(false)]);
   const after = (await store.pool.query('SELECT version,checksum,applied_at FROM schema_migrations')).rows;
   assert.deepEqual(after, before);
-  assert.equal(after.length, 5);
+  assert.equal(after.length, 6);
   assert.equal(after[0].version, 1);
 });
 

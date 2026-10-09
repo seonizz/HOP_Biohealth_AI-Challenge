@@ -6,7 +6,7 @@
 
 말씨 v2 개발 구현은 [구현·운영 범위](docs/MALSSI_IMPLEMENTATION.md), [검증 기록](docs/MALSSI_VALIDATION.md), [v2 OpenAPI](openapi-v2.json), [TypeScript 클라이언트](client/v2.ts)를 확인해 주세요. v2는 기본 비활성화이며 draft 문항의 공개 게시와 운영 배포는 별도 검토 대상입니다. 아래 기존 실행·화면 안내는 v1을 설명합니다.
 
-환자의 감정·위험 단서를 평가하는 **B→A 이중 모델 후속 설계**는 [아키텍처·개발 순서](docs/DUAL_MODEL_PIPELINE_DESIGN.md), [수치 JSON 스키마](docs/dual-model/assessment.schema.json), [장치·프롬프트 설정 예제](docs/dual-model/settings.example.json)에 있습니다. 예제 설정과 프롬프트는 설계 자료이며 현재 API에 연결되지 않았습니다.
+환자의 감정·위험 표현을 매 턴 평가하고 응답에 전달하는 **B→A 실행 경로**는 [설치·검증 안내](docs/dual-model/RUNTIME.md), [기존 설계](docs/DUAL_MODEL_PIPELINE_DESIGN.md), [수치 JSON 스키마](docs/dual-model/assessment.schema.json)에 설명합니다. 구현은 API·워커·DB·프론트에 연결되었지만, 공개 시연의 모델 실행은 꺼져 있으며 실제 학습 체크포인트 검증은 남아 있습니다.
 
 이 문서의 실행 명령은 저장소의 `backend/` 디렉터리를 기준으로 합니다. 저장소 루트에 있다면 먼저 `cd backend`를 실행하세요.
 

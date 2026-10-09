@@ -33,7 +33,7 @@ async function retryPending(){
 }
 function page(body,id=''){
   stopPoll();viewId++;document.body.classList.remove('noscroll');
-  root.innerHTML=`<section class="screen" ${id?`id="${id}"`:''}><header class="top"><button class="logo" id="home" aria-label="말씨 처음으로">말씨<small>●</small></button><nav aria-label="주 메뉴"><button class="ghost" id="about-nav">서비스 소개</button><button class="ghost" id="columns-nav">칼럼</button><button class="ghost" id="help">안전 도움</button>${user?`<button class="ghost" id="records">내 기록</button><button class="ghost" id="settings">내 설정</button><button class="ghost" id="logout">로그아웃</button>`:'<button class="ghost" id="login">로그인</button>'}</nav><div class="crisis">위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담</div></header>${user?.is_demo?'<div class="status-banner">가입 없는 시연 · 24시간 후 접속이 만료되고 기록은 다음 정리 주기에 삭제됩니다. 실제 개인정보는 입력하지 마세요.</div>':capabilities?.internal_draft?'<div class="status-banner">내부 검토용 · 문항과 모델 응답의 출시 검토가 진행 중입니다.</div>':''}<main id="main" tabindex="-1">${body}</main><footer class="footer">말씨는 진단이나 치료를 대신하지 않습니다. 실명보다 별칭으로 이야기해 주세요.</footer></section>`;
+  root.innerHTML=`<section class="screen" ${id?`id="${id}"`:''}><header class="top"><button class="logo" id="home" aria-label="말씨 처음으로">말씨<small>●</small></button><nav aria-label="주 메뉴"><button class="ghost" id="about-nav">서비스 소개</button><button class="ghost" id="columns-nav">칼럼</button><button class="ghost" id="help">안전 도움</button>${user?`<button class="ghost" id="records">내 기록</button><button class="ghost" id="settings">내 설정</button><button class="ghost" id="logout">로그아웃</button>`:'<button class="ghost" id="login">로그인</button>'}</nav><div class="crisis">위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담</div></header>${user?.is_demo?`<div class="status-banner">가입 없는 시연 · 24시간 후 접속이 만료되고 기록은 다음 정리 주기에 삭제됩니다. 실제 개인정보는 입력하지 마세요.${capabilities?.dual_turn_enabled&&!capabilities.model_execution_enabled?' 현재 모델이 연결되지 않아 표현 평가는 불가 상태로 기록됩니다.':''}</div>`:capabilities?.internal_draft?'<div class="status-banner">내부 검토용 · 문항과 모델 응답의 출시 검토가 진행 중입니다.</div>':''}<main id="main" tabindex="-1">${body}</main><footer class="footer">말씨는 진단이나 치료를 대신하지 않습니다. 실명보다 별칭으로 이야기해 주세요.</footer></section>`;
   on('home',()=>{location.hash='';home();});on('about-nav',about);on('columns-nav',()=>columns());on('login',()=>auth());on('records',records);on('settings',settings);on('help',help);
   on('logout',async()=>{await request('/api/auth/logout','POST',{});clearPrivate();home();});
   $('main').focus({preventScroll:true});
@@ -104,14 +104,35 @@ async function openProject(id){
 }
 async function openConversation(id){
   const snapshot=await v2('/conversations/'+id);const p=await v2('/projects/'+snapshot.project_id);
-  current=snapshot;project=p;location.hash='conversation='+id;renderConversation();
+  const visibleMessages=capabilities?.dual_turn_enabled?await allPages('/conversations/'+id+'/messages','messages'):[];
+  const pendingAlerts=capabilities?.dual_turn_enabled?(await v2('/conversations/'+id+'/alerts')).alerts:[];
+  current=snapshot;project=p;location.hash='conversation='+id;renderConversation(visibleMessages);
+  if(pendingAlerts.length)queueAlerts(id,visibleMessages,pendingAlerts,viewId);
+}
+const alertText=reason=>{
+  const [cue,kind]=reason.replace(/_(absolute|increase)$/,'|$1').split('|');
+  if(reason==='assessment_unavailable')return '이번 대화의 표현 평가를 완료하지 못했습니다. 답변을 안전하다는 판단으로 받아들이지 마세요.';
+  const label={sadness:'슬픔',anxiety:'불안',agitation:'초조',self_harm_cue:'자해 관련',harm_to_others_cue:'타인 위해 관련',acute_danger_cue:'급박한 위험 관련'}[cue]||'상태';
+  return `${label} 표현${kind==='increase'?'의 변화':'이'} 관찰되었습니다. 서비스 평가값이며 진단이나 실제 위험 확률이 아닙니다.`;
+};
+async function queueAlerts(conversationId,items,alerts,generation){
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  if(viewId!==generation||current?.conversation_id!==conversationId)return;
+  const responses=new Map(items.filter(message=>message.kind==='dual_reply').map(message=>[message.id,message]));
+  for(const alert of alerts){
+    const response=responses.get(alert.response_id);
+    const bubble=root.querySelector(`[data-response-id="${alert.response_id}"]`);
+    if(!response||response.turn_id!==alert.turn_id||!bubble||bubble.querySelector(`[data-alert-id="${alert.id}"]`))continue;
+    const message=document.createElement('p');message.className='score-alert';message.dataset.alertId=alert.id;if(!alert.shown_at)message.role='status';message.textContent=alertText(alert.reason_code);bubble.append(message);
+    if(!alert.shown_at)try{await request('/api/v2/alerts/'+alert.id+'/shown','POST',{response_id:alert.response_id});}catch{/* Still pending on the server for reconnect. */}
+  }
 }
 async function refreshConversation(){if(current)await openConversation(current.conversation_id);}
 async function turn(action,payload){
   const id=current.conversation_id;
-  await mutate('/conversations/'+id+'/turns',{expected_revision:current.resource_revision,action,payload},async r=>{await openConversation(id);if(r.model_unavailable)notice('이야기는 저장했습니다. 현재 모델 응답은 사용할 수 없습니다.');});
+  await mutate('/conversations/'+id+'/turns',{expected_revision:current.resource_revision,action,payload},async r=>{await openConversation(id);if(r.model_unavailable&&action==='message')notice('이야기는 저장했습니다. 현재 모델 응답은 사용할 수 없습니다.');});
 }
-function renderConversation(){
+function renderConversation(messageItems=[]){
   const c=current,held=c.state==='SAFETY_HOLD',ended=terminal(),running=Boolean(c.run_id),history=c.question_history||[];
   const qFor=id=>history.findLast(q=>q.question_id===id);
   const answered=c.coverage.answered+c.coverage.unknown+c.coverage.skipped+c.coverage.not_applicable;
@@ -119,6 +140,7 @@ function renderConversation(){
   page(`<div class="chat-layout"><aside class="sidebar">${face('listen')}<h2>${esc(project.alias)}의 이야기</h2><span class="pill">${esc(STATES[c.state])}</span><p class="note">${esc(GOALS[c.goal])}</p><progress value="${answered}" max="${c.coverage.total}" aria-label="정보 확인 진행"></progress><p class="note">${answered} / ${c.coverage.total}개 항목 확인<br>필요한 만큼만 이야기해 주세요.</p><button class="ghost" id="refresh">새로 불러오기</button><button class="ghost" id="memories">기억 확인하기</button><button class="ghost" id="project-list">이 프로젝트의 대화</button>${!held&&!ended&&!running?'<button class="ghost" id="choose-topic">다른 질문 고르기</button>':''}${!ended?'<button class="ghost" id="finish">대화 마무리</button>':''}</aside><div class="chat-main">
   ${held?`<article class="card safety-panel"><h2>먼저 지금의 안전을 확인해 주세요</h2><p>위험을 시사하는 이야기가 있어 일반 질문과 가이드를 잠시 멈췄어요. 급박한 상황이면 가까운 사람에게 알리고, 현재 계신 지역의 긴급 지원을 이용해 주세요.</p><button class="ghost" id="safety-detail">안전 도움 보기</button><form id="safety-form"><label class="field">누구의 상황인지, 지금은 어떤지 알려 주세요<textarea name="text" required maxlength="4000" rows="3"></textarea></label><label class="check-label"><input type="checkbox" name="resume"><span>현재 즉각적인 위험이 없음을 확인했고 일반 대화를 다시 시작하고 싶어요.<small>위 내용에도 현재 상황을 직접 적어 주세요.</small></span></label><button class="btn">안전 상황 전달</button></form></article>`:''}
   ${running?'<article class="card run-panel" role="status"><span class="run-dot"></span><b id="run-status">이야기를 정리하고 있어요.</b><p>입력은 저장되었습니다. 완료되면 이 화면에서 알려드릴게요.</p><button class="ghost" id="cancel-run">응답 생성 취소</button></article>':''}
+  ${messageItems.some(message=>message.kind==='dual_reply')?`<section class="card chat-transcript" aria-label="말씨 대화"><h3>말씨와 나눈 이야기</h3>${messageItems.filter(message=>message.kind==='message'||message.kind==='dual_reply'||message.kind==='answer'&&message.content?.trim()).map(message=>`<article class="chat-bubble ${message.role==='assistant'?'from-assistant':'from-user'}" ${message.kind==='dual_reply'?`data-response-id="${esc(message.id)}"`:''}><b>${message.role==='assistant'?'말씨':'나'}</b><p>${esc(message.content||'')}</p></article>`).join('')}</section>`:''}
   ${!held&&!running&&!ended&&c.question?`<article class="card"><div class="question-head">${face('ponder')}<div><p class="question-meta">천천히 답해 주세요</p><h2>${esc(c.question.text)}</h2></div></div>${questionMarkup(c.question)}</article>`:''}
   ${!held&&c.latest_guidance?guidanceCards(c.latest_guidance,c.state==='GUIDANCE'&&!running):''}
   ${!held&&!running&&!ended?`<article class="card"><h3>어떻게 이어갈까요?</h3>${!capabilities.model_execution_enabled?`<p class="note">현재는 질문과 기록을 이용할 수 있습니다. 맞춤 가이드는 모델 서버 연결 후 제공됩니다.</p>${user?.is_demo?'<button class="ghost" id="sample-guide">가이드 화면 예시 보기</button><p class="note">고정된 가상 예시이며 입력한 답변을 분석하지 않습니다.</p>':''}`:`<p class="note">${c.offer_guidance?'지금까지의 이야기로 대화 제안을 받아보실 수 있어요.':'정보가 적으면 확인된 내용 안에서만 제한적인 제안을 드려요.'}</p><button class="btn" id="generate">말하는 방법 정리하기</button>`}${!c.question?'<button class="ghost" id="ask-more">이야기 더 나누기</button>':''}<details><summary>자유롭게 이야기 추가하기</summary><form id="message-form"><label class="field">덧붙일 이야기<textarea name="text" required maxlength="8000" rows="3"></textarea></label><button class="ghost">이야기 보내기</button></form></details></article>`:''}
@@ -144,7 +166,10 @@ function poll(conversation,run,generation){
     if(busy||pending){poll(conversation,run,generation);return;}
     try{const result=await v2('/runs/'+run);if(viewId!==generation)return;
       if(['ACCEPTED','RUNNING'].includes(result.status)){$('run-status').textContent=result.deadline_at&&Date.parse(result.deadline_at)<Date.now()?'응답 기한이 지났습니다. 생성을 취소하고 운영자에게 연결 상태를 확인해 주세요.':result.status==='ACCEPTED'?'순서를 기다리고 있어요.':'말과 행동을 정리하고 있어요.';poll(conversation,run,generation);}
-      else{await openConversation(conversation);if(result.status==='FAILED')handleError({code:result.error?.code,message:'응답을 완료하지 못했습니다. 입력은 저장되어 있습니다.'});}
+      else{await openConversation(conversation);if(result.status==='FAILED'){
+        if(capabilities?.dual_turn_enabled&&result.error?.retryable)notice('응답을 완료하지 못했습니다. 입력과 평가 기록은 저장되어 있습니다. 같은 턴의 응답만 다시 생성할 수 있습니다.',()=>task(()=>mutate('/runs/'+run+'/retry',{},refreshConversation)));
+        else handleError({code:result.error?.code,message:'응답을 완료하지 못했습니다. 입력은 저장되어 있습니다.'});
+      }}
     }catch(error){if(viewId!==generation)return;if(error.status===401){handleError(error);return;}if($('run-status'))$('run-status').textContent='연결을 다시 확인하고 있어요. 입력은 저장되어 있습니다.';poll(conversation,run,generation);}
   },2000);
 }

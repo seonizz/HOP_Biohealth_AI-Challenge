@@ -1,6 +1,6 @@
 # Vercel HTTPS 시연 배포
 
-현재 공개 시연 주소는 **[https://malssi-demo.vercel.app](https://malssi-demo.vercel.app)**입니다. Vercel은 `*.vercel.app` 공유 주소와 HTTPS를 제공합니다. 이 구성은 정적 프런트엔드를 Vercel CDN에서 제공하고, 같은 주소의 `/api/auth/*`, `/api/v2/*`, `/health/*`를 Node.js Function에 연결합니다. PostgreSQL은 별도 Neon 무료 프로젝트 `malssi-demo`(`icy-star-34398366`)를 사용합니다. 가입 없는 시연은 가상 사례와 초안 답변을 보여주며 실제 모델 추론은 꺼져 있습니다.
+현재 공개 시연 주소는 **[https://malssi-demo.vercel.app](https://malssi-demo.vercel.app)**입니다. Vercel은 `*.vercel.app` 공유 주소와 HTTPS를 제공합니다. 이 구성은 정적 프런트엔드를 Vercel CDN에서 제공하고, 같은 주소의 `/api/auth/*`, `/api/v2/*`, `/health/*`를 Node.js Function에 연결합니다. PostgreSQL은 별도 Neon 무료 프로젝트 `malssi-demo`(`icy-star-34398366`)를 사용합니다. 가입 없는 시연은 가상 사례와 질문·기록 기능을 제공합니다. 현재 실제 학습 모델 추론은 꺼져 있으며, 화면의 고정 예시 가이드는 분석 결과가 아닙니다.
 
 ## 1. Neon 데이터베이스 준비
 
@@ -13,15 +13,17 @@ npm ci --prefix backend
 node --env-file=.runtime/neon-owner.env backend/scripts/provision-neon.mjs
 ```
 
-스크립트는 마이그레이션을 적용하고 테이블 소유자가 아닌 `hop_app` 실행 역할을 만든 뒤 권한과 RLS 조건을 확인합니다. 성공하면 `.runtime/vercel-secrets.json`에 `DATABASE_URL`, `HOP_CONTENT_KEY`, `CRON_SECRET`가 저장됩니다. 이 파일과 owner URL을 GitHub에 올리거나 채팅에 붙여 넣지 마십시오. 재실행 시 같은 암호화 키와 실행 역할 암호를 유지합니다.
+스크립트는 마이그레이션을 적용하고 테이블 소유자가 아닌 `hop_app` 실행 역할을 만든 뒤 권한과 RLS 조건을 확인합니다. 성공하면 `.runtime/vercel-secrets.json`에 `DATABASE_URL`, `HOP_CONTENT_KEY`, `CRON_SECRET`가 저장됩니다. 이 파일과 owner URL을 GitHub에 올리거나 채팅에 붙여 넣지 마십시오. 재실행 시 같은 암호화 키와 실행 역할 암호를 유지합니다. 기존 Neon DB에는 `006_dual_turn_assessments.sql`을 별도로 적용하고 `hop_app`에 신규 `turn_assessments`, `assessment_sources`, `assessment_alerts` 3개 테이블의 SELECT·INSERT·UPDATE·DELETE 권한을 부여했습니다.
 
 ## 2. Vercel 프로젝트 배포
 
-Vercel의 `seonizz/malssi-demo` 프로젝트는 이 저장소 루트에서 CLI로 생성하고 운영 배포했습니다. Node.js는 24.x이며 `vercel.json`이 빌드 명령, `frontend/dist` 출력, API 재작성, 일일 정리 작업을 설정합니다. 현재 원본 디자인과 API를 합친 PR #5가 열려 있으므로 Git 자동 배포는 연결하지 않았습니다. PR을 `main`에 병합한 뒤 Vercel 프로젝트의 Git 설정에서 저장소를 연결하면 이후 변경을 자동 배포할 수 있습니다. 그 전에는 저장소 루트에서 `vercel deploy --prod`로 배포합니다.
+Vercel의 `seonizz/malssi-demo` 프로젝트는 이 저장소 루트에서 CLI로 생성하고 운영 배포했습니다. Node.js는 24.x이며 `vercel.json`이 빌드 명령, `frontend/dist` 출력, API 재작성, 일일 정리 작업을 설정합니다. Git 자동 배포는 아직 연결하지 않았습니다. 현재 작업 브랜치가 `main`에 병합된 뒤 Vercel 프로젝트의 Git 설정에서 저장소를 연결하면 이후 변경을 자동 배포할 수 있습니다. 그 전에는 저장소 루트에서 `vercel deploy --prod`로 배포합니다.
 
 Vercel 프로젝트의 **Production 환경변수**에 `.runtime/vercel-secrets.json`의 세 값을 등록합니다. 값에 따옴표를 추가하지 마십시오. `HOP_PUBLIC_ORIGIN`은 Vercel의 `VERCEL_PROJECT_PRODUCTION_URL` 시스템 변수가 노출되어 있으면 자동으로 `https://...`로 설정됩니다. 이 변수를 사용할 수 없다면 발급된 공유 주소를 `HOP_PUBLIC_ORIGIN=https://프로젝트.vercel.app` 형식으로 직접 등록하십시오. 환경변수를 변경한 후 재배포합니다.
 
-배포 완료 후 `https://malssi-demo.vercel.app/health/ready`가 `ready:true`를 반환하고, 첫 화면에서 가입 없이 시연을 시작할 수 있는지 확인합니다. 시연 모드가 아닌 환경에서는 초안 카탈로그가 승인 전이므로 이 경로가 503을 반환합니다. 브라우저 개발자 도구에서 인증 쿠키에 `Secure`가 붙는지 확인합니다.
+이중 모델 경로는 Production 환경변수 `HOP_DUAL_ENABLED=true`로 켭니다. Vercel Function은 모델 워커나 GPU를 시작하지 않습니다. `HOP_V2_MODEL_ENABLED`를 켜지 않은 현재 구성에서는 수락된 입력마다 평가 불가(`-1`)를 DB에 기록하지만 실제 A 응답과 점수 알림은 만들지 않습니다. 같은 체크포인트를 B·A에 연결하는 별도 워커의 설정과 실행법은 [이중 모델 안내](../backend/docs/dual-model/RUNTIME.md)를 참고하십시오. 체크포인트·추론 서버가 확인되기 전에는 실제 모델 평가가 되는 것처럼 표시하지 않습니다.
+
+배포 완료 후 `https://malssi-demo.vercel.app/health/ready`가 `ready:true`를 반환하고, `/api/v2/capabilities`의 `dual_turn_enabled`와 `model_execution_enabled`가 의도한 설정과 같은지 확인합니다. 첫 화면에서 가입 없이 시연을 시작할 수 있는지도 확인합니다. 시연 모드가 아닌 환경에서는 초안 카탈로그가 승인 전이므로 준비 경로가 503을 반환합니다. 브라우저 개발자 도구에서 인증 쿠키에 `Secure`가 붙는지 확인합니다.
 
 ## 3. DB 운영과 무료 플랜 제한
 

@@ -110,7 +110,8 @@ test('columns from current main remain readable without signing in',async({page}
   await page.locator('.ccard .cc-open').first().click();
   await expect(page.locator('#colReader')).toBeVisible();
   await expect(page.locator('#colReader a[target="_blank"]')).toHaveCount(1);
-  await page.getByRole('button',{name:'🌱 다 읽었어요'}).click();
+  // The reader marks an article as read automatically when scrolling reaches its end.
+  await page.locator('#crScroll').evaluate(node=>{node.scrollTop=node.scrollHeight;node.dispatchEvent(new Event('scroll'));});
   await expect(page.locator('#colGarden')).toContainText('1 / 10');
   await page.getByRole('button',{name:'닫기'}).click();
   await page.getByRole('button',{name:'안 읽은 글'}).click();
