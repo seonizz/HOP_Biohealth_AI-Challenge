@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": { "node": "24.x" },
   "scripts": {
     "setup": "node scripts/init-env.mjs",
     "build": "node scripts/build.mjs",

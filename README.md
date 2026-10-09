@@ -2,6 +2,8 @@
 
 기존 프론트의 말씨 마스코트와 화면 분위기를 유지하고, 백엔드 v2 계약에 맞게 실제 서버 연동으로 교체한 배포용 프로젝트입니다.
 
+Vercel 무료 HTTPS 시연 배포와 Neon DB 설정은 [Vercel 배포 안내](docs/vercel-deployment.md)를 참고하세요.
+
 - 프론트 원본: `main`의 `b88342022446ff0402e9907a30e3f980d0a55c51`
 - 백엔드 원본: `feat/malssi-backend-dual-model`의 `66bc2ac7af3ab6d35583a6e02e216b50a64efadd`
 - 제공 명세: `말씨_백엔드_구현_명세_서버이용_20261009.zip`
