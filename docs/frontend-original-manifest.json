@@ -148,20 +148,20 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "946648398f5979589da20211786432ed1c1e4166180151fccc25b1b2ec1568eb",
-      "reason": "사이트 안 글꼴, 여백, 로고, ✓✕ 목록, 등장 애니메이션, 공통 내비게이션 바"
+      "sha256": "f0db7d4bf0ba20d5ec54f94ae9a5be655d8516080b9a25e4c015290bb8574f85",
+      "reason": "사이트 안 글꼴, 여백, 로고, ✓✕ 목록, 등장 애니메이션, 공통 내비게이션 바, 내비게이션 시작 버튼 작게"
     },
     "css/columns.css": {
-      "sha256": "6b98c5369806a7f0b995951b7bb1197571e20c7346f7c2022a4030de45c27dda",
-      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구, 안쪽 이중 스크롤 제거"
+      "sha256": "d315348eeb6c367e9e7a63a6f23aac47ec2814db695211190e19f9b0327d3d64",
+      "reason": "칼럼 카드·읽기 화면, 배너, 분류 버튼 대비"
     },
     "index.html": {
       "sha256": "671bee2432f56be7645d0ecca2dbaee1d1314053e81160ca594928760a13c0f5",
       "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
     },
     "js/components/AboutScreen.js": {
-      "sha256": "532ce1a71d128f0c6703e6da62535ea56612dff85195e008f15d2ad3a80ae7e3",
-      "reason": "소개글 개편, 스크롤 등장 애니메이션, 내비게이션 바"
+      "sha256": "6752979587f19179c6b3416628b3c0944e63569503fafca845ba9a46946bc904",
+      "reason": "소개글 개편(막대 그래프, 흐름, 펼침 목록), 스크롤 등장, 내비게이션 바"
     },
     "js/components/ColumnsScreen.js": {
       "sha256": "9b64672f6a37645a27ed0163473df932abca06d1c8733f8ecdc53dc50f92f086",
@@ -204,7 +204,7 @@
       "reason": "고화질 hello·front 추가"
     },
     "js/components/StartScreen.js": {
-      "sha256": "c17fd7684b2202b0b476a99133418790c2bec87fd0f0ff9fb31ce5343b3bce97",
+      "sha256": "dd17cff4da0fa3d801753b4769e45d9eab7995eee7b9bf36fd00ba03ec335f98",
       "reason": "고화질 hello, 문구 정리, 내비게이션 바, 시작하기 버튼 위치"
     },
     "css/result.css": {
@@ -224,12 +224,12 @@
       "reason": "결과 화면 내비게이션 바, 카드 단위 등장 애니메이션"
     },
     "css/about.css": {
-      "sha256": "45be70c574959befc1dd0dfd6ce0d077affad3c07bc0b32b0b01709ff1ff8d15",
-      "reason": "소개글 개편(데이터·질문 근거·웹·꼭 알아 두세요, 자세히 보기), 안쪽 이중 스크롤 제거"
+      "sha256": "cad331fb3b89a7d7c8a9524ff714c2004c04d9ca72b1bd6aeb928eecb7268c0d",
+      "reason": "소개글 개편: 번호·여백으로 단계 구분, 큰 숫자·막대 그래프, 상자 줄임"
     },
     "css/start.css": {
-      "sha256": "96c7443ed57123ab17b06c065b02c5715a09f3c356a42f9377cdd2c78ee099e3",
-      "reason": "시작하기 버튼을 단계 위로, 빛나는 효과"
+      "sha256": "14d77d712d9c7ce236eaa0b83590188fc48d0ee513486b0237b2880e19e4bf9b",
+      "reason": "시작하기 버튼 위치·대비, 위쪽 여백 정리"
     },
     "js/components/RecordsScreen.js": {
       "sha256": "05b50407f7135e4e347e586c606f9d98cefc3fa2dadf01db407b772e9a76f2d4",
