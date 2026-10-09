@@ -49,7 +49,10 @@ test('original 30-question journey, back, guide, deferred safety, local history 
   await expect(page.locator('#log')).toContainText('마지막으로 검증친구를 보거나 연락했을 때');
   await page.locator('#input .back').click();await question(page,'contact');
   expect(await page.evaluate(()=>S.tags.has('rare_contact'))).toBe(false);
-  await expect(page.locator('#input .back')).toHaveCount(0);
+  await expect(page.locator('#input .back')).toHaveCount(1); // 첫 질문 전까지 몇 번이든 뒤로 갈 수 있음
+  await page.locator('#input .back').click();await question(page,'rel');
+  await page.locator('#input .back').click();await question(page,'goal');
+  await choose(page,'다 골랐어요');await question(page,'rel');await choose(page,'친구');await question(page,'contact');
   await choose(page,'그보다 드물게');await question(page,'mood');
   await choose(page,'죽고 싶다거나 사라지고 싶다는 말 또는 행동을 했어요');await choose(page,'다 골랐어요');
   await question(page,'dur');
@@ -97,10 +100,14 @@ test('original columns, links, service introduction and mobile interaction',asyn
   await page.screenshot({path:'artifacts/restored-home.png',fullPage:true});
   await page.locator('#openCol').click();await expect(page.locator('.ccard')).toHaveCount(10);
   await page.locator('#colFilter [data-cat="불안"]').click();await expect(page.locator('.ccard')).toHaveCount(2);
-  await expect(page.locator('.ccard a[target="_blank"][rel="noopener noreferrer"]')).toHaveCount(2);
-  await page.locator('.ccard details').first().click();await expect(page.locator('.ccard details').first().locator('li').first()).toBeVisible();
+  await expect(page.locator('#columns .chero')).toBeVisible();
+  // 카드를 누르면 읽기 화면에 기사 전문과 새 탭 원문 링크
+  await page.locator('.ccard .cc-open').first().click();await expect(page.locator('#colReader .cr-body p').nth(3)).toBeVisible();
+  await expect(page.locator('#colReader a[target="_blank"][rel="noopener noreferrer"]')).toHaveCount(1);
+  await page.locator('#crClose').click();await expect(page.locator('#colReader')).toBeHidden();
   await page.locator('#colHome').click();await page.locator('#openAbout').click();await expect(page.locator('#about')).toBeVisible();
-  await page.locator('#aboutHome').click();await page.setViewportSize({width:390,height:844});
+  // 왼쪽 위 말씨 로고로 처음 화면
+  await page.locator('#about [data-home]').click();await expect(page.locator('#start')).toBeVisible();await page.setViewportSize({width:390,height:844});
   // The accepted original targets 1920×1080 and overflows on narrow screens.
   // Record that existing limitation while checking that its controls still work.
   const mobile=await page.evaluate(()=>({viewport:innerWidth,documentWidth:document.documentElement.scrollWidth}));

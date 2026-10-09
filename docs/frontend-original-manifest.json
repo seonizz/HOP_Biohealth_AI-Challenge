@@ -148,12 +148,12 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "c2ec1feb7ec2aedf93a016a1dc327c5be8aaa4c4404cc0cc63b9b2ed4d2f71bf",
-      "reason": "글꼴을 사이트 안(assets/fonts)에서 불러옴"
+      "sha256": "e795f1bfb281e964d7e35fd13652c97bc6da91ebeb8c15ab604ab4c2d7bc0133",
+      "reason": "글꼴을 사이트 안(assets/fonts)에서 불러옴, 화면 가장자리 여백, 로고 버튼"
     },
     "css/columns.css": {
-      "sha256": "dc89cfa7ad8b23e868ce93fcfcafcc176158c83a1e0c5576e33b49952b075666",
-      "reason": "인터랙티브 칼럼"
+      "sha256": "a07ac7829d024d810df7daab620d6224cfb3bd13af457ab349f1ac1f299d3038",
+      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구"
     },
     "index.html": {
       "sha256": "671bee2432f56be7645d0ecca2dbaee1d1314053e81160ca594928760a13c0f5",
@@ -164,8 +164,8 @@
       "reason": "서비스 소개 문구 수정"
     },
     "js/components/ColumnsScreen.js": {
-      "sha256": "ce9f94add12fd565507cf47a0f546e54cc76a96271b230bdbfe585065d73d248",
-      "reason": "인터랙티브 칼럼"
+      "sha256": "8b976ad51ea9404b1e5a5de873c44e65a258dfd97ae9b785c3a0200cedb43277",
+      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구"
     },
     "js/core/columns.js": {
       "sha256": "d98c686288365e741e6a248fb746b359596b39b49ad9073c2e0d3735d9707250",
@@ -174,6 +174,22 @@
     "js/core/questions.js": {
       "sha256": "96d2ecd3344bca4e97b472affb2307d709a8a05fc32ba8026bd2e05c226ad6ab",
       "reason": "생활 배경 질문 문구 수정, 이름 질문 건너뛰기·되묻기 제거"
+    },
+    "js/components/TopBar.js": {
+      "sha256": "99e1e6bf7b1e90ab0fd62b3ff62859de6a687a29cc75c4265f6e500dc8be73f3",
+      "reason": "로고를 누르면 처음 화면"
+    },
+    "js/app.js": {
+      "sha256": "195029c99b8261a60228e016c14075c5c35e225a0ab54c27fc4126657a01ac8d",
+      "reason": "로고를 누르면 처음 화면"
+    },
+    "js/core/conversation.js": {
+      "sha256": "ffa5b475076cc723edbd24bd048fcfe0423484b6a1d7c1cfaf1bcb06ec901140",
+      "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 7·14문항 응원"
+    },
+    "js/components/ChatInput.js": {
+      "sha256": "4664a798748e2a3701613ec6e29f52a7f881c773c4b33bd3bf6906517cb0ccfd",
+      "reason": "네 → 직접 입력 창에서도 이전 질문으로"
     }
   }
 }
