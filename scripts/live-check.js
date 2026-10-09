@@ -29,7 +29,11 @@ try {
   const update = await gateway.updateState(context);
   console.log(JSON.stringify({ phase:'state', ok:true, grounded_facts:update.patient_state.facts.length, name_indexed:Boolean(update.name_index), skipped:update.question_plan.skip.length, elapsed_ms:Date.now() - start }));
   const result = await gateway.respond(context, update.patient_state);
-  console.log(JSON.stringify({ phase:'guide', ok:true, category:result.guide.top, script_chars:result.guide.script.length, grounded_facts:result.patient_state.facts.length, elapsed_ms:Date.now() - start }));
+  const guide=result.guide;
+  console.log(JSON.stringify({ phase:'guide', ok:true, category:guide.top, script_chars:guide.script.length,
+    guide_chars:[guide.script,...guide.doList,...guide.avoid,guide.next,guide.care.feel,...guide.care.tips].reduce((sum,text)=>sum+text.length,0),
+    actions:guide.doList.length, avoid:guide.avoid.length, care_tips:guide.care.tips.length,
+    grounded_facts:result.patient_state.facts.length, elapsed_ms:Date.now() - start }));
 } catch (error) {
   console.log(JSON.stringify({ ok:false, code:error.code, status:error.status, elapsed_ms:Date.now() - start }));
   process.exitCode = 1;

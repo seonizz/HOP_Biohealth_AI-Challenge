@@ -55,7 +55,7 @@ test('final response uses a strict JSON schema, bearer auth and grounded context
     assert.equal(body.model, 'gemma4:12b');
     assert.equal(body.stream, false);
     assert.equal(body.reasoning_effort, 'none');
-    assert.equal(body.max_tokens, 2200);
+    assert.equal(body.max_tokens, 4096);
     assert.deepEqual(body.response_format, modelResponseFormat(context(), true));
     assert.equal(body.temperature, 0);
     assert.match(body.messages[0].content, /정보 제공자/);
@@ -437,7 +437,7 @@ test('trained final output reuses validated state and name while receiving guide
   const model = trainedGateway(async (_url, request) => {
     calls++;
     const body = JSON.parse(request.body);
-    assert.equal(body.max_tokens, 2048);
+    assert.equal(body.max_tokens, 4096);
     const input = JSON.parse(body.messages.at(-1).content);
     assert.ok(input.patient.some(row => row[0] === 'mood'));
     assert.ok(input.supporter.some(row => row[0] === 'feeling'));
@@ -448,6 +448,34 @@ test('trained final output reuses validated state and name while receiving guide
   assert.deepEqual(await model.respond(ctx, patientState()), result());
   assert.equal(calls, 1);
 });
+
+for (const protocol of ['json_prompt','json_schema']) {
+  test(`${protocol} final guide preserves longer paragraphs and all detailed list items`, async () => {
+    const ctx=context();ctx.name_index=nameIndex();
+    const value=result();
+    value.guide.script=['요즘 잠들기 어렵다는 이야기를 듣고 네가 어떻게 지내는지 마음이 쓰였어. 네가 겪는 일을 내가 전부 안다고 말할 수는 없지만, 네 편이라는 마음은 꼭 전하고 싶었어. 지금 원인을 설명하거나 괜찮은 척하려고 애쓰지 않아도 돼. 지금 이야기하고 싶은지, 다른 때가 편할지 네가 골라도 좋아.', '이야기하고 싶다면 내가 먼저 답을 정하기보다 네가 하고 싶은 말부터 천천히 들어 볼게. 오늘은 말을 하지 않아도 괜찮고, 이 제안이 부담스럽다면 거절해도 괜찮아. 내가 무엇을 해 주면 편할지도 네가 원하는 만큼만 알려 줘. 나중에 다시 이야기하고 싶을 때 편한 방식으로 말해 줘.'].join('\n\n');
+    value.guide.doList=['편한 시간인지 먼저 확인하고 상대가 대화할 시점과 깊이를 선택하도록 해 보세요. 바로 해결책을 제시하기보다 이야기를 들을 준비가 되어 있다는 마음을 전해 주세요.', '들은 내용을 짧게 확인하고 이해한 것이 맞는지 물어보세요. 마음을 이해하려는 확인이 질문을 계속 늘어놓는 일이 되지 않도록 상대의 반응도 살펴보세요.', '할 수 있는 작은 도움을 제안하고 상대의 선택을 기다려 보세요. 거절하거나 답하지 않아도 재촉하지 않으며 도움이 편한지부터 확인해 주세요.'];
+    value.guide.avoid=['수면 어려움의 이유를 단정하지 마세요. 어떤 마음인지 내가 다 알 수 없다는 태도로 이야기를 들어 보세요.', '다른 사람과 비교하거나 반드시 괜찮아질 거라고 단정하지 마세요. 지금 어려울 수 있다는 점을 인정하고 듣고 있다는 신호를 전해 보세요.', '답을 반복해서 요구하지 마세요. 대화하고 싶지 않다면 다른 때 이야기해도 괜찮다는 여지를 남겨 주세요.'];
+    value.guide.next='첫 대화 뒤에는 더 이야기하고 싶은지 잠시 쉬고 싶은지 확인해 보세요. 반응이 짧다는 이유만으로 거절이라고 단정하지 마세요. 지금 이야기하기 어렵다면 그 선택을 존중하고 다시 연락해도 되는지 물어보세요. 다음 대화의 시간과 방식은 함께 정하고 답을 재촉하지 않아도 괜찮아요.';
+    value.guide.care={feel:'지치고 걱정하는 마음으로 누군가를 돕는 일은 부담이 될 수 있어요. 어떤 말을 해야 할지 바로 정하지 못해도 괜찮아요. 상대의 반응을 전부 책임지려 하기보다 지금 할 수 있는 만큼 함께할 방법을 찾아 보세요.',tips:['대화를 시작하기 전에 자신의 여유도 살펴보세요. 집중해서 들을 시간과 쉬어야 할 시간을 나누어 무리하지 않는 범위를 정해 두세요.', '대화 뒤 잠시 긴장을 내려놓는 시간을 가져 보세요. 답을 기다리는 동안에도 일상과 휴식을 유지해도 괜찮아요.', '도울 수 있는 범위를 솔직하게 정하세요. 모든 문제를 혼자 해결하려 하지 않아도 되고 부담이 커지면 자신의 마음도 나눠 보세요.']};
+    const model=new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'test-only-secret',model:protocol==='json_prompt'?'malssi-gemma4-31b-step100':'gemma4:12b',protocol,fetchImpl:async (_url,request)=>{
+      const body=JSON.parse(request.body);
+      assert.equal(body.max_tokens,4096);
+      if(protocol==='json_prompt'){
+        const sample=JSON.parse(body.messages[2].content).guide;
+        assert.ok(sample.script.length>=300);
+        for(const list of [sample.doList,sample.avoid,sample.care.tips]) assert.ok(list.length>=3);
+        return envelope(JSON.stringify({guide:value.guide,assessment:value.assessment}));
+      }
+      return envelope(JSON.stringify(value));
+    }});
+    const output=await model.respond(ctx,patientState());
+    assert.deepEqual(output,value);
+    assert.ok(output.guide.script.length>300);
+    assert.ok(output.guide.script.includes('\n\n'));
+    assert.equal(output.guide.care.tips.at(-1),value.guide.care.tips.at(-1));
+  });
+}
 
 test('trained final builds a validated state first when no usable memory exists', async () => {
   const prompts = [];
