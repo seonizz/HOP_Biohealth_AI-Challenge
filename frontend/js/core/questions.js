@@ -1,8 +1,8 @@
 // 질문셋 (질문 정리.txt: CFI·FMI 기반 그분의 상황 + SSCS 기반 당신의 마음 + 전하고 싶은 말)
 // {name} = 호칭, {name:은}/{name:이}/{name:을}/{name:와} = 받침에 맞춰 조사 자동 처리
 // 보기 메타: d/a/x 우울·불안·중독 가중치, s 증상 라벨, r 위험 요인, p 보호 요인 → 프론트는 계산하지 않고 모델에 그대로 보냄(목업은 이 값으로 계산)
-//           t 흐름 태그(질문 분기·가이드에 씀), none 다른 보기와 함께 고를 수 없음, input 고르면 직접 입력창이 열림
-// 문항 속성: sec 단계 이름, intro 질문 전 안내, when 보일 조건, cue 모델이 신호를 읽을 자유 서술, noOwn 직접 입력 숨김, noSkip 건너뛰기 숨김(네/아니요 질문), rare 자주 못 보는 사이일 때 바꿔 쓸 질문 문구,
+//           t 흐름 태그(질문 분기·가이드에 씀), none 다른 보기와 함께 고를 수 없음, input 고르면 직접 입력창이 열림(ask가 있으면 말씨가 그 말로 되물음, 적지 않아도 됨)
+// 문항 속성: sec 단계 이름, intro 질문 전 안내, when 보일 조건, cue 모델이 신호를 읽을 자유 서술, noOwn 직접 입력 숨김, noSkip 건너뛰기 숨김(네/아니요 질문), rare 자주 못 보는 사이일 때 바꿔 쓸 질문 문구, fu 앞 답(네)에 이어 묻는 질문이라 "조금 더 알려 주세요" 표시,
 //           required 핵심 정보라 건너뛸 수 없고 빈 답도 받지 않음, ownPh 직접 입력 칸의 예시 문구, ph는 문구 또는 대화 상태를 받아 문구를 돌려주는 함수
 // 연락 빈도에서 "그보다 드물게"를 고르면 요즘 모습을 잘 모를 수 있어 문구를 바꿔 물음
 const RARE=s=>s.tags.has("rare_contact");
@@ -63,20 +63,20 @@ const Q = [
 
  // C. 어려움의 원인과 생활환경
  {id:"cause",sec:"어려움의 원인과 생활환경",face:"ponder",q:"{name:이} 현재 어려움에 영향을 준 경험이나 상황이 있었을까요?",type:"one",noOwn:true,noSkip:true,opts:["네","아니요"]},
- {id:"events",sec:"어려움의 원인과 생활환경",face:"ponder",q:"최근 1년 사이 {name}에게 있었던 일을 모두 골라 주세요.",type:"multi",when:s=>s.ans.cause?.sel[0]===0,opts:[
+ {id:"events",sec:"어려움의 원인과 생활환경",face:"ponder",fu:true,q:"어떤 일이 있었나요?\n최근 1년 사이 {name}에게 있었던 일을 모두 골라 주세요. 고르지 않아도 괜찮아요.",type:"multi",when:s=>s.ans.cause?.sel[0]===0,opts:[
    ["이별·이혼",{r:"breakup"}],["가까운 사람과의 사별",{r:"bereavement"}],["실직·퇴사·휴학",{r:"job_school_loss"}],["경제적 어려움",{r:"financial_difficulty"}],
    ["이사·환경 변화",{r:"environment_change"}],["본인 또는 가족의 질병",{r:"illness"}],["학업·업무 스트레스",{r:"academic_work_stress"}],["대인관계 갈등",{r:"interpersonal_conflict"}],
    ["없어요",{none:1}]]},
  {id:"others_why",sec:"어려움의 원인과 생활환경",face:"hear",q:"가족이나 주변 사람들은 {name:이} 왜 힘들어한다고 이야기하나요?",type:"text",cue:true,ph:othersWhyPh},
  {id:"support",sec:"어려움의 원인과 생활환경",face:"joy",q:"{name}에게 힘이 되어 주는 사람, 관계, 활동이 있나요?",type:"one",noOwn:true,noSkip:true,opts:[
-   ["네",{input:true,ph:"예: 교회 친구들, 강아지 산책",p:"social_support"}],["아니요",{r:"lack_of_support"}]]},
+   ["네",{input:true,ask:"어떤 사람이나 관계, 활동인가요?",ph:"예: 교회 친구들, 강아지 산책",p:"social_support"}],["아니요",{r:"lack_of_support"}]]},
  {id:"burden",sec:"어려움의 원인과 생활환경",face:"think",q:"반대로, {name:을} 더 힘들게 하거나 회복을 어렵게 하는 생활 속 부담이 있을까요?",type:"one",noOwn:true,noSkip:true,opts:[
-   ["네",{input:true,ph:"예: 빚 문제, 야근이 많은 회사",r:"life_burden"}],"아니요"]},
+   ["네",{input:true,ask:"어떤 부담인가요?",ph:"예: 빚 문제, 야근이 많은 회사",r:"life_burden"}],"아니요"]},
 
  // D. 생활 배경과 가치관
  {id:"values",sec:"{name:의} 생활 배경과 가치관",face:"ponder",q:"{name:을} 이해하려면 알아 두면 좋을 생활 배경이나 중요하게 여기는 가치가 있을까요?\n(예: 가족 안에서의 역할, 종교, 직업, \"약한 모습을 보이면 안 된다\"는 생각 등)",type:"text",ph:"예: 맏이라서 집안을 책임져야 한다고 생각해요"},
  {id:"values_effect",sec:"{name:의} 생활 배경과 가치관",face:"think",q:"이러한 생활 배경이나 가치관이 {name:의} 현재 어려움에 어떤 영향을 주는 것 같나요?",type:"text",ph:"예: 힘들다는 말을 못 하고 혼자 참는 것 같아요"},
- {id:"extra",sec:"{name:의} 생활 배경과 가치관",face:"empathy",q:"{name:와} 관련해서 따로 걱정되는 부분이 있다면 들려주세요.",type:"text",cue:true,ph:"없으면 \"없어요\"라고 적어도 괜찮아요"},
+ {id:"extra",sec:"{name:의} 생활 배경과 가치관",face:"empathy",q:"{name:와} 관련해서 추가적으로 걱정되는 부분이 있다면 들려주세요.",type:"text",cue:true,ph:"없으면 \"없어요\"라고 적어도 괜찮아요"},
 
  // E. 지금까지의 대처와 도움
  // 대처 방법(서술)과 받아 본 도움(보기)을 한 질문으로: 보기를 고르고, 그 밖의 방법은 직접 입력 칸에
@@ -101,8 +101,8 @@ const Q = [
    ["잠을 잘 못 자요",{t:"cg_sleep"}],["몸이 자주 아프거나 지쳐요",{t:"cg_body"}],["일이나 공부에 집중하기 어려워요",{t:"cg_focus"}],
    ["개인 시간이 거의 없어요",{t:"cg_notime"}],["다른 사람을 만나는 일이 줄었어요",{t:"cg_isolation"}],["다른 가족과 갈등이 생겼어요",{t:"cg_family_conflict"}],
    ["경제적 부담이 커졌어요",{t:"cg_money"}],["특별한 변화는 없어요",{none:1}]]},
- {id:"cgchange_more",sec:"당신의 마음",face:"hear",q:"위의 변화에 대해 더 들려주고 싶은 게 있다면 적어 주세요.",type:"one",noOwn:true,noSkip:true,
-   when:s=>[...s.tags].some(t=>t.startsWith("cg_"))||!!s.ans.cgchange?.custom,opts:[["네",{input:true,ph:"예: 저도 요즘 출근이 힘들어요"}],"없어요"]},
+ {id:"cgchange_more",sec:"당신의 마음",face:"hear",q:"위의 변화에 대해 더 들려주고 싶은 게 있다면 적어 주세요.",type:"text",ph:"예: 저도 요즘 출근이 힘들어요",
+   when:s=>[...s.tags].some(t=>t.startsWith("cg_"))||!!s.ans.cgchange?.custom},
  {id:"mycoping",sec:"당신의 마음",face:"listen",q:"힘든 상황이 생기면 당신은 보통 어떻게 하세요?\n해 봤던 방법 중 도움이 된 것과 그렇지 않았던 것이 있다면 들려주세요.",type:"text",ph:"예: 친구에게 털어놓으면 좀 나아졌어요"},
  {id:"mysupport",sec:"당신의 마음",face:"joy",q:"이 어려움을 나누거나 기댈 수 있는 곳을 모두 골라 주세요.",type:"multi",opts:[
    ["가족",{t:"sup_family"}],["친구",{t:"sup_friend"}],["같은 상황을 겪는 사람들(자조모임 등)",{t:"sup_peer"}],["상담사·의료진",{t:"sup_pro"}],

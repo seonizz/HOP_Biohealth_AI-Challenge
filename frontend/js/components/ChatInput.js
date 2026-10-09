@@ -39,8 +39,14 @@ const ChatInput={
       const b=document.createElement("button");b.className="chip";b.textContent=optLabel(o);b.setAttribute("aria-pressed","false");
       b.onclick=()=>{
         if(q.type==="one"){
-          // "네 [직접 입력]": 고르면 입력창으로 바뀜
-          if(m.input) return ChatInput.render({type:"text",ph:m.ph,noSkip:true},t=>onDone(t.startsWith("(")?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),()=>ChatInput.render(q,onDone,onBack));
+          // "네 [직접 입력]": 고르면 입력창으로 바뀜. ask가 있으면 말씨가 한 줄 되묻고, 적지 않아도 됨(건너뛰기)
+          // 이전 질문으로를 누르면 되묻기 말풍선을 지우고 네/아니요로 돌아감
+          if(m.input){
+            const n=ChatScreen.count(),logLen=S.log.length;
+            if(m.ask)ChatScreen.aiSay(m.ask+"\n적지 않아도 괜찮아요.",q.face,"","",true);
+            return ChatInput.render({type:"text",ph:m.ph,noSkip:!m.ask},t=>onDone(t.startsWith("(")?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),
+              ()=>{ChatScreen.truncate(n);S.log.length=logLen;ChatInput.render(q,onDone,onBack);});
+          }
           box.innerHTML="";return onDone(optLabel(o),[k],"");
         }
         const on=b.getAttribute("aria-pressed")!=="true";
