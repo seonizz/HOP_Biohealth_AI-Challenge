@@ -152,8 +152,8 @@
       "reason": "사이트 안 글꼴, 여백, 로고, ✓✕ 목록, 등장 애니메이션, 공통 내비게이션 바, 내비게이션 시작 버튼 작게"
     },
     "css/columns.css": {
-      "sha256": "d315348eeb6c367e9e7a63a6f23aac47ec2814db695211190e19f9b0327d3d64",
-      "reason": "칼럼 카드·읽기 화면, 배너, 분류 버튼 대비"
+      "sha256": "76f02e234d763686a6e89860aee1527aa115968c624f1faac44502ac5dd39aef",
+      "reason": "칼럼 카드·읽기 화면, 배너, 분류 버튼 대비, 배너 숫자·배지"
     },
     "index.html": {
       "sha256": "671bee2432f56be7645d0ecca2dbaee1d1314053e81160ca594928760a13c0f5",
@@ -164,12 +164,12 @@
       "reason": "소개글 개편(막대 그래프, 흐름, 펼침 목록), 스크롤 등장, 내비게이션 바"
     },
     "js/components/ColumnsScreen.js": {
-      "sha256": "9b64672f6a37645a27ed0163473df932abca06d1c8733f8ecdc53dc50f92f086",
-      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너, 내비게이션 바"
+      "sha256": "70f5c2538073157989b63730f2afdcb6f4f7ff6731fb07e08e4ebeacb0740cc5",
+      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너, 내비게이션 바, 칼럼의 도움 근거(배너 숫자·배지)"
     },
     "js/core/columns.js": {
-      "sha256": "6f03ed3592ceec8e2ce86fc8a018585a75eea189ebeea12bc4a0a97ae52596c5",
-      "reason": "칼럼 그림 연결, 환자의 가족이 된다는 것 제목 정리"
+      "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626",
+      "reason": "칼럼 그림 연결, 환자의 가족이 된다는 것 제목 정리, 글쓴이·사연 표시"
     },
     "js/core/questions.js": {
       "sha256": "96d2ecd3344bca4e97b472affb2307d709a8a05fc32ba8026bd2e05c226ad6ab",
