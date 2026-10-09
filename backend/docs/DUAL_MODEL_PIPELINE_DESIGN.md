@@ -184,7 +184,7 @@ PATIENT_CUE_CONTEXT (서버가 생성한 데이터, 진단/확률 아님)
 현재 커밋에는 오른쪽 파일의 **설계 자료만** 들어 있습니다. 다음 모듈은 후속 구현 제안입니다.
 
 ```text
-Backend/
+backend/
   src/dual/                       # 제안: 아직 없음
     orchestrator.ts               # 턴 상태 머신, B→A, 재개·취소
     inference/llamacpp.ts         # 장치와 무관한 HTTP 인터페이스

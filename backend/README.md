@@ -1,10 +1,12 @@
 # HOP Backend
 
+서버에 접속해 현재 구현을 실행하는 순서는 [서버 접속·실행·이용 인계서](docs/SERVER_HANDOFF_GUIDE.md)를 확인해 주세요. 기존 서비스와 분리된 스키마·포트, 환경 준비 도구, 실제 검증한 합성 API 예제를 포함합니다.
+
 말씨 v2 개발 구현은 [구현·운영 범위](docs/MALSSI_IMPLEMENTATION.md), [검증 기록](docs/MALSSI_VALIDATION.md), [v2 OpenAPI](openapi-v2.json), [TypeScript 클라이언트](client/v2.ts)를 확인해 주세요. v2는 기본 비활성화이며 draft 문항의 공개 게시와 운영 배포는 별도 검토 대상입니다. 아래 기존 실행·화면 안내는 v1을 설명합니다.
 
 환자의 감정·위험 단서를 평가하는 **B→A 이중 모델 후속 설계**는 [아키텍처·개발 순서](docs/DUAL_MODEL_PIPELINE_DESIGN.md), [수치 JSON 스키마](docs/dual-model/assessment.schema.json), [장치·프롬프트 설정 예제](docs/dual-model/settings.example.json)에 있습니다. 예제 설정과 프롬프트는 설계 자료이며 현재 API에 연결되지 않았습니다.
 
-이 문서의 실행 명령은 저장소의 `Backend/` 디렉터리를 기준으로 합니다. 저장소 루트에 있다면 먼저 `cd Backend`를 실행하세요.
+이 문서의 실행 명령은 저장소의 `backend/` 디렉터리를 기준으로 합니다. 저장소 루트에 있다면 먼저 `cd backend`를 실행하세요.
 
 HOP은 환자를 돕고 싶은 가족·친구·동료에게 대화와 도움 방법을 제안하는 서비스입니다. 주변인이 답한 내용을 프로젝트별로 기억하고, 17개 인터뷰 문항에서 필요한 정보가 모이면 관계와 상황에 맞는 코칭으로 이어갑니다.
 
