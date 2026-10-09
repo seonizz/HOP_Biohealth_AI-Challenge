@@ -22,9 +22,9 @@ export type ModelContext = {current_message:string;message_id?:string;[key:strin
 export interface AgentModel { call(kind:string,context:ModelContext,signal:AbortSignal):Promise<any>; countTokens(value:string,signal:AbortSignal):Promise<number>; }
 export class LocalAgentModel implements AgentModel {
   readonly base:string; readonly model:string; readonly apiKey:string;
-  constructor(base:string,model:string,apiKey='') {
+  constructor(base:string,model:string,apiKey='',allowedOrigins:string[] = []) {
     const url=new URL(base);
-    if(!['127.0.0.1','localhost','[::1]'].includes(url.hostname) || url.username || url.password || !['http:','https:'].includes(url.protocol)) throw new Error('V2 model must use an explicitly configured loopback endpoint');
+    if((!['127.0.0.1','localhost','[::1]'].includes(url.hostname) && !allowedOrigins.includes(url.origin)) || url.username || url.password || url.search || url.hash || !['http:','https:'].includes(url.protocol)) throw new Error('V2 model must use loopback or an explicitly allowed server-configured origin');
     this.base=base.replace(/\/$/,'');this.model=model;this.apiKey=apiKey;
   }
   async request(url:string,body:any,signal:AbortSignal) {

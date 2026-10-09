@@ -125,7 +125,18 @@ export class MalssiService {
     return this.db.transaction(owner,async tx=>{
       await tx.consent(); const {c,p}=await tx.conversation(id), answers=await this.answers(tx,c);
       const pending=c.data.pending_instance_id ? await tx.get('question_instances',c.data.pending_instance_id):null;
-      return {...meta(c),project_id:p.id,safety_revision:c.safety_revision,goal:c.data.goal,question:pending?{id:pending.id,...pending.data}:null,coverage:coverage(answers),ready_for:readiness(answers,c.data.goal),offer_guidance:c.data.collection_turns>=6,answers:Object.values(answers),next_actions:c.state==='SAFETY_HOLD'?['safety_update','resume_after_safety','finish']:TERMINAL.includes(c.state)?['archive','restore']:['answer','select_topic','select_question','request_guidance','finish']};
+      const guidance=(await tx.rows('guidance_versions',p.id,c.id)).filter(g=>g.status==='verified').at(-1);
+      const plans=await tx.rows('action_plans',p.id,c.id);
+      const instances=await tx.rows('question_instances',p.id,c.id);
+      return {...meta(c),project_id:p.id,safety_revision:c.safety_revision,safety_episode_id:c.state==='SAFETY_HOLD'?c.data.safety_episode_id:null,goal:c.data.goal,questionnaire_version:c.data.questionnaire_version,question:pending?{id:pending.id,...pending.data}:null,coverage:coverage(answers),ready_for:readiness(answers,c.data.goal),offer_guidance:c.data.collection_turns>=6,answers:Object.values(answers),question_history:instances.map(q=>({id:q.id,...q.data})),latest_guidance:guidance?{id:guidance.id,...guidance.data}:null,plans:plans.map(p=>({id:p.id,revision:p.revision,status:p.status,...p.data})),next_actions:c.state==='SAFETY_HOLD'?['safety_update','resume_after_safety','finish']:TERMINAL.includes(c.state)?['archive','restore']:['answer','select_topic','select_question','request_guidance','finish']};
+    });
+  }
+  async listConversations(owner: string, project: string, limit=50, cursor?: string) {
+    if(!Number.isInteger(limit)||limit<1||limit>50)fail();if(cursor)uuid(cursor);
+    return this.db.transaction(owner,async tx=>{
+      await tx.consent();await tx.project(project);
+      const rows=await tx.query('SELECT * FROM conversations WHERE owner_id=$1 AND project_id=$2 AND ($3::uuid IS NULL OR id>$3) ORDER BY id LIMIT $4',[owner,project,cursor||null,limit+1]);
+      return {conversations:rows.rows.slice(0,limit).map(row=>{const c=tx.decode(row);return {...meta(c),goal:c.data.goal,created_at:c.created_at};}),next_cursor:rows.rows.length>limit?rows.rows[limit-1].id:null};
     });
   }
   async safety(tx: Transaction, c: Row, assessment: ReturnType<typeof assessSafety>, messageId?: string) {

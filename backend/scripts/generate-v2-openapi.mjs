@@ -31,6 +31,8 @@ function route(method,path,summary,schema,success=200){
  (paths[path]??={})[method]=op;
 }
 schemas.Response={type:'object',description:'Versioned resource snapshot; see client/v2.ts and MALSSI_IMPLEMENTATION.md for fields.'};
+route('get','/api/v2/projects/{id}/conversations','Owned, unexpired project conversations; UUID cursor pagination');
+paths['/api/v2/projects/{id}/conversations'].get.parameters.push({in:'query',name:'limit',schema:{type:'integer',minimum:1,maximum:50,default:50}},{in:'query',name:'cursor',schema:id});
 for(const [path,summary] of [['capabilities','Feature availability'],['consents','Current consent purposes'],['projects','Owned projects'],['projects/{id}','Project'],['conversations/{id}','Conversation snapshot and question'],['conversations/{id}/messages','Messages in sequence order'],['runs/{id}','Saved input and run outcome'],['projects/{id}/memories','Memories, provenance and freshness'],['questionnaires/{version}','Immutable catalog'],['resources','Approved regional resources'],['deletions/{id}','Online and backup deletion state']])route('get','/api/v2/'+path,summary);
 for(const [path,schema,status] of [['consents','Consents',201],['consents/withdraw','Withdraw',202],['projects','ProjectCreate',201],['projects/{id}/conversations','ConversationCreate',201],['conversations/{id}/turns','Turn',200],['runs/{id}/cancel','Request',200],['memories/{id}/confirm','Revision',200],['conversations/{id}/plans','Plan',201],['plans/{id}/feedback','Feedback',201]])route('post','/api/v2/'+path,path,schema,status);
 route('patch','/api/v2/projects/{id}','Update display metadata','ProjectPatch');route('patch','/api/v2/memories/{id}','Correct remembered report','MemoryPatch');

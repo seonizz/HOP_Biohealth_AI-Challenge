@@ -10,7 +10,7 @@ export class Conflict extends Error {
 }
 export type Project = { id: string; title: string; status: string; profile: Profile; domains: unknown[]; pending_question_id: number | null; revision: number; created_at: string; updated_at: string };
 export type Message = { id: string; role: string; content: string; created_at: string; metadata?: any };
-export type User = { id: string; email: string };
+export type User = { id: string; email: string; is_demo?: boolean };
 export type StoredUser = User & { password_hash: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
@@ -94,23 +94,28 @@ export class Store {
       throw error;
     }
   }
+  async createDemoUser(): Promise<User> {
+    const result = await this.pool.query("INSERT INTO users(id,email,password_hash,demo_expires_at) VALUES ($1,$2,$3,now()+interval '24 hours') RETURNING id,email", [randomUUID(),randomUUID()+'@demo.invalid',randomBytes(32).toString('hex')]);
+    return {...result.rows[0],is_demo:true};
+  }
   async findUserByEmail(email: string): Promise<StoredUser | null> {
     const result = await this.pool.query('SELECT id,email,password_hash FROM users WHERE email=$1', [emailKey(email)]);
     return result.rows[0] ?? null;
   }
   async getUser(id: string): Promise<User | null> {
     if (!UUID.test(id)) return null;
-    const result = await this.pool.query('SELECT id,email FROM users WHERE id=$1', [id]);
-    return result.rows[0] ?? null;
+    const result = await this.pool.query('SELECT id,email,demo_expires_at IS NOT NULL AS is_demo FROM users WHERE id=$1 AND (demo_expires_at IS NULL OR demo_expires_at>now())', [id]);
+    const user=result.rows[0];
+    return user ? user.is_demo ? user : {id:user.id,email:user.email} : null;
   }
   async newSession(ownerId: string, expectedPasswordHash?: string): Promise<string> {
     const token = randomBytes(32).toString('base64url'), client = await this.pool.connect();
     try {
       await client.query('BEGIN');
-      const user = await client.query('SELECT password_hash FROM users WHERE id=$1 FOR UPDATE', [ownerId]);
+      const user = await client.query('SELECT password_hash,demo_expires_at FROM users WHERE id=$1 AND (demo_expires_at IS NULL OR demo_expires_at>now()) FOR UPDATE', [ownerId]);
       if (!user.rowCount || (expectedPasswordHash !== undefined && user.rows[0].password_hash !== expectedPasswordHash)) throw new Conflict('계정 정보가 변경되었습니다. 다시 로그인해 주세요.');
       await client.query('DELETE FROM sessions WHERE owner=$1 AND expires_at<=now()', [ownerId]);
-      await client.query("INSERT INTO sessions(token_hash,owner,expires_at) VALUES ($1,$2,now() + interval '7 days')", [hash(token), ownerId]);
+      await client.query("INSERT INTO sessions(token_hash,owner,expires_at) VALUES ($1,$2,LEAST(now() + interval '7 days',COALESCE($3::timestamptz,now() + interval '7 days')))", [hash(token), ownerId,user.rows[0].demo_expires_at]);
       await client.query('COMMIT');
       return token;
     } catch (error) { await client.query('ROLLBACK'); throw error; }
@@ -131,7 +136,7 @@ export class Store {
   }
   async authenticate(token: string): Promise<string | null> {
     if (typeof token !== 'string' || token.length < 32 || token.length > 256) return null;
-    const result = await this.pool.query('SELECT owner FROM sessions WHERE token_hash=$1 AND expires_at>now()', [hash(token)]);
+    const result = await this.pool.query('SELECT s.owner FROM sessions s JOIN users u ON u.id=s.owner WHERE s.token_hash=$1 AND s.expires_at>now() AND (u.demo_expires_at IS NULL OR u.demo_expires_at>now())', [hash(token)]);
     return result.rows[0]?.owner ?? null;
   }
   async revokeSession(token: string): Promise<void> { await this.pool.query('DELETE FROM sessions WHERE token_hash=$1', [hash(token)]); }

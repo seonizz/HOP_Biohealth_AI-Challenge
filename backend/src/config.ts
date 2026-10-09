@@ -29,6 +29,7 @@ export function getSettings(overrides: Record<string, unknown> = {}) {
     cookieSecure: process.env.HOP_COOKIE_SECURE === 'true',
     cookieSameSite: process.env.HOP_COOKIE_SAME_SITE || 'strict',
     allowRegistration: process.env.HOP_ALLOW_REGISTRATION === 'true',
+    demoEnabled: process.env.HOP_DEMO_ENABLED === 'true',
     inviteCode: process.env.HOP_INVITE_CODE || '',
     trustedProxy: process.env.HOP_TRUST_PROXY === 'true',
     corsOrigins: (process.env.HOP_CORS_ORIGINS || '').split(',').map(s => s.trim()).filter(Boolean),

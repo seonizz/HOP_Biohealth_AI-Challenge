@@ -72,6 +72,7 @@ export async function routeV2(req:IncomingMessage,res:ServerResponse,owner:strin
     else if(resource==='projects'&&!action&&method==='PATCH')send(await service.patchProject(owner,id,input));
     else if(resource==='projects'&&!action&&method==='DELETE')send(await service.deleteProject(owner,id,input),202);
     else if(resource==='projects'&&action==='conversations'&&method==='POST')send(await service.createConversation(owner,id,input),201);
+    else if(resource==='projects'&&action==='conversations'&&method==='GET')send(await service.listConversations(owner,id,Number(url.searchParams.get('limit')||50),url.searchParams.get('cursor')||undefined));
     else if(resource==='projects'&&action==='memories'&&method==='GET')send(await service.memories(owner,id,url.searchParams.get('status')||undefined,url.searchParams.get('entity')||undefined));
     else if(resource==='conversations'&&!action&&method==='GET')send(await service.readConversation(owner,id));
     else if(resource==='conversations'&&action==='messages'&&method==='GET')send(await service.messages(owner,id,Number(url.searchParams.get('limit')||100),url.searchParams.get('cursor')||undefined));
