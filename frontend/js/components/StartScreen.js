@@ -3,12 +3,11 @@ const StartScreen={
   render(){return `
 <section class="screen" id="start">
   ${NavBar()}
-  ${CrisisLine("위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담")}
   <div class="hero">
     <div>
       <h1>소중한 사람에게 건넬<br><em>첫 마디</em>를 함께 심어요</h1>
       <p class="lead">말씨가 몇 가지를 여쭤볼게요. 답해 주시면 그분의 상황을 함께 정리하고, 마음이 잘 닿는 말하기 방법을 알려드려요.</p>
-      <button class="btn glow" id="go">말씨와 시작하기</button>
+      <button class="btn" id="go">말씨와 시작하기</button>
       <div class="steps">
         <div class="step"><img data-m="listen" alt=""><span>질문에 답하기<i>약 10~15분</i></span></div>
         <div class="step"><img data-m="ponder" alt=""><span>상황 정리<i>말씨가 생각해요</i></span></div>

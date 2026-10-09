@@ -74,7 +74,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 .navlink{background:none;border:0;border-radius:999px;padding:10px 18px;font-family:var(--display);font-size:18px;color:var(--stem);cursor:pointer;transition:background .2s}
 .navlink:hover{background:var(--leaf-soft)}
 .navlink[aria-current="page"]{background:var(--leaf-soft);box-shadow:inset 0 0 0 2px var(--leaf)}
-.navcta{padding:11px 26px;font-size:18px;box-shadow:0 4px 0 #355a2a}
+.navcta{padding:8px 18px;font-size:16px;box-shadow:0 3px 0 #355a2a}
 .crisis-row{display:flex;justify-content:flex-end;margin-top:10px}
 .crisis-row .crisis{margin-left:0}
 /* 결과 카드가 한 칸씩 통째로 등장 */

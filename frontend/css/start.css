@@ -1,5 +1,5 @@
 /* 시작 (StartScreen) */
-#start .hero{flex:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:center;gap:48px}
+#start .hero{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:center;gap:48px;margin-top:clamp(8px,2vw,32px)}
 #start h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,4.4vw,80px);line-height:1.2;margin:0 0 20px;color:var(--ink);text-wrap:balance}
 #start h1 em{font-style:normal;color:var(--stem)}
 #start .lead{font-size:20px;color:var(--muted);max-width:30em;margin:0 0 34px}
@@ -17,9 +17,7 @@
 .bubble-tip{position:absolute;left:8%;bottom:14%;background:var(--card);border-radius:22px 22px 22px 6px;padding:14px 20px;font-family:var(--display);font-size:19px;color:var(--stem);box-shadow:0 6px 18px rgba(75,122,60,.12)}
 @media (max-width:900px){#start .hero{grid-template-columns:1fr}}
 
-/* 말씨와 시작하기: 숨 쉬듯 빛나는 테두리 + 반짝 지나가는 빛 */
-#go.glow{position:relative;overflow:hidden;font-size:24px;padding:18px 48px;animation:glow 2.6s ease-in-out infinite;transition:transform .2s}
-#go.glow:hover{transform:translateY(-2px) scale(1.03)}
-#go.glow::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(110deg,transparent 35%,rgba(255,255,255,.38) 50%,transparent 65%);background-size:260% 100%;animation:shine 3.4s ease-in-out infinite;pointer-events:none}
-@keyframes glow{0%,100%{box-shadow:0 5px 0 #355a2a,0 0 0 0 rgba(140,192,107,.6),0 0 0 0 rgba(140,192,107,0)}50%{box-shadow:0 5px 0 #355a2a,0 0 0 10px rgba(140,192,107,.18),0 0 34px 8px rgba(140,192,107,.45)}}
-@keyframes shine{0%{background-position:160% 0}55%,100%{background-position:-60% 0}}
+/* 말씨와 시작하기: 진한 초록 + 흰 글자로 대비를 크게 (움직이는 효과 없음) */
+#go{font-size:24px;padding:18px 48px;background:#2d5a23;color:#fff;box-shadow:0 5px 0 #1d3d16;transition:transform .15s,box-shadow .15s}
+#go:hover{transform:translateY(-2px);box-shadow:0 7px 0 #1d3d16}
+#go:active{transform:translateY(3px);box-shadow:0 2px 0 #1d3d16}

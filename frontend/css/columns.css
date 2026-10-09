@@ -64,3 +64,8 @@ body.noscroll{overflow:hidden}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (max-width:1100px){.cgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:700px){.chero{grid-template-columns:1fr;padding:28px}.cgrid{grid-template-columns:1fr}.cr-scroll{padding:22px}.cr-art{height:180px}}
+
+/* 분류·골라 보기 버튼: 배경과 구분되게 흰 바탕 + 또렷한 테두리, 고른 것은 진한 초록 */
+#columns .chip{background:var(--card);border:2px solid #6f9a58;color:var(--stem);font-family:var(--display);box-shadow:0 2px 6px rgba(75,122,60,.08)}
+#columns .chip:hover{border-color:var(--stem)}
+#columns .chip[aria-pressed="true"]{background:var(--stem);border-color:var(--stem);color:#fff}
