@@ -162,6 +162,7 @@ test('yes detail inputs preserve parenthesized observations for all three questi
     document.getElementById('ta').value = detail;
     await document.getElementById('send').click();
     assert.equal(submitted[0], `네, ${detail}`, `${id} preserves the complete detail`);
+    assert.equal(document.getElementById('ta').value, '', `${id} clears its submitted detail`);
     assert.deepEqual(Array.from(submitted[1]), [0]);
   }
 });
@@ -268,7 +269,7 @@ const settleUI = () => new Promise(resolve => setImmediate(resolve));
 const prompt = { who:'ai', text:'어떤 이야기를 나누고 싶으세요?', face:'ponder', fu:false };
 const nextPrompt = { who:'ai', text:'그분과 어떤 관계인가요?', face:'hear', fu:false };
 
-for (const kind of ['text', 'one', 'multi', 'follow-up', 'skip']) {
+for (const kind of ['text', 'one', 'one-own', 'multi', 'multi-own', 'follow-up', 'skip']) {
   test(`${kind} answers appear immediately and await the model before showing the next question`, async () => {
     const response = deferred(), calls = [];
     const { document, context } = conversationHarness((path, options) => {
@@ -278,7 +279,9 @@ for (const kind of ['text', 'one', 'multi', 'follow-up', 'skip']) {
     }, { realUI:true });
     const view = conversationView('친구'); view.log = [prompt];
     if (kind === 'one') view.question = { id:'want', type:'one', opts:['대화를 시작하고 싶어요'], noOwn:true, required:true };
+    if (kind === 'one-own') view.question = { id:'want', type:'one', opts:['대화를 시작하고 싶어요'], required:true };
     if (kind === 'multi') view.question = { id:'want', type:'multi', opts:['대화를 시작하고 싶어요'], noOwn:true, required:true };
+    if (kind === 'multi-own') view.question = { id:'want', type:'multi', opts:['대화를 시작하고 싶어요'], required:true };
     if (kind === 'follow-up') view.question.follow_up = true;
     if (kind === 'skip') view.question.required = false;
     context.flow.renderConversation(view, 0); context.flow.show('chat');
@@ -287,6 +290,9 @@ for (const kind of ['text', 'one', 'multi', 'follow-up', 'skip']) {
     if (['text', 'follow-up'].includes(kind)) {
       document.getElementById('ta').value = '<친구>에게 먼저 말을 걸고 싶어요.';
       send = document.getElementById('send');
+    } else if (kind.endsWith('-own')) {
+      document.getElementById('own').value = '함께 천천히 이야기하고 싶어요.';
+      send = kind === 'one-own' ? document.getElementById('ownSend') : input.querySelector('.done');
     } else if (kind === 'skip') send = input.querySelector('.skip');
     else {
       send = input.querySelector('.chip');
@@ -296,6 +302,7 @@ for (const kind of ['text', 'one', 'multi', 'follow-up', 'skip']) {
     assert.equal(calls.length, 1, 'duplicate sends are blocked while waiting');
     const bubble = log.querySelector('.me');
     assert.equal(bubble.textContent, calls[0][1].text);
+    assert.ok(input.querySelectorAll('input,textarea').every(element=>element.value===''), 'submitted text clears before the model response');
     assert.equal(bubble.children.length, 0, 'user text is never interpreted as HTML');
     assert.ok(log.querySelector('.dots'));
     assert.equal(log.querySelector('[role="status"]').getAttribute('aria-label'), '답변을 기다리고 있어요');
@@ -325,6 +332,7 @@ test('failed answers stay visible and retry with the same revision without dupli
   assert.equal(log.querySelectorAll('.me').length, 1);
   assert.equal(log.querySelector('.dots'), null);
   assert.equal(log.textContent.includes(nextPrompt.text), false);
+  assert.equal(document.getElementById('ta').value, '', 'retry keeps the submitted answer outside the draft');
   assert.equal(input.dataset.busy, '');
   const retry = input.querySelector('.api-error').querySelector('button').click();
   assert.equal(log.querySelectorAll('.me').length, 1);
@@ -457,7 +465,7 @@ for (const code of ['MODEL_UNAVAILABLE', 'MODEL_INVALID_RESPONSE']) {
     assert.equal(log.querySelectorAll('.me').length, 1);
     assert.equal(log.textContent.includes(nextPrompt.text), false);
     assert.equal(log.querySelector('.dots'), null);
-    assert.equal(document.getElementById('ta').value, '저장하고 기다릴 답변', 'failed input remains editable');
+    assert.equal(document.getElementById('ta').value, '', 'the submitted draft remains empty after model failure');
     assert.equal(input.querySelector('.api-error').querySelector('p').textContent, '답변을 준비하지 못했어요. 다시 시도해 주세요.');
     assert.equal(input.querySelector('.api-error').querySelector('button').textContent, '다시 시도');
   });
@@ -484,7 +492,7 @@ test('editing after a model failure uses the recovered pending revision and reje
   assert.equal(log.textContent.includes(nextPrompt.text), true);
 });
 
-test('a pending conflict after a lost response preserves the edited draft and retries with the latest revision', async () => {
+test('a pending conflict after a lost response retains the submitted correction for retry outside the empty draft', async () => {
   const first = deferred(), conflict = deferred(), read = deferred(), retry = deferred(), calls = [];
   const { document, context } = conversationHarness((path, options) => {
     calls.push([path, options]); return [first,conflict,read,retry][calls.length-1].promise;
@@ -495,7 +503,7 @@ test('a pending conflict after a lost response preserves the edited draft and re
   document.getElementById('ta').value = '보존할 수정 입력'; document.getElementById('send').click();
   conflict.reject(Object.assign(new Error('현재 질문을 다시 확인해 주세요.'),{status:409})); await settleUI();
   read.resolve({ ...view, revision:2, model_pending:true, pending_answer:calls[0][1].body, log:[prompt,{who:'me',text:'응답을 놓친 입력',fu:false}] }); await settleUI();
-  assert.equal(document.getElementById('ta').value, '보존할 수정 입력');
+  assert.equal(document.getElementById('ta').value, '');
   const input=document.getElementById('input'), log=document.getElementById('log');
   input.querySelector('.api-error').querySelector('button').click();
   assert.equal(calls[3][1].body.revision, 2);

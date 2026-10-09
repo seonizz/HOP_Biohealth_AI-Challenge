@@ -240,7 +240,7 @@
     {
       "path": "public/js/components/ChatInput.js",
       "upstream_sha256": "4664a798748e2a3701613ec6e29f52a7f881c773c4b33bd3bf6906517cb0ccfd",
-      "applied_sha256": "833367ae020169f816853fc7a19dff6301e2f21098280eac6e4413471052a9d6"
+      "applied_sha256": "b598f8be44a2a782106ca8a85f590cfb341225a2dfc91590cc77e47a09375b4a"
     },
     {
       "path": "public/js/components/ChatScreen.js",
@@ -297,6 +297,7 @@
     "Local font MIME types supported without external font requests.",
     "Font license text is preserved; trailing spaces normalized for repository whitespace checks.",
     "Sent answers appear immediately; the next prompt waits for the server/model response. Retries reconcile with server logs without duplicate bubbles, and internal model-state warnings are not shown in the UI.",
-    "User messages and waiting dots paint before requests. Model failures retain the saved pending answer and current prompt; only validated model output advances the conversation, with retry/edit/correction revision checks."
+    "User messages and waiting dots paint before requests. Model failures retain the saved pending answer and current prompt; only validated model output advances the conversation, with retry/edit/correction revision checks.",
+    "Validated submissions immediately clear textarea/direct-input drafts while retaining the captured answer in the user bubble and retry request."
   ]
 }

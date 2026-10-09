@@ -20,7 +20,10 @@ const ChatInput={
   },
   render(q,onDone,onBack){
     this.clear();const box=$("input");
-    const submit=(...args)=>this.run(()=>onDone(...args));
+    const submit=(...args)=>this.run(()=>{
+      box.querySelectorAll("input,textarea").forEach(el=>el.value="");
+      return onDone(...args);
+    });
     const addBack=()=>{if(!onBack)return;const b=document.createElement("button");b.className="back";b.textContent="← 이전 질문으로";
       b.onclick=()=>this.run(onBack);box.prepend(b);};
     // 건너뛰기 (네/아니요 질문은 q.noSkip, 핵심 문항은 q.required로 숨김)
