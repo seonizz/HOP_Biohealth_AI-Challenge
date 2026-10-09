@@ -3,7 +3,7 @@
   "info": {
     "title": "HOP 주변인 코칭 API",
     "version": "0.1.0",
-    "description": "Node.js 24 및 PostgreSQL 기반 팀 초대 전용 백엔드입니다. 정보 확보 수치는 인터뷰 진행 상태이며 진단·임상 척도가 아닙니다."
+    "description": "Node.js 24 및 PostgreSQL 기반 백엔드입니다. 팀 초대 가입과 내부 시연용 임시 방문자 진입을 지원합니다. 정보 확보 수치는 인터뷰 진행 상태이며 진단·임상 척도가 아닙니다."
   },
   "servers": [
     {
@@ -171,6 +171,31 @@
             }
           }
         }
+      }
+    },
+    "/api/auth/demo": {
+      "get": {
+        "operationId": "getDemoAvailability",
+        "tags": ["인증"],
+        "summary": "가입 없는 내부 시연 가능 여부",
+        "security": [],
+        "responses": {"200": {"description": "enabled는 HOP_DEMO_ENABLED와 v2 API 사용 가능 여부입니다."}}
+      },
+      "post": {
+        "operationId": "startDemoVisit",
+        "tags": ["인증"],
+        "summary": "24시간 임시 방문자 대화 시작",
+        "description": "HOP_DEMO_ENABLED=true인 내부 시연에서만 사용합니다. 방문자별 임시 계정과 동의 기록, 프로젝트, 첫 대화를 만들고 HttpOnly 세션 쿠키를 설정합니다. 빈 JSON 객체를 전송합니다. 세션은 24시간 뒤 만료되고 계정은 시간당 정리 작업에서 삭제됩니다.",
+        "security": [],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "maxProperties": 0}}}},
+        "responses": {"201": {"description": "user, project_id, conversation_id 및 세션 쿠키"}, "404": {"description": "시연 모드 비활성화"}, "429": {"$ref": "#/components/responses/RateLimited"}}
+      },
+      "delete": {
+        "operationId": "deleteDemoVisit",
+        "tags": ["인증"],
+        "summary": "현재 임시 방문자와 온라인 기록 즉시 삭제",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "maxProperties": 0}}}},
+        "responses": {"200": {"description": "deleted=true 및 세션 쿠키 삭제"}, "401": {"$ref": "#/components/responses/Unauthorized"}, "403": {"description": "시연 계정이 아님"}}
       }
     },
     "/api/auth/register": {

@@ -1,0 +1,25 @@
+{
+  admin off
+}
+{$HOP_SITE_ADDRESS} {
+  encode zstd gzip
+  header {
+    X-Content-Type-Options nosniff
+    Referrer-Policy no-referrer
+    X-Frame-Options DENY
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'"
+    Cache-Control no-store
+    -Server
+  }
+  @api path /api/auth/* /api/v2/* /health/* /help/safety /openapi-v2.json
+  handle @api {
+    reverse_proxy api:9000 {
+      flush_interval -1
+    }
+  }
+  handle {
+    root * /srv
+    file_server
+  }
+}

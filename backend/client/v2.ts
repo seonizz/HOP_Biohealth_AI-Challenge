@@ -28,6 +28,7 @@ export class MalssiClient {
  }
  turn(conversation:string,input:TurnRequest){return this.request<WriteResult>('/conversations/'+encodeURIComponent(conversation)+'/turns','POST',input);}
  run(id:string){return this.request<Run>('/runs/'+encodeURIComponent(id));}
+ conversations(project:string,cursor?:string){return this.request<{conversations:{conversation_id:string;resource_revision:number;state:ConversationState;goal:Goal;created_at:string}[];next_cursor:string|null}>('/projects/'+encodeURIComponent(project)+'/conversations'+(cursor?'?cursor='+encodeURIComponent(cursor):''));}
  cancel(id:string,request_id:string){return this.request<WriteResult>('/runs/'+encodeURIComponent(id)+'/cancel','POST',{request_id});}
  // Cookie-authenticated browser SSE. Never place a Bearer token in its URL.
  events(id:string){if(this.token)throw new Error('Use an authenticated fetch SSE client for Bearer authentication');return new EventSource(this.base+'/api/v2/conversations/'+encodeURIComponent(id)+'/events',{withCredentials:true});}

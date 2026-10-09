@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { isIP } from 'node:net';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { readFileSync } from 'node:fs';
@@ -16,7 +16,7 @@ import { KnowledgeBase } from './knowledge.ts';
 import { credentials, passwordChange, passwordHash, verifyPassword, sameSecret, cookie, tokenFromHeaders, Limiter } from './auth.ts';
 import { ContentCipher } from './v2/crypto.ts';
 import { V2Database } from './v2/db.ts';
-import { MalssiService } from './v2/service.ts';
+import { MalssiService, CONSENT_VERSION } from './v2/service.ts';
 import { publicV2, routeV2 } from './v2/routes.ts';
 import { V2Error } from './v2/errors.ts';
 
@@ -95,6 +95,10 @@ export async function createApp(settings: Settings = getSettings(), gateway: Mod
       if (origin && !permittedOrigins.includes(origin) && !['GET','HEAD'].includes(req.method || '')) throw new HttpError(403,'허용되지 않은 요청 출처입니다.','origin_denied');
       if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
       if (await publicV2(req,res,malssi,store)) return;
+      if(req.method==='GET' && req.url==='/health/service') {
+        await store.pool.query('SELECT 1');
+        json(res,200,{ready:true,v2_enabled:Boolean(malssi)});return;
+      }
       const socketIp = req.socket.remoteAddress || 'unknown';
       const proxyAllowed = settings.trustedProxy && ['127.0.0.1','::1','::ffff:127.0.0.1'].includes(socketIp);
       const forwarded = String(req.headers['x-forwarded-for'] || '').split(',').at(-1)?.trim() || '';
@@ -109,7 +113,7 @@ export async function createApp(settings: Settings = getSettings(), gateway: Mod
         res.writeHead(200,{'Content-Type':'application/json; charset=utf-8'});res.end(readFileSync(resolve(ROOT,'openapi.json')));return;
       }
       if (req.method === 'GET' && path === '/health') {
-        json(res,200,{status:'ok',model_mode:settings.modelMode,model_name:settings.llmModel,knowledge_count:knowledge.count,model_ready:'unchecked',runtime:'nodejs',database:'postgresql',scope:'team-invite-only'}); return;
+        json(res,200,{status:'ok',model_mode:settings.modelMode,model_name:settings.llmModel,knowledge_count:knowledge.count,model_ready:'unchecked',runtime:'nodejs',database:'postgresql',scope:settings.demoEnabled?'internal-demo-and-team-invite':'team-invite-only'}); return;
       }
       if (req.method === 'GET' && path === '/ready') {
         const readyJson = (status: number, value: Record<string,unknown>) => json(res,status,{knowledge_count:knowledge.count,model_mode:settings.modelMode,...value});
@@ -124,6 +128,28 @@ export async function createApp(settings: Settings = getSettings(), gateway: Mod
           const ready = ids.includes(settings.llmModel);
           readyJson(ready?200:503,{ready,model_name:settings.llmModel,model_mode:'local',reason:ready?undefined:'설정된 모델이 서빙 목록에 없습니다.'});
         } catch { readyJson(503,{ready:false,model_name:settings.llmModel,model_mode:'local',reason:'모델 서버 연결을 확인해 주세요.'}); }
+        return;
+      }
+      if (req.method === 'GET' && path === '/api/auth/demo') {
+        json(res,200,{enabled:Boolean(settings.demoEnabled && malssi)}); return;
+      }
+      if (req.method === 'POST' && path === '/api/auth/demo') {
+        if (!settings.demoEnabled || !malssi) throw new HttpError(404,'시연 모드를 사용할 수 없습니다.','not_found');
+        limiter.hit('demo:'+ip,5,60000);
+        const input=await body(req);
+        if (!input || typeof input!=='object' || Array.isArray(input) || Object.keys(input).length) throw new HttpError(422,'빈 JSON 객체를 보내 주세요.','invalid_demo_request');
+        const visitor=await store.createDemoUser();
+        try {
+          await malssi.setConsents(visitor.id,{request_id:randomUUID(),version:CONSENT_VERSION,purposes:{service_processing:true,sensitive_processing:true,history_storage:false,cross_session_memory:false}});
+          const project=await malssi.createProject(visitor.id,{request_id:randomUUID(),alias:'친구',title:'말씨 시연'});
+          const conversation=await malssi.createConversation(visitor.id,project.project_id,{request_id:randomUUID(),goal:'what_to_say'});
+          const token=await store.newSession(visitor.id);
+          res.setHeader('Set-Cookie',cookie(token,settings.cookieSecure,false,settings.cookieSameSite));
+          json(res,201,{user:visitor,project_id:project.project_id,conversation_id:conversation.conversation_id});
+        } catch(error) {
+          await store.pool.query('DELETE FROM users WHERE id=$1',[visitor.id]);
+          throw error;
+        }
         return;
       }
       if (req.method === 'POST' && ['/api/auth/register','/api/auth/login'].includes(path)) {
@@ -152,6 +178,19 @@ export async function createApp(settings: Settings = getSettings(), gateway: Mod
       const owner = token ? await store.authenticate(token) : null;
       if (!owner) throw new HttpError(401,'유효한 접속 토큰이 필요합니다.','unauthorized');
       if (!['GET','HEAD','OPTIONS'].includes(req.method || '') && req.headers.authorization === undefined && !origin) throw new HttpError(403,'쿠키 인증 변경 요청에는 허용된 Origin이 필요합니다.','origin_required');
+      if (req.method === 'DELETE' && path === '/api/auth/demo') {
+        await body(req);
+        const visitor=await store.getUser(owner);
+        if (!visitor?.is_demo || !malssi) throw new HttpError(403,'시연 계정만 삭제할 수 있습니다.','not_demo');
+        await malssi.db.transaction(owner,async tx=>{
+          const projects=await tx.query('SELECT id FROM v2_projects WHERE owner_id=$1',[owner]);
+          for(const p of projects.rows) await tx.invalidate(p.id,'CANCELLED');
+          await tx.receipt('delete_account',owner,randomBytes(32).toString('base64url'));
+          await tx.query('DELETE FROM users WHERE id=$1',[owner]);
+        });
+        res.setHeader('Set-Cookie',cookie('',settings.cookieSecure,true,settings.cookieSameSite));
+        json(res,200,{deleted:true}); return;
+      }
       if (await routeV2(req,res,owner,malssi,store)) return;
       if (req.method === 'POST' && path === '/api/auth/password') {
         limiter.hit('password:'+owner,5,60000);
