@@ -53,9 +53,10 @@ async function ask(){
   await ChatScreen.typing(q.face,600);ChatScreen.aiSay(q.rare&&RARE(S)?q.rare:q.q,q.face,q.why);
   ChatInput.render(q,answer,S.prev?goBack:null);
 }
+// 후속 질문은 건너뛸 수 없고 빈 답도 받지 않음 (required)
 async function followUp(f,face="ponder"){
   S.fuCount++;await ChatScreen.typing(face,700);ChatScreen.aiSay(f.q,face,"","",true);
-  return new Promise(res=>ChatInput.render(f,(text,sel,custom="")=>{ChatScreen.meSay(text);res({text,sel,custom});}));
+  return new Promise(res=>ChatInput.render({...f,required:true},(text,sel,custom="")=>{ChatScreen.meSay(text);res({text,sel,custom});}));
 }
 async function answer(text,sel,custom="",skipped=false){
   const q=Q[S.i];ChatScreen.meSay(text);
