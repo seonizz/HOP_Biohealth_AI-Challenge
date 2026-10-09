@@ -1,4 +1,6 @@
 /* 대화 (ChatScreen) */
+/* 화면 높이를 창에 고정해야 대화창(.log)이 늘어나지 않고 안에서 스크롤되어 자동 스크롤이 동작함 */
+#chat{height:100%}
 #chat .body{flex:1;display:flex;flex-direction:column;width:100%;max-width:960px;margin:20px auto 0;min-height:0}
 .prog{height:8px;background:var(--leaf-soft);border-radius:8px;overflow:hidden;flex:1;max-width:360px}
 .prog i{display:block;height:100%;background:var(--leaf);border-radius:8px;transition:width .5s}
