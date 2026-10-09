@@ -2,7 +2,7 @@
 const StartScreen={
   render(){return `
 <section class="screen" id="start">
-  ${TopBar(`<button class="ghost histbtn" id="openAbout">서비스 소개</button><button class="ghost" id="openRec">내 기록 <span id="recN"></span></button><div class="crisis" style="margin-left:0">위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담</div>`)}
+  ${TopBar(`<button class="ghost histbtn" id="openAbout">서비스 소개</button><button class="ghost" id="openCol">칼럼</button><button class="ghost" id="openRec">내 기록 <span id="recN"></span></button><div class="crisis" style="margin-left:0">위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담</div>`)}
   <div class="hero">
     <div>
       <div class="pill" style="margin-bottom:18px">우울 · 불안 · 중독을 겪는 사람의 곁에서</div>
@@ -30,6 +30,7 @@ const StartScreen={
     $("go").onclick=begin;
     $("openRec").onclick=()=>RecordsScreen.open();
     $("openAbout").onclick=()=>AboutScreen.open();
+    $("openCol").onclick=()=>ColumnsScreen.open();
     this.updRecN();
   },
   // "내 기록 (n)" 개수 표시
