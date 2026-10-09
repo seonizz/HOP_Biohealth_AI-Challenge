@@ -54,7 +54,7 @@ const ChatInput={
     }
     // 선택형 문항의 직접 입력
     const row=document.createElement("div");row.className="inrow";
-    row.innerHTML=`<div class="own"><label for="own">직접 입력</label><input id="own" type="text" placeholder="${q.type==="multi"?"보기에 없는 내용이 있다면 적어 주세요":"보기에 없다면 적어 주세요"}">${q.type==="one"?'<button class="send" id="ownSend">보내기</button>':""}</div>`;
+    row.innerHTML=`<div class="own"><label for="own">직접 입력</label><input id="own" type="text" placeholder="${esc(q.ownPh||(q.type==="multi"?"보기에 없는 내용이 있다면 적어 주세요":"보기에 없다면 적어 주세요"))}">${q.type==="one"?'<button class="send" id="ownSend">보내기</button>':""}</div>`;
     if(canSkip)row.appendChild(skipBtn());
     box.appendChild(row);
     const own=$("own");

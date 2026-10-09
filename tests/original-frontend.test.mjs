@@ -22,7 +22,7 @@ test('all 36 frontend source files match the accepted pre-PR3 commit',()=>{
   }
 });
 test('original question order, required questions and no-skip rules',()=>{
-  assert.deepEqual(Array.from(Q,q=>q.id),'name want goal rel contact mood dur freq describe concern cause events others_why support burden values values_effect extra coping help barrier need others_help moment moment_freq feeling cgchange cgchange_more mycoping mysupport'.split(' '));
+  assert.deepEqual(Array.from(Q,q=>q.id),'name want goal rel contact mood dur freq describe concern cause events others_why support burden values values_effect extra help barrier need others_help moment moment_freq feeling cgchange cgchange_more mycoping mysupport'.split(' '));
   assert.deepEqual(Array.from(Q.filter(q=>q.required),q=>q.id),'name want rel mood dur freq concern need moment'.split(' '));
   assert.deepEqual(Array.from(Q.filter(q=>q.noSkip),q=>q.id),'cause support burden cgchange_more'.split(' '));
 });

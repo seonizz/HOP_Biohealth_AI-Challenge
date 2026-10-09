@@ -3,7 +3,7 @@
 // 보기 메타: d/a/x 우울·불안·중독 가중치, s 증상 라벨, r 위험 요인, p 보호 요인 → 프론트는 계산하지 않고 모델에 그대로 보냄(목업은 이 값으로 계산)
 //           t 흐름 태그(질문 분기·가이드에 씀), none 다른 보기와 함께 고를 수 없음, input 고르면 직접 입력창이 열림
 // 문항 속성: sec 단계 이름, intro 질문 전 안내, when 보일 조건, cue 모델이 신호를 읽을 자유 서술, noOwn 직접 입력 숨김, noSkip 건너뛰기 숨김(네/아니요 질문), rare 자주 못 보는 사이일 때 바꿔 쓸 질문 문구,
-//           required 핵심 정보라 건너뛸 수 없고 빈 답도 받지 않음
+//           required 핵심 정보라 건너뛸 수 없고 빈 답도 받지 않음, ownPh 직접 입력 칸의 예시 문구
 // 연락 빈도에서 "그보다 드물게"를 고르면 요즘 모습을 잘 모를 수 있어 문구를 바꿔 물음
 const RARE=s=>s.tags.has("rare_contact");
 const Q = [
@@ -62,8 +62,8 @@ const Q = [
  {id:"extra",sec:"{name:의} 생활 배경과 가치관",face:"empathy",q:"{name:와} 관련해서 따로 걱정되는 부분이 있다면 들려주세요.",type:"text",cue:true,ph:"없으면 \"없어요\"라고 적어도 괜찮아요"},
 
  // E. 지금까지의 대처와 도움
- {id:"coping",sec:"지금까지의 대처와 도움",face:"listen",q:"{name:은} 현재의 어려움을 해결하거나 견디기 위해 어떤 방법을 사용해 왔나요?",type:"text",cue:true,ph:"예: 술을 마시거나, 친구를 만나 이야기해요"},
- {id:"help",sec:"지금까지의 대처와 도움",face:"listen",q:"{name:이} 지금까지 받아 본 도움을 모두 골라 주세요.",type:"multi",opts:[
+ // 대처 방법(서술)과 받아 본 도움(보기)을 한 질문으로: 보기를 고르고, 그 밖의 방법은 직접 입력 칸에
+ {id:"help",sec:"지금까지의 대처와 도움",face:"listen",q:"{name:은} 지금까지 어려움을 견디거나 해결하려고 어떤 방법을 써 왔나요?\n받아 본 도움을 모두 고르고, 그 밖에 해 온 방법이 있다면 적어 주세요.",type:"multi",cue:true,ownPh:"예: 술을 마시거나, 친구를 만나 이야기해요",opts:[
    ["정신건강의학과 진료",{p:"accepting_attitude",t:"help_treat"}],["약물 치료",{p:"accepting_attitude",t:"help_treat"}],["심리상담",{p:"accepting_attitude",t:"help_treat"}],
    ["정신건강복지센터·중독관리센터",{p:"accepting_attitude",t:"help_treat"}],["학교·직장 상담",{p:"accepting_attitude",t:"help_treat"}],["종교 기관",{t:"help_religion"}],
    ["가족·친구의 도움",{p:"social_support"}],["아직 받은 적 없어요",{none:1,t:"help_none"}],["잘 모르겠어요",{none:1}]]},
@@ -77,7 +77,7 @@ const Q = [
  {id:"others_help",sec:"현재 필요한 도움",face:"hear",q:"가족이나 주변 사람들은 {name}에게 어떤 도움을 권하고 있나요?",type:"text",ph:"예: 병원에 가 보라고 해요"},
 
  // SSCS 기반: 당신의 마음
- {id:"moment",required:true,sec:"당신의 마음",face:"empathy",intro:"이제 당신에 대해 여쭤볼게요. 누군가를 곁에서 돕는 일은 생각보다 많이 지치는 일이에요.",q:"요즘 {name:의} 일로 가장 마음이 쓰이거나 힘들었던 순간은 언제였나요?",type:"text",ph:"예: 새벽까지 연락이 안 됐을 때"},
+ {id:"moment",required:true,sec:"당신의 마음",face:"empathy",intro:"이제 당신에 대해 여쭤볼게요. 누군가를 곁에서 돕는 일은 생각보다 많이 지치는 일이에요.",q:"요즘 당신이 가장 마음 쓰였거나 힘들었던 순간은 언제였나요?",type:"text",ph:"예: 새벽까지 연락이 안 됐을 때"},
  {id:"moment_freq",sec:"당신의 마음",face:"listen",q:"그런 일은 얼마나 자주 있나요?",type:"one",noOwn:true,opts:[["거의 매일",{t:"cgfreq_daily"}],"일주일에 몇 번","한 달에 몇 번","가끔"]},
  {id:"feeling",sec:"당신의 마음",face:"hear",q:"그 순간 당신의 마음은 어떠셨어요?",type:"text",ph:"예: 무섭고, 내가 뭘 잘못했나 싶었어요"},
  {id:"cgchange",sec:"당신의 마음",face:"empathy",q:"{name:을} 돕는 동안 당신에게 생긴 변화를 모두 골라 주세요.",type:"multi",opts:[
