@@ -152,7 +152,7 @@
       "reason": "사이트 안 글꼴(본문 나눔스퀘어라운드, 제목 주아), 화면 가장자리 여백, 로고 버튼"
     },
     "css/columns.css": {
-      "sha256": "a07ac7829d024d810df7daab620d6224cfb3bd13af457ab349f1ac1f299d3038",
+      "sha256": "45f282abcf9500616ea129ec36806e2e021f93b50a59c5ed89ff91f65e2ead39",
       "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구"
     },
     "index.html": {
