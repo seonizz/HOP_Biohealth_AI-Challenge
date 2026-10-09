@@ -1,5 +1,5 @@
 /* 소개 (AboutScreen) */
-#about .abody{flex:1;overflow-y:auto;min-height:0;margin-top:20px;display:grid;gap:28px;align-content:start;padding-bottom:12px}
+#about .abody{flex:1;min-height:0; /* 페이지 전체가 스크롤 (안쪽에 스크롤을 또 만들지 않음) */margin-top:20px;display:grid;gap:28px;align-content:start;padding-bottom:12px}
 .ahero{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,.7fr);gap:40px;align-items:center;background:var(--card);border-radius:36px;padding:44px 52px}
 .ahero h2{font-family:var(--display);font-weight:400;font-size:46px;line-height:1.3;margin:0 0 16px;text-wrap:balance}
 .ahero h2 em{font-style:normal;color:var(--stem)}

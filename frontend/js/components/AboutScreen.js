@@ -125,7 +125,7 @@ const AboutScreen={
     $("aboutHome").onclick=()=>show("start");
     $("aboutGo").onclick=begin;
   },
-  open(){show("about");document.querySelector("#about .abody").scrollTop=0;this.animate();},
+  open(){show("about");window.scrollTo(0,0);this.animate();},
   // 열 때마다: 머리 부분은 바로, 아래 부분은 스크롤해서 화면에 들어올 때 차례로 떠오름
   animate(){
     const a=$("about"),hero=a.querySelector(".ahero");

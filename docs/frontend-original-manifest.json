@@ -152,15 +152,15 @@
       "reason": "사이트 안 글꼴(본문 나눔스퀘어라운드, 제목 주아), 화면 가장자리 여백, 로고 버튼, 해 보세요/피하면 좋아요 ✓✕ 목록, 카드 글 낱말 단위 줄바꿈, 로고를 오른쪽 버튼 높이에 맞춰 키움, 등장 애니메이션"
     },
     "css/columns.css": {
-      "sha256": "45f282abcf9500616ea129ec36806e2e021f93b50a59c5ed89ff91f65e2ead39",
-      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구"
+      "sha256": "6b98c5369806a7f0b995951b7bb1197571e20c7346f7c2022a4030de45c27dda",
+      "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구, 안쪽 이중 스크롤 제거"
     },
     "index.html": {
       "sha256": "671bee2432f56be7645d0ecca2dbaee1d1314053e81160ca594928760a13c0f5",
       "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
     },
     "js/components/AboutScreen.js": {
-      "sha256": "5c131feb3308614fa34bd4d42e79794815d69ab57ba681e273d0a694c6441738",
+      "sha256": "5fd2a113287e44c3916aae1ab75f32671f787f30c4fcf3f5166c01f92dbacbb4",
       "reason": "소개글 개편(2026HOP/소개글_정립.txt), 큰 그림 고화질 front, 스크롤 등장 애니메이션"
     },
     "js/components/ColumnsScreen.js": {
@@ -184,20 +184,20 @@
       "reason": "로고를 누르면 처음 화면 (대화 중이면 나가기 확인)"
     },
     "js/core/conversation.js": {
-      "sha256": "ffa5b475076cc723edbd24bd048fcfe0423484b6a1d7c1cfaf1bcb06ec901140",
-      "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 7·14문항 응원"
+      "sha256": "e6a13ad30274ea3159cea9493ab41ff2f1c46d8e6051d62cb942225c0c8b5ed1",
+      "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 7·14문항 응원, 결과 만드는 동안 로딩 단계·다시 시도"
     },
     "js/components/ChatInput.js": {
       "sha256": "4664a798748e2a3701613ec6e29f52a7f881c773c4b33bd3bf6906517cb0ccfd",
       "reason": "네 → 직접 입력 창에서도 이전 질문으로"
     },
     "js/components/ChatScreen.js": {
-      "sha256": "17e314641894288c33612a09b6cd3c434bf6766173fa5fad5c71ce3e2835770f",
-      "reason": "대화 중 나가기 확인 창"
+      "sha256": "b6749bef6fd4908a95b03e8933461c4e381e57b94156bc31f3d3942c41045ca6",
+      "reason": "대화 중 나가기 확인 창, 결과 만드는 동안 로딩 카드"
     },
     "css/chat.css": {
-      "sha256": "23d8a28018412c4980d73a4d77864e78cc71238fcfac07dfdba216e77b4ddfba",
-      "reason": "대화 중 나가기 확인 창, 선택지 칸을 줄여 질문이 보이게"
+      "sha256": "bea8eb9d826ca9ace2e0d8a966337da239e63bf629db0d7d27560f8f959d6471",
+      "reason": "대화 중 나가기 확인 창, 선택지 칸을 줄여 질문이 보이게, 로딩 카드"
     },
     "js/core/assets.js": {
       "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12",
@@ -224,8 +224,8 @@
       "reason": "결과 화면 등장 애니메이션(글자·카드·첫 문장 타자), 복사는 전체 문장"
     },
     "css/about.css": {
-      "sha256": "7fc4509e7f529005a57cce19709a156a418dc18218400af8501c9edc1854065e",
-      "reason": "소개글 개편(데이터·질문 근거·웹·꼭 알아 두세요, 자세히 보기)"
+      "sha256": "45be70c574959befc1dd0dfd6ce0d077affad3c07bc0b32b0b01709ff1ff8d15",
+      "reason": "소개글 개편(데이터·질문 근거·웹·꼭 알아 두세요, 자세히 보기), 안쪽 이중 스크롤 제거"
     }
   }
 }

@@ -1,5 +1,5 @@
 /* 칼럼 (ColumnsScreen) */
-#columns .cbody{flex:1;overflow-y:auto;min-height:0;margin-top:20px;display:grid;gap:26px;align-content:start;padding-bottom:12px}
+#columns .cbody{flex:1;min-height:0; /* 페이지 전체가 스크롤 */margin-top:20px;display:grid;gap:26px;align-content:start;padding-bottom:12px}
 
 /* 머리 배너 */
 .chero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.6fr);gap:40px;align-items:center;background:var(--card);border-radius:36px;padding:40px 52px}
