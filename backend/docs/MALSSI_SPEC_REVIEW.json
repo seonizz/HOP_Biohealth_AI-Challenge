@@ -1,0 +1,108 @@
+{
+  "document_status": "design_draft",
+  "checked_on": "2026-10-09",
+  "scope": "Static specification/catalog validation only. No application runtime, database, model, legal, or clinical validation was performed.",
+  "files": {
+    "MALSSI_BACKEND_SPEC_V1.md": {
+      "bytes": 106825,
+      "sha256": "5952db85aa832ba48dea4fa28cdb98caf2f15a48fb65c57b26d836e3345995c8"
+    },
+    "MALSSI_QUESTIONNAIRE_V1.json": {
+      "bytes": 56367,
+      "sha256": "2373cfbd3bd6ef018cb42ede680c7da491fece932752eabd172ea9b309b49a97"
+    }
+  },
+  "chapters": 25,
+  "question_count": 24,
+  "acceptance_case_count": 42,
+  "check_count": 20,
+  "checks": [
+    {
+      "name": "exact_24_question_ids",
+      "passed": true
+    },
+    {
+      "name": "no_duplicate_question_ids",
+      "passed": true
+    },
+    {
+      "name": "draft_not_validated_scale",
+      "passed": true
+    },
+    {
+      "name": "source_template_neutral_present",
+      "passed": true
+    },
+    {
+      "name": "unknown_skip_supported",
+      "passed": true
+    },
+    {
+      "name": "conditional_not_applicable_only",
+      "passed": true
+    },
+    {
+      "name": "supported_particles",
+      "passed": true
+    },
+    {
+      "name": "neutral_without_placeholder",
+      "passed": true
+    },
+    {
+      "name": "valid_dependency_references",
+      "passed": true
+    },
+    {
+      "name": "goal_ids_exist",
+      "passed": true
+    },
+    {
+      "name": "option_bounds_and_exclusivity",
+      "passed": true,
+      "details": []
+    },
+    {
+      "name": "all_ids_in_spec",
+      "passed": true
+    },
+    {
+      "name": "sequential_25_chapters",
+      "passed": true
+    },
+    {
+      "name": "json_examples_parse",
+      "passed": true,
+      "details": {
+        "count": 5,
+        "errors": []
+      }
+    },
+    {
+      "name": "balanced_code_fences",
+      "passed": true
+    },
+    {
+      "name": "no_editorial_leftovers",
+      "passed": true
+    },
+    {
+      "name": "memory_and_agent_controls",
+      "passed": true
+    },
+    {
+      "name": "memory_revision_captured_and_checked",
+      "passed": true
+    },
+    {
+      "name": "runtime_validation_not_claimed",
+      "passed": true
+    },
+    {
+      "name": "markdown_table_columns",
+      "passed": true,
+      "details": []
+    }
+  ],
+  "passed": true
+}

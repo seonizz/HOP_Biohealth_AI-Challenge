@@ -1,0 +1,22 @@
+{
+  "checked_at_kst": "2026-10-09T15:27:44+09:00",
+  "environment": "designated remote server; isolated handoff schema and loopback API port 19010",
+  "node_version": "v24.19.0",
+  "checks": {
+    "environment_files_mode_0600": true,
+    "existing_environment_overwrite_rejected": true,
+    "isolated_schema_migration": true,
+    "restricted_runtime_grants": true,
+    "api_live_status": 200,
+    "draft_readiness_status": 503,
+    "synthetic_register_login": true,
+    "synthetic_consent_project_conversation": true,
+    "answer_N00_and_read_T01": true,
+    "synthetic_account_deleted": true,
+    "test_api_stopped": true,
+    "existing_v1_api_healthy_after_test": true,
+    "previous_gpu_test_process_stopped": true
+  },
+  "model_inference_started_for_this_handoff_check": false,
+  "passed": true
+}
