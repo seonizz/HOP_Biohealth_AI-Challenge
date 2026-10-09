@@ -12,16 +12,16 @@
 *{box-sizing:border-box}
 html{scroll-padding-top:env(safe-area-inset-top,0px)}
 html,body,#app{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.7;padding-inline:16px;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.7;padding-inline:clamp(16px,4vw,64px);overflow-x:hidden}
 img{max-width:100%}
 [hidden]:not([hidden=until-found i]){display:none!important}
 button{font:inherit;cursor:pointer}
 button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outline-offset:3px}
 
 /* 화면 틀 + 상단 바 (TopBar) */
-.screen{min-height:100%;max-width:1680px;margin:0 auto;display:flex;flex-direction:column;padding-block:28px}
+.screen{min-height:100%;max-width:1680px;margin:0 auto;display:flex;flex-direction:column;padding-block:clamp(20px,3vw,44px)}
 .top{display:flex;align-items:center;gap:20px}
-.logo{font-family:var(--display);color:var(--stem);font-size:34px;line-height:1;display:flex;align-items:flex-start;gap:2px}
+.logo{font-family:var(--display);color:var(--stem);font-size:34px;line-height:1;display:flex;align-items:flex-start;gap:2px;background:none;border:0;padding:0;cursor:pointer}
 .logo small{font-size:15px;color:var(--leaf);margin-top:-6px}
 .crisis{margin-left:auto;font-size:14px;color:var(--muted);background:var(--card);border:2px solid var(--leaf-soft);padding:6px 14px;border-radius:999px}
 .crisis b{color:var(--stem)}
