@@ -7,7 +7,7 @@
 // 연락 빈도에서 "그보다 드물게"를 고르면 요즘 모습을 잘 모를 수 있어 문구를 바꿔 물음
 const RARE=s=>s.tags.has("rare_contact");
 const Q = [
- {id:"name",sec:"시작",face:"hello",q:"오늘 이야기할 분을 어떻게 부르면 될까요?\n이름이나 별명, 호칭 무엇이든 괜찮아요.",why:"기록의 제목으로 쓰여요. 이 브라우저에만 저장돼요.",type:"text",ph:"예: 엄마, 친구 지수",short:true},
+ {id:"name",required:true,sec:"시작",face:"hello",q:"오늘 이야기할 분을 어떻게 부르면 될까요?\n이름이나 별명, 호칭 무엇이든 괜찮아요.",why:"기록의 제목으로 쓰여요. 이 브라우저에만 저장돼요.",type:"text",ph:"예: 엄마, 친구 지수",short:true},
 
  // 전하고 싶은 말 (모델이 이후 필요한 질문만 고를 수 있도록 맨 앞에서 목적을 먼저 물음)
  {id:"want",required:true,sec:"전하고 싶은 말",face:"thanks",intro:"먼저 {name}에게 건네고 싶은 마음부터 여쭤볼게요. 그 마음이 잘 닿도록 필요한 이야기를 이어서 함께 살펴볼게요.",q:"{name}에게 꼭 전하고 싶은 말이 있다면 무엇인가요?",why:"당신의 진심을 그분이 받아들이기 쉬운 말로 옮겨 드릴게요.",type:"text",ph:"예: 네 편이라는 것, 병원에 같이 가 보자는 것"},
@@ -100,8 +100,6 @@ Q.forEach(q=>{if(q.groups)q.opts=q.groups.flatMap(([g,os])=>os.map(([t,m])=>[t,{
 const VAGUE=/^(몰라|모르겠|글쎄|그냥|별로|없어|없음|음+|\.+|ㅇ+|-)$|모르겠|잘 모르/;
 function isThin(t,min=10){t=(t||"").trim();return !t||t.startsWith("(")||t.length<min||VAGUE.test(t);}
 const FOLLOW={
-  name:{when:a=>isThin(a.text,1),q:{type:"text",q:"부르기 편한 호칭 하나만 정해 주세요. \"친구\", \"동생\"처럼 적어도 괜찮아요.",ph:"예: 동생",short:true},
-    merge:(a,r)=>({text:isThin(r.text,1)?"그분":r.text,sel:[]})},
   rel:{when:a=>a.custom&&isThin(a.custom,2),q:{type:"text",q:"조금만 더 알려 주세요. {name:와}는 어떤 사이인가요?",ph:"예: 대학 때부터 친한 친구",short:true},
     merge:(a,r)=>isThin(r.text,1)?a:{text:r.text,sel:[]}},
   mood:{when:a=>!a.sel.length&&isThin(a.custom,6),q:{type:"text",q:"골라 주신 항목은 없었어요. 요즘 {name}에게서 '평소와 다르다'고 느낀 순간이 있다면 하나만 적어 주세요.",ph:"예: 주말 내내 방에서 안 나와요"},

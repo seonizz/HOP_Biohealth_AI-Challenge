@@ -172,8 +172,8 @@
       "reason": "칼럼 그림 연결"
     },
     "js/core/questions.js": {
-      "sha256": "78dc2362cfd511d366438bdfaba2787c12f2aba6bd78d9ee27a0a0bf7d1368fd",
-      "reason": "생활 배경 질문 문구 수정"
+      "sha256": "96d2ecd3344bca4e97b472affb2307d709a8a05fc32ba8026bd2e05c226ad6ab",
+      "reason": "생활 배경 질문 문구 수정, 이름 질문 건너뛰기·되묻기 제거"
     }
   }
 }
