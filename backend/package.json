@@ -17,14 +17,16 @@
     "db:grant": "node --env-file-if-exists=.env scripts/grant-runtime.ts",
     "backup": "node --env-file-if-exists=.env scripts/backup.mjs",
     "worker:v2": "node --env-file-if-exists=.env scripts/malssi-worker.ts",
+    "model:api": "node --env-file-if-exists=.env scripts/malssi-model-api.ts",
+    "openapi:model": "node scripts/generate-model-api-openapi.ts",
     "retention:v2": "node --env-file-if-exists=.env scripts/malssi-retention.ts"
   },
   "dependencies": {
+    "@types/node": "^26.6.4",
+    "@types/pg": "^8.23.1",
     "pg": "^8.23.1"
   },
   "devDependencies": {
-    "@types/node": "^26.6.4",
-    "@types/pg": "^8.23.1",
     "typescript": "^7.0.2"
   },
   "description": "HOP supporter coaching API"

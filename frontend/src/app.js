@@ -2,7 +2,7 @@ import {request,v2,allPages} from './api.js';
 import {$,esc,face,GOALS,STATES,date,notice,dialog,guidanceCards} from './ui.js';
 import {questionMarkup,bindQuestion,answerText} from './questions.js';
 import {demoGuidance} from './demo.js';
-import {COLUMN_CATS,COLUMNS} from './columns.js';
+import {showColumns} from './interactive-columns.js';
 
 let user=null,capabilities=null,consents=null,current=null,project=null,busy=false,pending=null,pollTimer=null,viewId=0,demoEnabled=false;
 const root=$('app');
@@ -32,19 +32,21 @@ async function retryPending(){
   await operation.after(result);
 }
 function page(body,id=''){
-  stopPoll();viewId++;
-  root.innerHTML=`<section class="screen" ${id?`id="${id}"`:''}><header class="top"><button class="logo" id="home" aria-label="말씨 처음으로">말씨<small>●</small></button><nav aria-label="주 메뉴"><button class="ghost" id="columns-nav">칼럼</button><button class="ghost" id="help">안전 도움</button>${user?`<button class="ghost" id="records">내 기록</button><button class="ghost" id="settings">내 설정</button><button class="ghost" id="logout">로그아웃</button>`:'<button class="ghost" id="login">로그인</button>'}</nav></header>${user?.is_demo?'<div class="status-banner">가입 없는 시연 · 24시간 후 접속이 만료되고 기록은 다음 정리 주기에 삭제됩니다. 실제 개인정보는 입력하지 마세요.</div>':capabilities?.internal_draft?'<div class="status-banner">내부 검토용 · 문항과 모델 응답의 출시 검토가 진행 중입니다.</div>':''}<main id="main" tabindex="-1">${body}</main><footer class="footer">말씨는 진단이나 치료를 대신하지 않습니다. 실명보다 별칭으로 이야기해 주세요.</footer></section>`;
-  on('home',()=>{location.hash='';home();});on('columns-nav',()=>columns());on('login',()=>auth());on('records',records);on('settings',settings);on('help',help);
+  stopPoll();viewId++;document.body.classList.remove('noscroll');
+  root.innerHTML=`<section class="screen" ${id?`id="${id}"`:''}><header class="top"><button class="logo" id="home" aria-label="말씨 처음으로">말씨<small>●</small></button><nav aria-label="주 메뉴"><button class="ghost" id="about-nav">서비스 소개</button><button class="ghost" id="columns-nav">칼럼</button><button class="ghost" id="help">안전 도움</button>${user?`<button class="ghost" id="records">내 기록</button><button class="ghost" id="settings">내 설정</button><button class="ghost" id="logout">로그아웃</button>`:'<button class="ghost" id="login">로그인</button>'}</nav><div class="crisis">위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담</div></header>${user?.is_demo?`<div class="status-banner">가입 없는 시연 · 24시간 후 접속이 만료되고 기록은 다음 정리 주기에 삭제됩니다. 실제 개인정보는 입력하지 마세요.${capabilities?.dual_turn_enabled&&!capabilities.model_execution_enabled?' 현재 모델이 연결되지 않아 표현 평가는 불가 상태로 기록됩니다.':''}</div>`:capabilities?.internal_draft?'<div class="status-banner">내부 검토용 · 문항과 모델 응답의 출시 검토가 진행 중입니다.</div>':''}<main id="main" tabindex="-1">${body}</main><footer class="footer">말씨는 진단이나 치료를 대신하지 않습니다. 실명보다 별칭으로 이야기해 주세요.</footer></section>`;
+  on('home',()=>{location.hash='';home();});on('about-nav',about);on('columns-nav',()=>columns());on('login',()=>auth());on('records',records);on('settings',settings);on('help',help);
   on('logout',async()=>{await request('/api/auth/logout','POST',{});clearPrivate();home();});
   $('main').focus({preventScroll:true});
+  window.scrollTo(0,0);
 }
-function home(){page(`<div class="hero"><div><p class="eyebrow">누군가의 곁에 있는 당신에게</p><h1>소중한 사람에게 건넬<br><em>첫 마디</em>를 함께 심어요</h1><p class="lead">어떻게 다가가야 할지 막막한 마음, 말씨와 천천히 정리해 보세요. 들려주신 이야기를 바탕으로 말과 작은 행동을 함께 찾아가요.</p><div class="steps"><div class="step">${face('listen')}<span>이야기 나누기<i>아는 만큼, 편한 속도로</i></span></div><div class="step">${face('ponder')}<span>상황 정리<i>함께 확인해요</i></span></div><div class="step">${face('cheer')}<span>말하는 방법<i>나에게 맞는 제안</i></span></div></div><button class="btn" id="begin">${!user&&demoEnabled?'가입 없이 체험하기':'말씨와 시작하기'}</button><p class="note">${!user&&demoEnabled?'체험을 시작하면 질문 기능에 필요한 정보를 처리합니다. 접속은 24시간 후 만료되고 기록은 다음 정리 주기에 자동 삭제됩니다. 언제든 직접 삭제할 수도 있습니다. 실제 개인정보 대신 가상의 사례를 입력해 주세요.':'질문은 건너뛸 수 있어요. 기록 보관과 다음 대화를 위한 기억은 직접 선택하실 수 있어요.'}</p></div><div class="stage"><div class="blob"></div>${face('empathy','orbit o1')}${face('joy','orbit o2')}${face('thanks','orbit o3')}${face('hello','main')}<div class="bubble-tip">말 한마디에도 마음이 닿도록.</div></div></div>`,'start');on('begin',()=>user?newProject():demoEnabled?startDemo():auth());}
-function columns(cat='전체'){
-  const selected=COLUMN_CATS.some(([name])=>name===cat)?cat:'전체';
-  const sections=COLUMN_CATS.filter(([name])=>selected==='전체'||name===selected);
-  page(`<div class="cbody"><div class="chero"><div><p class="eyebrow">곁에 있는 사람을 위한 읽을거리</p><h1>함께 알아보는 <em>마음 돌봄</em></h1><p>가족이나 친구가 힘들어할 때 읽어 볼 외부 글을 모았습니다. 각 글의 요약은 원문과 함께 확인해 주세요.</p></div>${face('cheer')}</div><div class="cfilter" role="group" aria-label="칼럼 분류">${['전체',...COLUMN_CATS.map(([name])=>name)].map(name=>`<button class="chip column-filter" data-cat="${esc(name)}" aria-pressed="${name===selected}">${name==='통합'?'가족 돌봄 전반':esc(name)}</button>`).join('')}</div><div class="cgrid">${sections.map(([name,description,mascot])=>`<section class="csec"><h2 class="t">${face(mascot)}${esc(description)}</h2><div class="clist">${COLUMNS.filter(item=>item.cat===name).map(item=>`<article class="ccard"><span class="pill">${name==='통합'?'가족 돌봄':esc(name)}</span><h3>${esc(item.title)}</h3><p class="clead">${esc(item.lead)}</p><details><summary>핵심 정리</summary><ul>${item.points.map(point=>`<li>${esc(point)}</li>`).join('')}</ul></details><a class="csrc" href="${esc(item.url)}" target="_blank" rel="noopener noreferrer">${esc(item.src)} 원문 읽기 ↗</a></article>`).join('')}</div></section>`).join('')}</div><p class="note">원문은 각 언론사와 기관에 있으며, 요약은 진단이나 치료 안내를 대신하지 않습니다.</p></div>`,'columns');
-  root.querySelectorAll('.column-filter').forEach(button=>button.onclick=()=>task(()=>columns(button.dataset.cat)));
+function home(){page(`<div class="hero"><div><span class="pill" style="margin-bottom:18px">우울 · 불안 · 중독을 겪는 사람의 곁에서</span><h1>소중한 사람에게 건넬<br><em>첫 마디</em>를 함께 심어요</h1><p class="lead">말씨가 몇 가지를 여쭤볼게요. 답해 주시면 그분의 상황을 함께 정리하고, 마음이 잘 닿는 말하기 방법을 알려드려요.</p><div class="steps"><div class="step">${face('listen')}<span>질문에 답하기<i>편한 속도로</i></span></div><div class="step">${face('ponder')}<span>상황 정리<i>말씨가 함께 확인해요</i></span></div><div class="step">${face('cheer')}<span>말하는 방법<i>가이드 화면 예시</i></span></div></div><button class="btn" id="begin">${!user&&demoEnabled?'가입 없이 체험하기':'말씨와 시작하기'}</button><p class="note">${!user&&demoEnabled?'시연 기록은 서버에 임시 저장되며 접속은 24시간 후 만료됩니다. 실제 개인정보 대신 가상 사례를 입력해 주세요. 모델 응답은 사용하지 않습니다.':'말씨는 진단이나 치료를 대신하지 않아요. 실명 대신 별칭으로 이야기해 주세요.'}</p></div><div class="stage"><div class="blob"></div>${face('empathy','orbit o1')}${face('joy','orbit o2')}${face('thanks','orbit o3')}${face('hello','main')}<div class="bubble-tip">안녕하세요, 저는 말씨예요!</div></div></div>`,'start');on('begin',()=>user?newProject():demoEnabled?startDemo():auth());}
+function about(){page(`<div class="abody"><div class="ahero"><div><span class="pill">말씨를 소개합니다</span><h2>곁에 있는 사람의 <em>첫 마디</em>를 함께 생각해요</h2><p>말씨는 몇 가지 질문으로 상황을 정리하고, 상대에게 건넬 말과 작은 행동을 준비하도록 돕습니다. 진단이나 치료를 대신하지 않습니다.</p></div>${face('hello')}</div><div class="agrid"><article class="acard">${face('listen')}<h3>질문에 답하기</h3><p>모르는 질문은 넘어갈 수 있습니다. 현재 상황만 편한 속도로 알려 주세요.</p></article><article class="acard">${face('ponder')}<h3>상황 정리</h3><p>답변은 보호된 서버 기록에 저장되며 언제든 확인·정정·삭제할 수 있습니다.</p></article><article class="acard">${face('cheer')}<h3>말하는 방법</h3><p>현재 시연의 가이드 화면은 가상의 고정 예시입니다. 실제 모델 분석 결과가 아닙니다.</p></article></div><div class="acta"><button class="btn" id="about-begin">${!user&&demoEnabled?'가입 없이 체험하기':'말씨와 시작하기'}</button></div></div>`,'about');on('about-begin',()=>user?newProject():demoEnabled?startDemo():auth());}
+function sampleGuide(){
+  const conversationId=current?.conversation_id;
+  page(`<div class="wrapr"><div class="rside">${face('cheer')}<span class="pill">가이드 화면 예시</span><h2>이렇게 마음을<br>건네 보세요</h2><p>완벽한 말보다, 곁에 있다는 신호가 더 중요해요.</p></div><div class="cards"><article class="card safety-panel"><h3>AI 생성 결과 아님</h3><p>고정된 가상 사례이며 입력한 답변을 분석하거나 개인화하지 않았습니다.</p></article>${guidanceCards(demoGuidance)}<div class="actions"><button class="ghost" id="back-to-conversation">대화로 돌아가기</button></div></div></div>`,'result');
+  on('back-to-conversation',()=>openConversation(conversationId));
 }
+function columns(cat='전체'){showColumns(page,()=>user?newProject():demoEnabled?task(startDemo):auth(),cat);}
 async function startDemo(){
   const data=await request('/api/auth/demo','POST',{});
   user=data.user;
@@ -81,7 +83,7 @@ function consentPage(){page(`<article class="card narrow"><h1>이야기 전에 �
 async function records(){
   if(!consents?.purposes.service_processing||!consents?.purposes.sensitive_processing){consentPage();return;}
   const projects=await allPages('/projects','projects');current=null;project=null;location.hash='';
-  page(`<div class="page-head"><div><p class="eyebrow">천천히 이어 가는 이야기</p><h1>내 기록</h1></div><button class="btn" id="new-project">새 이야기 시작</button></div>${projects.length?`<div class="project-grid">${projects.map(p=>`<article class="card"><span class="pill">${p.temporary?'24시간 임시 보관':'기록 보관'}</span><h2>${esc(p.alias||p.title)}</h2><p class="note">${esc(p.title)}<br>보관 기한 ${date(p.expires_at)}</p><div class="actions"><button class="ghost project-open" data-id="${p.id}">이야기 열기</button><button class="ghost danger-button project-delete" data-id="${p.id}">삭제</button></div></article>`).join('')}</div>`:`<div class="empty">${face('hello')}<h2>첫 이야기를 함께 시작해 볼까요?</h2><p class="muted">소중한 사람을 떠올려 주세요.</p></div>`}`);
+  page(`<div class="page-head"><div><p class="eyebrow">천천히 이어 가는 이야기</p><h1>내 기록</h1></div><button class="btn" id="new-project">새 이야기 시작</button></div><div class="wrapk"><div class="rlist">${projects.map(p=>`<article class="rcard"><div class="record-icon">${face('basic')}</div><div><span class="pill">${p.temporary?'24시간 임시 보관':'기록 보관'}</span><h2>${esc(p.alias||p.title)}</h2><small>${esc(p.title)} · 보관 기한 ${date(p.expires_at)}</small><div class="actions"><button class="ghost project-open" data-id="${p.id}">이야기 열기</button><button class="ghost danger-button project-delete" data-id="${p.id}">삭제</button></div></div></article>`).join('')}</div><div class="rdetail">${face(projects.length?'ponder':'hello')}<h2>${projects.length?'다시 이어 볼 이야기를 골라 주세요':'첫 이야기를 함께 시작해 볼까요?'}</h2><p>${projects.length?'왼쪽 기록에서 이야기를 열면 서버에 저장된 질문과 답변을 다시 확인할 수 있어요.':'소중한 사람을 떠올려 주세요. 질문과 답변은 이 브라우저가 아닌 서버에 임시 저장됩니다.'}</p><p class="note">시연 기록은 24시간 뒤 접속이 만료되며 언제든 직접 삭제할 수 있습니다.</p></div></div>`,'records');
   on('new-project',newProject);
   root.querySelectorAll('.project-open').forEach(b=>b.onclick=()=>task(()=>openProject(b.dataset.id)));
   root.querySelectorAll('.project-delete').forEach(b=>b.onclick=()=>task(async()=>{const p=await v2('/projects/'+b.dataset.id);if(!confirm(`“${p.alias}”의 프로젝트와 대화·기억을 삭제하시겠습니까?`))return;await mutate('/projects/'+p.id,{expected_revision:p.revision},async()=>{await records();notice('프로젝트의 온라인 기록이 삭제되었습니다. 백업 만료 상태는 삭제 요청으로 관리됩니다.');},'DELETE');}));
@@ -102,14 +104,35 @@ async function openProject(id){
 }
 async function openConversation(id){
   const snapshot=await v2('/conversations/'+id);const p=await v2('/projects/'+snapshot.project_id);
-  current=snapshot;project=p;location.hash='conversation='+id;renderConversation();
+  const visibleMessages=capabilities?.dual_turn_enabled?await allPages('/conversations/'+id+'/messages','messages'):[];
+  const pendingAlerts=capabilities?.dual_turn_enabled?(await v2('/conversations/'+id+'/alerts')).alerts:[];
+  current=snapshot;project=p;location.hash='conversation='+id;renderConversation(visibleMessages);
+  if(pendingAlerts.length)queueAlerts(id,visibleMessages,pendingAlerts,viewId);
+}
+const alertText=reason=>{
+  const [cue,kind]=reason.replace(/_(absolute|increase)$/,'|$1').split('|');
+  if(reason==='assessment_unavailable')return '이번 대화의 표현 평가를 완료하지 못했습니다. 답변을 안전하다는 판단으로 받아들이지 마세요.';
+  const label={sadness:'슬픔',anxiety:'불안',agitation:'초조',self_harm_cue:'자해 관련',harm_to_others_cue:'타인 위해 관련',acute_danger_cue:'급박한 위험 관련'}[cue]||'상태';
+  return `${label} 표현${kind==='increase'?'의 변화':'이'} 관찰되었습니다. 서비스 평가값이며 진단이나 실제 위험 확률이 아닙니다.`;
+};
+async function queueAlerts(conversationId,items,alerts,generation){
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  if(viewId!==generation||current?.conversation_id!==conversationId)return;
+  const responses=new Map(items.filter(message=>message.kind==='dual_reply').map(message=>[message.id,message]));
+  for(const alert of alerts){
+    const response=responses.get(alert.response_id);
+    const bubble=root.querySelector(`[data-response-id="${alert.response_id}"]`);
+    if(!response||response.turn_id!==alert.turn_id||!bubble||bubble.querySelector(`[data-alert-id="${alert.id}"]`))continue;
+    const message=document.createElement('p');message.className='score-alert';message.dataset.alertId=alert.id;if(!alert.shown_at)message.role='status';message.textContent=alertText(alert.reason_code);bubble.append(message);
+    if(!alert.shown_at)try{await request('/api/v2/alerts/'+alert.id+'/shown','POST',{response_id:alert.response_id});}catch{/* Still pending on the server for reconnect. */}
+  }
 }
 async function refreshConversation(){if(current)await openConversation(current.conversation_id);}
 async function turn(action,payload){
   const id=current.conversation_id;
-  await mutate('/conversations/'+id+'/turns',{expected_revision:current.resource_revision,action,payload},async r=>{await openConversation(id);if(r.model_unavailable)notice('이야기는 저장했습니다. 현재 모델 응답은 사용할 수 없습니다.');});
+  await mutate('/conversations/'+id+'/turns',{expected_revision:current.resource_revision,action,payload},async r=>{await openConversation(id);if(r.model_unavailable&&action==='message')notice('이야기는 저장했습니다. 현재 모델 응답은 사용할 수 없습니다.');});
 }
-function renderConversation(){
+function renderConversation(messageItems=[]){
   const c=current,held=c.state==='SAFETY_HOLD',ended=terminal(),running=Boolean(c.run_id),history=c.question_history||[];
   const qFor=id=>history.findLast(q=>q.question_id===id);
   const answered=c.coverage.answered+c.coverage.unknown+c.coverage.skipped+c.coverage.not_applicable;
@@ -117,6 +140,7 @@ function renderConversation(){
   page(`<div class="chat-layout"><aside class="sidebar">${face('listen')}<h2>${esc(project.alias)}의 이야기</h2><span class="pill">${esc(STATES[c.state])}</span><p class="note">${esc(GOALS[c.goal])}</p><progress value="${answered}" max="${c.coverage.total}" aria-label="정보 확인 진행"></progress><p class="note">${answered} / ${c.coverage.total}개 항목 확인<br>필요한 만큼만 이야기해 주세요.</p><button class="ghost" id="refresh">새로 불러오기</button><button class="ghost" id="memories">기억 확인하기</button><button class="ghost" id="project-list">이 프로젝트의 대화</button>${!held&&!ended&&!running?'<button class="ghost" id="choose-topic">다른 질문 고르기</button>':''}${!ended?'<button class="ghost" id="finish">대화 마무리</button>':''}</aside><div class="chat-main">
   ${held?`<article class="card safety-panel"><h2>먼저 지금의 안전을 확인해 주세요</h2><p>위험을 시사하는 이야기가 있어 일반 질문과 가이드를 잠시 멈췄어요. 급박한 상황이면 가까운 사람에게 알리고, 현재 계신 지역의 긴급 지원을 이용해 주세요.</p><button class="ghost" id="safety-detail">안전 도움 보기</button><form id="safety-form"><label class="field">누구의 상황인지, 지금은 어떤지 알려 주세요<textarea name="text" required maxlength="4000" rows="3"></textarea></label><label class="check-label"><input type="checkbox" name="resume"><span>현재 즉각적인 위험이 없음을 확인했고 일반 대화를 다시 시작하고 싶어요.<small>위 내용에도 현재 상황을 직접 적어 주세요.</small></span></label><button class="btn">안전 상황 전달</button></form></article>`:''}
   ${running?'<article class="card run-panel" role="status"><span class="run-dot"></span><b id="run-status">이야기를 정리하고 있어요.</b><p>입력은 저장되었습니다. 완료되면 이 화면에서 알려드릴게요.</p><button class="ghost" id="cancel-run">응답 생성 취소</button></article>':''}
+  ${messageItems.some(message=>message.kind==='dual_reply')?`<section class="card chat-transcript" aria-label="말씨 대화"><h3>말씨와 나눈 이야기</h3>${messageItems.filter(message=>message.kind==='message'||message.kind==='dual_reply'||message.kind==='answer'&&message.content?.trim()).map(message=>`<article class="chat-bubble ${message.role==='assistant'?'from-assistant':'from-user'}" ${message.kind==='dual_reply'?`data-response-id="${esc(message.id)}"`:''}><b>${message.role==='assistant'?'말씨':'나'}</b><p>${esc(message.content||'')}</p></article>`).join('')}</section>`:''}
   ${!held&&!running&&!ended&&c.question?`<article class="card"><div class="question-head">${face('ponder')}<div><p class="question-meta">천천히 답해 주세요</p><h2>${esc(c.question.text)}</h2></div></div>${questionMarkup(c.question)}</article>`:''}
   ${!held&&c.latest_guidance?guidanceCards(c.latest_guidance,c.state==='GUIDANCE'&&!running):''}
   ${!held&&!running&&!ended?`<article class="card"><h3>어떻게 이어갈까요?</h3>${!capabilities.model_execution_enabled?`<p class="note">현재는 질문과 기록을 이용할 수 있습니다. 맞춤 가이드는 모델 서버 연결 후 제공됩니다.</p>${user?.is_demo?'<button class="ghost" id="sample-guide">가이드 화면 예시 보기</button><p class="note">고정된 가상 예시이며 입력한 답변을 분석하지 않습니다.</p>':''}`:`<p class="note">${c.offer_guidance?'지금까지의 이야기로 대화 제안을 받아보실 수 있어요.':'정보가 적으면 확인된 내용 안에서만 제한적인 제안을 드려요.'}</p><button class="btn" id="generate">말하는 방법 정리하기</button>`}${!c.question?'<button class="ghost" id="ask-more">이야기 더 나누기</button>':''}<details><summary>자유롭게 이야기 추가하기</summary><form id="message-form"><label class="field">덧붙일 이야기<textarea name="text" required maxlength="8000" rows="3"></textarea></label><button class="ghost">이야기 보내기</button></form></details></article>`:''}
@@ -125,7 +149,7 @@ function renderConversation(){
   <article class="card"><details ${c.answers.length?'open':''}><summary>지금까지 들려주신 이야기 (${c.answers.length})</summary><div class="history">${historyMarkup||'<p class="note">답변을 보내면 여기에 기록됩니다.</p>'}</div></details><button class="ghost" id="all-messages">추가 대화 기록 보기</button></article>
   </div></div>`);
   on('refresh',refreshConversation);on('project-list',()=>openProject(project.id));on('memories',memories);on('safety-detail',help);on('continue-new',()=>newProject(project.id));
-  on('finish',()=>turn('finish',{}));on('generate',()=>turn('request_guidance',{guidance_kind:'communication_guidance'}));on('sample-guide',()=>dialog('가이드 화면 예시 · AI 생성 결과 아님',guidanceCards(demoGuidance)));on('ask-more',()=>turn('select_topic',{topic_id:'B'}));on('choose-topic',chooseTopic);
+  on('finish',()=>turn('finish',{}));on('generate',()=>turn('request_guidance',{guidance_kind:'communication_guidance'}));on('sample-guide',sampleGuide);on('ask-more',()=>turn('select_topic',{topic_id:'B'}));on('choose-topic',chooseTopic);
   on('cancel-run',()=>mutate('/runs/'+c.run_id+'/cancel',{},refreshConversation));on('all-messages',messages);
   if($('answer-form'))bindQuestion($('answer-form'),c.question,(disposition,value)=>task(()=>turn('answer',{question_instance_id:c.question.id,question_id:c.question.question_id,question_version:c.question.question_version,disposition,value})));
   if($('message-form'))$('message-form').onsubmit=e=>{e.preventDefault();const text=new FormData(e.target).get('text');task(()=>turn('message',{text}));};
@@ -142,7 +166,10 @@ function poll(conversation,run,generation){
     if(busy||pending){poll(conversation,run,generation);return;}
     try{const result=await v2('/runs/'+run);if(viewId!==generation)return;
       if(['ACCEPTED','RUNNING'].includes(result.status)){$('run-status').textContent=result.deadline_at&&Date.parse(result.deadline_at)<Date.now()?'응답 기한이 지났습니다. 생성을 취소하고 운영자에게 연결 상태를 확인해 주세요.':result.status==='ACCEPTED'?'순서를 기다리고 있어요.':'말과 행동을 정리하고 있어요.';poll(conversation,run,generation);}
-      else{await openConversation(conversation);if(result.status==='FAILED')handleError({code:result.error?.code,message:'응답을 완료하지 못했습니다. 입력은 저장되어 있습니다.'});}
+      else{await openConversation(conversation);if(result.status==='FAILED'){
+        if(capabilities?.dual_turn_enabled&&result.error?.retryable)notice('응답을 완료하지 못했습니다. 입력과 평가 기록은 저장되어 있습니다. 같은 턴의 응답만 다시 생성할 수 있습니다.',()=>task(()=>mutate('/runs/'+run+'/retry',{},refreshConversation)));
+        else handleError({code:result.error?.code,message:'응답을 완료하지 못했습니다. 입력은 저장되어 있습니다.'});
+      }}
     }catch(error){if(viewId!==generation)return;if(error.status===401){handleError(error);return;}if($('run-status'))$('run-status').textContent='연결을 다시 확인하고 있어요. 입력은 저장되어 있습니다.';poll(conversation,run,generation);}
   },2000);
 }

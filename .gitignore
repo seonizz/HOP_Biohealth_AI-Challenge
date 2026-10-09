@@ -11,3 +11,6 @@ playwright-report/
 *.log
 .runtime/
 artifacts/
+
+.vercel
+.env*

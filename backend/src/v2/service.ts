@@ -5,6 +5,8 @@ import { V2Database, Transaction, contentTables } from './db.ts';
 import type { Row } from './db.ts';
 import { fail, keys, record, revision, text, uuid } from './errors.ts';
 import { assessSafety, inputText, SAFETY_TEXT } from './safety.ts';
+import {unknownAssessment,RUBRIC_VERSION,thresholds} from './assessment.ts';
+import {dualModelSettings} from './dual-config.ts';
 
 export const CONSENT_VERSION = 'malssi-consent-v1';
 export const PURPOSES = ['service_processing','sensitive_processing','history_storage','cross_session_memory'];
@@ -13,8 +15,8 @@ const TERMINAL = ['COMPLETED','ARCHIVED'];
 const meta = (c: Row, next: string[] = []) => ({conversation_id:c.id,resource_revision:c.revision,state:c.state,run_id:c.active_run_id || null,next_actions:next});
 
 export class MalssiService {
-  readonly db: V2Database; readonly allowDraft: boolean; readonly modelEnabled: boolean;
-  constructor(db: V2Database, options: {allowDraft?:boolean;modelEnabled?:boolean} = {}) { this.db=db; this.allowDraft=options.allowDraft ?? false; this.modelEnabled=options.modelEnabled ?? false; }
+  readonly db: V2Database; readonly allowDraft: boolean; readonly modelEnabled: boolean; readonly dualEnabled:boolean;
+  constructor(db: V2Database, options: {allowDraft?:boolean;modelEnabled?:boolean;dualEnabled?:boolean} = {}) { this.db=db; this.allowDraft=options.allowDraft ?? false; this.modelEnabled=options.modelEnabled ?? false; this.dualEnabled=options.dualEnabled ?? false; }
   checkCatalog() { if (!this.allowDraft) assertCatalogPublishable(); }
   async answers(tx: Transaction, c: Row): Promise<Answers> {
     const rows = await tx.rows('answer_revisions',c.project_id,c.id);
@@ -128,7 +130,9 @@ export class MalssiService {
       const guidance=(await tx.rows('guidance_versions',p.id,c.id)).filter(g=>g.status==='verified').at(-1);
       const plans=await tx.rows('action_plans',p.id,c.id);
       const instances=await tx.rows('question_instances',p.id,c.id);
-      return {...meta(c),project_id:p.id,safety_revision:c.safety_revision,safety_episode_id:c.state==='SAFETY_HOLD'?c.data.safety_episode_id:null,goal:c.data.goal,questionnaire_version:c.data.questionnaire_version,question:pending?{id:pending.id,...pending.data}:null,coverage:coverage(answers),ready_for:readiness(answers,c.data.goal),offer_guidance:c.data.collection_turns>=6,answers:Object.values(answers),question_history:instances.map(q=>({id:q.id,...q.data})),latest_guidance:guidance?{id:guidance.id,...guidance.data}:null,plans:plans.map(p=>({id:p.id,revision:p.revision,status:p.status,...p.data})),next_actions:c.state==='SAFETY_HOLD'?['safety_update','resume_after_safety','finish']:TERMINAL.includes(c.state)?['archive','restore']:['answer','select_topic','select_question','request_guidance','finish']};
+      // Apply current required-alias policy to previously saved pending/correction snapshots.
+      const snapshot=(q:Row)=>({id:q.id,...q.data,...(q.data.question_id==='N00'?{disposition_options:['answered']}: {})});
+      return {...meta(c),project_id:p.id,safety_revision:c.safety_revision,safety_episode_id:c.state==='SAFETY_HOLD'?c.data.safety_episode_id:null,goal:c.data.goal,questionnaire_version:c.data.questionnaire_version,question:pending?snapshot(pending):null,coverage:coverage(answers),ready_for:readiness(answers,c.data.goal),offer_guidance:c.data.collection_turns>=6,answers:Object.values(answers),question_history:instances.map(snapshot),latest_guidance:guidance?{id:guidance.id,...guidance.data}:null,plans:plans.map(p=>({id:p.id,revision:p.revision,status:p.status,...p.data})),next_actions:c.state==='SAFETY_HOLD'?['safety_update','resume_after_safety','finish']:TERMINAL.includes(c.state)?['archive','restore']:['answer','select_topic','select_question','request_guidance','finish']};
     });
   }
   async listConversations(owner: string, project: string, limit=50, cursor?: string) {
@@ -176,9 +180,17 @@ export class MalssiService {
     }
     await tx.saveProject(p);
     const assessment=assessSafety(inputText(value));
-    if(assessment.route!=='no_signal') {await this.safety(tx,c,assessment,message.id);return;}
+    if(assessment.route!=='no_signal') {await this.safety(tx,c,assessment,message.id);return message.id;}
     c.state='EXPLORING';c.data.collection_turns++;
     await this.ask(tx,c,p);
+    return message.id;
+  }
+  async unavailableAssessment(tx:Transaction,c:Row,p:Row,turnId:string){
+    const runId=randomUUID(),assessmentId=randomUUID(),setting=thresholds(),dual=dualModelSettings();
+    const epoch=await tx.query('SELECT consent_epoch FROM users WHERE id=$1',[tx.owner]);
+    await tx.query(`INSERT INTO agent_runs(id,owner_id,project_id,conversation_id,status,input_revision,project_revision,memory_revision,safety_revision,consent_epoch,deletion_epoch,encrypted_payload) VALUES($1,$2,$3,$4,'FAILED',$5,$6,$7,$8,$9,$10,$11)`,[runId,tx.owner,p.id,c.id,c.revision,p.revision,p.memory_revision,c.safety_revision,epoch.rows[0].consent_epoch,p.deletion_epoch,tx.seal(p.id,runId,{kind:'dual_turn',message_id:turnId,error:{code:'MODEL_UNAVAILABLE',retryable:true}})]);
+    await tx.query(`INSERT INTO turn_assessments(id,owner_id,project_id,conversation_id,turn_id,run_id,input_revision,evaluation_status,model_id,model_sha256,prompt_profile,prompt_version,schema_version,rubric_version,threshold_version,attempts,encrypted_payload) VALUES($1,$2,$3,$4,$5,$6,$7,3,$8,$9,$10,$11,1,$12,$13,0,$14)`,[assessmentId,tx.owner,p.id,c.id,turnId,runId,c.revision,dual.modelId||'not-configured',dual.checkpointSha256||'unverified',dual.profile,dual.version,RUBRIC_VERSION,setting.version,tx.seal(p.id,assessmentId,{raw:null,normalized:unknownAssessment(),reason:'MODEL_UNAVAILABLE'})]);
+    await tx.query('INSERT INTO assessment_sources(owner_id,project_id,conversation_id,assessment_id,source_id) VALUES($1,$2,$3,$4,$5)',[tx.owner,p.id,c.id,assessmentId,turnId]);
   }
   async enqueue(tx: Transaction, c: Row, p: Row, kind: string, messageId?: string, guidanceKind?: string) {
     if (!this.modelEnabled) fail('MODEL_UNAVAILABLE',503);
@@ -186,9 +198,9 @@ export class MalssiService {
     const count=await tx.query('SELECT count(*)::integer AS n FROM agent_queue');
     if(count.rows[0].n>=3) fail('QUEUE_FULL',503);
     await tx.rate('model',3);
-    const id=randomUUID(), epoch=await tx.query('SELECT consent_epoch FROM users WHERE id=$1',[tx.owner]);
-    const data={kind,message_id:messageId || null,guidance_kind:guidanceKind || null,questionnaire_version:c.data.questionnaire_version,policy_version:'malssi-v1',prompt_version:'malssi-v1',decision_log:[],model_id:process.env.HOP_LLM_MODEL || 'local',model_artifact_hash:process.env.HOP_MODEL_ARTIFACT_HASH || 'unverified'};
-    await tx.query(`INSERT INTO agent_runs(id,owner_id,project_id,conversation_id,status,input_revision,project_revision,memory_revision,safety_revision,consent_epoch,deletion_epoch,encrypted_payload) VALUES($1,$2,$3,$4,'ACCEPTED',$5,$6,$7,$8,$9,$10,$11)`,[id,tx.owner,p.id,c.id,c.revision,p.revision,p.memory_revision,c.safety_revision,epoch.rows[0].consent_epoch,p.deletion_epoch,tx.seal(p.id,id,data)]);
+    const id=randomUUID(), epoch=await tx.query('SELECT consent_epoch FROM users WHERE id=$1',[tx.owner]),dual=dualModelSettings();
+    const data={kind,message_id:messageId || null,guidance_kind:guidanceKind || null,questionnaire_version:c.data.questionnaire_version,policy_version:'malssi-v1',prompt_profile:dual.profile,prompt_version:kind==='dual_turn'?dual.version:'malssi-v1',decision_log:[],model_id:kind==='dual_turn'?dual.modelId||'not-configured':process.env.HOP_LLM_MODEL || 'local',model_artifact_hash:kind==='dual_turn'?dual.checkpointSha256||'unverified':process.env.HOP_MODEL_ARTIFACT_HASH || 'unverified'};
+    await tx.query(`INSERT INTO agent_runs(id,owner_id,project_id,conversation_id,status,input_revision,project_revision,memory_revision,safety_revision,consent_epoch,deletion_epoch,deadline_at,encrypted_payload) VALUES($1,$2,$3,$4,'ACCEPTED',$5,$6,$7,$8,$9,$10,CASE WHEN $12 THEN now()+interval '45 seconds' ELSE now()+interval '180 seconds' END,$11)`,[id,tx.owner,p.id,c.id,c.revision,p.revision,p.memory_revision,c.safety_revision,epoch.rows[0].consent_epoch,p.deletion_epoch,tx.seal(p.id,id,data),kind==='dual_turn']);
     await tx.query('INSERT INTO agent_queue(run_id,owner_id) VALUES($1,$2)',[id,tx.owner]);
     c.active_run_id=id; await tx.event(c,'run.accepted',id);
   }
@@ -227,13 +239,15 @@ export class MalssiService {
       if(c.active_run_id && !interrupts.includes(action) && !(action==='answer' && assessment.route!=='no_signal')) fail('RUN_IN_PROGRESS',409);
       if(!interrupts.includes(action)) await tx.rate('general',60);
       c.revision++;
-      if(action==='answer') await this.answer(tx,c,p,payload);
+      let modelUnavailable=false;
+      if(action==='answer') {const turnId=await this.answer(tx,c,p,payload);if(this.dualEnabled&&c.state!=='SAFETY_HOLD'){if(this.modelEnabled)await this.enqueue(tx,c,p,'dual_turn',turnId);else{await this.unavailableAssessment(tx,c,p,turnId);modelUnavailable=true;}}}
       else if(action==='correct_answer') {
         const old=await tx.get('answer_revisions',uuid(payload.answer_revision_id));
         if(old.conversation_id!==c.id || old.status!=='current') fail('INVALID_ANSWER');
         const instance=await tx.get('question_instances',old.question_instance_id);
         const replacement=record(payload.replacement);keys(replacement,['disposition','value'],['disposition','value']);
-        await this.answer(tx,c,p,{question_instance_id:instance.id,question_id:instance.data.question_id,question_version:c.data.questionnaire_version,...replacement},old);
+        const turnId=await this.answer(tx,c,p,{question_instance_id:instance.id,question_id:instance.data.question_id,question_version:c.data.questionnaire_version,...replacement},old);
+        if(this.dualEnabled&&c.state!=='SAFETY_HOLD'){if(this.modelEnabled)await this.enqueue(tx,c,p,'dual_turn',turnId);else{await this.unavailableAssessment(tx,c,p,turnId);modelUnavailable=true;}}
       } else if(action==='select_question' || action==='select_topic') {
         if(action==='select_topic' && !catalog.topics.some((t:any)=>t.id===payload.topic_id)) fail('INVALID_OPTION');
         await this.ask(tx,c,p,action==='select_question'?payload.question_id:undefined,action==='select_topic'?payload.topic_id:undefined);c.state='EXPLORING';
@@ -243,11 +257,12 @@ export class MalssiService {
         if(action==='message') message=await tx.insert('v2_messages',c,{role:'user',content:text(payload.text,8000),kind:'message'},'visible');
         // When inference is disabled, still retain the user's accepted message and report an explicit failed run.
         if(!this.modelEnabled && message) {
+          if(this.dualEnabled)await this.unavailableAssessment(tx,c,p,message.id);
           await this.ask(tx,c,p); c.state='EXPLORING';
           await tx.saveConversation(c);
           return {...meta(c,['answer','request_guidance']),model_unavailable:true,input_saved:true};
         }
-        await this.enqueue(tx,c,p,action,message?.id,payload.guidance_kind);
+        await this.enqueue(tx,c,p,action==='message'&&this.dualEnabled?'dual_turn':action,message?.id,payload.guidance_kind);
       } else if(action==='safety_update') {
         if(c.state!=='SAFETY_HOLD') fail('INVALID_STATE',409);
         if(payload.safety_episode_id && payload.safety_episode_id!==c.data.safety_episode_id) fail('NOT_FOUND',404);
@@ -271,7 +286,7 @@ export class MalssiService {
         c.active_run_id=null;c.state='REVIEWING';
       }
       await tx.saveConversation(c); await tx.event(c,'conversation.changed',c.id);
-      return meta(c,c.active_run_id?['poll_run','cancel_run','safety_update']:c.state==='SAFETY_HOLD'?['safety_update','resume_after_safety','finish']:['answer','request_guidance','finish']);
+      return {...meta(c,c.active_run_id?['poll_run','cancel_run','safety_update']:c.state==='SAFETY_HOLD'?['safety_update','resume_after_safety','finish']:['answer','request_guidance','finish']),...(modelUnavailable?{model_unavailable:true}:{} )};
     });
   }
   async messages(owner: string, id: string, limit=100, cursor?: string) {
@@ -280,6 +295,23 @@ export class MalssiService {
       await tx.consent(); const {c}=await tx.conversation(id);
       const all=(await tx.rows('v2_messages',c.project_id,c.id)).filter(m=>!cursor || BigInt(m.sequence_id)>BigInt(cursor));
       return {messages:all.slice(0,limit).map(m=>({id:m.id,revision:m.revision,sequence_id:m.sequence_id,visibility:m.status,...m.data})),next_cursor:all.length>limit?all[limit-1].sequence_id:null};
+    });
+  }
+  async alerts(owner:string,conversationId:string){
+    return this.db.transaction(owner,async tx=>{
+      await tx.consent();const {c}=await tx.conversation(conversationId);
+      const rows=await tx.query('SELECT id,turn_id,response_id,reason_code,threshold_version,shown_at FROM assessment_alerts WHERE owner_id=$1 AND conversation_id=$2 ORDER BY created_at,id LIMIT 100',[owner,c.id]);
+      return {alerts:rows.rows};
+    });
+  }
+  async acknowledgeAlert(owner:string,id:string,responseId:string){
+    uuid(id);uuid(responseId);
+    return this.db.transaction(owner,async tx=>{
+      const row=await tx.query('SELECT project_id,conversation_id,response_id FROM assessment_alerts WHERE id=$1 AND owner_id=$2',[id,owner]);
+      if(!row.rowCount||row.rows[0].response_id!==responseId)fail('NOT_FOUND',404);
+      await tx.consent();await tx.conversation(row.rows[0].conversation_id);
+      await tx.query('UPDATE assessment_alerts SET shown_at=coalesce(shown_at,now()) WHERE id=$1 AND owner_id=$2',[id,owner]);
+      return {shown:true,id};
     });
   }
   async confirm(tx: Transaction, memory: Row, p: Row) {
@@ -303,6 +335,14 @@ export class MalssiService {
   }
   async invalidateSources(tx: Transaction, p: Row, sourceIds: string[], suppress: boolean) {
     // Conservative dependency invalidation: suppress entire source messages, never reconstruct forgotten spans.
+    if(sourceIds.length){
+      const affected=await tx.query('SELECT id,response_id FROM turn_assessments WHERE owner_id=$1 AND project_id=$2 AND (turn_id=ANY($3::uuid[]) OR id IN (SELECT assessment_id FROM assessment_sources WHERE owner_id=$1 AND project_id=$2 AND source_id=ANY($3::uuid[])))',[tx.owner,p.id,sourceIds]);
+      if(affected.rowCount){
+        await tx.query('DELETE FROM turn_assessments WHERE owner_id=$1 AND id=ANY($2::uuid[])',[tx.owner,affected.rows.map(row=>row.id)]);
+        const responseIds=affected.rows.map(row=>row.response_id).filter(Boolean);
+        if(responseIds.length)await tx.query('DELETE FROM v2_messages WHERE owner_id=$1 AND id=ANY($2::uuid[])',[tx.owner,responseIds]);
+      }
+    }
     for(const source of sourceIds.filter(Boolean)) {
       if(suppress) await tx.query('INSERT INTO memory_suppressions(owner_id,project_id,source_id) VALUES($1,$2,$3) ON CONFLICT DO NOTHING',[tx.owner,p.id,source]);
       const derived=await tx.query('WITH RECURSIVE descendants(id) AS (SELECT child_id FROM memory_derivations WHERE owner_id=$1 AND project_id=$2 AND parent_id=$3 UNION SELECT d.child_id FROM memory_derivations d JOIN descendants x ON x.id=d.parent_id WHERE d.owner_id=$1 AND d.project_id=$2) SELECT id FROM descendants',[tx.owner,p.id,source]);
@@ -365,9 +405,26 @@ export class MalssiService {
   async run(owner: string,id:string) {
     return this.db.transaction(owner,async tx=>{await tx.consent();uuid(id);const r=await tx.query('SELECT * FROM agent_runs WHERE owner_id=$1 AND id=$2',[owner,id]);if(!r.rowCount)fail('NOT_FOUND',404);await tx.project(r.rows[0].project_id);const run=tx.decode(r.rows[0]);return {id,status:run.status,input_saved:true,result:run.status==='SUCCEEDED'?run.data.result || null:null,error:run.data.error || null,deadline_at:run.deadline_at};});
   }
+  async retryRun(owner:string,id:string,input:any){
+    keys(record(input),['request_id'],['request_id']);uuid(id);
+    return this.db.write(owner,'retry_run:'+id,input,async tx=>{
+      await tx.consent();const result=await tx.query('SELECT * FROM agent_runs WHERE id=$1 AND owner_id=$2 FOR UPDATE',[id,owner]);
+      if(!result.rowCount)fail('NOT_FOUND',404);
+      const run=result.rows[0],{c,p}=await tx.conversation(run.conversation_id),data=tx.decode(run).data;
+      if(run.status!=='FAILED'||data.kind!=='dual_turn'||!data.error?.retryable||c.active_run_id||c.state==='SAFETY_HOLD'||TERMINAL.includes(c.state)||c.revision!==run.input_revision+1)fail('INVALID_STATE',409);
+      const assessment=await tx.query('SELECT id FROM turn_assessments WHERE owner_id=$1 AND run_id=$2 AND turn_id=$3',[owner,id,data.message_id]);
+      if(!assessment.rowCount)fail('INVALID_STATE',409);
+      const epoch=await tx.query('SELECT consent_epoch FROM users WHERE id=$1',[owner]);
+      c.revision++;c.active_run_id=id;
+      await tx.query("UPDATE agent_runs SET status='ACCEPTED',input_revision=$3,project_revision=$4,memory_revision=$5,safety_revision=$6,consent_epoch=$7,deletion_epoch=$8,attempts=0,deadline_at=now()+interval '45 seconds',encrypted_payload=$9 WHERE id=$1 AND owner_id=$2",[id,owner,c.revision,p.revision,p.memory_revision,c.safety_revision,epoch.rows[0].consent_epoch,p.deletion_epoch,tx.seal(p.id,id,{...data,error:null})]);
+      await tx.query('INSERT INTO agent_queue(run_id,owner_id) VALUES($1,$2) ON CONFLICT DO NOTHING',[id,owner]);
+      await tx.saveConversation(c);await tx.event(c,'run.accepted',id);
+      return meta(c,['poll_run','cancel_run']);
+    });
+  }
   async cancel(owner:string,id:string,input:any) {
     keys(record(input),['request_id'],['request_id']);
-    return this.db.write(owner,'cancel:'+id,input,async tx=>{uuid(id);const r=await tx.query('SELECT * FROM agent_runs WHERE id=$1 AND owner_id=$2',[id,owner]);if(!r.rowCount)fail('NOT_FOUND',404);const {c}=await tx.conversation(r.rows[0].conversation_id);if(['ACCEPTED','RUNNING'].includes(r.rows[0].status)){await tx.query("UPDATE agent_runs SET status='CANCELLED' WHERE id=$1 AND owner_id=$2",[id,owner]);await tx.query('DELETE FROM agent_queue WHERE run_id=$1',[id]);c.active_run_id=null;c.revision++;await tx.saveConversation(c);await tx.event(c,'run.cancelled',id);}return meta(c,['view_conversation']);});
+    return this.db.write(owner,'cancel:'+id,input,async tx=>{uuid(id);const r=await tx.query('SELECT * FROM agent_runs WHERE id=$1 AND owner_id=$2',[id,owner]);if(!r.rowCount)fail('NOT_FOUND',404);const {c}=await tx.conversation(r.rows[0].conversation_id);if(['ACCEPTED','RUNNING'].includes(r.rows[0].status)){await tx.query("UPDATE agent_runs SET status='CANCELLED' WHERE id=$1 AND owner_id=$2",[id,owner]);await tx.query('DELETE FROM agent_queue WHERE run_id=$1',[id]);await tx.query('DELETE FROM turn_assessments WHERE run_id=$1 AND owner_id=$2',[id,owner]);c.active_run_id=null;c.revision++;await tx.saveConversation(c);await tx.event(c,'run.cancelled',id);}return meta(c,['view_conversation']);});
   }
   async choosePlan(owner:string,id:string,input:any) {
     keys(record(input),['request_id','guidance_id','action_index','user_edited_text'],['request_id','guidance_id']);

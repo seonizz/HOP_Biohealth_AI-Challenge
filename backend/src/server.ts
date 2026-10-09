@@ -66,7 +66,7 @@ export async function createApp(settings: Settings = getSettings(), gateway: Mod
     if (settings.v2Enabled) {
       const db = new V2Database(store.pool,new ContentCipher(settings.contentKey));
       await db.assertRuntimeRole();
-      malssi = new MalssiService(db,{allowDraft:settings.v2AllowDraft,modelEnabled:settings.v2ModelEnabled});
+      malssi = new MalssiService(db,{allowDraft:settings.v2AllowDraft,modelEnabled:settings.v2ModelEnabled,dualEnabled:settings.dualEnabled});
     }
   } catch(error) {await store.close();throw error;}
   const limiter = new Limiter();
@@ -94,8 +94,8 @@ export async function createApp(settings: Settings = getSettings(), gateway: Mod
     try {
       if (origin && !permittedOrigins.includes(origin) && !['GET','HEAD'].includes(req.method || '')) throw new HttpError(403,'허용되지 않은 요청 출처입니다.','origin_denied');
       if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
-      if (await publicV2(req,res,malssi,store)) return;
-      if(req.method==='GET' && req.url==='/health/service') {
+      if (await publicV2(req,res,malssi,store,settings.demoEnabled)) return;
+      if(req.method==='GET' && new URL(req.url||'/','http://localhost').pathname==='/health/service') {
         await store.pool.query('SELECT 1');
         json(res,200,{ready:true,v2_enabled:Boolean(malssi)});return;
       }

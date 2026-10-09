@@ -2,6 +2,8 @@ import { strictJson } from '../llm.ts';
 import { evidence } from './crypto.ts';
 import { fail, keys, record, text, V2Error } from './errors.ts';
 import { question, questions } from './questions.ts';
+import { readFileSync } from 'node:fs';
+import { assessmentSchema, responseSchema } from './assessment.ts';
 
 const string = {type:'string',minLength:1};
 const strings = (maxItems=3) => ({type:'array',maxItems,items:string});
@@ -19,31 +21,69 @@ const prompts:Record<string,string> = {
   verify:'Validate draft against context for factual grounding, subject confusion, negation, unsupported diagnosis/medication/coercion, citation and privacy issues, and respectful Korean. approved=true requires issues=[]. If anything is ungrounded, return approved=false and brief correction requirements. Never provide chain of thought.',
 };
 export type ModelContext = {current_message:string;message_id?:string;[key:string]:any};
-export interface AgentModel { call(kind:string,context:ModelContext,signal:AbortSignal):Promise<any>; countTokens(value:string,signal:AbortSignal):Promise<number>; }
+export interface AgentModel {
+  readonly identity?:{model_id:string;checkpoint_sha256:string;prompt_profile:string;prompt_version:string};
+  call(kind:string,context:ModelContext,signal:AbortSignal):Promise<any>;
+  countTokens(value:string,signal:AbortSignal):Promise<number>;
+}
 export class LocalAgentModel implements AgentModel {
-  readonly base:string; readonly model:string; readonly apiKey:string;
-  constructor(base:string,model:string,apiKey='',allowedOrigins:string[] = []) {
+  readonly base:string; readonly model:string; readonly apiKey:string;readonly protocol:'llamacpp'|'ollama';
+  constructor(base:string,model:string,apiKey='',allowedOrigins:string[] = [],protocol:'llamacpp'|'ollama'='llamacpp') {
     const url=new URL(base);
     if((!['127.0.0.1','localhost','[::1]'].includes(url.hostname) && !allowedOrigins.includes(url.origin)) || url.username || url.password || url.search || url.hash || !['http:','https:'].includes(url.protocol)) throw new Error('V2 model must use loopback or an explicitly allowed server-configured origin');
-    this.base=base.replace(/\/$/,'');this.model=model;this.apiKey=apiKey;
+    this.base=base.replace(/\/$/,'');this.model=model;this.apiKey=apiKey;this.protocol=protocol;
   }
   async request(url:string,body:any,signal:AbortSignal) {
     let response:Response;
     try { response=await fetch(url,{method:'POST',redirect:'error',signal:AbortSignal.any([signal,AbortSignal.timeout(45000)]),headers:{'Content-Type':'application/json',...(this.apiKey?{Authorization:'Bearer '+this.apiKey}:{})},body:JSON.stringify(body)}); }
     catch { fail('MODEL_UNAVAILABLE',503); }
-    if(!response.ok)fail('MODEL_UNAVAILABLE',503);
+    if(!response.ok)fail(response.status===429?'MODEL_BUSY':'MODEL_UNAVAILABLE',response.status===429?429:503);
     const bytes=await response.arrayBuffer();if(bytes.byteLength>131072)fail('INVALID_MODEL_OUTPUT');
     try{return JSON.parse(Buffer.from(bytes).toString('utf8'));}catch{fail('INVALID_MODEL_OUTPUT');}
   }
   async countTokens(value:string,signal:AbortSignal) {
+    // Ollama has no /tokenize endpoint. A UTF-8 byte upper bound is conservative,
+    // never a claim of exact tokenization, and does not load or invoke a model.
+    if(this.protocol==='ollama')return Buffer.byteLength(value,'utf8')+512;
     const data=await this.request(this.base.replace(/\/v1$/,'')+'/tokenize',{content:value,add_special:true},signal);
     if(!Array.isArray(data.tokens))fail('MODEL_UNAVAILABLE',503);
     return data.tokens.length;
   }
   async call(kind:string,context:ModelContext,signal:AbortSignal) {
-    const data=await this.request(this.base+'/chat/completions',{model:this.model,messages:[{role:'system',content:POLICY+'\n'+prompts[kind]},{role:'user',content:JSON.stringify(context)}],temperature:0,max_tokens:2048,chat_template_kwargs:{enable_thinking:false},response_format:{type:'json_schema',json_schema:{name:'malssi_'+kind,strict:true,schema:SCHEMAS[kind]}}},signal);
+    const data=await this.request(this.base+'/chat/completions',{model:this.model,messages:[{role:'system',content:POLICY+'\n'+prompts[kind]},{role:'user',content:JSON.stringify(context)}],stream:false,temperature:0,max_tokens:2048,...(this.protocol==='ollama'?{reasoning_effort:'none'}:{chat_template_kwargs:{enable_thinking:false}}),response_format:{type:'json_schema',json_schema:{name:'malssi_'+kind,strict:true,schema:SCHEMAS[kind]}}},signal);
     if(data.choices?.[0]?.finish_reason!=='stop' || typeof data.choices[0].message?.content!=='string')fail('INVALID_MODEL_OUTPUT');
     try{return strictJson(data.choices[0].message.content);}catch{fail('INVALID_MODEL_OUTPUT');}
+  }
+}
+export class DualRoleModel implements AgentModel {
+  readonly evaluator:LocalAgentModel;readonly responder:LocalAgentModel;
+  readonly profile:string;readonly version:string;
+  readonly identity?:{model_id:string;checkpoint_sha256:string;prompt_profile:string;prompt_version:string};
+  constructor(evaluatorBase:string,responderBase:string,model:string,apiKey:string,profile:string,version:string,options:{allowedOrigins?:string[];protocol?:'llamacpp'|'ollama';checkpointSha256?:string}={}){
+    if(!['test','production'].includes(profile)||version!=='v1'||!model.trim())throw new Error('Dual model identity and prompt profile/version must be configured');
+    for(const endpoint of [evaluatorBase,responderBase]){
+      const url=new URL(endpoint);
+      const loopback=['127.0.0.1','localhost','[::1]'].includes(url.hostname);
+      if(!(loopback&&url.protocol==='http:'||url.protocol==='https:'&&options.allowedOrigins?.includes(url.origin))||url.username||url.password||url.search||url.hash)throw new Error('Dual model endpoint must be loopback or an explicitly allowed HTTPS origin');
+      if(!loopback&&!apiKey)throw new Error('Remote model API requires a server-side API key');
+    }
+    this.evaluator=new LocalAgentModel(evaluatorBase,model,apiKey,options.allowedOrigins||[],options.protocol);
+    this.responder=new LocalAgentModel(responderBase,model,apiKey,options.allowedOrigins||[],options.protocol);
+    this.profile=profile;this.version=version;
+    if(options.checkpointSha256){if(!/^[a-f0-9]{64}$/i.test(options.checkpointSha256))throw new Error('Invalid model checkpoint SHA-256');this.identity={model_id:model,checkpoint_sha256:options.checkpointSha256,prompt_profile:profile,prompt_version:version};}
+  }
+  countTokens(value:string,signal:AbortSignal){return this.evaluator.countTokens(value,signal);}
+  async call(kind:string,context:ModelContext,signal:AbortSignal){
+    if(kind!=='assess'&&kind!=='respond')return this.responder.call(kind,context,signal);
+    const {_model_request_id,...input}=context;
+    const model=kind==='assess'?this.evaluator:this.responder;
+    const prompt=readFileSync(new URL(`../../docs/dual-model/prompts/${this.profile}/${this.version}/${kind==='assess'?'evaluator':'responder'}.txt`,import.meta.url),'utf8');
+    const source=kind==='assess'?assessmentSchema:responseSchema;
+    const {$schema,title,...schema}=source;
+    const data=await model.request(model.base+'/chat/completions',{model:model.model,messages:[{role:'system',content:prompt},{role:'user',content:JSON.stringify(input)}],stream:false,temperature:0,max_tokens:kind==='assess'?768:384,...(model.protocol==='ollama'?{reasoning_effort:'none'}:{chat_template_kwargs:{enable_thinking:false}}),response_format:{type:'json_schema',json_schema:{name:kind==='assess'?'patient_cues_v1':'malssi_response_v1',strict:true,schema}}},signal);
+    const choice=data.choices?.[0],reply=choice?.message;
+    if(choice?.finish_reason!=='stop'||typeof reply?.content!=='string'||reply.reasoning_content)fail('INVALID_MODEL_OUTPUT');
+    try{return strictJson(reply.content);}catch{fail('INVALID_MODEL_OUTPUT');}
   }
 }
 export function validateExtraction(raw:any,context:ModelContext) {

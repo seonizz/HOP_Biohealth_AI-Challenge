@@ -9,7 +9,7 @@ await client.connect();
 try {
   await client.query('BEGIN');
   await client.query('GRANT USAGE ON SCHEMA "' + schema + '" TO "' + role + '"');
-  for (const table of ['users','sessions','projects','messages','requests','profile_versions','consent_records','v2_projects','temporary_content_keys','conversations','requests_v2','agent_runs','agent_queue','model_slots','outbox_events','v2_rate_limits','question_instances','v2_messages','answer_revisions','memory_items','conversation_summaries','safety_episodes','guidance_versions','action_plans','plan_feedback','memory_derivations','memory_suppressions','deletion_requests','audit_events','agent_run_steps']) {
+  for (const table of ['users','sessions','projects','messages','requests','profile_versions','consent_records','v2_projects','temporary_content_keys','conversations','requests_v2','agent_runs','agent_queue','model_slots','outbox_events','v2_rate_limits','question_instances','v2_messages','answer_revisions','memory_items','conversation_summaries','safety_episodes','guidance_versions','action_plans','plan_feedback','memory_derivations','memory_suppressions','deletion_requests','audit_events','agent_run_steps','turn_assessments','assessment_sources','assessment_alerts']) {
     await client.query('GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE "' + schema + '"."' + table + '" TO "' + role + '"');
   }
   await client.query('GRANT SELECT ON TABLE "' + schema + '"."schema_migrations" TO "' + role + '"');

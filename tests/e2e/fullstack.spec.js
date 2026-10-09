@@ -45,9 +45,10 @@ test('one-click demo opens a private temporary conversation without registration
   const capabilities=await (await page.request.get('/api/v2/capabilities')).json();
   if(!capabilities.model_execution_enabled){
     await page.getByRole('button',{name:'가이드 화면 예시 보기'}).click();
-    await expect(page.locator('#dialog')).toContainText('AI 생성 결과 아님');
-    await expect(page.locator('#dialog')).toContainText('입력한 답변을 분석하거나 개인화하지 않았습니다.');
-    await page.locator('#dialog').getByRole('button',{name:'닫기',exact:true}).click();
+    await expect(page.locator('#result')).toContainText('AI 생성 결과 아님');
+    await expect(page.locator('#result')).toContainText('입력한 답변을 분석하거나 개인화하지 않았습니다.');
+    await page.getByRole('button',{name:'대화로 돌아가기'}).click();
+    await expect(page.getByRole('heading',{name:'친구의 이야기'})).toBeVisible();
   }
   const me=await (await page.request.get('/api/auth/me')).json();
   expect(me.user.is_demo).toBe(true);
@@ -106,7 +107,15 @@ test('columns from current main remain readable without signing in',async({page}
   await expect(page.locator('.ccard')).toHaveCount(10);
   await page.getByRole('button',{name:'불안',exact:true}).click();
   await expect(page.locator('.ccard')).toHaveCount(2);
-  await expect(page.locator('.ccard a[target="_blank"]')).toHaveCount(2);
+  await page.locator('.ccard .cc-open').first().click();
+  await expect(page.locator('#colReader')).toBeVisible();
+  await expect(page.locator('#colReader a[target="_blank"]')).toHaveCount(1);
+  // The reader marks an article as read automatically when scrolling reaches its end.
+  await page.locator('#crScroll').evaluate(node=>{node.scrollTop=node.scrollHeight;node.dispatchEvent(new Event('scroll'));});
+  await expect(page.locator('#colGarden')).toContainText('1 / 10');
+  await page.getByRole('button',{name:'닫기'}).click();
+  await page.getByRole('button',{name:'안 읽은 글'}).click();
+  await expect(page.locator('.ccard')).toHaveCount(1);
   await page.getByRole('button',{name:'말씨 처음으로'}).click();
   await expect(page.getByRole('button',{name:'가입 없이 체험하기'})).toBeVisible();
 });

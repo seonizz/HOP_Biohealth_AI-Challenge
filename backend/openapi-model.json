@@ -1,0 +1,3332 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Malssi server-to-server model I/O API",
+    "version": "1.0.0",
+    "description": "B and A use one configured checkpoint. No model, training, or worker is started by this API. Input is server-owned; browser access is not supported. Evidence offsets are Unicode code points."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:9010"
+    }
+  ],
+  "security": [
+    {
+      "modelBearer": []
+    }
+  ],
+  "paths": {
+    "/health/live": {
+      "get": {
+        "summary": "Process liveness; never invokes inference",
+        "responses": {
+          "200": {
+            "description": "API process is running"
+          }
+        }
+      }
+    },
+    "/v1/status": {
+      "get": {
+        "summary": "Configuration and model identity; inference readiness is not probed",
+        "responses": {
+          "200": {
+            "description": "enabled/configured flags and configured model metadata"
+          }
+        }
+      }
+    },
+    "/v1/openapi.json": {
+      "get": {
+        "summary": "This OpenAPI document",
+        "responses": {
+          "200": {
+            "description": "OpenAPI 3.1 JSON"
+          }
+        }
+      }
+    },
+    "/v1/assessments": {
+      "post": {
+        "operationId": "assess",
+        "summary": "B evaluation with numeric-only output",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/assessRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated output and configured checkpoint metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/assessResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Browser access forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Model identity or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Inference slot busy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "499": {
+            "description": "Caller cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Invalid model output",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Inference disabled or server unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/responses": {
+      "post": {
+        "operationId": "respond",
+        "summary": "A response using server-validated B context",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/respondRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated output and configured checkpoint metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/respondResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Browser access forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Model identity or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Inference slot busy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "499": {
+            "description": "Caller cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Invalid model output",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Inference disabled or server unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tasks/extract": {
+      "post": {
+        "operationId": "extract",
+        "summary": "extract",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/extractRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated output and configured checkpoint metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/extractResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Browser access forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Model identity or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Inference slot busy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "499": {
+            "description": "Caller cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Invalid model output",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Inference disabled or server unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tasks/guide": {
+      "post": {
+        "operationId": "guide",
+        "summary": "guide",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/guideRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated output and configured checkpoint metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/guideResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Browser access forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Model identity or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Inference slot busy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "499": {
+            "description": "Caller cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Invalid model output",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Inference disabled or server unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tasks/verify": {
+      "post": {
+        "operationId": "verify",
+        "summary": "verify",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/verifyRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated output and configured checkpoint metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/verifyResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Browser access forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Model identity or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Inference slot busy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "499": {
+            "description": "Caller cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Invalid model output",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Inference disabled or server unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/tokenize": {
+      "post": {
+        "operationId": "tokenize",
+        "summary": "tokenize",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/tokenizeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Validated output and configured checkpoint metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/tokenizeResult"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Invalid bearer token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Browser access forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Model identity or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "JSON required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid input",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Inference slot busy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "499": {
+            "description": "Caller cancelled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Invalid model output",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Inference disabled or server unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Deadline exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "modelBearer": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "Identity": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "model_id",
+          "checkpoint_sha256",
+          "prompt_profile",
+          "prompt_version"
+        ],
+        "properties": {
+          "model_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "checkpoint_sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "prompt_profile": {
+            "type": "string",
+            "enum": [
+              "test",
+              "production"
+            ]
+          },
+          "prompt_version": {
+            "type": "string",
+            "enum": [
+              "v1"
+            ]
+          }
+        }
+      },
+      "NormalizedAssessment": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Patient cue assessment draft v1 (not a clinical instrument)",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "sadness",
+          "anxiety",
+          "agitation",
+          "self_harm_cue",
+          "harm_to_others_cue",
+          "acute_danger_cue"
+        ],
+        "properties": {
+          "sadness": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp",
+                    "message_id"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "message_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z0-9_.:-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "anxiety": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp",
+                    "message_id"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "message_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z0-9_.:-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "agitation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp",
+                    "message_id"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "message_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z0-9_.:-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "self_harm_cue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp",
+                    "message_id"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "message_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z0-9_.:-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "harm_to_others_cue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp",
+                    "message_id"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "message_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z0-9_.:-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "acute_danger_cue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp",
+                    "message_id"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "message_id": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 120,
+                      "pattern": "^[A-Za-z0-9_.:-]+$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "PatientCueContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "evaluation_status",
+          "current",
+          "previous_valid",
+          "trend",
+          "response_policy",
+          "assessment_available",
+          "rubric_version",
+          "model_sha256",
+          "prompt_version",
+          "do_not_diagnose"
+        ],
+        "properties": {
+          "evaluation_status": {
+            "type": "integer",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ]
+          },
+          "current": {
+            "$ref": "#/components/schemas/NormalizedAssessment"
+          },
+          "previous_valid": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sadness",
+              "anxiety",
+              "agitation",
+              "self_harm_cue",
+              "harm_to_others_cue",
+              "acute_danger_cue"
+            ],
+            "properties": {
+              "sadness": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "score",
+                      "turn_id",
+                      "created_at"
+                    ],
+                    "properties": {
+                      "score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "turn_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120,
+                        "pattern": "^[A-Za-z0-9_.:-]+$"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                ]
+              },
+              "anxiety": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "score",
+                      "turn_id",
+                      "created_at"
+                    ],
+                    "properties": {
+                      "score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "turn_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120,
+                        "pattern": "^[A-Za-z0-9_.:-]+$"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                ]
+              },
+              "agitation": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "score",
+                      "turn_id",
+                      "created_at"
+                    ],
+                    "properties": {
+                      "score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "turn_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120,
+                        "pattern": "^[A-Za-z0-9_.:-]+$"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                ]
+              },
+              "self_harm_cue": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "score",
+                      "turn_id",
+                      "created_at"
+                    ],
+                    "properties": {
+                      "score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "turn_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120,
+                        "pattern": "^[A-Za-z0-9_.:-]+$"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                ]
+              },
+              "harm_to_others_cue": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "score",
+                      "turn_id",
+                      "created_at"
+                    ],
+                    "properties": {
+                      "score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "turn_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120,
+                        "pattern": "^[A-Za-z0-9_.:-]+$"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                ]
+              },
+              "acute_danger_cue": {
+                "anyOf": [
+                  {
+                    "type": "null"
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "score",
+                      "turn_id",
+                      "created_at"
+                    ],
+                    "properties": {
+                      "score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 3
+                      },
+                      "turn_id": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120,
+                        "pattern": "^[A-Za-z0-9_.:-]+$"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "trend": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "sadness",
+              "anxiety",
+              "agitation",
+              "self_harm_cue",
+              "harm_to_others_cue",
+              "acute_danger_cue"
+            ],
+            "properties": {
+              "sadness": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": true
+                      },
+                      "delta": {
+                        "type": "integer",
+                        "minimum": -3,
+                        "maximum": 3
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": false
+                      },
+                      "delta": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                ]
+              },
+              "anxiety": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": true
+                      },
+                      "delta": {
+                        "type": "integer",
+                        "minimum": -3,
+                        "maximum": 3
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": false
+                      },
+                      "delta": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                ]
+              },
+              "agitation": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": true
+                      },
+                      "delta": {
+                        "type": "integer",
+                        "minimum": -3,
+                        "maximum": 3
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": false
+                      },
+                      "delta": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                ]
+              },
+              "self_harm_cue": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": true
+                      },
+                      "delta": {
+                        "type": "integer",
+                        "minimum": -3,
+                        "maximum": 3
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": false
+                      },
+                      "delta": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                ]
+              },
+              "harm_to_others_cue": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": true
+                      },
+                      "delta": {
+                        "type": "integer",
+                        "minimum": -3,
+                        "maximum": 3
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": false
+                      },
+                      "delta": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                ]
+              },
+              "acute_danger_cue": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": true
+                      },
+                      "delta": {
+                        "type": "integer",
+                        "minimum": -3,
+                        "maximum": 3
+                      }
+                    }
+                  },
+                  {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "comparable",
+                      "delta"
+                    ],
+                    "properties": {
+                      "comparable": {
+                        "const": false
+                      },
+                      "delta": {
+                        "type": "null"
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "response_policy": {
+            "enum": [
+              "ordinary",
+              "reflect_and_clarify",
+              "safety_support",
+              "assessment_unavailable"
+            ]
+          },
+          "assessment_available": {
+            "type": "boolean"
+          },
+          "rubric_version": {
+            "const": "patient-cues-v1"
+          },
+          "model_sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "prompt_version": {
+            "const": "v1"
+          },
+          "do_not_diagnose": {
+            "const": true
+          }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "error"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "error": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "retryable"
+            ],
+            "properties": {
+              "code": {
+                "type": "string"
+              },
+              "retryable": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "assessInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_message",
+          "target",
+          "messages",
+          "rubric_version"
+        ],
+        "properties": {
+          "current_message": {
+            "type": "string",
+            "maxLength": 8000
+          },
+          "target": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "patient_id",
+              "project_id",
+              "conversation_id",
+              "speaker"
+            ],
+            "properties": {
+              "patient_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "project_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "conversation_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "speaker": {
+                "const": "supporter"
+              }
+            }
+          },
+          "messages": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "message_index",
+                "content",
+                "speaker"
+              ],
+              "properties": {
+                "message_index": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 5
+                },
+                "content": {
+                  "type": "string",
+                  "maxLength": 8000
+                },
+                "speaker": {
+                  "const": "supporter"
+                }
+              }
+            }
+          },
+          "rubric_version": {
+            "const": "patient-cues-v1"
+          }
+        }
+      },
+      "assessOutput": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Patient cue assessment draft v1 (not a clinical instrument)",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "sadness",
+          "anxiety",
+          "agitation",
+          "self_harm_cue",
+          "harm_to_others_cue",
+          "acute_danger_cue"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "sadness": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "anxiety": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "agitation": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "self_harm_cue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "harm_to_others_cue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "acute_danger_cue": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "score",
+              "source",
+              "timeframe",
+              "evidence"
+            ],
+            "properties": {
+              "score": {
+                "type": "integer",
+                "enum": [
+                  -1,
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "source": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "timeframe": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1,
+                  2,
+                  3
+                ]
+              },
+              "evidence": {
+                "type": "array",
+                "maxItems": 2,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "message_index",
+                    "start_cp",
+                    "end_cp"
+                  ],
+                  "properties": {
+                    "message_index": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "start_cp": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "end_cp": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "assessRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "expected_model",
+          "input"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "expected_model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "input": {
+            "$ref": "#/components/schemas/assessInput"
+          }
+        }
+      },
+      "assessResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "operation",
+          "model",
+          "output"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "operation": {
+            "const": "assess"
+          },
+          "model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "output": {
+            "$ref": "#/components/schemas/assessOutput"
+          }
+        }
+      },
+      "respondInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_message",
+          "target",
+          "recent_messages",
+          "patient_cue_context"
+        ],
+        "properties": {
+          "current_message": {
+            "type": "string",
+            "maxLength": 8000
+          },
+          "target": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "patient_id",
+              "speaker"
+            ],
+            "properties": {
+              "patient_id": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120,
+                "pattern": "^[A-Za-z0-9_.:-]+$"
+              },
+              "speaker": {
+                "const": "supporter"
+              }
+            }
+          },
+          "recent_messages": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "role",
+                "content"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120,
+                  "pattern": "^[A-Za-z0-9_.:-]+$"
+                },
+                "role": {
+                  "enum": [
+                    "user",
+                    "assistant"
+                  ]
+                },
+                "content": {
+                  "type": "string",
+                  "maxLength": 8000
+                }
+              }
+            }
+          },
+          "patient_cue_context": {
+            "$ref": "#/components/schemas/PatientCueContext"
+          }
+        }
+      },
+      "respondOutput": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "title": "Malssi conversational response v1",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "message"
+        ],
+        "properties": {
+          "message": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "respondRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "expected_model",
+          "input"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "expected_model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "input": {
+            "$ref": "#/components/schemas/respondInput"
+          }
+        }
+      },
+      "respondResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "operation",
+          "model",
+          "output"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "operation": {
+            "const": "respond"
+          },
+          "model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "output": {
+            "$ref": "#/components/schemas/respondOutput"
+          }
+        }
+      },
+      "extractInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_message"
+        ],
+        "properties": {
+          "current_message": {
+            "type": "string",
+            "maxLength": 8000
+          },
+          "message_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "array"
+          },
+          "memories": {
+            "type": "array"
+          },
+          "recent_messages": {
+            "type": "array"
+          },
+          "knowledge": {
+            "type": "array"
+          },
+          "safety": {
+            "type": "array"
+          },
+          "correction_requirements": {
+            "type": "array"
+          },
+          "draft": {
+            "type": "object"
+          },
+          "previous_draft": {
+            "type": "object"
+          }
+        }
+      },
+      "extractOutput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "assertion_candidates",
+          "topic_candidates",
+          "safety_observations",
+          "contradictions"
+        ],
+        "properties": {
+          "assertion_candidates": {
+            "type": "array",
+            "maxItems": 24,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "question_id",
+                "entity",
+                "value",
+                "source_type",
+                "quote",
+                "start_cp",
+                "end_cp"
+              ],
+              "properties": {
+                "question_id": {
+                  "type": "string",
+                  "enum": [
+                    "T01",
+                    "T02",
+                    "T03",
+                    "T04",
+                    "T05",
+                    "T06",
+                    "T07",
+                    "T08",
+                    "T09",
+                    "T10",
+                    "T11",
+                    "T12",
+                    "T13",
+                    "T14",
+                    "T15",
+                    "T16",
+                    "T17",
+                    "C01",
+                    "C01A",
+                    "C02",
+                    "C03",
+                    "C04",
+                    "C05"
+                  ]
+                },
+                "entity": {
+                  "type": "string",
+                  "enum": [
+                    "subject",
+                    "supporter",
+                    "relationship"
+                  ]
+                },
+                "value": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_type": {
+                  "type": "string",
+                  "enum": [
+                    "self_report",
+                    "observation",
+                    "reported_speech",
+                    "interpretation",
+                    "unknown"
+                  ]
+                },
+                "quote": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "start_cp": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "end_cp": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          },
+          "topic_candidates": {
+            "type": "array",
+            "maxItems": 0
+          },
+          "safety_observations": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "contradictions": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      },
+      "extractRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "expected_model",
+          "input"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "expected_model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "input": {
+            "$ref": "#/components/schemas/extractInput"
+          }
+        }
+      },
+      "extractResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "operation",
+          "model",
+          "output"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "operation": {
+            "const": "extract"
+          },
+          "model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "output": {
+            "$ref": "#/components/schemas/extractOutput"
+          }
+        }
+      },
+      "guideInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_message"
+        ],
+        "properties": {
+          "current_message": {
+            "type": "string",
+            "maxLength": 8000
+          },
+          "message_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "array"
+          },
+          "memories": {
+            "type": "array"
+          },
+          "recent_messages": {
+            "type": "array"
+          },
+          "knowledge": {
+            "type": "array"
+          },
+          "safety": {
+            "type": "array"
+          },
+          "correction_requirements": {
+            "type": "array"
+          },
+          "draft": {
+            "type": "object"
+          },
+          "previous_draft": {
+            "type": "object"
+          }
+        }
+      },
+      "guideOutput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "supporter_acknowledgement",
+          "situation_summary",
+          "suggested_words",
+          "actions",
+          "avoid",
+          "supporter_care",
+          "limitations",
+          "citations",
+          "next_actions"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "const": "communication_guidance"
+          },
+          "supporter_acknowledgement": {
+            "type": "string",
+            "minLength": 1
+          },
+          "situation_summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "suggested_words": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "text",
+                "purpose",
+                "source_refs"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "purpose": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "source_refs": {
+                  "type": "array",
+                  "maxItems": 24,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          },
+          "actions": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "title",
+                "how",
+                "preconditions",
+                "stop_if",
+                "source_refs"
+              ],
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "how": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "preconditions": {
+                  "type": "array",
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "stop_if": {
+                  "type": "array",
+                  "maxItems": 3,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "source_refs": {
+                  "type": "array",
+                  "maxItems": 24,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            }
+          },
+          "avoid": {
+            "type": "array",
+            "maxItems": 3,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "expression",
+                "reason",
+                "alternative"
+              ],
+              "properties": {
+                "expression": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "reason": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "alternative": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "supporter_care": {
+            "type": "array",
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "limitations": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "citations": {
+            "type": "array",
+            "maxItems": 0
+          },
+          "next_actions": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "choose_plan",
+                "ask_more",
+                "revise_context",
+                "finish"
+              ]
+            }
+          }
+        }
+      },
+      "guideRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "expected_model",
+          "input"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "expected_model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "input": {
+            "$ref": "#/components/schemas/guideInput"
+          }
+        }
+      },
+      "guideResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "operation",
+          "model",
+          "output"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "operation": {
+            "const": "guide"
+          },
+          "model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "output": {
+            "$ref": "#/components/schemas/guideOutput"
+          }
+        }
+      },
+      "verifyInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_message"
+        ],
+        "properties": {
+          "current_message": {
+            "type": "string",
+            "maxLength": 8000
+          },
+          "message_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "goal": {
+            "type": "string"
+          },
+          "answers": {
+            "type": "array"
+          },
+          "memories": {
+            "type": "array"
+          },
+          "recent_messages": {
+            "type": "array"
+          },
+          "knowledge": {
+            "type": "array"
+          },
+          "safety": {
+            "type": "array"
+          },
+          "correction_requirements": {
+            "type": "array"
+          },
+          "draft": {
+            "type": "object"
+          },
+          "previous_draft": {
+            "type": "object"
+          }
+        }
+      },
+      "verifyOutput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "approved",
+          "issues"
+        ],
+        "properties": {
+          "approved": {
+            "type": "boolean"
+          },
+          "issues": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      },
+      "verifyRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "expected_model",
+          "input"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "expected_model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "input": {
+            "$ref": "#/components/schemas/verifyInput"
+          }
+        }
+      },
+      "verifyResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "operation",
+          "model",
+          "output"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "operation": {
+            "const": "verify"
+          },
+          "model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "output": {
+            "$ref": "#/components/schemas/verifyOutput"
+          }
+        }
+      },
+      "tokenizeInput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "current_message"
+        ],
+        "properties": {
+          "current_message": {
+            "type": "string",
+            "maxLength": 60000
+          }
+        }
+      },
+      "tokenizeOutput": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "tokens"
+        ],
+        "properties": {
+          "tokens": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "tokenizeRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "expected_model",
+          "input"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "expected_model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "input": {
+            "$ref": "#/components/schemas/tokenizeInput"
+          }
+        }
+      },
+      "tokenizeResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "api_version",
+          "request_id",
+          "operation",
+          "model",
+          "output"
+        ],
+        "properties": {
+          "api_version": {
+            "const": "1"
+          },
+          "request_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120,
+            "pattern": "^[A-Za-z0-9_.:-]+$"
+          },
+          "operation": {
+            "const": "tokenize"
+          },
+          "model": {
+            "$ref": "#/components/schemas/Identity"
+          },
+          "output": {
+            "$ref": "#/components/schemas/tokenizeOutput"
+          }
+        }
+      }
+    }
+  }
+}

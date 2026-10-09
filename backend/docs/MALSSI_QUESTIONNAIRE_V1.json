@@ -10,7 +10,7 @@
   "clinical_review_status": "pending_review",
   "scored_scale": false,
   "choice_origin": "service_authored_response_aids_not_validated_scale",
-  "catalog_usage": "Design artifact only. Current server does not load this file.",
+  "catalog_usage": "Loaded by backend/src/v2/questions.ts; draft catalog enabled only for the operator-authorized demo.",
   "source_notes": [
     "T01-T17 preserve user-supplied meaning and resemble the APA CFI Informant structure; public application rights must be reviewed.",
     "C01,C01A,C02-C05 are service questions conceptually aligned with SSCS, not the FMI scale or a validated score."
@@ -145,9 +145,7 @@
       "text_template": "오늘 이야기할 분을 어떻게 부르면 될까요?",
       "neutral_text": "오늘 이야기할 분을 어떻게 부르면 될까요?",
       "disposition_options": [
-        "answered",
-        "unknown",
-        "skipped"
+        "answered"
       ],
       "answer_schema": {
         "kind": "text",
@@ -168,11 +166,7 @@
       "eligibility": {
         "kind": "always"
       },
-      "priority": 0,
-      "default_on_skip": {
-        "alias": "그분",
-        "origin": "default"
-      }
+      "priority": 0
     },
     {
       "id": "T01",

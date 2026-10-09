@@ -5,7 +5,7 @@ import {ContentCipher} from '../src/v2/crypto.ts';
 import {V2Database} from '../src/v2/db.ts';
 import {MalssiService,PURPOSES,CONSENT_VERSION} from '../src/v2/service.ts';
 export const databaseUrl=process.env.HOP_TEST_DATABASE_URL || process.env.DATABASE_URL || '';
-export async function fixture(t:any,modelEnabled=false){
+export async function fixture(t:any,modelEnabled=false,dualEnabled=false){
  const schema='malssi_test_'+randomUUID().replaceAll('-',''),admin=await Store.connect(databaseUrl,{schema});
  let runtimeUrl=process.env.HOP_TEST_RUNTIME_DATABASE_URL,createdRole:string|undefined;
  if(!runtimeUrl){
@@ -18,7 +18,7 @@ export async function fixture(t:any,modelEnabled=false){
  await admin.pool.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA "${schema}" TO "${runtimeRole}"`);
  await admin.pool.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA "${schema}" TO "${runtimeRole}"`);
  const key=randomBytes(32).toString('base64'),runtime=await Store.connect(runtimeUrl,{schema,migrate:false}),cipher=new ContentCipher(key),db=new V2Database(runtime.pool,cipher);
- await db.assertRuntimeRole();const service=new MalssiService(db,{allowDraft:true,modelEnabled});
+ await db.assertRuntimeRole();const service=new MalssiService(db,{allowDraft:true,modelEnabled,dualEnabled});
  t.after(async()=>{await runtime.close();assert.match(schema,/^malssi_test_[a-f0-9]{32}$/);try{await admin.pool.query(`DROP SCHEMA "${schema}" CASCADE`);if(createdRole)await admin.pool.query(`DROP ROLE "${createdRole}"`);}finally{await admin.close();}});
  async function user(history=true,memory=true){
   const u=await admin.createUser(randomUUID()+'@example.invalid','scrypt$fixture');

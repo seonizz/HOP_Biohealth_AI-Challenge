@@ -1,0 +1,106 @@
+/* Keep the original visual language while the active UI uses the v2 API. */
+:root{--display:"Jua","Gowun Dodum",system-ui,sans-serif;--body:"Gowun Dodum",system-ui,sans-serif}
+body{font-family:var(--body);font-size:17px;padding-inline:16px}
+.screen{max-width:1680px;padding-block:28px;gap:18px}
+.top{gap:20px}.top nav{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.top .crisis{margin-left:0;white-space:nowrap}
+.logo{font-family:var(--display);font-size:34px;font-weight:400}
+.btn{font-family:var(--display);font-size:22px;padding:16px 40px;box-shadow:0 5px 0 #355a2a}
+.ghost{font-family:var(--display);font-size:17px;padding:10px 22px}
+.pill{font-family:var(--display);font-weight:400}
+.card{border:0;border-radius:28px;padding:26px 30px}
+.card h2,.card h3,.page-head h1{font-family:var(--display);font-weight:400;letter-spacing:0}
+.status-banner{font-size:14px}
+.footer{font-size:13px}
+#main:focus{outline:none}
+
+/* The start screen follows the pre-integration composition and copy. */
+#start #main{flex:1;display:flex}
+#start .hero{flex:1;min-height:0;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:48px}
+#start h1{font-family:var(--display);font-weight:400;font-size:clamp(44px,4.4vw,80px);line-height:1.2;letter-spacing:0;margin:0 0 20px}
+#start .hero .lead{font-size:20px;line-height:1.7;max-width:30em;margin:0 0 40px}
+#start .steps{gap:16px;margin-bottom:44px}
+#start .step{padding:10px 18px 10px 10px}
+#start .step img{width:52px;height:52px}
+#start .step span{font-family:var(--display);font-size:18px}
+#start .step i{font-family:var(--body);font-size:13px}
+#start .hero .note{max-width:39em;margin-top:22px}
+#start .bubble-tip{font-family:var(--display)}
+#start .footer{display:none}
+
+/* Original cards and mascot scale around server-owned questions and records. */
+.chat-layout{max-width:1060px;margin:14px auto 0;display:grid;grid-template-columns:1fr;gap:20px}
+.sidebar{position:static;display:flex;flex-wrap:wrap;align-items:center;gap:12px;background:var(--card);border-radius:28px;padding:16px 22px}
+.sidebar>img{width:70px;margin:0}.sidebar h2{font-family:var(--display);font-weight:400;font-size:28px;margin:0 8px 0 0}
+.sidebar>.pill{white-space:nowrap}.sidebar>.note{margin:0;color:var(--muted)}
+.sidebar progress{width:min(260px,100%);flex:1;min-width:150px;accent-color:var(--leaf)}
+.sidebar button{width:auto;font-size:14px;padding:7px 15px}
+.chat-main{gap:20px}.chat-main>.card{box-shadow:0 5px 20px rgba(75,122,60,.06)}
+.question-head img{width:72px;height:72px;object-fit:contain}
+.question-head h2{font-family:var(--display);font-size:27px;font-weight:400;line-height:1.45;letter-spacing:0}
+.question-meta{font-size:15px;color:var(--stem)}
+.choice{border:2px solid var(--leaf-soft);border-radius:999px;background:var(--cream);padding:10px 17px}
+.choice:has(input:checked){background:var(--leaf);border-color:var(--leaf);color:white}
+.choice:has(input:checked) input{accent-color:white}
+.field input,.field textarea,.field select{border:2px solid var(--leaf-soft);background:var(--cream);border-radius:20px}
+.field textarea{min-height:100px}
+.form-body>.actions{justify-content:flex-start}
+.history{max-height:440px}.history-item{border:0;border-radius:20px;background:var(--bg);padding:16px;margin-bottom:10px}
+.chat-transcript{display:grid;gap:12px}
+.chat-transcript h3{font-family:var(--display);font-weight:400;margin:0}
+.chat-bubble{max-width:min(720px,92%);padding:13px 18px;border-radius:20px;background:var(--leaf-soft)}
+.chat-bubble.from-user{justify-self:end;background:var(--cream);border:1px solid var(--leaf-soft)}
+.chat-bubble b{font-family:var(--display);font-weight:400;color:var(--stem)}
+.chat-bubble p{margin:5px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.chat-bubble .score-alert{margin-top:12px;padding:10px 12px;border-radius:12px;background:var(--cheek-soft);font-size:14px;color:var(--ink)}
+.history-item .question-text{font-family:var(--display);font-size:17px;color:var(--stem)}
+.guide-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+.guide-grid>.care,.guide-grid>.script,.guide-grid>.avoid,.guide-grid>.card:last-child{grid-column:1/-1}
+.guide-grid .script{border:2px dashed var(--leaf);background:var(--cream);font-size:20px}
+.guide-grid .care{background:var(--leaf-soft)}.guide-grid .care img{width:84px}
+.guide-grid .avoid{background:var(--cheek-soft)}
+.safety-panel{border:2px solid var(--cheek);background:var(--cheek-soft)}
+.run-panel{background:var(--cream)}
+.project-grid{grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:20px}
+.project-grid .card{box-shadow:0 5px 18px rgba(75,122,60,.06)}
+.project-grid h2{font-family:var(--display);font-size:25px;font-weight:400;letter-spacing:0}
+.empty h2{font-family:var(--display);font-weight:400}
+.page-head h1{font-size:38px}
+#records #main{flex:1;display:flex;flex-direction:column;min-height:0}
+#records .wrapk{flex:1;min-height:380px;grid-template-columns:420px minmax(0,1fr)}
+#records .rlist .rcard{align-items:flex-start;cursor:default}
+#records .record-icon img{width:54px;max-width:none}
+#records .rcard>div:last-child{min-width:0}
+#records .rcard h2{font-family:var(--display);font-weight:400;font-size:23px;margin:8px 0 0}
+#records .rcard small{display:block;overflow-wrap:anywhere}
+#records .rcard .actions{justify-content:flex-start;margin-top:12px}
+#records .rdetail{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px}
+#records .rdetail>img{width:150px}
+#records .rdetail h2{font-family:var(--display);font-weight:400;font-size:30px;margin:0}
+#records .rdetail p{max-width:35em;margin:0}
+#result #main{flex:1;display:flex}
+#result .wrapr{width:100%;align-items:start}
+#result .rside{position:sticky;top:70px}
+#result .rside>.pill{display:block;width:max-content;max-width:100%;margin:10px auto}
+#result .cards>.safety-panel h3{color:#b65c48}
+#result .guide-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+#result .guide-grid>.care,#result .guide-grid>.card:nth-child(2),#result .guide-grid>.script,#result .guide-grid>.avoid,#result .guide-grid>.card:last-child{grid-column:1/-1}
+#about .abody{overflow:visible}#about .ahero h2{letter-spacing:0}
+#columns .chero h1{font-weight:400;letter-spacing:0}
+#columns .ccard h3,#columns .csec h2.t{font-weight:400}
+#columns .column-heading{font-family:var(--display);font-size:clamp(28px,3vw,42px);font-weight:400;margin:0}
+#columns .column-heading em{font-style:normal;color:var(--leaf)}
+#columns .creader[hidden],#columns .ctoast[hidden]{display:none}
+
+@media(max-width:1200px){.top .crisis{width:100%;margin-left:0}.top nav{margin-left:auto}}
+@media(max-width:900px){#start .hero{grid-template-columns:1fr}.guide-grid,#result .guide-grid{grid-template-columns:1fr}.guide-grid>*{grid-column:1!important}#records .wrapk{grid-template-columns:1fr}#result .rside{position:static}}
+@media(max-width:760px){
+  body{padding-inline:14px}.screen{padding-block:18px}.top{gap:10px}.top nav{gap:6px}.top .ghost{font-size:13px;padding:7px 11px}
+  .top .crisis{font-size:12px;white-space:normal}.logo{font-size:28px}
+  #start h1{font-size:clamp(37px,10vw,52px)}#start .hero .lead{font-size:17px;margin-bottom:26px}
+  #start .steps{gap:8px;margin-bottom:26px}#start .step{padding:8px}#start .step img{width:40px;height:40px}#start .step span{font-size:14px}
+  #start .stage{max-width:400px;margin:auto}#start .hero .note{font-size:13px}
+  .sidebar{padding:16px}.sidebar>img{width:50px}.sidebar h2{font-size:22px}.sidebar>.note{width:100%}
+  .sidebar button{font-size:13px;padding:6px 10px}.question-head img{width:54px;height:54px}.question-head h2{font-size:22px}
+  .card{padding:20px}.page-head h1{font-size:30px}
+}

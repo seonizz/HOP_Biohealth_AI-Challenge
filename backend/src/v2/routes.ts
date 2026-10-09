@@ -19,13 +19,13 @@ async function readBody(req:IncomingMessage) {
   if(deleting){if(req.headers['idempotency-key']&&req.headers['idempotency-key']!==value.request_id)fail('IDEMPOTENCY_CONFLICT',409);if(req.headers['if-match']&&Number(String(req.headers['if-match']).replaceAll('"',''))!==value.expected_revision)fail('REVISION_CONFLICT',409);}
   return value;
 }
-export async function publicV2(req:IncomingMessage,res:ServerResponse,service:MalssiService|null,store:Store) {
+export async function publicV2(req:IncomingMessage,res:ServerResponse,service:MalssiService|null,store:Store,demoMode=false) {
   const path=new URL(req.url||'/','http://localhost').pathname;
   if(req.method==='GET'&&path==='/health/live'){respond(res,200,{live:true});return true;}
   if(req.method==='GET'&&path==='/help/safety'){respond(res,200,{text:SAFETY_TEXT,phone_numbers:[],country_required:true});return true;}
   if(req.method==='GET'&&path==='/openapi-v2.json'){res.writeHead(200,{'Content-Type':'application/json'});res.end(readFileSync(new URL('../../openapi-v2.json',import.meta.url)));return true;}
   if(req.method==='GET'&&path==='/health/ready'){
-    let ready=Boolean(service);try{await store.pool.query('SELECT 1');assertCatalogPublishable();}catch{ready=false;}
+    let ready=Boolean(service);try{await store.pool.query('SELECT 1');if (!(demoMode && service?.allowDraft)) assertCatalogPublishable();}catch{ready=false;}
     respond(res,ready?200:503,{ready,api_version:'2.0',reason:ready?null:'V2 policy, published catalog, encryption key and database must be configured.'});return true;
   }
   if(req.method==='GET'&&/^\/api\/v2\/deletions\/[^/]+$/.test(path)&&req.headers.authorization?.startsWith('Deletion ')) {
@@ -46,7 +46,7 @@ export async function routeV2(req:IncomingMessage,res:ServerResponse,owner:strin
   const send=(data:any,status=200)=>respond(res,status,data);
   if(path==='/api/v2/capabilities'&&method==='GET'){
     const slot=(await service.db.pool.query('SELECT circuit_until FROM model_slots WHERE id=1')).rows[0];
-    send({schema_version:'2.0',structured_interview:true,personalized_guidance:false,model_execution_enabled:service.modelEnabled,model_validation:'not_release_validated',circuit_open:Boolean(slot?.circuit_until&&new Date(slot.circuit_until).getTime()>Date.now()),reviewed_fallback:false,resource_directory:false,questionnaire_status:catalog.publication_status,internal_draft:service.allowDraft});
+    send({schema_version:'2.0',structured_interview:true,personalized_guidance:false,model_execution_enabled:service.modelEnabled,dual_turn_enabled:service.dualEnabled,model_validation:'not_release_validated',circuit_open:Boolean(slot?.circuit_until&&new Date(slot.circuit_until).getTime()>Date.now()),reviewed_fallback:false,resource_directory:false,questionnaire_status:catalog.publication_status,internal_draft:service.allowDraft});
   } else if(path==='/api/v2/consents'&&method==='GET')send(await service.consents(owner));
   else if(path==='/api/v2/consents'&&method==='POST')send(await service.setConsents(owner,input),201);
   else if(path==='/api/v2/consents/withdraw'&&method==='POST')send(await service.withdraw(owner,input),202);
@@ -66,7 +66,7 @@ export async function routeV2(req:IncomingMessage,res:ServerResponse,owner:strin
     });
     send({deletion_id:receipt.id,receipt:owner+'.'+receiptToken,receipt_expires_in:3600,online_purged:true,derived_purged:true,backup_expires_at:receipt.backup_expires_at},202);
   } else {
-    const m=/^\/api\/v2\/(projects|conversations|runs|memories|messages|plans|deletions)\/([^/]+)(?:\/(conversations|messages|turns|events|memories|confirm|cancel|plans|feedback))?$/.exec(path);
+    const m=/^\/api\/v2\/(projects|conversations|runs|memories|messages|plans|deletions|alerts)\/([^/]+)(?:\/(conversations|messages|turns|events|memories|confirm|cancel|retry|plans|feedback|alerts|shown))?$/.exec(path);
     if(!m)fail('NOT_FOUND',404);const [,resource,id,action]=m;uuid(id);
     if(resource==='projects'&&!action&&method==='GET')send(await service.readProject(owner,id));
     else if(resource==='projects'&&!action&&method==='PATCH')send(await service.patchProject(owner,id,input));
@@ -76,10 +76,13 @@ export async function routeV2(req:IncomingMessage,res:ServerResponse,owner:strin
     else if(resource==='projects'&&action==='memories'&&method==='GET')send(await service.memories(owner,id,url.searchParams.get('status')||undefined,url.searchParams.get('entity')||undefined));
     else if(resource==='conversations'&&!action&&method==='GET')send(await service.readConversation(owner,id));
     else if(resource==='conversations'&&action==='messages'&&method==='GET')send(await service.messages(owner,id,Number(url.searchParams.get('limit')||100),url.searchParams.get('cursor')||undefined));
+    else if(resource==='conversations'&&action==='alerts'&&method==='GET')send(await service.alerts(owner,id));
+    else if(resource==='alerts'&&action==='shown'&&method==='POST'){keys(record(input),['response_id'],['response_id']);send(await service.acknowledgeAlert(owner,id,input.response_id));}
     else if(resource==='conversations'&&action==='turns'&&method==='POST'){const result=await service.turn(owner,id,input);send(result,result.run_id?202:200);}
     else if(resource==='conversations'&&action==='plans'&&method==='POST')send(await service.choosePlan(owner,id,input),201);
     else if(resource==='runs'&&!action&&method==='GET')send(await service.run(owner,id));
     else if(resource==='runs'&&action==='cancel'&&method==='POST')send(await service.cancel(owner,id,input));
+    else if(resource==='runs'&&action==='retry'&&method==='POST')send(await service.retryRun(owner,id,input));
     else if(resource==='memories'&&action==='confirm'&&method==='POST')send(await service.mutateMemory(owner,id,input,'confirm'));
     else if(resource==='memories'&&!action&&method==='PATCH')send(await service.mutateMemory(owner,id,input,'correct'));
     else if(resource==='memories'&&!action&&method==='DELETE')send(await service.mutateMemory(owner,id,{scope:'forget_memory',...input},'forget'),202);
