@@ -148,7 +148,7 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "e795f1bfb281e964d7e35fd13652c97bc6da91ebeb8c15ab604ab4c2d7bc0133",
+      "sha256": "1fa4ca7efd09458851b2178f104d4ec40ede652e155f9c7267c08c41dedadb25",
       "reason": "글꼴을 사이트 안(assets/fonts)에서 불러옴, 화면 가장자리 여백, 로고 버튼"
     },
     "css/columns.css": {
