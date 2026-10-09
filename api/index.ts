@@ -5,6 +5,16 @@ import { getSettings } from '../backend/src/config.ts';
 type Request = IncomingMessage & { url?: string };
 let appPromise: ReturnType<typeof createApp> | undefined;
 
+function logStartupFailure(error: unknown) {
+  const value = error as { name?: string; code?: string; message?: string };
+  let message = typeof value?.message === 'string' ? value.message : 'Unknown startup failure';
+  for (const secret of [process.env.DATABASE_URL, process.env.HOP_CONTENT_KEY, process.env.CRON_SECRET]) {
+    if (secret) message = message.replaceAll(secret, '[redacted]');
+  }
+  message = message.replace(/postgres(?:ql)?:\/\/\S+/gi, '[redacted]');
+  console.error('Malssi API startup failed', { name: value?.name, code: value?.code, message: message.slice(0, 300) });
+}
+
 function application() {
   if (!appPromise) {
     const domain = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
@@ -19,7 +29,7 @@ function application() {
       v2ModelEnabled: false,
       demoEnabled: true,
       allowRegistration: false,
-    })).catch(error => { appPromise = undefined; throw error; });
+    })).catch(error => { appPromise = undefined; logStartupFailure(error); throw error; });
   }
   return appPromise;
 }
