@@ -1,0 +1,13 @@
+**
+!package.json
+!package-lock.json
+!openapi.json
+!src/
+!src/**
+!migrations/
+!migrations/**
+!public/
+!public/**
+!scripts/
+!scripts/migrate.ts
+!scripts/grant-runtime.ts
