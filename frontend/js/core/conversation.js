@@ -77,22 +77,34 @@ async function answer(text,sel,custom="",skipped=false){
   // 위험 신호(suicidal)는 대화 중에 끊지 않고 결과 화면의 안전 카드로 안내
   S.i++;setTimeout(ask,400);
 }
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
 async function finish(){
   ChatScreen.progress(100);
   // 마무리 전 정보 충분성 점검
   for(const g of gapCheck()){const r=await followUp(g,"think");if(!isThin(r.text,1)){S.extraObs=r.text;S.ans.gap_obs={text:r.text,sel:[]};}}
-  await ChatScreen.typing("ponder",1400);
-  ChatScreen.aiSay("고마워요. 들려주신 이야기를 바탕으로 말하는 방법을 정리했어요.","thanks");
-  // 모델 1(맥락 추출) → 모델 2(수치화) → 가이드
-  const payload=buildPayload();
-  const ctx=await Model.extractContext(payload);
-  const scores=await Model.scoreAnswers(payload,ctx);
-  const A=S.ans,val=k=>{const t=A[k]?.text;return t&&!t.startsWith("(")?t:undefined;}; // 건너뛴 답은 비움
-  const p={name:S.name,rel:val("rel"),contact:val("contact"),obs:S.extraObs,concern:val("concern"),moment:val("moment"),feeling:val("feeling"),want:val("want"),
-    scores,safety:!!ctx.safety||safetyFlag(),symptoms:ctx.symptoms,risks:ctx.risks,protect:ctx.protect,tags:[...S.tags],
-    answers:Object.fromEntries(Object.entries(A).map(([k,v])=>[k,v.text]))};
-  const g=await Model.guide(p);
+  await ChatScreen.typing("ponder",900);
+  ChatScreen.aiSay("고마워요. 들려주신 이야기를 바탕으로 말하는 방법을 정리해 볼게요.","thanks");
+  await wait(500);ChatInput.clear();ChatScreen.think(true);
+  analyze();
+}
+// 모델 1(맥락 추출) → 모델 2(수치화) → 가이드. 로딩 카드의 단계를 실제 처리에 맞춰 넘기고, 실패하면 다시 시도
+async function analyze(){
+  const mine=S,gone=()=>S!==mine||$("chat").hidden; // 기다리는 사이 처음으로 나갔거나 새 대화를 시작했으면 결과를 띄우지 않음
+  const step=async(i,job)=>{ChatScreen.thinkStep(i);const [r]=await Promise.all([job(),wait(900)]);return r;}; // 단계마다 최소 0.9초는 보여 줌
+  let p,g;
+  try{
+    const payload=buildPayload();
+    const ctx=await step(0,()=>Model.extractContext(payload));if(gone())return;
+    const scores=await step(1,()=>Model.scoreAnswers(payload,ctx));if(gone())return;
+    const A=S.ans,val=k=>{const t=A[k]?.text;return t&&!t.startsWith("(")?t:undefined;}; // 건너뛴 답은 비움
+    p={name:S.name,rel:val("rel"),contact:val("contact"),obs:S.extraObs,concern:val("concern"),moment:val("moment"),feeling:val("feeling"),want:val("want"),
+      scores,safety:!!ctx.safety||safetyFlag(),symptoms:ctx.symptoms,risks:ctx.risks,protect:ctx.protect,tags:[...S.tags],
+      answers:Object.fromEntries(Object.entries(A).map(([k,v])=>[k,v.text]))};
+    g=await step(2,()=>Model.guide(p));if(gone())return;
+  }catch(e){if(!gone())ChatScreen.thinkError(()=>{ChatScreen.think(true);analyze();});return;}
+  ChatScreen.thinkStep(3);
   const rec={id:Date.now(),title:S.name||"그분",date:new Date().toISOString(),profile:p,guide:g,log:S.log,followUps:S.fuCount};
   const all=loadRecs();all.unshift(rec);const ok=saveRecs(all);
-  setTimeout(()=>ResultScreen.open(p,g,ok),1100);
+  await wait(500);if(gone())return;
+  ChatScreen.think(false);ResultScreen.open(p,g,ok);
 }

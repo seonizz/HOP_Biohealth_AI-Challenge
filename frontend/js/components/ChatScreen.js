@@ -6,6 +6,15 @@ const ChatScreen={
   <div class="body">
     <div class="log" id="log" aria-live="polite"></div>
     <div class="input" id="input"></div>
+    <div class="thinking" id="thinking" hidden role="status" aria-live="polite">
+      <div class="th-card">
+        <img class="th-img" data-m="ponder" alt="">
+        <h3>말을 정리하고 있어요 <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span></h3>
+        <p class="th-sub">들려주신 이야기에 따라 조금 걸릴 수 있어요.</p>
+        <ol class="th-steps"><li>들려주신 이야기를 다시 읽고 있어요</li><li>그분의 상황을 정리하고 있어요</li><li>마음이 잘 닿는 첫 문장을 고르고 있어요</li></ol>
+        <div class="th-err" hidden><p>정리하는 중에 문제가 생겼어요. 답해 주신 내용은 그대로 있으니 다시 시도해 주세요.</p><button class="btn" id="thRetry">다시 시도</button></div>
+      </div>
+    </div>
   </div>
   <dialog class="leave" id="leaveDlg" aria-labelledby="leaveT">
     <img data-m="ponder" alt="">
@@ -35,7 +44,11 @@ const ChatScreen={
     $("leaveGo").onclick=()=>{$("leaveDlg").close();go();};
     $("leaveDlg").showModal();
   },
-  clear(){$("log").innerHTML="";},
+  clear(){$("log").innerHTML="";this.think(false);},
+  // 결과를 만드는 동안 보이는 로딩 카드: 단계(0~2)가 실제 모델 처리에 맞춰 하나씩 완료로 바뀜
+  think(on){const t=$("thinking");t.hidden=!on;if(on){t.querySelector(".th-err").hidden=true;this.thinkStep(0);}},
+  thinkStep(i){[...$("thinking").querySelectorAll(".th-steps li")].forEach((l,k)=>l.className=k<i?"done":k===i?"now":"");},
+  thinkError(retry){$("thinking").querySelector(".th-err").hidden=false;$("thinking").querySelectorAll(".th-steps li.now").forEach(l=>l.className="");$("thRetry").onclick=retry;},
   // 이전 질문으로 돌아갈 때 그 뒤에 쌓인 말풍선을 지움
   count(){return $("log").children.length;},
   truncate(n){const l=$("log");while(l.children.length>n)l.lastChild.remove();},
