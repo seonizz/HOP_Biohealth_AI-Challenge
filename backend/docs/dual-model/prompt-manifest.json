@@ -1,0 +1,17 @@
+{
+  "status": "DRAFT_BOTH_PROFILES",
+  "test": {
+    "v1": {
+      "evaluator": "prompts/test/v1/evaluator.txt",
+      "responder": "prompts/test/v1/responder.txt",
+      "approved": false
+    }
+  },
+  "production": {
+    "v1": {
+      "evaluator": "prompts/production/v1/evaluator.txt",
+      "responder": "prompts/production/v1/responder.txt",
+      "approved": false
+    }
+  }
+}

@@ -1,0 +1,1819 @@
+{
+  "schema_version": "1.0",
+  "questionnaire_version": "malssi-intake-v1.0",
+  "publication_status": "draft",
+  "service_name": "말씨",
+  "language": "ko-KR",
+  "created_on": "2026-10-09",
+  "question_count": 24,
+  "rights_status": "pending_review",
+  "clinical_review_status": "pending_review",
+  "scored_scale": false,
+  "choice_origin": "service_authored_response_aids_not_validated_scale",
+  "catalog_usage": "Design artifact only. Current server does not load this file.",
+  "source_notes": [
+    "T01-T17 preserve user-supplied meaning and resemble the APA CFI Informant structure; public application rights must be reviewed.",
+    "C01,C01A,C02-C05 are service questions conceptually aligned with SSCS, not the FMI scale or a validated score."
+  ],
+  "normalization": {
+    "form": "NFC",
+    "length_unit": "unicode_code_points",
+    "body_max_bytes": 65536,
+    "text_max_codepoints": 8000,
+    "answer_max_codepoints": 2000
+  },
+  "common_actions": [
+    {
+      "disposition": "unknown",
+      "label": "모르겠어요",
+      "value": null
+    },
+    {
+      "disposition": "skipped",
+      "label": "건너뛰기",
+      "alternate_label": "말하고 싶지 않아요",
+      "value": null
+    }
+  ],
+  "value_contract": {
+    "simple_choice": {
+      "allowed_forms": [
+        "{option_ids:[string],detail?:string}",
+        "{text:string}"
+      ],
+      "exactly_one_form": true,
+      "option_label_from_server": true
+    },
+    "text": {
+      "form": "{text:string}"
+    },
+    "composite": {
+      "form": "{field_id:{status:'answered',option_id:string,detail?:string}|{status:'unknown'|'skipped'},detail?:string}",
+      "top_level_answered_requires_at_least_one_answered_field": true
+    },
+    "coping_entries": {
+      "allowed_forms": [
+        "{entries:[{method_option_id:string,effect_option_id:string,detail?:string}]}",
+        "{text:string}"
+      ],
+      "exactly_one_form": true
+    },
+    "null_dispositions": [
+      "unknown",
+      "skipped",
+      "not_applicable"
+    ],
+    "none_is_answered": true,
+    "none_excludes_other_options": true
+  },
+  "topics": [
+    {
+      "id": "A",
+      "label": "대상자와의 관계"
+    },
+    {
+      "id": "B",
+      "label": "현재 겪는 어려움"
+    },
+    {
+      "id": "C",
+      "label": "원인과 생활환경"
+    },
+    {
+      "id": "D",
+      "label": "생활 배경과 가치관"
+    },
+    {
+      "id": "E",
+      "label": "지금까지의 대처와 도움"
+    },
+    {
+      "id": "F",
+      "label": "현재 필요한 도움"
+    },
+    {
+      "id": "SUPPORTER",
+      "label": "나의 경험과 필요한 도움"
+    }
+  ],
+  "goal_priorities": {
+    "understand": [
+      "T02",
+      "T04",
+      "T07",
+      "T08"
+    ],
+    "what_to_say": [
+      "C01",
+      "T04",
+      "T15"
+    ],
+    "what_to_do": [
+      "T15",
+      "T12",
+      "T14",
+      "C04"
+    ],
+    "support_me": [
+      "C01",
+      "C02",
+      "C03",
+      "C05"
+    ],
+    "find_help": [
+      "T13",
+      "T14",
+      "T15",
+      "T17"
+    ],
+    "unsure": [
+      "T02",
+      "C01"
+    ]
+  },
+  "questions": [
+    {
+      "id": "N00",
+      "display_number": "0",
+      "section": "INTRO",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": null,
+      "scored_scale": false,
+      "original_text": "오늘 이야기할 분을 어떻게 부르면 될까요?",
+      "text_template": "오늘 이야기할 분을 어떻게 부르면 될까요?",
+      "neutral_text": "오늘 이야기할 분을 어떻게 부르면 될까요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "text",
+        "fields": [
+          {
+            "id": "alias",
+            "type": "text",
+            "required": true,
+            "min_codepoints": 1,
+            "max_codepoints": 30,
+            "examples": [
+              "엄마",
+              "친구 지수"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 0,
+      "default_on_skip": {
+        "alias": "그분",
+        "origin": "default"
+      }
+    },
+    {
+      "id": "T01",
+      "display_number": "1",
+      "section": "A",
+      "entity": "relationship",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "{호칭}와 어떤 관계이며, 평소 얼마나 자주 만나거나 연락하시나요?",
+      "text_template": "{subject:와과} 어떤 관계이며, 평소 얼마나 자주 만나거나 연락하시나요?",
+      "neutral_text": "오늘 말씀하실 분과 어떤 관계이며, 평소 얼마나 자주 만나거나 연락하시나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "composite",
+        "fields": [
+          {
+            "id": "relation",
+            "type": "single_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "parent",
+                "label": "부모"
+              },
+              {
+                "id": "child",
+                "label": "자녀"
+              },
+              {
+                "id": "spouse_partner",
+                "label": "배우자·연인"
+              },
+              {
+                "id": "sibling",
+                "label": "형제자매"
+              },
+              {
+                "id": "friend",
+                "label": "친구"
+              },
+              {
+                "id": "coworker",
+                "label": "직장 동료"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 1,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          },
+          {
+            "id": "contact_frequency",
+            "type": "single_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "daily",
+                "label": "매일"
+              },
+              {
+                "id": "several_weekly",
+                "label": "주 여러 번"
+              },
+              {
+                "id": "weekly",
+                "label": "주 1회"
+              },
+              {
+                "id": "several_monthly",
+                "label": "월 여러 번"
+              },
+              {
+                "id": "monthly_or_less",
+                "label": "월 1회 이하"
+              },
+              {
+                "id": "irregular",
+                "label": "불규칙"
+              },
+              {
+                "id": "no_contact",
+                "label": "현재 연락 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 1,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 1,
+      "relation_direction": "subject_relation_to_user",
+      "field_statuses": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "detail_max_codepoints": 2000
+    },
+    {
+      "id": "T02",
+      "display_number": "2",
+      "section": "B",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자가 현재 어떤 어려움을 겪고 있다고 생각하시나요?",
+      "text_template": "{subject:이가} 현재 어떤 어려움을 겪고 있다고 생각하시나요?",
+      "neutral_text": "오늘 말씀하실 분의 현재 어려움은 무엇이라고 생각하시나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "difficulties",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "low_mood",
+                "label": "기분 저하"
+              },
+              {
+                "id": "worry_anxiety",
+                "label": "불안·걱정"
+              },
+              {
+                "id": "alcohol",
+                "label": "음주"
+              },
+              {
+                "id": "gambling",
+                "label": "도박"
+              },
+              {
+                "id": "digital_use",
+                "label": "디지털 사용"
+              },
+              {
+                "id": "daily_relationship",
+                "label": "생활·관계"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 7,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 10,
+      "slot": "subject.reported_difficulties"
+    },
+    {
+      "id": "T03",
+      "display_number": "3",
+      "section": "B",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자의 어려움을 다른 가족이나 주변 사람에게 설명한다면 어떻게 설명하시겠나요?",
+      "text_template": "{subject:의} 어려움을 다른 가족이나 주변 사람에게 설명한다면 어떻게 설명하시겠나요?",
+      "neutral_text": "이분의 어려움을 다른 가족이나 주변 사람에게 설명한다면 어떻게 설명하시겠나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "text",
+        "fields": [
+          {
+            "id": "description",
+            "type": "text",
+            "required": true,
+            "min_codepoints": 1,
+            "max_codepoints": 2000,
+            "allow_direct_text": false,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": false,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 70,
+      "slot": "subject.social_description"
+    },
+    {
+      "id": "T04",
+      "display_number": "4",
+      "section": "B",
+      "entity": "supporter",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자의 어려움 중 가장 걱정되거나 마음에 걸리는 부분은 무엇인가요?",
+      "text_template": "{subject:의} 어려움 중 가장 걱정되거나 마음에 걸리는 부분은 무엇인가요?",
+      "neutral_text": "이분의 어려움 중 가장 걱정되거나 마음에 걸리는 부분은 무엇인가요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "concerns",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "safety",
+                "label": "안전"
+              },
+              {
+                "id": "daily_life",
+                "label": "일상생활"
+              },
+              {
+                "id": "relationship",
+                "label": "관계"
+              },
+              {
+                "id": "health",
+                "label": "건강"
+              },
+              {
+                "id": "finances",
+                "label": "경제"
+              },
+              {
+                "id": "declining_help",
+                "label": "도움 거부"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 7,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 11,
+      "slot": "supporter.main_concerns_about_subject"
+    },
+    {
+      "id": "T05",
+      "display_number": "5",
+      "section": "C",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자의 현재 어려움에 영향을 준 경험이나 상황이 있다고 생각하시나요?",
+      "text_template": "{subject:의} 현재 어려움에 영향을 준 경험이나 상황이 있다고 생각하시나요?",
+      "neutral_text": "이분의 현재 어려움에 영향을 준 경험이나 상황이 있다고 생각하시나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "contributors",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "change",
+                "label": "최근 변화"
+              },
+              {
+                "id": "loss",
+                "label": "상실"
+              },
+              {
+                "id": "conflict",
+                "label": "관계 갈등"
+              },
+              {
+                "id": "work_study",
+                "label": "일·학업"
+              },
+              {
+                "id": "health",
+                "label": "건강"
+              },
+              {
+                "id": "finances",
+                "label": "경제"
+              },
+              {
+                "id": "none",
+                "label": "떠오르는 것 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 7,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 50,
+      "slot": "subject.perceived_contributors",
+      "default_source_type": "interpretation"
+    },
+    {
+      "id": "T06",
+      "display_number": "6",
+      "section": "C",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "가족이나 주변 사람들은 대상자의 어려움에 대해 어떤 이유가 있다고 이야기하나요?",
+      "text_template": "가족이나 주변 사람들은 {subject:의} 어려움에 대해 어떤 이유가 있다고 이야기하나요?",
+      "neutral_text": "가족이나 주변 사람들은 이분의 어려움에 대해 어떤 이유가 있다고 이야기하나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "single_choice",
+        "fields": [
+          {
+            "id": "others_explanations",
+            "type": "single_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "none",
+                "label": "들은 이야기 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 1,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 65,
+      "slot": "subject.others_explanations",
+      "default_source_type": "reported_speech"
+    },
+    {
+      "id": "T07",
+      "display_number": "7",
+      "section": "C",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자가 현재 어려움을 견디는 데 도움이 되는 사람, 관계, 활동 또는 환경이 있나요?",
+      "text_template": "{subject:이가} 현재 어려움을 견디는 데 도움이 되는 사람, 관계, 활동 또는 환경이 있나요?",
+      "neutral_text": "이분에게 현재 어려움을 견디는 데 도움이 되는 사람, 관계, 활동 또는 환경이 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "supports",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "family",
+                "label": "가족"
+              },
+              {
+                "id": "friends",
+                "label": "친구"
+              },
+              {
+                "id": "professional",
+                "label": "전문가"
+              },
+              {
+                "id": "activity",
+                "label": "활동·취미"
+              },
+              {
+                "id": "stable_environment",
+                "label": "안정된 생활환경"
+              },
+              {
+                "id": "none",
+                "label": "현재 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 6,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 30,
+      "slot": "subject.supports"
+    },
+    {
+      "id": "T08",
+      "display_number": "8",
+      "section": "C",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자의 어려움을 더 크게 만들거나 회복을 어렵게 하는 생활 속 부담이 있나요?",
+      "text_template": "{subject:의} 어려움을 더 크게 만들거나 회복을 어렵게 하는 생활 속 부담이 있나요?",
+      "neutral_text": "이분의 어려움을 더 크게 만들거나 회복을 어렵게 하는 생활 속 부담이 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "stressors",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "finances",
+                "label": "경제"
+              },
+              {
+                "id": "work_study",
+                "label": "일·학업"
+              },
+              {
+                "id": "relationship",
+                "label": "관계"
+              },
+              {
+                "id": "caregiving",
+                "label": "돌봄"
+              },
+              {
+                "id": "housing",
+                "label": "주거"
+              },
+              {
+                "id": "health",
+                "label": "건강"
+              },
+              {
+                "id": "none",
+                "label": "현재 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 7,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 31,
+      "slot": "subject.stressors"
+    },
+    {
+      "id": "T09",
+      "display_number": "9",
+      "section": "D",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자를 이해하기 위해 알아두어야 할 생활 배경이나 가치관이 있나요?",
+      "text_template": "{subject:을를} 이해하기 위해 알아두어야 할 생활 배경이나 가치관이 있나요?",
+      "neutral_text": "이분을 이해하기 위해 알아두어야 할 생활 배경이나 가치관이 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "context_values",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "family_culture",
+                "label": "가족문화"
+              },
+              {
+                "id": "belief_religion",
+                "label": "신념·종교"
+              },
+              {
+                "id": "language",
+                "label": "언어"
+              },
+              {
+                "id": "upbringing",
+                "label": "성장환경"
+              },
+              {
+                "id": "roles",
+                "label": "역할·책임"
+              },
+              {
+                "id": "none",
+                "label": "특별히 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 6,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 55,
+      "slot": "subject.context_values"
+    },
+    {
+      "id": "T10",
+      "display_number": "10",
+      "section": "D",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "이러한 생활 배경이나 가치관이 대상자의 현재 어려움에 어떤 영향을 준다고 생각하시나요?",
+      "text_template": "이러한 생활 배경이나 가치관이 {subject:의} 현재 어려움에 어떤 영향을 준다고 생각하시나요?",
+      "neutral_text": "이러한 생활 배경이나 가치관이 이분의 현재 어려움에 어떤 영향을 준다고 생각하시나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped",
+        "not_applicable"
+      ],
+      "answer_schema": {
+        "kind": "single_choice",
+        "fields": [
+          {
+            "id": "context_effects",
+            "type": "single_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "none",
+                "label": "특별한 영향 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 1,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "parent_answer",
+        "question_id": "T09",
+        "field_id": "context_values",
+        "when_substantive": "eligible",
+        "when_none": "derive_not_applicable",
+        "when_unknown_or_skipped": "deferred",
+        "on_parent_correction": "invalidate_derived_state"
+      },
+      "priority": 56,
+      "slot": "subject.context_effects"
+    },
+    {
+      "id": "T11",
+      "display_number": "11",
+      "section": "D",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자의 생활 배경이나 가치관과 관련하여 추가로 걱정되는 어려움이 있나요?",
+      "text_template": "{subject:의} 생활 배경이나 가치관과 관련하여 추가로 걱정되는 어려움이 있나요?",
+      "neutral_text": "이분의 생활 배경이나 가치관과 관련하여 추가로 걱정되는 어려움이 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped",
+        "not_applicable"
+      ],
+      "answer_schema": {
+        "kind": "single_choice",
+        "fields": [
+          {
+            "id": "context_concerns",
+            "type": "single_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "none",
+                "label": "추가 걱정 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 1,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "parent_answer",
+        "question_id": "T09",
+        "field_id": "context_values",
+        "when_substantive": "eligible",
+        "when_none": "derive_not_applicable",
+        "when_unknown_or_skipped": "deferred",
+        "on_parent_correction": "invalidate_derived_state"
+      },
+      "priority": 57,
+      "slot": "subject.context_concerns"
+    },
+    {
+      "id": "T12",
+      "display_number": "12",
+      "section": "E",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자는 현재의 어려움을 해결하거나 견디기 위해 어떤 방법을 사용해 왔나요?",
+      "text_template": "{subject:은는} 현재의 어려움을 해결하거나 견디기 위해 어떤 방법을 사용해 왔나요?",
+      "neutral_text": "이분이 현재의 어려움을 해결하거나 견디기 위해 사용해 온 방법은 무엇인가요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "coping",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "rest",
+                "label": "휴식"
+              },
+              {
+                "id": "talk",
+                "label": "대화"
+              },
+              {
+                "id": "activity",
+                "label": "활동"
+              },
+              {
+                "id": "professional_help",
+                "label": "전문적 도움"
+              },
+              {
+                "id": "enduring_alone",
+                "label": "혼자 견딤"
+              },
+              {
+                "id": "none",
+                "label": "시도 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 6,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 35,
+      "slot": "subject.coping"
+    },
+    {
+      "id": "T13",
+      "display_number": "13",
+      "section": "E",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자가 지금까지 가족, 친구, 의료기관, 상담기관 또는 기타 기관으로부터 받은 도움은 무엇인가요?",
+      "text_template": "{subject:이가} 지금까지 가족, 친구, 의료기관, 상담기관 또는 기타 기관으로부터 받은 도움은 무엇인가요?",
+      "neutral_text": "이분이 지금까지 가족, 친구, 의료기관, 상담기관 또는 기타 기관으로부터 받은 도움은 무엇인가요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "past_help",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "family",
+                "label": "가족"
+              },
+              {
+                "id": "friends",
+                "label": "친구"
+              },
+              {
+                "id": "medical",
+                "label": "의료기관"
+              },
+              {
+                "id": "counseling",
+                "label": "상담기관"
+              },
+              {
+                "id": "community",
+                "label": "지역기관"
+              },
+              {
+                "id": "none",
+                "label": "받은 도움 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 6,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 45,
+      "slot": "subject.past_help"
+    },
+    {
+      "id": "T14",
+      "display_number": "14",
+      "section": "E",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자가 필요한 도움을 받는 데 어려움을 겪은 이유나 방해가 된 요인이 있나요?",
+      "text_template": "{subject:이가} 필요한 도움을 받는 데 어려움을 겪은 이유나 방해가 된 요인이 있나요?",
+      "neutral_text": "이분에게 필요한 도움을 받는 데 어려움을 겪은 이유나 방해가 된 요인이 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "barriers",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "cost",
+                "label": "비용"
+              },
+              {
+                "id": "time",
+                "label": "시간"
+              },
+              {
+                "id": "access",
+                "label": "접근성"
+              },
+              {
+                "id": "information",
+                "label": "정보 부족"
+              },
+              {
+                "id": "stigma_burden",
+                "label": "부담·낙인"
+              },
+              {
+                "id": "subject_preference",
+                "label": "당사자 의사"
+              },
+              {
+                "id": "none",
+                "label": "방해 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 7,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 36,
+      "slot": "subject.help_barriers",
+      "do_not_skip_when": {
+        "question_id": "T13",
+        "option_id": "none"
+      }
+    },
+    {
+      "id": "T15",
+      "display_number": "15",
+      "section": "F",
+      "entity": "supporter",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "현재 대상자에게 가장 필요하다고 생각하는 도움은 무엇인가요?",
+      "text_template": "현재 {subject:에게} 가장 필요하다고 생각하는 도움은 무엇인가요?",
+      "neutral_text": "현재 이분에게 가장 필요하다고 생각하는 도움은 무엇인가요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "single_choice",
+        "fields": [
+          {
+            "id": "needs",
+            "type": "single_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "listening",
+                "label": "들어주기"
+              },
+              {
+                "id": "communication",
+                "label": "대화 방법"
+              },
+              {
+                "id": "daily_support",
+                "label": "생활 도움"
+              },
+              {
+                "id": "professional",
+                "label": "전문 도움"
+              },
+              {
+                "id": "social_support",
+                "label": "주변 지지"
+              },
+              {
+                "id": "safety_check",
+                "label": "안전 확인"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 1,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 12,
+      "slot": "supporter.perceived_subject_needs"
+    },
+    {
+      "id": "T16",
+      "display_number": "16",
+      "section": "F",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "가족이나 주변 사람들은 대상자에게 어떤 도움을 권하고 있나요?",
+      "text_template": "가족이나 주변 사람들은 {subject:에게} 어떤 도움을 권하고 있나요?",
+      "neutral_text": "가족이나 주변 사람들은 이분에게 어떤 도움을 권하고 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "recommendations",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "talk",
+                "label": "대화"
+              },
+              {
+                "id": "daily_support",
+                "label": "생활 지원"
+              },
+              {
+                "id": "medical_counseling",
+                "label": "의료·상담"
+              },
+              {
+                "id": "community",
+                "label": "지역 지원"
+              },
+              {
+                "id": "none",
+                "label": "권유 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 5,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 66,
+      "slot": "subject.network_recommendations"
+    },
+    {
+      "id": "T17",
+      "display_number": "17",
+      "section": "F",
+      "entity": "subject",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "CFI_informant_structural_similarity",
+      "scored_scale": false,
+      "original_text": "대상자가 상담사나 의료진과 이야기할 때 특별히 고려하거나 배려해야 할 점이 있나요?",
+      "text_template": "{subject:이가} 상담사나 의료진과 이야기할 때 특별히 고려하거나 배려해야 할 점이 있나요?",
+      "neutral_text": "이분이 상담사나 의료진과 이야기할 때 특별히 고려하거나 배려해야 할 점이 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "care_preferences",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "pace",
+                "label": "말하는 속도"
+              },
+              {
+                "id": "language",
+                "label": "언어"
+              },
+              {
+                "id": "values",
+                "label": "문화·가치관"
+              },
+              {
+                "id": "privacy",
+                "label": "사생활"
+              },
+              {
+                "id": "past_experience",
+                "label": "과거 경험"
+              },
+              {
+                "id": "accompaniment",
+                "label": "동행"
+              },
+              {
+                "id": "none",
+                "label": "특별히 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 7,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 37,
+      "slot": "subject.care_preferences",
+      "variants": [
+        {
+          "id": "future_help",
+          "when": "no_treatment_experience",
+          "text": "앞으로 도움을 받는다면, 이분에게 특별히 배려해야 할 점이 있나요?"
+        }
+      ]
+    },
+    {
+      "id": "C01",
+      "display_number": "나1",
+      "section": "SUPPORTER",
+      "entity": "supporter",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "SSCS_conceptual_alignment",
+      "scored_scale": false,
+      "original_text": "대상자와 관련해서 요즘 가장 마음이 쓰이거나 힘들었던 순간은 언제인가요?",
+      "text_template": "{subject:와과} 관련해서 요즘 가장 마음이 쓰이거나 힘들었던 순간은 언제인가요?",
+      "neutral_text": "이분과 관련해서 요즘 가장 마음이 쓰이거나 힘들었던 순간은 언제인가요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "text",
+        "fields": [
+          {
+            "id": "stress_event",
+            "type": "text",
+            "required": true,
+            "min_codepoints": 1,
+            "max_codepoints": 2000,
+            "allow_direct_text": false,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": false,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 13,
+      "slot": "supporter.stress_event"
+    },
+    {
+      "id": "C01A",
+      "display_number": "나1-1",
+      "section": "SUPPORTER",
+      "entity": "supporter",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "SSCS_conceptual_alignment",
+      "scored_scale": false,
+      "original_text": "그런 일이 얼마나 자주 있나요?",
+      "text_template": "그런 일이 얼마나 자주 있나요?",
+      "neutral_text": "그런 일이 얼마나 자주 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "single_choice",
+        "fields": [
+          {
+            "id": "frequency",
+            "type": "single_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "once_recently",
+                "label": "최근 한 번"
+              },
+              {
+                "id": "several_monthly",
+                "label": "월 여러 번"
+              },
+              {
+                "id": "several_weekly",
+                "label": "주 여러 번"
+              },
+              {
+                "id": "nearly_daily",
+                "label": "거의 매일"
+              },
+              {
+                "id": "irregular",
+                "label": "불규칙"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 1,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "requires_confirmed_event",
+        "question_id": "C01",
+        "when_missing": "deferred"
+      },
+      "priority": 14,
+      "slot": "supporter.stress_frequency"
+    },
+    {
+      "id": "C02",
+      "display_number": "나2",
+      "section": "SUPPORTER",
+      "entity": "supporter",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "SSCS_conceptual_alignment",
+      "scored_scale": false,
+      "original_text": "그런 순간들을 겪으면서, 당신의 마음은 어떠셨어요?",
+      "text_template": "그런 순간들을 겪으면서, 마음은 어떠셨어요?",
+      "neutral_text": "그런 순간들을 겪으면서, 마음은 어떠셨어요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "emotions",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "worry",
+                "label": "걱정"
+              },
+              {
+                "id": "sadness",
+                "label": "슬픔"
+              },
+              {
+                "id": "anger",
+                "label": "분노"
+              },
+              {
+                "id": "guilt",
+                "label": "죄책감"
+              },
+              {
+                "id": "helplessness",
+                "label": "무력감"
+              },
+              {
+                "id": "exhaustion",
+                "label": "지침"
+              },
+              {
+                "id": "mixed",
+                "label": "복합적"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 8,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": []
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 15,
+      "slot": "supporter.emotions",
+      "variants": [
+        {
+          "id": "general_recent",
+          "when": "no_confirmed_C01_event",
+          "text": "요즘 이 상황을 겪으며 어떤 마음이 드셨나요?"
+        }
+      ]
+    },
+    {
+      "id": "C03",
+      "display_number": "나3",
+      "section": "SUPPORTER",
+      "entity": "supporter",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "SSCS_conceptual_alignment",
+      "scored_scale": false,
+      "original_text": "대상자를 돕는 동안, 당신의 잠이나 건강, 일, 다른 관계에는 어떤 변화가 있었나요?",
+      "text_template": "{subject:을를} 돕는 동안, 본인의 잠이나 건강, 일, 다른 관계에는 어떤 변화가 있었나요?",
+      "neutral_text": "이분을 돕는 동안, 본인의 잠이나 건강, 일, 다른 관계에는 어떤 변화가 있었나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "life_impact",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "sleep",
+                "label": "잠"
+              },
+              {
+                "id": "health",
+                "label": "건강"
+              },
+              {
+                "id": "work_study",
+                "label": "일·학업"
+              },
+              {
+                "id": "relationships",
+                "label": "다른 관계"
+              },
+              {
+                "id": "personal_time",
+                "label": "일상 여유"
+              },
+              {
+                "id": "none",
+                "label": "변화 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 6,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 16,
+      "slot": "supporter.life_impact"
+    },
+    {
+      "id": "C04",
+      "display_number": "나4",
+      "section": "SUPPORTER",
+      "entity": "supporter",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "SSCS_conceptual_alignment",
+      "scored_scale": false,
+      "original_text": "힘든 상황이 생기면 당신은 보통 어떻게 하시나요? 해봤던 방법 중 도움이 된 것과 그렇지 않았던 것이 있다면 들려주세요.",
+      "text_template": "힘든 상황이 생기면 보통 어떻게 하시나요? 해봤던 방법 중 도움이 된 것과 그렇지 않았던 것이 있다면 들려주세요.",
+      "neutral_text": "힘든 상황이 생기면 보통 어떻게 하시나요? 해봤던 방법 중 도움이 된 것과 그렇지 않았던 것이 있다면 들려주세요.",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "coping_entries",
+        "fields": [
+          {
+            "id": "coping_entries",
+            "type": "coping_entries",
+            "required": true,
+            "min_items": 1,
+            "max_items": 6,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "entry_schema": {
+              "method_options": [
+                {
+                  "id": "talk",
+                  "label": "대화"
+                },
+                {
+                  "id": "distance",
+                  "label": "거리 두기"
+                },
+                {
+                  "id": "rest",
+                  "label": "휴식"
+                },
+                {
+                  "id": "social_support",
+                  "label": "주변 도움"
+                },
+                {
+                  "id": "information",
+                  "label": "정보 찾기"
+                },
+                {
+                  "id": "other",
+                  "label": "직접 입력"
+                }
+              ],
+              "effect_options": [
+                {
+                  "id": "helpful",
+                  "label": "도움 됨"
+                },
+                {
+                  "id": "unhelpful",
+                  "label": "도움 안 됨"
+                },
+                {
+                  "id": "mixed",
+                  "label": "혼합"
+                },
+                {
+                  "id": "unknown",
+                  "label": "모름"
+                }
+              ],
+              "required": [
+                "method_option_id",
+                "effect_option_id"
+              ],
+              "other_requires_detail": true,
+              "detail_max_codepoints": 500
+            }
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 32,
+      "slot": "supporter.coping_experiences"
+    },
+    {
+      "id": "C05",
+      "display_number": "나5",
+      "section": "SUPPORTER",
+      "entity": "supporter",
+      "origin": "user_provided_question",
+      "adaptation_status": "subject_template_and_service_input_design",
+      "framework_reference": "SSCS_conceptual_alignment",
+      "scored_scale": false,
+      "original_text": "이 어려움을 함께 나누거나 기댈 수 있는 사람, 또는 도움을 받을 수 있는 곳이 있나요?",
+      "text_template": "이 어려움을 함께 나누거나 기댈 수 있는 사람, 또는 도움을 받을 수 있는 곳이 있나요?",
+      "neutral_text": "이 어려움을 함께 나누거나 기댈 수 있는 사람, 또는 도움을 받을 수 있는 곳이 있나요?",
+      "disposition_options": [
+        "answered",
+        "unknown",
+        "skipped"
+      ],
+      "answer_schema": {
+        "kind": "multi_choice",
+        "fields": [
+          {
+            "id": "support_network",
+            "type": "multi_choice",
+            "required": true,
+            "options": [
+              {
+                "id": "family",
+                "label": "가족"
+              },
+              {
+                "id": "friends",
+                "label": "친구"
+              },
+              {
+                "id": "coworkers",
+                "label": "동료"
+              },
+              {
+                "id": "professional",
+                "label": "전문가"
+              },
+              {
+                "id": "peer_group",
+                "label": "자조모임"
+              },
+              {
+                "id": "community",
+                "label": "지역기관"
+              },
+              {
+                "id": "none",
+                "label": "현재 없음"
+              },
+              {
+                "id": "other",
+                "label": "직접 입력"
+              }
+            ],
+            "min_selected": 1,
+            "max_selected": 7,
+            "allow_direct_text": true,
+            "direct_text_max_codepoints": 2000,
+            "other_requires_detail": true,
+            "other_detail_max_codepoints": 500,
+            "mutually_exclusive_option_ids": [
+              "none"
+            ]
+          }
+        ]
+      },
+      "eligibility": {
+        "kind": "always"
+      },
+      "priority": 17,
+      "slot": "supporter.support_network"
+    }
+  ]
+}

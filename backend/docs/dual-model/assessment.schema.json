@@ -1,0 +1,425 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Patient cue assessment draft v1 (not a clinical instrument)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "sadness",
+    "anxiety",
+    "agitation",
+    "self_harm_cue",
+    "harm_to_others_cue",
+    "acute_danger_cue"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "enum": [
+        1
+      ]
+    },
+    "sadness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "source",
+        "timeframe",
+        "evidence"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "source": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "timeframe": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "message_index",
+              "start_cp",
+              "end_cp"
+            ],
+            "properties": {
+              "message_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "start_cp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end_cp": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "anxiety": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "source",
+        "timeframe",
+        "evidence"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "source": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "timeframe": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "message_index",
+              "start_cp",
+              "end_cp"
+            ],
+            "properties": {
+              "message_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "start_cp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end_cp": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "agitation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "source",
+        "timeframe",
+        "evidence"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "source": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "timeframe": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "message_index",
+              "start_cp",
+              "end_cp"
+            ],
+            "properties": {
+              "message_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "start_cp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end_cp": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "self_harm_cue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "source",
+        "timeframe",
+        "evidence"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "source": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "timeframe": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "message_index",
+              "start_cp",
+              "end_cp"
+            ],
+            "properties": {
+              "message_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "start_cp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end_cp": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "harm_to_others_cue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "source",
+        "timeframe",
+        "evidence"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "source": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "timeframe": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "message_index",
+              "start_cp",
+              "end_cp"
+            ],
+            "properties": {
+              "message_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "start_cp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end_cp": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "acute_danger_cue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "score",
+        "source",
+        "timeframe",
+        "evidence"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "enum": [
+            -1,
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "source": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "timeframe": {
+          "type": "integer",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "message_index",
+              "start_cp",
+              "end_cp"
+            ],
+            "properties": {
+              "message_index": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "start_cp": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "end_cp": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
