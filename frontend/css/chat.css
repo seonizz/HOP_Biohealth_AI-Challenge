@@ -72,3 +72,11 @@ textarea{flex:1;min-width:0;resize:none;font:inherit;font-size:17px;padding:12px
 @keyframes spin{to{transform:rotate(360deg)}}
 .th-err{margin-top:18px}
 .th-err p{color:#9b392d;margin:0 0 12px;font-size:15px}
+
+/* 버튼 자리 통일: 항상 오른쪽 아래 [건너뛰기][보내기·다 골랐어요], 같은 높이 */
+.acts{display:flex;gap:10px;align-items:center;margin-left:auto;align-self:flex-end;flex:none}
+.acts .skip,.acts .send{height:48px;padding:0 24px;border-radius:999px;font-family:var(--display);font-size:17px;align-self:auto;white-space:nowrap}
+.acts .send{background:var(--stem);color:#fff;border:0;box-shadow:0 3px 0 #355a2a}
+.acts .send:active{transform:translateY(2px);box-shadow:0 1px 0 #355a2a}
+.row .acts{align-self:flex-end}
+.acts .send{min-width:132px} /* 보내기·다 골랐어요 너비를 같게 해서 건너뛰기 자리가 늘 같게 */
