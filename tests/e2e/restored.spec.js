@@ -41,7 +41,7 @@ async function finishRemaining(page){
   throw new Error('Original questionnaire did not reach a result');
 }
 
-test('original 30-question journey, back, guide, deferred safety, local history and deletion',async({page})=>{
+test('full questionnaire journey, back, guide, deferred safety, local history and deletion',async({page})=>{
   const errors=[],apiRequests=[];
   page.on('pageerror',e=>errors.push(e.message));
   page.on('request',r=>{if(new URL(r.url()).pathname.startsWith('/api/'))apiRequests.push(r.url());});
@@ -64,7 +64,7 @@ test('original 30-question journey, back, guide, deferred safety, local history 
   await expect(page.locator('#result .safety')).toContainText('109');
   await expect(page.locator('#scr')).toContainText('지금 바로 대답하지 않아도 돼');
   const record=await page.evaluate(()=>loadRecs()[0]);
-  expect(Object.keys(record.profile.answers)).toHaveLength(30);
+  expect(Object.keys(record.profile.answers)).toHaveLength(await page.evaluate(()=>Q.length)); // 모든 문항에 답함 (현재 29문항)
   expect(record.profile.safety).toBe(true);expect(record.guide.care.tips.length).toBeGreaterThan(0);
   expect(record.guide.doList.length).toBeGreaterThan(0);expect(record.guide.avoid.length).toBeGreaterThan(0);
   await page.screenshot({path:'artifacts/restored-result.png',fullPage:true});
