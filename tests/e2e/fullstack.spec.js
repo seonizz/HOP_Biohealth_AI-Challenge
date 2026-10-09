@@ -99,3 +99,14 @@ test('mobile layout and help remain usable without signing in',async({page})=>{
   await page.locator('#dialog').getByRole('button',{name:'닫기',exact:true}).click();
   await page.screenshot({path:'artifacts/mobile-home.png',fullPage:true});
 });
+test('columns from current main remain readable without signing in',async({page})=>{
+  await page.goto('/');
+  await page.getByRole('button',{name:'칼럼',exact:true}).click();
+  await expect(page.getByRole('heading',{name:/함께 알아보는/})).toBeVisible();
+  await expect(page.locator('.ccard')).toHaveCount(10);
+  await page.getByRole('button',{name:'불안',exact:true}).click();
+  await expect(page.locator('.ccard')).toHaveCount(2);
+  await expect(page.locator('.ccard a[target="_blank"]')).toHaveCount(2);
+  await page.getByRole('button',{name:'말씨 처음으로'}).click();
+  await expect(page.getByRole('button',{name:'가입 없이 체험하기'})).toBeVisible();
+});
