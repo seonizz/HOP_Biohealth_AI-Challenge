@@ -11,6 +11,7 @@ services:
       HOP_INVITE_CODE: synthetic-e2e-invite
       HOP_V2_ALLOW_DRAFT: 'true'
       HOP_V2_MODEL_ENABLED: 'true'
+      HOP_ORIGINAL_FRONTEND_MODEL_MODE: prototype
   worker:
     environment:
       HOP_V2_MODEL_ENABLED: 'true'

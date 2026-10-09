@@ -8,7 +8,7 @@ const read=p=>readFileSync(new URL(p,root),'utf8');
 const context=vm.createContext({});
 vm.runInContext(read('frontend/js/core/questions.js')+'\nglobalThis.catalog={Q,FOLLOW,RARE};',context);
 const {Q,FOLLOW,RARE}=context.catalog;
-test('all 36 frontend source files match the accepted pre-PR3 commit',()=>{
+test('all 36 frontend reference files match ea9c607 exactly',()=>{
   const manifest=JSON.parse(read('docs/frontend-original-manifest.json'));
   assert.equal(manifest.commit,'ea9c607519ce2269d8da14a166a7b99d7e287233');
   assert.equal(manifest.files.length,36);
@@ -20,6 +20,11 @@ test('all 36 frontend source files match the accepted pre-PR3 commit',()=>{
     const bytes=/\.(js|html|css)$/.test(path)?Buffer.from(content.toString('utf8').replace(/\r\n/g,'\n')):content;
     assert.equal(createHash('sha256').update(bytes).digest('hex'),accepted[path]?.sha256??sha256,path);
   }
+});
+test('deployed HTML preserves the original and changes only the two adapter script hooks',()=>{
+  const deployed=read('frontend/index.html').replace(/\r\n/g,'\n').replace('js/backend/model.js','js/core/mockModel.js').replace('<script src="js/backend/bridge.js"></script>\n','');
+  assert.equal(deployed.replace(/\r\n/g,'\n'),read('frontend/original/index.html').replace(/\r\n/g,'\n'));
+  assert.ok(!read('frontend/index.html').includes('src/app.js'));
 });
 test('original question order, required questions and no-skip rules',()=>{
   assert.deepEqual(Array.from(Q,q=>q.id),'name want goal rel contact mood dur freq describe concern cause events others_why support burden values values_effect extra coping help barrier need others_help moment moment_freq feeling cgchange cgchange_more mycoping mysupport'.split(' '));

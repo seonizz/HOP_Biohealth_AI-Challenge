@@ -1,32 +1,32 @@
-# 말씨 — 원본 디자인과 백엔드 통합
+# 말씨 — ea9c607 원본 UI와 메인 기능 연결
 
-원본 프런트의 색상, 글꼴, 마스코트와 화면 구성을 유지하면서 말씨 v2 API와 PostgreSQL에 연결한 통합본입니다. 공개 HTTPS 시연 주소는 [malssi-demo.vercel.app](https://malssi-demo.vercel.app)입니다. 첫 화면에서 **가입 없이 체험하기**를 누르면 임시 계정으로 바로 시작합니다.
+PR #3 직전 `ea9c607519ce2269d8da14a166a7b99d7e287233`의 화면·문구·30문항 흐름을 그대로 실행합니다. 시작 → 원본 질문 → 결과 가이드 → 기록 보기·삭제의 메인 기능만 우선 백엔드에 연결했습니다.
 
-실행 화면은 `frontend/src/`의 API 클라이언트를 사용합니다. 질문과 답변, 프로젝트와 기록은 서버의 24문항 카탈로그와 Neon PostgreSQL에 저장되며, 새로고침 후에도 복원됩니다. 최신 원본 칼럼 화면과 자체 호스팅 글꼴도 반영했습니다. `frontend/js/`는 원본 프런트의 참조용 소스이며 배포 빌드에 포함하지 않습니다. 브라우저의 `localStorage`에는 칼럼 읽음·담기 표시만 저장하고 대화 원문이나 인증 토큰은 저장하지 않습니다.
+원본 화면 컴포넌트·CSS·마스코트·질문 파일은 해당 커밋과 같습니다. HTML에는 모델 API 어댑터와 기록 저장 어댑터의 로딩만 추가합니다. `frontend/src/`의 재작성 UI와 24문항 화면은 배포 빌드에서 제외합니다. 기존 브라우저 기록은 보존하며 새 완료 결과를 PostgreSQL에도 암호화 저장합니다.
 
-실제 모델 추론과 GPU 작업은 시연 배포에서 꺼져 있습니다. B→A 이중 모델의 턴별 API·워커·DB·화면 경로는 [실행 안내](backend/docs/dual-model/RUNTIME.md)에 구현되어 있으며, 확인된 학습 체크포인트와 별도 워커가 설정되기 전에는 평가 불가 상태만 기록합니다. 예시 가이드는 고정된 가상 예시임을 표시하며 사용자가 입력한 답변을 분석하지 않습니다. 원본의 30문항과 임시 점수·가이드를 실제 API로 혼동하지 않도록 서버의 24문항 계약을 사용합니다. 원본 자료와 변경 경위는 [프런트 복원 기록](docs/FRONTEND_RESTORATION.md), 운영 구성은 [Vercel 배포 안내](docs/vercel-deployment.md)를 참고하세요.
+이번 서버 배포는 `HOP_ORIGINAL_FRONTEND_MODEL_MODE=prototype`을 명시해 원본 프로토타입 가이드를 서버에서 실행합니다. 실제 모델 추론과 매 턴 B→A 파이프라인은 이번 메인 UI에 연결하지 않았습니다. 연결·미연결 기능과 병행 작업 지점은 [명세표](docs/MAIN_FEATURE_CONNECTIONS.md)를 참고하십시오.
 
 ## 구조
 
-- `frontend/`: 원본 디자인 자산과 백엔드 연동 화면
-- `backend/`: 인증, 말씨 v2 API, PostgreSQL 마이그레이션, 모델 작업자
-- `api/`: Vercel Function 어댑터와 일일 보관 정리
-- `scripts/`: 프런트 빌드·검증 도구
-- `deploy/`, `compose.yaml`: 로컬 Docker 배포
+- `frontend/js/components/`, `frontend/css/`, `frontend/assets/`: ea9c607 원본 UI.
+- `frontend/js/backend/`: 별도 API·저장 어댑터.
+- `backend/src/original-frontend.ts`: 원본 계약, 소유권 검사와 암호화 저장.
+- `backend/data/original-*`: ea9c607 질문·프로토타입 모델 스냅샷.
+- `backend/src/v2/`: 기존 기능과 모델 워커. 후속 병행 작업 대상으로 보존.
 
-## 로컬 실행과 검증
+## 실행·검증
 
-Node.js 24.19 이상과 Docker Compose를 사용합니다.
+Node 24.19 이상을 사용합니다.
 
 ```sh
-npm ci
+npm ci --ignore-scripts
+npm ci --prefix backend --ignore-scripts
 npm run check
 npm test
 npm run build
-npm run setup -- --origin http://localhost:8080
-docker compose up --build -d
+npm run check --prefix backend
 ```
 
-브라우저에서 `http://localhost:8080`을 여십시오. 기본 시연 계정은 24시간 후 접속이 만료되고, 설정에서 즉시 삭제할 수 있습니다. 배포에서는 Neon의 `malssi-demo` 프로젝트가 DB를 관리합니다. 실제 개인정보 대신 가상 사례를 입력해 주세요.
+기존 Linux 서버의 웹 주소는 `http://localhost:8088`이며 SSH 터널로 접근합니다. 운영 중 API와 데이터는 그대로 두고 새 API는 19021 포트와 독립 스키마를 사용합니다. 배포 기록은 [서버 배포·검증 기록](docs/ORIGINAL_UI_DEPLOYMENT.md)에 정리합니다.
 
-공개 출시 전에는 문항의 권리·콘텐츠 검토, 실제 모델 품질 검증, 백업·복원 훈련, 분산 환경 요청 제한과 모니터링이 필요합니다.
+현재 서버 기록은 기존 임시 브라우저 계정의 24시간 세션 정책을 사용합니다. 원본 localStorage 기록은 원래와 같이 유지됩니다. 실제 모델 연결은 명시적으로 `local` 모드를 설정한 후 검증해야 하며, 모델 오류를 프로토타입 결과로 자동 대체하지 않습니다. 기존 Vercel 주소는 이번 Linux 서버 배포 대상에 포함하지 않습니다.

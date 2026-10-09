@@ -13,6 +13,7 @@ export function getSettings(overrides: Record<string, unknown> = {}) {
     v2AllowDraft: process.env.HOP_V2_ALLOW_DRAFT === 'true',
     v2ModelEnabled: process.env.HOP_V2_MODEL_ENABLED === 'true',
     dualEnabled: process.env.HOP_DUAL_ENABLED === 'true',
+    originalFrontendModelMode: process.env.HOP_ORIGINAL_FRONTEND_MODEL_MODE || 'local',
     contentKey: process.env.HOP_CONTENT_KEY || '',
     restorePending: process.env.HOP_RESTORE_PENDING === 'true',
     requireKnowledge: process.env.HOP_REQUIRE_KNOWLEDGE === 'true',
@@ -37,6 +38,7 @@ export function getSettings(overrides: Record<string, unknown> = {}) {
     ...overrides,
   };
   if (!['local', 'mock'].includes(String(result.modelMode))) throw new Error('Invalid HOP_MODEL_MODE');
+  if (!['local','prototype'].includes(String(result.originalFrontendModelMode))) throw new Error('Invalid HOP_ORIGINAL_FRONTEND_MODEL_MODE');
   if (!['ollama', 'openai'].includes(String(result.llmBackend))) throw new Error('Invalid HOP_LLM_BACKEND');
   if (!Number.isInteger(result.port) || result.port < 0 || result.port > 65535) throw new Error('Invalid HOP_PORT');
   if (!Number.isFinite(result.llmTimeoutMs) || result.llmTimeoutMs < 1) throw new Error('Invalid HOP_LLM_TIMEOUT_MS');

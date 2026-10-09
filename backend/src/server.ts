@@ -19,6 +19,7 @@ import { V2Database } from './v2/db.ts';
 import { MalssiService, CONSENT_VERSION } from './v2/service.ts';
 import { publicV2, routeV2 } from './v2/routes.ts';
 import { V2Error } from './v2/errors.ts';
+import { routeOriginalFrontend } from './original-frontend.ts';
 
 function json(res: ServerResponse, code: number, value: unknown) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -191,6 +192,7 @@ export async function createApp(settings: Settings = getSettings(), gateway: Mod
         res.setHeader('Set-Cookie',cookie('',settings.cookieSecure,true,settings.cookieSameSite));
         json(res,200,{deleted:true}); return;
       }
+      if (await routeOriginalFrontend(req,res,owner,malssi,gateway,settings.originalFrontendModelMode)) return;
       if (await routeV2(req,res,owner,malssi,store)) return;
       if (req.method === 'POST' && path === '/api/auth/password') {
         limiter.hit('password:'+owner,5,60000);

@@ -145,35 +145,5 @@
       "path": "js/core/utils.js",
       "sha256": "2da0a49dcb38da89b913ee2147bd1c392e75c5a4be7a2525bf1fbab6b6bba8a1"
     }
-  ],
-  "accepted_edits": {
-    "css/base.css": {
-      "sha256": "c2ec1feb7ec2aedf93a016a1dc327c5be8aaa4c4404cc0cc63b9b2ed4d2f71bf",
-      "reason": "글꼴을 사이트 안(assets/fonts)에서 불러옴"
-    },
-    "css/columns.css": {
-      "sha256": "dc89cfa7ad8b23e868ce93fcfcafcc176158c83a1e0c5576e33b49952b075666",
-      "reason": "인터랙티브 칼럼"
-    },
-    "index.html": {
-      "sha256": "671bee2432f56be7645d0ecca2dbaee1d1314053e81160ca594928760a13c0f5",
-      "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
-    },
-    "js/components/AboutScreen.js": {
-      "sha256": "ee86787df475d7157a9d69de37918861118ef823fef1e2553a85a6430ace7dad",
-      "reason": "서비스 소개 문구 수정"
-    },
-    "js/components/ColumnsScreen.js": {
-      "sha256": "ce9f94add12fd565507cf47a0f546e54cc76a96271b230bdbfe585065d73d248",
-      "reason": "인터랙티브 칼럼"
-    },
-    "js/core/columns.js": {
-      "sha256": "d98c686288365e741e6a248fb746b359596b39b49ad9073c2e0d3735d9707250",
-      "reason": "칼럼 그림 연결"
-    },
-    "js/core/questions.js": {
-      "sha256": "78dc2362cfd511d366438bdfaba2787c12f2aba6bd78d9ee27a0a0bf7d1368fd",
-      "reason": "생활 배경 질문 문구 수정"
-    }
-  }
+  ]
 }

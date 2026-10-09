@@ -16,6 +16,7 @@ x-runtime: &runtime
   HOP_V2_ALLOW_DRAFT: ${HOP_V2_ALLOW_DRAFT:-false}
   HOP_CONTENT_KEY: ${HOP_CONTENT_KEY:?Set a 32-byte base64 key}
   HOP_V2_MODEL_ENABLED: ${HOP_V2_MODEL_ENABLED:-false}
+  HOP_ORIGINAL_FRONTEND_MODEL_MODE: ${HOP_ORIGINAL_FRONTEND_MODEL_MODE:-local}
   HOP_MODEL_MODE: local
   HOP_LLM_BASE_URL: ${HOP_LLM_BASE_URL:-http://host.docker.internal:18011/v1}
   HOP_LLM_MODEL: ${HOP_LLM_MODEL:-configure-your-local-model}

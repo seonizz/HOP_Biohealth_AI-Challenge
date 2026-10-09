@@ -12,6 +12,7 @@ COPY --chown=node:node docs/MALSSI_QUESTIONNAIRE_V1.json ./docs/MALSSI_QUESTIONN
 COPY --chown=node:node src ./src
 COPY --chown=node:node migrations ./migrations
 COPY --chown=node:node public ./public
+COPY --chown=node:node data/original-frontend.json data/original-model-utils.js data/original-mock-model.js ./data/
 COPY --chown=node:node scripts/migrate.ts scripts/grant-runtime.ts scripts/malssi-worker.ts scripts/malssi-retention.ts scripts/malssi-deletion-ledger.ts ./scripts/
 USER node
 STOPSIGNAL SIGTERM
