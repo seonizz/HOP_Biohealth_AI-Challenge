@@ -160,16 +160,16 @@
       "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
     },
     "js/components/AboutScreen.js": {
-      "sha256": "3f995641ef1fd62fcb55d1145f83b6509743eb3fdad192ff8caf5172e7831ab2",
-      "reason": "서비스 소개 문구 수정, 큰 그림을 고화질 front로, 제목 줄바꿈, 스크롤 등장 애니메이션"
+      "sha256": "5c131feb3308614fa34bd4d42e79794815d69ab57ba681e273d0a694c6441738",
+      "reason": "소개글 개편(2026HOP/소개글_정립.txt), 큰 그림 고화질 front, 스크롤 등장 애니메이션"
     },
     "js/components/ColumnsScreen.js": {
       "sha256": "7b41193eb07cc1c2e1cd616ab020bc7240331eb8cecc682819dd408152c6d8ba",
       "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구"
     },
     "js/core/columns.js": {
-      "sha256": "d98c686288365e741e6a248fb746b359596b39b49ad9073c2e0d3735d9707250",
-      "reason": "칼럼 그림 연결"
+      "sha256": "6f03ed3592ceec8e2ce86fc8a018585a75eea189ebeea12bc4a0a97ae52596c5",
+      "reason": "칼럼 그림 연결, 환자의 가족이 된다는 것 제목 정리"
     },
     "js/core/questions.js": {
       "sha256": "96d2ecd3344bca4e97b472affb2307d709a8a05fc32ba8026bd2e05c226ad6ab",
@@ -216,12 +216,16 @@
       "reason": "해 보세요 카드에 표시용 클래스"
     },
     "js/core/utils.js": {
-      "sha256": "56d5daf499cbc868af87f4b3093cd2d1628dbdcec3fadf99f00a052bd48c82ed",
+      "sha256": "e318ee55d89f0031d54c7c1fe6864649b5a506b6ba7c0d67235ec96a651ec4e1",
       "reason": "등장 애니메이션 도우미(reveal·popChars·typeText)"
     },
     "js/components/ResultScreen.js": {
       "sha256": "97fe8ed3b2a1e61c759196d74b8a981345ab571f3df54544f8ae24c80058f282",
       "reason": "결과 화면 등장 애니메이션(글자·카드·첫 문장 타자), 복사는 전체 문장"
+    },
+    "css/about.css": {
+      "sha256": "7fc4509e7f529005a57cce19709a156a418dc18218400af8501c9edc1854065e",
+      "reason": "소개글 개편(데이터·질문 근거·웹·꼭 알아 두세요, 자세히 보기)"
     }
   }
 }
