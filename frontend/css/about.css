@@ -94,10 +94,13 @@
 .more summary{cursor:pointer;font-family:var(--display);color:var(--stem);list-style:none;display:inline-flex;align-items:center;gap:6px}
 .more summary::after{content:"▾";transition:transform .25s}
 .more[open] summary::after{transform:rotate(180deg)}
-.more p{font-size:15.5px;margin:10px 0;max-width:52em}
-.more dl{margin:10px 0;display:grid;gap:10px;max-width:52em}
-.more dt{font-family:var(--display);color:var(--stem)}
-.more dd{margin:2px 0 0;font-size:15.5px}
+.more[open]{background:var(--card);border-radius:22px;padding:16px 22px 18px}
+.more p{font-size:15.5px;line-height:1.75;margin:12px 0 0;max-width:56em}
+/* CFI 원리 네 가지: 2×2, 제목 바로 아래 내용 (왼쪽 초록 선) */
+.more dl.pr{margin:16px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 30px}
+.more dl.pr > div{border-left:3px solid var(--leaf);padding:0 0 0 14px}
+.more dt{font-family:var(--display);font-size:18px;color:var(--stem);line-height:1.4}
+.more dd{margin:4px 0 0;font-size:15px;line-height:1.7;color:var(--ink)}
 
 /* 04 웹: 상자 없이 그림 + 글 */
 .web{display:grid;grid-template-columns:1fr 1fr;gap:48px}
@@ -112,5 +115,5 @@
 .notice p{margin:0}
 
 @media (max-width:1100px){.charts{grid-template-columns:1fr}.bignums{grid-template-columns:repeat(2,minmax(0,1fr));row-gap:22px}.bignums div:nth-child(3){padding-left:0;border-left:0}}
-@media (max-width:900px){.ahero,.flow,.web{grid-template-columns:1fr}.flow li::after{display:none}.ahero{padding:30px}.asec{margin-top:64px}.asec h3.t{font-size:27px}.sscs{grid-template-columns:1fr 1fr}.sscs li::after{display:none}.learn-row{grid-template-columns:1fr}.learn-row i{display:none}.basis > li{grid-template-columns:44px 1fr}.qnum{font-size:40px}}
+@media (max-width:900px){.ahero,.flow,.web{grid-template-columns:1fr}.flow li::after{display:none}.ahero{padding:30px}.asec{margin-top:64px}.asec h3.t{font-size:27px}.sscs,.more dl.pr{grid-template-columns:1fr}.sscs li::after{display:none}.learn-row{grid-template-columns:1fr}.learn-row i{display:none}.basis > li{grid-template-columns:44px 1fr}.qnum{font-size:40px}}
 @media (max-width:600px){.bignums{grid-template-columns:1fr}.bignums div{padding-left:0;border-left:0}.bar{grid-template-columns:1fr auto}.bar .bk{grid-column:1/-1}}

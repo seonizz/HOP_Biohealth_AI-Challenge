@@ -148,7 +148,7 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "f0db7d4bf0ba20d5ec54f94ae9a5be655d8516080b9a25e4c015290bb8574f85",
+      "sha256": "35a5828f28607ea2f13eaa965be94a9ff3aa6318d9e1475d5d46d00caf323830",
       "reason": "사이트 안 글꼴, 여백, 로고, ✓✕ 목록, 등장 애니메이션, 공통 내비게이션 바, 내비게이션 시작 버튼 작게"
     },
     "css/columns.css": {
@@ -160,7 +160,7 @@
       "reason": "Google Fonts 링크 제거, 칼럼 본문 스크립트 추가"
     },
     "js/components/AboutScreen.js": {
-      "sha256": "6752979587f19179c6b3416628b3c0944e63569503fafca845ba9a46946bc904",
+      "sha256": "402c333df651d0808aef123ede55112502d4528b3d67f775858b6e662e4b4dfc",
       "reason": "소개글 개편(막대 그래프, 흐름, 펼침 목록), 스크롤 등장, 내비게이션 바"
     },
     "js/components/ColumnsScreen.js": {
@@ -220,16 +220,16 @@
       "reason": "등장 애니메이션 도우미(reveal)"
     },
     "js/components/ResultScreen.js": {
-      "sha256": "fdb34611beee2c39a780c2c1de85c7ff18068761df2a76f883a755ad5f9ff223",
-      "reason": "결과 화면 내비게이션 바, 카드 단위 등장 애니메이션"
+      "sha256": "ce49bb8d53274c0c7cd7bdd4030003ee43134079ec40f7991e3564d8c6fd3b38",
+      "reason": "결과 화면 내비게이션 바, 카드 단위 등장 애니메이션, 문장 복사를 연한 글씨로"
     },
     "css/about.css": {
-      "sha256": "cad331fb3b89a7d7c8a9524ff714c2004c04d9ca72b1bd6aeb928eecb7268c0d",
+      "sha256": "d699c30c4fcfa244abaa47703d6893bbfe5e0f7bdc64f41bd6002e3bf6005c96",
       "reason": "소개글 개편: 번호·여백으로 단계 구분, 큰 숫자·막대 그래프, 상자 줄임"
     },
     "css/start.css": {
-      "sha256": "14d77d712d9c7ce236eaa0b83590188fc48d0ee513486b0237b2880e19e4bf9b",
-      "reason": "시작하기 버튼 위치·대비, 위쪽 여백 정리"
+      "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb",
+      "reason": "시작하기 버튼 위치·대비·사선 빛, 위쪽 여백 정리"
     },
     "js/components/RecordsScreen.js": {
       "sha256": "05b50407f7135e4e347e586c606f9d98cefc3fa2dadf01db407b772e9a76f2d4",
