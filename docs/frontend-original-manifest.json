@@ -148,7 +148,7 @@
   ],
   "accepted_edits": {
     "css/base.css": {
-      "sha256": "885d5183af0195d3bc8af4b9b7921901e2e5d9602e22c6a28681d27b7a015641",
+      "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e",
       "reason": "사이트 안 글꼴, 여백, 로고, ✓✕ 목록, 등장 애니메이션, 공통 내비게이션 바, 내비게이션 시작 버튼 작게"
     },
     "css/columns.css": {
@@ -176,8 +176,8 @@
       "reason": "생활 배경 문구, 이름 필수, 대처+받아 본 도움 합침, 당신의 마음 첫 질문을 사용자 중심으로, 왜 힘들어하는지 예시를 앞서 고른 일에 맞춤"
     },
     "js/components/TopBar.js": {
-      "sha256": "ac2472c87cf9b6c33c1a53d06f971ccd6a65eee16d2c68e0da4d0185bee1db2c",
-      "reason": "로고 버튼, 공통 내비게이션 바(NavBar)"
+      "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3",
+      "reason": "로고 버튼, 공통 내비게이션 바(NavBar), 로고 그림"
     },
     "js/app.js": {
       "sha256": "66fdb677f82953d3793f565dded368472c15e32245b53d6acd83da635cef0248",
@@ -188,16 +188,16 @@
       "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 7·14문항 응원, 결과 만드는 동안 로딩 단계·다시 시도, 함수형 답변 예시"
     },
     "js/components/ChatInput.js": {
-      "sha256": "d6b381236a44a06fd95703f2d1f1c10e72212dc50c4ea6a5f104a8ee6131a117",
-      "reason": "네 → 직접 입력에서도 이전 질문으로, 직접 입력 예시 문구(ownPh)"
+      "sha256": "ee8c642b20cb06c9a076b2beafcc20a27c6b63dfa98392695af8d030fcd13e6c",
+      "reason": "네 → 직접 입력에서도 이전 질문으로, 직접 입력 예시 문구(ownPh), 건너뛰기·주 버튼 자리 통일"
     },
     "js/components/ChatScreen.js": {
       "sha256": "b6749bef6fd4908a95b03e8933461c4e381e57b94156bc31f3d3942c41045ca6",
       "reason": "대화 중 나가기 확인 창, 결과 만드는 동안 로딩 카드"
     },
     "css/chat.css": {
-      "sha256": "bea8eb9d826ca9ace2e0d8a966337da239e63bf629db0d7d27560f8f959d6471",
-      "reason": "대화 중 나가기 확인 창, 선택지 칸을 줄여 질문이 보이게, 로딩 카드"
+      "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197",
+      "reason": "대화 중 나가기 확인 창, 선택지 칸을 줄여 질문이 보이게, 로딩 카드, 버튼 자리 통일"
     },
     "js/core/assets.js": {
       "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12",
