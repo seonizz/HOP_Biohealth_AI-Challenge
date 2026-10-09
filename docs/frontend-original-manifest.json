@@ -172,8 +172,8 @@
       "reason": "칼럼 그림 연결, 환자의 가족이 된다는 것 제목 정리, 글쓴이·사연 표시"
     },
     "js/core/questions.js": {
-      "sha256": "96d2ecd3344bca4e97b472affb2307d709a8a05fc32ba8026bd2e05c226ad6ab",
-      "reason": "생활 배경 질문 문구 수정, 이름 질문 건너뛰기·되묻기 제거"
+      "sha256": "ecdb2808d1edb274648b0effde473c20b99cd5aba11ffaea078688b1afa382fc",
+      "reason": "생활 배경 문구, 이름 필수, 대처+받아 본 도움 합침, 당신의 마음 첫 질문을 사용자 중심으로"
     },
     "js/components/TopBar.js": {
       "sha256": "ac2472c87cf9b6c33c1a53d06f971ccd6a65eee16d2c68e0da4d0185bee1db2c",
@@ -188,8 +188,8 @@
       "reason": "이전 질문을 첫 질문까지 여러 번, 후속·보충 질문에서도 뒤로, 7·14문항 응원, 결과 만드는 동안 로딩 단계·다시 시도"
     },
     "js/components/ChatInput.js": {
-      "sha256": "4664a798748e2a3701613ec6e29f52a7f881c773c4b33bd3bf6906517cb0ccfd",
-      "reason": "네 → 직접 입력 창에서도 이전 질문으로"
+      "sha256": "d6b381236a44a06fd95703f2d1f1c10e72212dc50c4ea6a5f104a8ee6131a117",
+      "reason": "네 → 직접 입력에서도 이전 질문으로, 직접 입력 예시 문구(ownPh)"
     },
     "js/components/ChatScreen.js": {
       "sha256": "b6749bef6fd4908a95b03e8933461c4e381e57b94156bc31f3d3942c41045ca6",
@@ -224,8 +224,8 @@
       "reason": "결과 화면 내비게이션 바, 카드 단위 등장 애니메이션, 문장 복사를 연한 글씨로"
     },
     "css/about.css": {
-      "sha256": "d699c30c4fcfa244abaa47703d6893bbfe5e0f7bdc64f41bd6002e3bf6005c96",
-      "reason": "소개글 개편: 번호·여백으로 단계 구분, 큰 숫자·막대 그래프, 상자 줄임"
+      "sha256": "5e9e45eb9a045f92869c320b8f42ab89030b144b71d7797f59f342d3e01bc849",
+      "reason": "소개글 개편, 번호·제목 정렬, 도와드려요 그림 가운데 + 점선"
     },
     "css/start.css": {
       "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb",
