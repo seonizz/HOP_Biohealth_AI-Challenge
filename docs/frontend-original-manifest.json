@@ -164,7 +164,7 @@
       "reason": "서비스 소개 문구 수정, 큰 그림을 고화질 front로"
     },
     "js/components/ColumnsScreen.js": {
-      "sha256": "8b976ad51ea9404b1e5a5de873c44e65a258dfd97ae9b785c3a0200cedb43277",
+      "sha256": "ee495abb60ee5ffe3fbde99c9b019d12248829dc57b05ead7663034a7159910d",
       "reason": "칼럼 카드·읽기 화면(본문 전체), 머리 배너 복구"
     },
     "js/core/columns.js": {
