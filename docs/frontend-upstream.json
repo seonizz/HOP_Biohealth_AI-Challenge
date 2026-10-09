@@ -245,7 +245,7 @@
     {
       "path": "public/js/components/ChatScreen.js",
       "upstream_sha256": "b6749bef6fd4908a95b03e8933461c4e381e57b94156bc31f3d3942c41045ca6",
-      "applied_sha256": "21c4bf180ab5456a61879e4c6ea9b3ab135accd13088f7f4a723c5186db7c10f"
+      "applied_sha256": "07dcda4b70e7b121d52742b733b07ec3b4c949a4f0b25a643e0b0b3c05393f45"
     },
     {
       "path": "public/js/components/ColumnsScreen.js",
@@ -265,7 +265,7 @@
     {
       "path": "public/js/core/conversation.js",
       "upstream_sha256": "e6a13ad30274ea3159cea9493ab41ff2f1c46d8e6051d62cb942225c0c8b5ed1",
-      "applied_sha256": "bfd1c1bc00aad1105ec3ef1808a032777a9888b6100a01e540a4dfdc866d4231"
+      "applied_sha256": "56a6f57cd98b60d0c17492a67cde7b9f929781bfb96b9cc1322468adda0ce955"
     },
     {
       "path": "public/js/core/questions.js",
@@ -295,6 +295,7 @@
     "Removed stale About sentence saying the trained model will be integrated later.",
     "Atomic result API shows pending loading and completes all steps on response; no fabricated timed model phase progression.",
     "Local font MIME types supported without external font requests.",
-    "Font license text is preserved; trailing spaces normalized for repository whitespace checks."
+    "Font license text is preserved; trailing spaces normalized for repository whitespace checks.",
+    "Sent answers appear immediately; the next prompt waits for the server/model response. Retries reconcile with server logs without duplicate bubbles, and internal model-state warnings are not shown in the UI."
   ]
 }

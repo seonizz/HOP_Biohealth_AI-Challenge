@@ -40,7 +40,7 @@
 
 `selected`는 해당 질문 보기의 0 기반 번호입니다. 서버가 보기 문구·메타를 제공하고 검증합니다. 단일 보기에는 하나, 단독 보기에는 다른 선택을 함께 보낼 수 없습니다. “네, 직접 입력” 보기의 부가 문구는 `text`로 보냅니다. `follow_up:true`인 현재 질문에는 동일 플래그로 답해야 합니다.
 
-응답은 `id,revision,name,chat_title,status,question,progress,section,canGoBack,log`를 포함합니다. `chat_title`은 모델이 이름 답변의 실제 원문에서 추출한 호칭이며 식별되지 않으면 빈 문자열입니다. `status=ready`이면 현재 질문은 `null`입니다. 답변 저장 후 모델 실패 시 HTTP 200과 `model_warning`을 반환합니다. 입력은 이미 저장되어 있으며 다음 질문을 진행할 수 있습니다. 항상 반환된 `revision`을 다음 요청에 사용합니다. 409가 발생하면 현재 상태를 다시 조회합니다.
+응답은 `id,revision,name,chat_title,status,question,progress,section,canGoBack,log`를 포함합니다. `chat_title`은 모델이 이름 답변의 실제 원문에서 추출한 호칭이며 식별되지 않으면 빈 문자열입니다. `status=ready`이면 현재 질문은 `null`입니다. 답변 저장 후 모델 실패 시 HTTP 200과 `model_warning`을 반환합니다. 이 내부 안내는 UI에 표시하지 않으며 입력은 이미 저장되어 있고 다음 질문을 진행할 수 있습니다. UI는 전송한 답변을 즉시 표시한 뒤 이 API 응답을 기다려 다음 질문을 표시합니다. 항상 반환된 `revision`을 다음 요청에 사용합니다. 409가 발생하면 현재 상태를 다시 조회합니다.
 
 ## 서버 내부 상태
 

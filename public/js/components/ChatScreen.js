@@ -36,7 +36,7 @@ const ChatScreen={
   },
   started(){
     if($("chat").hidden||typeof S==="undefined"||!S)return false;
-    return S.log.some(m=>m.who==="me")||[...$("input").querySelectorAll("textarea,input")].some(e=>e.value.trim())||
+    return (this.messages||S.log).some(m=>m.who==="me")||[...$("input").querySelectorAll("textarea,input")].some(e=>e.value.trim())||
       [...$("input").querySelectorAll(".chip")].some(e=>e.getAttribute("aria-pressed")==="true");
   },
   leave(go){
@@ -76,6 +76,6 @@ const ChatScreen={
   meSay(t){const d=document.createElement("div");d.className="msg me";d.textContent=t;$("log").appendChild(d);$("log").scrollTop=1e9;},
   // 서버/모델을 기다리는 동안 입력 중… 점 애니메이션을 보여 줘요.
   typing(face,work){const r=document.createElement("div");r.className="ai-row";
-    r.innerHTML=`<img src="${M[face]}" alt=""><div class="msg"><span class="dots"><span></span><span></span><span></span></span></div>`;
+    r.innerHTML=`<img src="${M[face]}" alt=""><div class="msg" role="status" aria-label="답변을 기다리고 있어요"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span></div>`;
     $("log").appendChild(r);$("log").scrollTop=1e9;return Promise.resolve(work).finally(()=>r.remove());}
 };

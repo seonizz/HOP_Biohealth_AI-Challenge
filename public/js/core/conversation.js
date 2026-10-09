@@ -22,7 +22,6 @@ function renderConversation(view,token){
   if(view.status==="ready"){finish(token);return;}
   const q=view.question;
   ChatInput.render(q,(text,selected,custom="",skipped=false)=>answer(text,selected,custom,skipped),view.canGoBack?goBack:null);
-  if(view.model_warning)ChatInput.error(view.model_warning);
 }
 
 async function recoverConversation(error,token,retry,present=(message,operation)=>ChatInput.error(message,operation)){
@@ -39,18 +38,21 @@ async function recoverConversation(error,token,retry,present=(message,operation)
   if(token===conversationToken)present(error.message,retry);
 }
 
-async function submitConversation(path,body,token){
+async function submitConversation(path,body,token,message){
   if(token!==conversationToken)return;
+  // 전송한 말은 즉시 보여 주고, 다음 질문은 모델 응답 뒤 서버 기록으로 확정해요.
+  // 재시도나 답변 수정도 같은 서버 기록 뒤에 표시하므로 말풍선이 중복되지 않아요.
+  if(message)ChatScreen.sync([...S.log,message]);
   try{
     const view=await ChatScreen.typing(S?.question?.face||"ponder",API.request(path,{method:"POST",body}));
     if(token===conversationToken)renderConversation(view,token);
-  }catch(error){await recoverConversation(error,token,()=>submitConversation(path,body,token));}
+  }catch(error){await recoverConversation(error,token,()=>submitConversation(path,body,token,message));}
 }
 
 function answer(text,selected,custom="",skipped=false){
   if(!S?.question)return;
   const body={revision:S.revision,question_id:S.question.id,text,selected,custom,skipped,follow_up:!!S.question.follow_up};
-  return submitConversation(`/api/intakes/${S.id}/answers`,body,conversationToken);
+  return submitConversation(`/api/intakes/${S.id}/answers`,body,conversationToken,{who:"me",text,fu:body.follow_up});
 }
 
 function goBack(){

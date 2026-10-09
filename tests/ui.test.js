@@ -18,6 +18,7 @@ class Element {
     };
   }
   appendChild(child) { child.parent = this; this.children.push(child); return child; }
+  get lastChild() { return this.children.at(-1) ?? null; }
   prepend(child) { child.parent = this; this.children.unshift(child); }
   remove() { if (this.parent) this.parent.children = this.parent.children.filter(child => child !== this); }
   focus() { this.focused = true; }
@@ -80,22 +81,23 @@ function deferred() {
   let resolve, reject; const promise = new Promise((done, fail) => { resolve = done; reject = fail; }); return { promise, resolve, reject };
 }
 
-function conversationHarness(request) {
+function conversationHarness(request, { realUI = false } = {}) {
   const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo']);
   document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden></div>';
   const context = vm.createContext({
     document, window:{ scrollTo() {} }, StartScreen: { updRecN() {} },
-    ChatInput: { clear() {}, render() {}, error(message) { throw new Error(message); } },
+    M: { hello:'hello.png', ponder:'ponder.png', hear:'hear.png' },
+    ...(!realUI ? { ChatInput: { clear() {}, render() {}, error(message) { throw new Error(message); } } } : {}),
     API: { request },
   });
-  vm.runInContext(script('core/utils.js') + script('components/ChatScreen.js') + script('core/conversation.js') + '\nglobalThis.ui = ChatScreen; globalThis.flow = { begin, leaveConversation, renderConversation, show, finish };', context);
-  context.ui.typing = (_, work) => Promise.resolve(work);
+  vm.runInContext(script('core/utils.js') + (realUI ? script('core/questions.js') + script('components/ChatInput.js') : '') + script('components/ChatScreen.js') + script('core/conversation.js') + '\nglobalThis.ui = ChatScreen; globalThis.flow = { begin, leaveConversation, renderConversation, show, finish, answer, goBack };', context);
+  if (!realUI) context.ui.typing = (_, work) => Promise.resolve(work);
   return { document, context };
 }
 
 const conversationView = chatTitle => ({
   id: 'intake-1', revision: 1, chat_title: chatTitle, name: '시연 친구', log: [], progress: 4,
-  section: '바람', status: 'active', question: { id: 'want' }, canGoBack: false,
+  section: '바람', status: 'active', question: { id: 'want', type:'text', required:true }, canGoBack: false,
 });
 
 test('server chat title is rendered literally and absent titles clear the previous name', () => {
@@ -260,4 +262,140 @@ test('DB multi choice without own text keeps its done action and only submits se
   await box.querySelector('.done').click(); assert.equal(submitted, undefined);
   box.querySelectorAll('.chip')[1].click(); await box.querySelector('.done').click();
   assert.equal(submitted[0], '둘째 보기'); assert.deepEqual(Array.from(submitted[1]), [1]); assert.equal(submitted[2], '');
+});
+
+const settleUI = () => new Promise(resolve => setImmediate(resolve));
+const prompt = { who:'ai', text:'어떤 이야기를 나누고 싶으세요?', face:'ponder', fu:false };
+const nextPrompt = { who:'ai', text:'그분과 어떤 관계인가요?', face:'hear', fu:false };
+
+for (const kind of ['text', 'one', 'multi', 'follow-up', 'skip']) {
+  test(`${kind} answers appear immediately and await the model before showing the next question`, async () => {
+    const response = deferred(), calls = [];
+    const { document, context } = conversationHarness((path, options) => {
+      // The user bubble must already be visible when the HTTP request starts.
+      assert.equal(document.getElementById('log').querySelectorAll('.me').length, 1);
+      calls.push([path, options.body]); return response.promise;
+    }, { realUI:true });
+    const view = conversationView('친구'); view.log = [prompt];
+    if (kind === 'one') view.question = { id:'want', type:'one', opts:['대화를 시작하고 싶어요'], noOwn:true, required:true };
+    if (kind === 'multi') view.question = { id:'want', type:'multi', opts:['대화를 시작하고 싶어요'], noOwn:true, required:true };
+    if (kind === 'follow-up') view.question.follow_up = true;
+    if (kind === 'skip') view.question.required = false;
+    context.flow.renderConversation(view, 0); context.flow.show('chat');
+    const input = document.getElementById('input'), log = document.getElementById('log');
+    let send;
+    if (['text', 'follow-up'].includes(kind)) {
+      document.getElementById('ta').value = '<친구>에게 먼저 말을 걸고 싶어요.';
+      send = document.getElementById('send');
+    } else if (kind === 'skip') send = input.querySelector('.skip');
+    else {
+      send = input.querySelector('.chip');
+      if (kind === 'multi') { send.click(); send = input.querySelector('.done'); }
+    }
+    send.click(); send.click();
+    assert.equal(calls.length, 1, 'duplicate sends are blocked while waiting');
+    const bubble = log.querySelector('.me');
+    assert.equal(bubble.textContent, calls[0][1].text);
+    assert.equal(bubble.children.length, 0, 'user text is never interpreted as HTML');
+    assert.ok(log.querySelector('.dots'));
+    assert.equal(log.querySelector('[role="status"]').getAttribute('aria-label'), '답변을 기다리고 있어요');
+    assert.equal(log.textContent.includes(nextPrompt.text), false);
+    assert.equal(input.dataset.busy, 'true');
+    assert.ok(input.querySelectorAll('button,input,textarea').every(element => element.disabled));
+    response.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:calls[0][1].text, fu:kind === 'follow-up' }, nextPrompt], question:{ id:'rel', type:'one', opts:['친구'], required:true } });
+    await settleUI();
+    assert.equal(log.querySelector('.dots'), null);
+    assert.equal(log.querySelectorAll('.me').length, 1);
+    assert.equal(log.querySelector('.me'), bubble, 'the confirmed bubble is retained');
+    assert.equal(log.textContent.includes(nextPrompt.text), true);
+    assert.equal(input.dataset.busy, '');
+    assert.ok(input.querySelectorAll('button,input,textarea').every(element => !element.disabled));
+  });
+}
+
+test('failed answers stay visible and retry with the same revision without duplicate bubbles', async () => {
+  const first = deferred(), second = deferred(), calls = [];
+  const { document, context } = conversationHarness((path, options) => {
+    calls.push([path, structuredClone(options.body)]); return calls.length === 1 ? first.promise : second.promise;
+  }, { realUI:true });
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+  document.getElementById('ta').value = '먼저 안부를 묻고 싶어요.'; document.getElementById('send').click();
+  first.reject(Object.assign(new Error('연결을 확인해 주세요.'), { status:0 })); await settleUI();
+  const log = document.getElementById('log'), input = document.getElementById('input');
+  assert.equal(log.querySelectorAll('.me').length, 1);
+  assert.equal(log.querySelector('.dots'), null);
+  assert.equal(log.textContent.includes(nextPrompt.text), false);
+  assert.equal(input.dataset.busy, '');
+  const retry = input.querySelector('.api-error').querySelector('button').click();
+  assert.equal(log.querySelectorAll('.me').length, 1);
+  assert.ok(log.querySelector('.dots'));
+  second.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:calls[0][1].text, fu:false }, nextPrompt] }); await retry;
+  assert.deepEqual(calls[1], calls[0]);
+  assert.equal(log.querySelectorAll('.me').length, 1);
+  assert.equal(log.querySelector('.dots'), null);
+});
+
+test('editing a failed answer replaces its pending bubble and uses the server-confirmed text', async () => {
+  const first = deferred(), second = deferred(); let calls = 0;
+  const { document, context } = conversationHarness(() => ++calls === 1 ? first.promise : second.promise, { realUI:true });
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+  document.getElementById('ta').value = '첫 입력'; document.getElementById('send').click();
+  first.reject(new Error('연결 실패')); await settleUI();
+  document.getElementById('ta').value = '수정한 입력'; document.getElementById('send').click();
+  const log = document.getElementById('log');
+  assert.equal(log.querySelectorAll('.me').length, 1);
+  assert.equal(log.querySelector('.me').textContent, '수정한 입력');
+  second.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:'서버에서 확인한 입력', fu:false }, nextPrompt] }); await settleUI();
+  assert.equal(log.querySelectorAll('.me').length, 1);
+  assert.equal(log.querySelector('.me').textContent, '서버에서 확인한 입력');
+  assert.equal(log.querySelector('.dots'), null);
+});
+
+test('a lost answer response is reconciled from server records after a revision conflict', async () => {
+  const answerResponse = deferred(), readResponse = deferred(), calls = [];
+  const { document, context } = conversationHarness((path, options) => {
+    calls.push([path, options?.method || 'GET']); return options ? answerResponse.promise : readResponse.promise;
+  }, { realUI:true });
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+  document.getElementById('ta').value = '곁에 있고 싶어요.'; document.getElementById('send').click();
+  answerResponse.reject(Object.assign(new Error('현재 기록을 확인해 주세요.'), { status:409 })); await settleUI();
+  assert.equal(document.getElementById('log').querySelectorAll('.me').length, 1);
+  readResponse.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:'곁에 있고 싶어요.', fu:false }, nextPrompt] }); await settleUI();
+  assert.deepEqual(calls, [['/api/intakes/intake-1/answers','POST'], ['/api/intakes/intake-1','GET']]);
+  assert.equal(document.getElementById('log').querySelectorAll('.me').length, 1);
+  assert.equal(document.getElementById('input').querySelector('.api-error'), null);
+});
+
+test('a saved answer continues without displaying the internal model-state warning', async () => {
+  const response = deferred();
+  const { document, context } = conversationHarness(() => response.promise, { realUI:true });
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0);
+  document.getElementById('ta').value = '먼저 안부를 물을게요.'; document.getElementById('send').click();
+  const warning = '답변은 저장했어요. 모델 상태 정리는 다음 답변에서 다시 시도해요.';
+  response.resolve({ ...view, revision:2, model_warning:warning, log:[prompt, { who:'me', text:'먼저 안부를 물을게요.', fu:false }, nextPrompt] }); await settleUI();
+  assert.equal(document.getElementById('input').querySelector('.api-error'), null);
+  assert.equal(document.getElementById('log').textContent.includes(warning), false);
+  assert.equal(document.getElementById('log').querySelector('.me').textContent, '먼저 안부를 물을게요.');
+  assert.equal(document.getElementById('log').textContent.includes(nextPrompt.text), true);
+  assert.equal(document.getElementById('input').dataset.busy, '');
+});
+
+test('leaving while the first answer is pending confirms exit and old replies do not change a new conversation', async () => {
+  const answerResponse = deferred(), beginningResponse = deferred();
+  const { document, context } = conversationHarness(path => path === '/api/intakes' ? beginningResponse.promise : answerResponse.promise, { realUI:true });
+  const view = conversationView('친구'); view.log = [prompt]; context.flow.renderConversation(view, 0); context.flow.show('chat');
+  document.getElementById('ta').value = '기다리는 입력'; document.getElementById('send').click();
+  document.getElementById('ta').value = ''; // Pending bubble alone must still trigger confirmation.
+  context.flow.leaveConversation(); assert.equal(document.getElementById('leaveDlg').open, true);
+  document.getElementById('leaveGo').click();
+  const beginning = context.flow.begin();
+  answerResponse.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:'기다리는 입력', fu:false }, nextPrompt] }); await settleUI();
+  const log = document.getElementById('log');
+  assert.equal(log.querySelectorAll('.me').length, 0);
+  assert.ok(log.querySelector('.dots'), 'the new request keeps its own waiting indicator');
+  assert.equal(document.getElementById('chatTitle').textContent, '');
+  beginningResponse.resolve({ ...conversationView('새 친구'), id:'intake-2', log:[prompt] }); await beginning;
+  assert.equal(document.getElementById('chatTitle').textContent, '새 친구');
+  assert.equal(log.querySelector('.dots'), null);
+  assert.equal(log.querySelectorAll('.me').length, 0);
 });
