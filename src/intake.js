@@ -2,6 +2,8 @@ import { isThin, optLabel, optMeta, renderQuestion, renderText } from './catalog
 import { initialQuestionSet, conditionMatches, followMatches, mergeFollow, branchGateIds } from './question-bank.js';
 import { HttpError } from './errors.js';
 import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
+import { clarificationQuestions, clarificationCandidates } from './clarifications.js';
+import { validateRelationshipMemory } from './relationship-agent.js';
 
 const SKIP = '(건너뛰었어요)';
 const WELCOME = '안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.';
@@ -21,6 +23,7 @@ function snapshot(state) {
   return structuredClone({
     i: state.i, ans: state.ans, tags: state.tags, name: state.name,
     fuCount: state.fuCount, extraObs: state.extraObs, logLen: state.log.length,
+    clarificationAnswers: state.clarificationAnswers || {},
     modelSkipped: state.modelSkipped || {}, nameIndex: state.nameIndex || null, chatTitle: state.chatTitle || '',
   });
 }
@@ -76,6 +79,7 @@ export function createIntake(questionSet = initialQuestionSet) {
 
 function activeQuestion(state) {
   const { questions, gapQuestion } = questionSetOf(state);
+  if (state.pendingFollow?.kind === 'clarification') return { ...clarificationQuestions.find(q=>q.id===state.pendingFollow.questionId), follow_up:true };
   if (state.pendingFollow?.kind === 'gap') return { ...gapQuestion, follow_up: true };
   if (state.pendingFollow) {
     return { ...questions[state.i].follow_up.question, id: state.pendingFollow.questionId,
@@ -184,6 +188,14 @@ export function answerIntake(originalState, input) {
   if (state.pendingFollow) {
     const pending = state.pendingFollow;
     state.pendingFollow = null;
+    if (pending.kind === 'clarification') {
+      const prior=structuredClone(originalState);delete prior.clarificationHistory;
+      state.clarificationHistory=[...(originalState.clarificationHistory||[]),prior];
+      state.clarificationAnswers ||= {};
+      state.clarificationAnswers[question.id]=answer;
+      state.status='ready';
+      return state;
+    }
     if (pending.kind === 'gap') {
       state.extraObs = answer.text;
       state.ans.gap_obs = answer;
@@ -251,21 +263,29 @@ export function backIntake(originalState) {
     // The first question has no preceding prompt; cancelling its uncommitted
     // answer still lets a concurrent correction invalidate the model request.
     if (hadPendingModel) {
-      delete originalState.agentMemory; delete originalState.agentResult; delete originalState.agentRecord;
+      delete originalState.safetySignal; delete originalState.agentStateExecution; delete originalState.agentMemory; delete originalState.agentRelationshipMemory; delete originalState.agentResult; delete originalState.agentRecord;
       originalState.modelStatus = 'not_connected';
       return originalState;
     }
     invalid('back_unavailable', '지금은 이전 질문으로 돌아갈 수 없어요.', 409);
   }
+  if (originalState.pendingFollow?.kind==='clarification' && originalState.clarificationHistory?.length) {
+    const history=structuredClone(originalState.clarificationHistory),state=history.pop();
+    state.clarificationHistory=history;
+    delete state.safetySignal; delete state.agentStateExecution; delete state.agentMemory;delete state.agentRelationshipMemory;delete state.agentResult;delete state.agentRecord;
+    state.modelStatus='not_connected';
+    return state;
+  }
   const state = structuredClone(originalState);
   state.history = structuredClone(historyOf(originalState));
+  delete state.clarificationHistory;
   if (!state.pendingFollow) state.history.pop();
   const previous = state.history.pop();
   const { logLen, ...values } = previous;
   Object.assign(state, values, { status: 'active', pendingFollow: null, prev: null, cur: null,
     modelSkipped: values.modelSkipped || {}, nameIndex: values.nameIndex || null, chatTitle: values.chatTitle || '' });
   state.log.length = logLen;
-  delete state.agentMemory; delete state.agentResult; delete state.agentRecord;
+  delete state.safetySignal; delete state.agentStateExecution; delete state.agentMemory; delete state.agentRelationshipMemory; delete state.agentResult; delete state.agentRecord;
   state.modelStatus = 'not_connected';
   advance(state);
   return state;
@@ -280,6 +300,10 @@ export function applyModelUpdate(originalState, output) {
   const state = structuredClone(originalState);
   state.history = structuredClone(historyOf(originalState));
   state.agentMemory = structuredClone(output.patient_state);
+  if (output.state_agent) state.agentStateExecution=structuredClone(output.state_agent);
+  if (output.safety_signal) state.safetySignal=structuredClone(output.safety_signal);
+  if (output.relationship_memory) state.agentRelationshipMemory=validateRelationshipMemory(output.relationship_memory,context);
+  else delete state.agentRelationshipMemory;
   state.modelStatus = 'connected';
   if (nameIndex) {
     state.name = nameIndex.alias;
@@ -291,12 +315,24 @@ export function applyModelUpdate(originalState, output) {
   }
   state.modelSkipped ||= {};
   for (const decision of plan.skip) state.modelSkipped[decision.question_id] = structuredClone(decision);
+  if (output.finish_early===true) {
+    state.log.length=state.log.findLastIndex(item=>item.who==='me')+1;
+    state.pendingFollow=null;state.status='ready';
+    state.log.push({who:'ai',face:'ponder',fu:false,text:'지금 즉각적인 위험이 있다면 대화를 이어가기보다 응급 도움을 요청하고, 당신의 안전을 먼저 확보해 주세요. 혼자 감당하지 않도록 주변 도움을 함께 요청해 주세요.'});
+  }
   if (state.status === 'active' && !state.pendingFollow) {
     // The next prompt was prepared before the external model call and has not been displayed yet.
     const previous = state.prev;
     state.log.length = state.cur.logLen;
     state.cur = null;
     advance(state, previous);
+  }
+  if (!output.finish_early && output.clarification && state.status==='ready') {
+    const question=clarificationCandidates(state).find(q=>q.id===output.clarification);
+    if (!question) invalid('INVALID_CLARIFICATION','이미 확인한 질문은 다시 묻지 않아요.',422);
+    state.pendingFollow={kind:'clarification',questionId:question.id};
+    state.status='active';state.fuCount++;
+    addPrompt(state,question,true);
   }
   return state;
 }
@@ -330,8 +366,11 @@ function evidenceField(question, state) {
 export function buildContext(state) {
   // Verification history and model evidence include the saved pending answer,
   // but never expose the prepared next prompt before the model accepts it.
+  const latestAnswerId=state.modelPending?.input?.question_id;
   if (state.modelPending) state = { ...preparedModelState(state), log:state.log };
   const { questions, gapQuestion, version } = questionSetOf(state);
+  const latestQuestion=latestAnswerId ? [...questions,...clarificationQuestions].find(question=>question.id===latestAnswerId)||
+    (gapQuestion?.id===latestAnswerId ? gapQuestion : null) : null;
   const gates = branchGateIds(questionSetOf(state));
   // A thin first answer is already evidence even while its follow-up is pending.
   const pending = state.pendingFollow?.kind === 'question' ? state.pendingFollow : null;
@@ -339,15 +378,23 @@ export function buildContext(state) {
   const answers = questions.filter(question => evidenceState.ans[question.id])
     .map(question => payloadAnswer(question, evidenceState.ans[question.id], evidenceState));
   if (state.ans.gap_obs && gapQuestion) answers.push(payloadAnswer(gapQuestion, state.ans.gap_obs, state));
+  for (const question of clarificationQuestions) if(state.clarificationAnswers?.[question.id]) {
+    answers.push(payloadAnswer(question,state.clarificationAnswers[question.id],state));
+  }
   const fields = Object.fromEntries(questions.map(question => [question.id, {
     ...evidenceField(question, evidenceState),
     ...(pending?.questionId === question.id ? { follow_up_pending:true } : {})
   }]));
+  const extraFields=Object.fromEntries(clarificationQuestions.filter(q=>state.clarificationAnswers?.[q.id]).map(q=>[q.id,
+    evidenceField(q,{...state,ans:state.clarificationAnswers})]));
   const value = id => state.ans[id]?.skipped ? '' : state.ans[id]?.text || '';
   return {
     schema_version: '1.0',
+    adaptive_questions:true,
+    clarification_candidates:clarificationCandidates(state).map(q=>({...q,question:renderQuestion(q,state).q})),
     question_set_version:version,
     answered_count: Object.values(evidenceState.ans).filter(answer => !answer.skipped).length,
+    latest_answer: latestQuestion ? {question_id:latestAnswerId,subject:subjectOf(latestQuestion)} : null,
     question_candidates: state.status === 'active' ? questions.slice(state.i)
       .filter(question => !['name','want','cause'].includes(question.id) && !gates.has(question.id) && !evidenceState.ans[question.id] &&
         !state.modelSkipped?.[question.id] && (!question.when || conditionMatches(question.when, evidenceState)))
@@ -361,12 +408,14 @@ export function buildContext(state) {
       alias: state.name || '그분', relationship: fields.rel,
       fields: {
         ...Object.fromEntries(questions.filter(question => subjectOf(question) === 'patient').map(question => [question.id, fields[question.id]])),
+        ...Object.fromEntries(clarificationQuestions.filter(q=>q.subject==='patient'&&extraFields[q.id]).map(q=>[q.id,extraFields[q.id]])),
         ...(state.ans.gap_obs && gapQuestion ? { gap_obs:evidenceField(gapQuestion, state) } : {}),
       },
     },
     supporter: {
       role: 'informant',
-      fields: Object.fromEntries(questions.filter(question => subjectOf(question) === 'supporter').map(question => [question.id, fields[question.id]])),
+      fields: {...Object.fromEntries(questions.filter(question => subjectOf(question) === 'supporter').map(question => [question.id, fields[question.id]])),
+        ...Object.fromEntries(clarificationQuestions.filter(q=>q.subject==='supporter'&&extraFields[q.id]).map(q=>[q.id,extraFields[q.id]]))},
     },
     payload: { name: state.name, tags: [...state.tags], answers },
     profileInput: {
@@ -375,6 +424,7 @@ export function buildContext(state) {
       tags: [...state.tags], answers: Object.fromEntries(Object.entries(state.ans).map(([id, answer]) => [id, answer.text])),
     },
     agent_state: state.agentMemory || null,
+    relationship_state: state.agentRelationshipMemory || null,
     log: structuredClone(state.log), followUps: state.fuCount, model_status: state.modelStatus || 'not_connected',
   };
 }

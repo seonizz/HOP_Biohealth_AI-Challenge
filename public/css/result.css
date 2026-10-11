@@ -5,6 +5,15 @@
 .rside h2{font-family:var(--display);font-weight:400;font-size:40px;line-height:1.3;margin:14px 0 8px;text-wrap:balance}
 .rside p{color:var(--muted);margin:0}
 .cards{display:grid;gap:20px}
+.speech-step{padding-top:22px;margin-top:22px;border-top:1px solid #d8dfc7}
+.speech-step h4{font-size:17px;color:var(--stem);margin:0 0 12px}
+.speech-line{white-space:pre-wrap;margin:0;line-height:1.9}
+.speech-why{margin-top:16px;padding:16px 18px;border-radius:16px;background:rgba(255,255,255,.6);font-size:15px;line-height:1.75}
+.speech-why p{margin:6px 0 10px;white-space:pre-wrap}
+.speech-why summary,.speech-full summary{cursor:pointer;color:var(--stem)}
+.speech-why blockquote{margin:10px 0;padding-left:12px;border-left:3px solid #c8d7b5;white-space:pre-wrap}
+.speech-full{margin-top:22px}.speech-full div{margin-top:12px}
+.care ul{line-height:1.8}.care>div,.next>div{min-width:0}
 .next{display:flex;gap:18px;align-items:center}
 .next img{width:72px;flex:none}
 .actions{display:flex;gap:12px;justify-content:flex-end}

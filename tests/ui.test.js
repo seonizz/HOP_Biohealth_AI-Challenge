@@ -83,7 +83,7 @@ function deferred() {
 
 function conversationHarness(request, { realUI = false } = {}) {
   const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo', 'leaveStay', 'restart1']);
-  document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden><p></p></div>';
+  document.getElementById('thinking').innerHTML='<div class="th-segments"></div><p class="th-count"></p><ol class="th-steps"></ol><div class="th-err" hidden><p></p></div>';
   const listeners={};
   const context = vm.createContext({
     document, window:{ scrollTo() {}, addEventListener(event,listener){listeners[event]=listener;} }, StartScreen: { updRecN() {} }, setTimeout, clearTimeout,
@@ -186,7 +186,7 @@ test('a record refresh started during deletion cannot restore the deleted record
   const records = [1, 2].map(id => ({ id, title: `기록 ${id}`, date: '2026-10-09T00:00:00Z', profile: { rel: '친구', safety: false }, guide: { top: '통합', script: '곁에 있을게요.', next: '연락해 주세요.' }, log: [] }));
   const context = vm.createContext({
     document, M: { basic: 'basic.png', hear: 'hear.png' },
-    GuideCards: { doAvoid: () => '' }, StartScreen: { updRecN() {} },
+    GuideCards: { speech:()=>"",list:()=>"", doAvoid: () => '' }, StartScreen: { updRecN() {} },
     API: { request(path, options) { calls.push([path, options?.method || 'GET']); return options?.method === 'DELETE' ? removal.promise : refresh.promise; } },
   });
   vm.runInContext(script('core/utils.js') + script('core/store.js') + script('components/RecordsScreen.js') + '\nglobalThis.screen = RecordsScreen; globalThis.cache = { get: loadRecs, set: setRecs };', context);
@@ -615,3 +615,19 @@ for (const edit of [false, true]) {
     assert.equal(input.querySelector('.api-error'), null);
   });
 }
+
+
+test('generation loading adds segments only from completed server stages and escapes stage labels',()=>{
+  const {document,context}=conversationHarness(async()=>{});
+  context.ui.think(true);
+  const root=document.getElementById('thinking');
+  assert.equal(root.querySelector('.th-segments').querySelectorAll('i').length,1);
+  context.ui.thinkProgress({status:'running',completed:[{label:'첫마디 작성'}],current:'<검토>',attempt:2});
+  assert.equal(root.querySelector('.th-segments').querySelectorAll('i').length,2);
+  assert.equal(root.querySelector('.th-count').textContent,'완료한 단계 1개');
+  assert.equal(root.querySelector('.th-steps').querySelectorAll('검토').length,0);
+  context.ui.thinkProgress({status:'running',completed:[{label:'첫마디 작성'}],current:'다시 검토',attempt:3});
+  assert.equal(root.querySelector('.th-segments').querySelectorAll('i').length,2);
+  context.ui.thinkProgress({status:'saving',completed:[{label:'첫마디 작성'},{label:'근거 검토'}],current:'결과 저장'});
+  assert.equal(root.querySelector('.th-count').textContent,'완료한 단계 2개');
+});

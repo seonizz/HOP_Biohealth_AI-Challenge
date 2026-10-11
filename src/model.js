@@ -2,9 +2,33 @@ import { HttpError } from './errors.js';
 import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { modelResponseFormat } from './model-schema.js';
 import { trainedContext } from './model-context.js';
+import { OBSERVE, MEMORY, STATE_REVIEW, PROMPT_VERSION } from './relationship-prompts.js';
+import { claimsOf, auditSchema, validateAudits, AUDIT_INSTRUCTION } from './grounding-audit.js';
+import { runRelationshipAgent, assertRetrievedEvidence, relationshipStateRequest, canonicalRelationshipState, canonicalPatientState, currentRelationshipMemory, relationshipQuestionRequest, validateRelationshipQuestions, questionReviewRequest, applyQuestionReview, safetyReviewRequest, validateSchema } from './relationship-agent.js';
 
 const TRAINED_MODEL = 'malssi-gemma4-31b-step100';
 const FINAL_MAX_TOKENS = 4096;
+
+// llama.cpp expands long bounded strings into thousands of grammar rules.
+// Keep structure and source enums in the runner; enforce lengths with the
+// original schema in our validators after generation, before any persistence.
+export function inferenceSchema(schema) {
+  const result=structuredClone(schema);
+  const visit=node=>{
+    if (!node||typeof node!=='object') return;
+    if (node.type==='string') delete node.maxLength;
+    if (node.type==='object'&&node.properties?.interpretation?.type==='string'&&
+        (node.properties.certainty?.const==='tentative'||JSON.stringify(node.properties.certainty?.enum)==='["tentative"]')) {
+      node.properties.interpretation.pattern='^가능한 해석: .+$';
+    }
+    for (const child of Object.values(node)) {
+      if (Array.isArray(child)) child.forEach(visit);
+      else visit(child);
+    }
+  };
+  visit(result);
+  return result;
+}
 const GUIDE_DETAIL_RULE = `최종 가이드는 짧은 결론 한두 문장으로 끝내지 말고, 확인된 상황과 이용자가 전하고 싶은 마음에 맞춰 충분히 설명하세요.
 script는 직접 건넬 말 5~8문장, 약 300~500자를 목표로 두 문단으로 작성하세요. 관찰에 대한 조심스러운 언급, 공감, 이용자의 진심, 상대가 선택할 수 있는 작은 제안과 거절해도 괜찮다는 여지를 자연스럽게 연결하세요.
 doList, avoid, care.tips는 각각 3~4개의 서로 다른 항목을 목표로 하세요. 각 항목은 1~2문장으로 실행 방법과 이유를 설명하며, avoid에는 피할 표현 대신 쓸 수 있는 말이나 행동도 포함하세요.
@@ -161,14 +185,26 @@ function validMemory(value, context) {
 function contextBudgetError(value, status) {
   if (status === 422) return value?.error?.code === 'context_budget_exceeded';
   return status === 400 && value?.error?.type === 'invalid_request_error' && typeof value.error.message === 'string' &&
-    /^Prompt \(\d+\) plus max_tokens \(\d+\) exceeds the \d+-token context budget; no text was truncated$/.test(value.error.message);
+    (/^Prompt \(\d+\) plus max_tokens \(\d+\) exceeds the \d+-token context budget; no text was truncated$/.test(value.error.message) ||
+     /^input length \(\d+ tokens\) exceeds the model's maximum context length \(\d+ tokens\)$/.test(value.error.message));
 }
 
 function correction(reason, repair) {
   if (!reason) return '';
-  const evidence = ['patient_state_validation', 'name_index_validation', 'question_plan_validation'].includes(reason);
+  if(reason==='agent_speech_repeat')return '\n검증 실패: 지금 대화해도 되는지 묻는 허락 질문이 중복됐습니다. 허락은 첫 문장에 한 번만 묻고, 마지막에는 무엇이 걱정되는지 또는 어떤 도움이 필요한지를 물어보세요.';
+  if(reason==='agent_speech_address')return '\n검증 실패: 직접 말을 듣는 상대를 제삼자인 “그분”이나 “대상자”로 설명했습니다. 호칭을 생략하고 “요즘 어떤지 듣고 싶어요”처럼 상대에게 직접 건넬 말로 쓰세요.';
+  if(reason==='agent_script_inference')return '\n검증 실패: script에서 대상자의 마음·원인을 알고 있는 것처럼 설명했습니다. “완벽하게 하고 싶은 마음 때문에”, “얼마나 힘든지 알고 있어”를 삭제하세요. “요즘 계획을 여러 번 고치고 괜찮은지 자주 물어보는 걸 봤어. 어떤 점이 가장 걱정되는지 듣고 싶어.”처럼 원문에 있는 행동과 열린 질문으로 바꾸세요. 원문에 없는 행동은 예시에서도 가져오지 마세요.';
+  if(reason==='agent_hypothesis_language')return '\n검증 실패: tentative 해석을 확정된 사실처럼 썼습니다. 원문이 뒷받침하는 하나의 관계 가설만 남기고 “일 수 있어요”, “가능성이 있어 확인이 필요해요”처럼 불확실성을 명시하세요. 원인·진단을 새로 만들어 표현만 완곡하게 바꾸면 안 됩니다.';
+  if(reason==='agent_claim_audit')return '\n검증 실패: 모든 claims의 id를 audits에 정확히 한 번씩 검토하세요. unsupported나 reported의 plausible 판정이 있으면 approved=false와 구체적인 issues를 반환하세요.';
+  if(reason==='agent_unreported_label')return '\n검증 실패: 인용에 없는 완벽주의·강박·수면장애 명칭으로 행동을 바꾸었습니다. 그런 명칭을 삭제하고 원문에 실제 나온 관찰 행동으로만 다시 쓰세요. tentative로 바꾸는 것만으로 통과할 수 없습니다.';
+  if(reason==='agent_duplicate_findings')return '\n검증 실패: 동일한 해석을 dynamics, strengths, boundaries에 중복했습니다. 각 항목은 서로 달라야 합니다. strengths는 원문에 확인된 긍정적 자원만 쓰고 없으면 []로 두세요.';
+  if(reason==='agent_urgent_action')return '\n검증 실패: 현재 즉각적 위험의 안내가 지정된 긴급 행동과 다릅니다. script, doList, avoid, next, care.tips는 스키마 enum의 문구를 그대로 반환하세요. 동의·대답을 기다리거나 도움을 나중으로 미루지 마세요. care.feel에는 이용자가 원문에서 표현한 감정만 짧게 공감하세요.';
+  if(reason==='agent_goal_missing')return '\n검증 실패: 이용자가 상담/진료 권유를 선택했지만 script에서 빠졌습니다. script 자체에 함께 상담을 알아볼지 상대의 선택을 묻는 발화문을 포함하세요.';
+  const evidence = ['patient_state_validation', 'name_index_validation', 'question_plan_validation',
+    'agent_evidence','agent_retrieval_evidence','agent_safety_context','agent_safety_evidence','agent_relationship_label',
+    'agent_relationship_unknown','agent_memory_subject','agent_memory_name_only'].includes(reason);
   return '\n검증 후 재작성 ' + repair + ': ' + (evidence
-    ? '근거 검증에 실패했습니다. 마지막 user 자료의 같은 사람·질문에서 정확히 복사한 인용만 사용하고 unknown을 확정하지 마세요. 불확실한 이름은 null, 건너뛰기는 []로 유지하세요.'
+    ? '근거 검증에 실패했습니다. retrieval이 있으면 검색된 documents에서만 인용을 선택하세요. 마지막 user 자료의 같은 사람·질문에서 정확히 복사한 인용만 사용하고 unknown을 확정하지 마세요. 불확실한 이름은 null, 건너뛰기는 []로 유지하세요.'
     : '응답 형식 검증에 실패했습니다. 지정된 키와 자료형만 사용한 완전한 JSON 객체 하나를 처음부터 작성하세요. 설명·추가 키·미완성 문자열을 넣지 마세요.') +
     ' 사실이나 진단을 만들지 말고, 앞선 형식 예시의 사실을 현재 자료로 사용하지 마세요. 중복을 줄여 출력 한도 안에서 모든 필수 필드를 완성하세요.';
 }
@@ -213,13 +249,15 @@ function safeUsage(usage) {
 }
 
 export class ModelGateway {
-  constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, fetchImpl = globalThis.fetch,
+  constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, agentFormat = 'json_schema', reasoningEffort = 'none', fetchImpl = globalThis.fetch,
     diagnosticLogger = entry => console.error(JSON.stringify(entry)) } = {}) {
     this.baseUrl = typeof baseUrl === 'string' ? baseUrl.replace(/\/+$/, '') : '';
     this.apiKey = apiKey;
     this.model = model;
     this.protocol = protocol || (model === TRAINED_MODEL ? 'json_prompt' : 'json_schema');
     this.timeoutMs = timeoutMs ?? (this.protocol === 'json_prompt' ? 1800000 : 180000);
+    this.agentFormat = agentFormat;
+    this.reasoningEffort = reasoningEffort;
     this.fetchImpl = fetchImpl;
     this.diagnosticLogger = diagnosticLogger;
   }
@@ -230,7 +268,8 @@ export class ModelGateway {
       return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password && !url.search && !url.hash &&
         typeof this.apiKey === 'string' && Boolean(this.apiKey.trim()) && !/[\u0000-\u001f\u007f-\uffff]/.test(this.apiKey) &&
         typeof this.model === 'string' && Boolean(this.model.trim()) && Number.isInteger(this.timeoutMs) && this.timeoutMs > 0 &&
-        this.timeoutMs <= 2147483647 && ['json_schema', 'json_prompt'].includes(this.protocol) && typeof this.fetchImpl === 'function';
+        this.timeoutMs <= 2147483647 && ['json_schema', 'json_object', 'prompt'].includes(this.agentFormat) &&
+        ['omit', 'none', 'low', 'medium', 'high'].includes(this.reasoningEffort) && ['json_schema', 'json_prompt', 'relationship_agent'].includes(this.protocol) && typeof this.fetchImpl === 'function';
     } catch { return false; }
   }
 
@@ -239,7 +278,7 @@ export class ModelGateway {
     const controller = new AbortController();
     const requestId = typeof options?.requestId === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(options.requestId)
       ? options.requestId : null;
-    const operation = { controller, deadline: performance.now() + this.timeoutMs, requestId };
+    const operation = { controller, deadline: performance.now() + this.timeoutMs, requestId, onProgress:options?.onProgress };
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
     try { return await generate(operation); }
     catch (error) {
@@ -251,6 +290,21 @@ export class ModelGateway {
 
   async respond(context, priorMemory = null, options = {}) {
     return this.operation(options, async operation => {
+      if (this.protocol === 'relationship_agent') {
+        let memory=validMemory(priorMemory || context.agent_state,context);
+        if (memory) memory=canonicalPatientState(memory,context);
+        let relationshipMemory=currentRelationshipMemory(context);
+        let name=context.name_index ?? null;
+        try { name=validateNameIndex(name,context); } catch { name=null; }
+        if (!memory || !relationshipMemory) {
+          const state=await this.relationshipState(context,null,operation,true);
+          memory=state.patient_state; name=state.name_index; relationshipMemory=state.relationship_memory;
+        }
+        const result=await runRelationshipAgent(this,{...context,relationship_state:relationshipMemory},memory,name,operation);
+        return {...validateGuide(result.payload,context),relationship_analysis:result.relationship_analysis,
+          relationship_memory:result.relationship_memory,agent:result.agent,
+          ...(result.conversation_detail?{conversation_detail:result.conversation_detail}:{})};
+      }
       if (this.protocol === 'json_prompt') {
         let memory = validMemory(priorMemory || context.agent_state, context);
         let name = context.name_index ?? null;
@@ -269,9 +323,91 @@ export class ModelGateway {
   }
 
   async updateState(context, priorMemory = null, options = {}) {
-    return this.operation(options, operation => this.protocol === 'json_prompt'
-      ? this.trainedState(context, validMemory(priorMemory, context), operation)
+    return this.operation(options, operation => this.protocol==='relationship_agent'
+      ? this.relationshipState(context,validMemory(priorMemory,context),operation)
+      : this.protocol==='json_prompt' ? this.trainedState(context, validMemory(priorMemory, context), operation)
       : this.complete(context, priorMemory, STATE_PROMPT, 2200, operation, payload => validateState(payload, context)));
+  }
+
+  async relationshipState(context,memory,operation,final=false) {
+    const request=relationshipStateRequest(context,memory,final);
+    const observationSchema=structuredClone(request.schema);
+    delete observationSchema.properties.relationship_memory;
+    observationSchema.required=observationSchema.required.filter(key=>key!=='relationship_memory');
+    const relationshipSchema={type:'object',properties:{relationship_memory:request.schema.properties.relationship_memory},required:['relationship_memory'],additionalProperties:false};
+    const reviewSchema={type:'object',properties:{approved:{type:'boolean'},issues:{type:'array',maxItems:3,items:{type:'object',
+      properties:{reason:{type:'string',minLength:1,maxLength:500},repair:{type:'string',minLength:1,maxLength:600}},required:['reason','repair'],additionalProperties:false}}},required:['approved','issues'],additionalProperties:false};
+    const {prior_state,prior_relationship_memory,...raw}=request.data;
+    const empty={patient:[],supporter:[],relationship:[],unknowns:[]};
+    const stages=[];
+    let result,review=null;
+    for(let repair=0;repair<2;repair++) {
+      const suffix=repair?'_after_review':'';
+      const observations=await this.agentComplete('state_observations'+suffix,OBSERVE,{...raw,...(review?{review}:{})},observationSchema,1800,operation,payload=>{
+        exactKeys(payload,['patient_state','name_index']);
+        assertRetrievedEvidence(payload,request.retrieval);
+        canonicalRelationshipState({...payload,relationship_memory:empty},context,request.schema);
+        return payload;
+      });
+      stages.push('state_observations'+suffix);
+      result=await this.agentComplete('relationship_memory'+suffix,MEMORY,
+        {...raw,observations,prior_relationship_memory,...(review?{review}:{})},relationshipSchema,1800,operation,payload=>{
+          exactKeys(payload,['relationship_memory']);
+          assertRetrievedEvidence(payload,request.retrieval);
+          const canonical=canonicalRelationshipState({...observations,...payload},context,request.schema);
+          const state=validateState({patient_state:canonical.patient_state,name_index:canonical.name_index,question_plan:{skip:[]}},context);
+          return {...state,relationship_memory:canonical.relationship_memory};
+        });
+      stages.push('relationship_memory'+suffix);
+      const claims=claimsOf({patient:result.relationship_memory.patient,supporter:result.relationship_memory.supporter,relationship:result.relationship_memory.relationship});
+      const auditedSchema=structuredClone(reviewSchema);auditedSchema.properties.audits=auditSchema(claims);auditedSchema.required.push('audits');
+      review=await this.agentComplete('state_review'+suffix,STATE_REVIEW+AUDIT_INSTRUCTION,{...raw,state:result,claims},auditedSchema,2200,operation,payload=>{
+        exactKeys(payload,['approved','issues','audits']);
+        if(typeof payload.approved!=='boolean'||!Array.isArray(payload.issues)||payload.issues.length>3||payload.approved!==(payload.issues.length===0)) throw invalidResponse('state_review_schema');
+        for(const issue of payload.issues) {
+          exactKeys(issue,['reason','repair']);
+          for(const [key,max] of [['reason',500],['repair',600]])if(typeof issue[key]!=='string'||!issue[key].trim()||issue[key].length>max)throw invalidResponse('state_review_schema');
+        }
+        validateAudits(payload.audits,claims,payload.approved);
+        return payload;
+      });
+      stages.push('state_review'+suffix);
+      if(review.approved) break;
+      if(repair===1) throw invalidResponse('state_review_rejected');
+    }
+    if (context.adaptive_questions && !final) {
+      const questions=relationshipQuestionRequest(context);
+      let decision=await this.agentComplete('question_plan',questions.prompt,questions.data,questions.schema,1200,operation,
+        value=>validateRelationshipQuestions(value,context,questions));
+      stages.push('question_plan');
+      if(decision.finish_early){
+        const safetyRequest=safetyReviewRequest(questions,decision);
+        const safetyReview=await this.agentComplete('safety_review',safetyRequest.prompt,safetyRequest.data,safetyRequest.schema,1000,operation,
+          value=>validateSchema(value,safetyRequest.schema));
+        stages.push('safety_review');
+        decision.finish_early=safetyReview.basis==='current_physical_danger';
+        decision.safety_signal={...decision.safety_signal,urgent:decision.finish_early,review:safetyReview};
+      }
+      if(decision.question_plan.skip.length||decision.clarification){
+        const reviewRequest=questionReviewRequest(decision,questions);
+        decision=await this.agentComplete('question_review',reviewRequest.prompt,reviewRequest.data,reviewRequest.schema,1800,operation,
+          value=>applyQuestionReview(value,decision,reviewRequest));
+        stages.push('question_review');
+      }
+      Object.assign(result,decision);
+    }
+    result.state_agent={prompt_version:PROMPT_VERSION,stages,reviewed:true};
+    return result;
+  }
+
+  async agentComplete(stage,prompt,payload,schema,maxTokens,operation,validate) {
+    return this.request(({repairReason,repairs,repairFeedback})=>({
+      model:this.model,stream:false,...(this.reasoningEffort==='omit'?{}:{reasoning_effort:this.reasoningEffort}),temperature:0.2,max_tokens:maxTokens,
+      ...(this.agentFormat==='prompt'?{}:{response_format:this.agentFormat==='json_object'?{type:'json_object'}:
+        {type:'json_schema',json_schema:{name:stage,strict:true,schema:inferenceSchema(schema)}}}),
+      messages:[{role:'system',content:prompt+correction(repairReason,repairs)},
+        {role:'user',content:JSON.stringify({stage,data:payload,output_schema:schema,...(repairFeedback?{validation_feedback:repairFeedback}:{})})}],
+    }),operation,validate,stage);
   }
 
   async trainedState(context, memory, operation, finalProjection = false) {
@@ -306,14 +442,15 @@ export class ModelGateway {
   }
 
   async request(body, operation, validate, generation, allowTighter = false) {
-    let tighter = false; let repairReason = null; let repairs = 0;
+    let tighter = false; let repairReason = null; let repairs = 0; let repairFeedback = null;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       ensureTime(operation);
+      operation.onProgress?.({stage:generation,status:'started',attempt});
       const started = performance.now();
       let status = null; let finishReason = null; let usage = null; let response;
       let retry = false; let delay = 0;
       try {
-        const requestBody = JSON.stringify(body({ tighter, repairReason, repairs }));
+        const requestBody = JSON.stringify(body({ tighter, repairReason, repairs,repairFeedback }));
         ensureTime(operation);
         try {
           response = await this.fetchImpl(this.baseUrl + '/chat/completions', {
@@ -327,12 +464,12 @@ export class ModelGateway {
         ensureTime(operation);
         status = Number.isInteger(response.status) ? response.status : null;
         if (!response.ok) {
-          if (allowTighter && [400, 422].includes(status)) {
+          if ([400, 422].includes(status)) {
             let detail;
             try { detail = await response.json(); } catch { /* Never log upstream error bodies. */ }
             ensureTime(operation);
             if (contextBudgetError(detail, status)) {
-              retry = !tighter;
+              retry = allowTighter && !tighter;
               tighter = true;
               throw failure(502, 'MODEL_CONTEXT_TOO_LONG', '모델이 읽을 내용이 많아 답변을 만들지 못했어요. 입력 내용을 확인하고 다시 시도해 주세요.', 'context_budget');
             }
@@ -360,6 +497,7 @@ export class ModelGateway {
         const result = validate(parseContent(choice.message.content));
         ensureTime(operation);
         this.logAttempt(operation, generation, attempt, started, status, finishReason, usage, 'success');
+        operation.onProgress?.({stage:generation,status:'completed',attempt});
         return result;
       } catch (error) {
         // Release an unread error body without retaining or logging its contents.
@@ -370,7 +508,7 @@ export class ModelGateway {
         this.logAttempt(operation, generation, attempt, started, status, finishReason, usage, failure.modelReason || 'internal_failure');
         if (expired || !known || attempt === MAX_ATTEMPTS) throw failure;
         if (error.code === 'MODEL_INVALID_RESPONSE') {
-          repairReason = error.modelReason; repairs++;
+          repairReason = error.modelReason; repairFeedback = error.modelFeedback ? [repairFeedback,error.modelFeedback].filter(Boolean).join('\n') : null; repairs++;
           retry = true;
         }
         if (!retry) throw failure;

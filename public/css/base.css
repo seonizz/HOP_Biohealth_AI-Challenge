@@ -49,6 +49,7 @@ button:focus-visible,textarea:focus-visible{outline:3px solid var(--leaf);outlin
 .script .copy{position:absolute;right:24px;top:24px;background:none;border:0;padding:4px 2px;font-family:var(--body);font-size:14px;color:var(--muted);cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px;transition:color .15s,text-decoration-color .15s} /* 버튼이 아닌 연한 글씨 */
 .script .copy:hover{color:var(--stem);text-decoration-color:currentColor}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start} /* 내용 길이만큼만 (빈 칸 없이) */
+.two.guide-actions{grid-template-columns:minmax(0,1fr)} /* 행동·주의 카드는 각각 본문 전체 폭으로 읽어요. */
 .card ul{margin:0;padding-left:20px;display:grid;gap:6px}
 .avoid{background:var(--cheek-soft)}
 .avoid h3{color:#b65c48}

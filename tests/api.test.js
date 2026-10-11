@@ -41,6 +41,55 @@ async function fixture(t, gateway = { model:'gemma4:12b', updateState:async () =
   return { ...app, base, browser, request };
 }
 
+test('optional confirmations persist through API retries and correction without reasking a skipped prompt', {skip:!databaseUrl}, async t=>{
+  const seen=[];
+  const f=await fixture(t,{model:'gemma4:12b',protocol:'relationship_agent',updateState:async context=>{
+    seen.push(context);
+    return {...update(memory),clarification:context.clarification_candidates?.[0]?.id||null};
+  }});
+  await f.store.pool.query("UPDATE questions SET enabled=FALSE WHERE id<>'name'");
+  const session=await f.browser();
+  let view=(await f.request(session,'/api/intakes','POST',{})).data;
+  let response=await f.request(session,`/api/intakes/${view.id}/answers`,'POST',{revision:view.revision,question_id:'name',text:'지민'});
+  assert.equal(response.status,200);view=response.data;assert.equal(view.question.id,'clarify_help');
+  const input={revision:view.revision,question_id:'clarify_help',follow_up:true,skipped:true};
+  response=await f.request(session,`/api/intakes/${view.id}/answers`,'POST',input);
+  assert.equal(response.status,200);view=response.data;assert.equal(view.question.id,'clarify_response');
+  const context=(await f.request(session,`/api/intakes/${view.id}/context`)).data.context;
+  assert.equal(context.patient.fields.clarify_help.status,'skipped');
+  assert.equal(context.patient.fields.clarify_help.source,'app_user_report');
+  assert.ok(seen.at(-1).clarification_candidates.every(q=>q.id!=='clarify_help'));
+  response=await f.request(session,`/api/intakes/${view.id}/back`,'POST',{revision:view.revision});
+  assert.equal(response.status,200);assert.equal(response.data.question.id,'clarify_help');
+  assert.equal((await f.request(session,`/api/intakes/${view.id}/context`)).data.context.patient.fields.clarify_help,undefined);
+});
+
+test('relationship agent updates and persists internal analysis even for a skipped optional answer', {skip:!databaseUrl}, async t => {
+  const observed=[];
+  const internal={patient:[],supporter:[],relationship:[],unknowns:['추가 관찰은 아직 확인되지 않았어요.']};
+  const gateway={model:'gemma4:12b',protocol:'relationship_agent',updateState:async context=>{
+    observed.push(context);
+    return {...update(memory),relationship_memory:internal};
+  }};
+  const f=await fixture(t,gateway), session=await f.browser();
+  await f.store.pool.query(`INSERT INTO questions(id,kind,sort_order,enabled,subject,definition) VALUES ('reflection_note','base',150,TRUE,'patient',$1)`,
+    [{type:'text',q:'추가로 관찰한 내용을 들려주세요.',sec:'관찰'}]);
+  let view=(await f.request(session,'/api/intakes','POST',{})).data;
+  view=(await f.request(session,`/api/intakes/${view.id}/answers`,'POST',{revision:view.revision,question_id:'name',text:'지민'})).data;
+  assert.equal(view.question.id,'reflection_note');
+  const skipped=await f.request(session,`/api/intakes/${view.id}/answers`,'POST',{
+    revision:view.revision,question_id:'reflection_note',skipped:true});
+  assert.equal(skipped.status,200);view=skipped.data;
+  assert.equal(observed.length,2);
+  assert.equal(observed[1].patient.fields.reflection_note.status,'skipped');
+  assert.deepEqual(observed[1].relationship_state,internal);
+  const context=(await f.request(session,`/api/intakes/${view.id}/context`)).data.context;
+  assert.deepEqual(context.relationship_state,internal);
+  const back=await f.request(session,`/api/intakes/${view.id}/back`,'POST',{revision:view.revision});
+  assert.equal(back.status,200);
+  assert.equal((await f.request(session,`/api/intakes/${view.id}/context`)).data.context.relationship_state,null);
+});
+
 test('UI catalog, browser isolation, CSRF and persisted column interactions', { skip:!databaseUrl }, async t => {
   const f = await fixture(t), a = await f.browser(), b = await f.browser();
   assert.equal(a.bootstrap.questions.length, 29);
@@ -637,4 +686,29 @@ test('shared recovery exhaustion correlates both HTTP failures with one model op
   assert.equal(saved.revision,1);
   assert.equal(saved.model_pending,true);
   assert.equal(saved.log.filter(entry => entry.who === 'me').length,1);
+});
+
+test('generation progress is owner-only, shared by duplicate requests, and contains no draft text', {skip:!databaseUrl},async t=>{
+  let release,started,calls=0;
+  const entered=new Promise(resolve=>started=resolve),gate=new Promise(resolve=>release=resolve);
+  const detail={opening:{excerpt:'요즘',why:'설명',evidence:[]}};
+  const f=await fixture(t,{model:'future-31b',respond:async(_context,_memory,{onProgress})=>{
+    calls++;onProgress({stage:'speech_opening',status:'started',attempt:1});
+    onProgress({stage:'speech_opening',status:'completed',attempt:1});
+    onProgress({stage:'speech_write',status:'started',attempt:2});started();await gate;
+    return {patient_state:memory,guide,assessment:{safety:false},name_index:null,conversation_detail:detail};
+  }});
+  const a=await f.browser(),b=await f.browser(),owner=(await f.store.browser(a.cookie.slice(15))).id;
+  const row=await f.store.createIntake(owner,{...createIntake(),status:'ready'});
+  const path=`/api/intakes/${row.id}`;
+  const first=f.request(a,path+'/result','POST',{revision:0});await entered;
+  const status=await f.request(a,path+'/progress');
+  assert.equal(status.status,200);assert.equal(status.data.progress.completed.length,1);assert.equal(status.data.progress.attempt,2);
+  assert.equal(JSON.stringify(status.data).includes(guide.script),false);
+  assert.equal((await f.request(b,path+'/progress')).status,404);
+  const duplicate=f.request(a,path+'/result','POST',{revision:0});
+  release();const results=await Promise.all([first,duplicate]);
+  assert.equal(calls,1);assert.ok(results.every(result=>result.status===200));
+  assert.deepEqual(results[0].data.record.conversation_detail,detail);
+  assert.equal((await f.request(a,path+'/progress')).data.progress.status,'complete');
 });

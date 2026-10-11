@@ -11,7 +11,10 @@ const ChatScreen={
         <img class="th-img" data-m="ponder" alt="">
         <h3>말을 정리하고 있어요 <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span></h3>
         <p class="th-sub">들려주신 이야기에 따라 조금 걸릴 수 있어요.</p>
-        <ol class="th-steps"><li>들려주신 이야기를 다시 읽고 있어요</li><li>그분의 상황을 정리하고 있어요</li><li>마음이 잘 닿는 첫 문장을 고르고 있어요</li></ol>
+        <div class="th-segments" aria-hidden="true"></div>
+        <p class="th-count">완료한 단계 0개</p>
+        <ol class="th-steps"><li class="now">답안을 준비하고 있어요</li></ol>
+        <p class="note">한 칸은 실제 작성·검토 단계 하나예요. 필요한 경우 수정 단계가 추가돼요.</p>
         <div class="th-err" hidden><p>정리하는 중에 문제가 생겼어요. 답해 주신 내용은 그대로 있으니 다시 시도해 주세요.</p><button class="btn" id="thRetry">다시 시도</button></div>
       </div>
     </div>
@@ -46,7 +49,14 @@ const ChatScreen={
     $("leaveDlg").showModal();
   },
   clear(){$("log").innerHTML="";this.messages=[];this.think(false);},
-  think(on){const t=$("thinking");t.hidden=!on;if(on){t.querySelector(".th-err").hidden=true;this.thinkStep(0);}},
+  think(on){const t=$("thinking");t.hidden=!on;if(on){t.querySelector(".th-err").hidden=true;this.thinkProgress({completed:[],current:'답안 준비',status:'running',attempt:1});}},
+  thinkProgress(p){
+    const t=$("thinking"),done=p.completed||[];
+    t.querySelector('.th-segments').innerHTML=done.map(()=>'<i class="done"></i>').join('')+(p.status==='complete'?'':'<i class="now"></i>');
+    t.querySelector('.th-count').textContent=`완료한 단계 ${done.length}개`;
+    t.querySelector('.th-steps').innerHTML=done.slice(-2).map(item=>`<li class="done">${esc(item.label)}</li>`).join('')+
+      `<li class="${p.status==='complete'?'done':'now'}">${esc(p.current)}${p.attempt>1?' · 다시 확인 중':''}</li>`;
+  },
   thinkStep(i){$("thinking").querySelectorAll("li").forEach((l,k)=>l.className=k<i?"done":k===i?"now":"");},
   thinkError(retry,message="정리하는 중에 문제가 생겼어요. 답해 주신 내용은 그대로 있으니 다시 시도해 주세요."){
     const error=$("thinking").querySelector(".th-err");error.hidden=false;

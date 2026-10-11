@@ -107,12 +107,23 @@ async function finish(token=conversationToken){
   if(token!==conversationToken||!S?.id)return;
   const id=S.id,revision=S.revision;
   ChatInput.clear();ChatScreen.think(true);
+  let polling=true,timer;
+  const poll=async()=>{
+    if(!polling||token!==conversationToken)return;
+    try{
+      const data=await API.request(`/api/intakes/${id}/progress`);
+      if(polling&&token===conversationToken&&data.revision===revision)ChatScreen.thinkProgress(data.progress);
+    }catch{ /* The final request owns error reporting; polling can reconnect. */ }
+    if(polling&&token===conversationToken)timer=setTimeout(poll,1500);
+  };
+  timer=setTimeout(poll,250);
   try{
     const result=await API.request(`/api/intakes/${id}/result`,{method:"POST",body:{revision}});
     if(token!==conversationToken)return;
     ChatScreen.thinkStep(3);ChatScreen.think(false);
     S.revision=result.revision;
     rememberRec(result.record);
-    ResultScreen.open(result.record.profile,result.record.guide,true);
-  }catch(error){await recoverConversation(error,token,()=>finish(token),(message,retry)=>ChatScreen.thinkError(retry,message));}
+    ResultScreen.open(result.record.profile,result.record.guide,true,result.record.relationship_analysis,result.record.conversation_detail);
+  }catch(error){polling=false;clearTimeout(timer);await recoverConversation(error,token,()=>finish(token),(message,retry)=>ChatScreen.thinkError(retry,message));}
+  finally{polling=false;clearTimeout(timer);}
 }

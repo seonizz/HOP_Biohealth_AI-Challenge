@@ -62,7 +62,11 @@
 
 세션 쿠키와 상담 보관은 분리합니다. 세션이 만료돼도 원문·결과·버전 이력을 자동 삭제하지 않습니다. `DELETE /api/records/:id`로 명시적으로 삭제한 기록만 연결된 상담 자료와 함께 제거합니다. 관리자 검증은 브라우저 세션에 의존하지 않는 로컬 `npm run export:verification`으로 수행합니다.
 
-상태 모델은 `{patient_state,name_index,question_plan:{skip:[]}}`를 JSON으로 반환합니다. 이름 인덱스는 `{alias,source_question_id:"name",quote}`이며 실제 이름 입력·후속 답변만 인용할 수 있습니다. `skip` 항목은 `{question_id,reason,explanation,evidence:[{subject,question_id,quote}]}`입니다. 현재 미응답 후보만 선택하고 `already_covered`는 이미 답한 원문 근거를 요구합니다. `not_needed`는 5개 이상 답변 이후의 선택 질문만 허용합니다. 이름·전하고 싶은 말·원인 분기 기준은 제외하고 필수 질문은 `already_covered`만 허용합니다. 결정은 `auto_skipped` 상태와 근거로 저장하며 `payload.answers`에 답변을 만들지 않습니다. 최종 내부 결과는 `{guide,patient_state,assessment,name_index}`입니다.
+`relationship_agent`는 한 답변 요청 안에서 `state_observations`, `relationship_memory`, `state_review`, `question_plan`, 생략·추가 확인 제안이 있으면 `question_review`를 순서대로 호출합니다. 상태·관계 검토가 모두 통과해야 다음 질문으로 진행합니다. `state_agent` 실행 정보는 암호화된 대화 상태의 `agentStateExecution`에 보관합니다. 모델이 만드는 요약을 사실의 근거로 쓰지 않고, 서버가 보고된 원문을 귀속 문구와 함께 구성합니다.
+
+질문 계획의 `skip`은 현재 미응답 후보 중 같은 사람의 답변으로 `already_covered`가 입증된 문항만 허용합니다. `not_needed`는 이 프로토콜에서 허용하지 않습니다. 생략의 근거가 질문 전체에 답하지 않으면 `question_review`에서 취소하고 원래 질문을 유지합니다. 기본 문항을 마쳤을 때 필요하면 `clarify_help`, `clarify_response`, `clarify_boundary` 중 하나를 선택합니다. 고정 질문은 일반 `question`으로 내려가고 `follow_up:true`로 답합니다. `clarificationAnswers`에 답변·건너뜀을 보관하며 모두 사용하면 더 묻지 않습니다. 뒤로가기는 해당 확인 질문을 복원하고 이후 모델 메모리·결과를 무효화합니다. 진행자가 위험을 제안하면 별도 `safety_review`에서 현재 신체 위험인지 확인하고 근거·검토 결과를 암호화된 상태의 `safetySignal`에 보관합니다. 검토된 현재 위험의 `finish_early`는 추가 질문을 종료하고 즉시 도움 안내를 대화에 넣습니다.
+
+최종 내부 결과는 기존 `{guide,patient_state,assessment,name_index}`에 검토된 `relationship_analysis`, `relationship_memory`, `agent` 실행 정보를 추가합니다. 다섯 카드의 필드와 프론트 계약은 유지합니다. 이름 인덱스는 `{alias,source_question_id:"name",quote}`이며 실제 이름 원문에서만 추출합니다. 기존 `json_schema`/`json_prompt` 경로의 일반 질문 계획 계약은 별도로 유지합니다.
 
 `MODEL_PROTOCOL=json_prompt`인 학습 모델은 지원하는 텍스트 Chat Completions 필드만 사용합니다. 상태 정리는 출력 최대 2,048토큰으로 수행하고 `user_goal`은 서버 원문으로 채웁니다. 최종 가이드는 최대 4,096토큰을 예약하며, 모델 JSON의 `guide,assessment`에 검증된 상태·이름 인덱스를 결합한 뒤 동일 검증을 적용합니다. `script`는 5~8문장·약 300~500자, `doList,avoid,care.tips`는 각각 3~4개 항목을 목표로 요청하고 방법·이유·대안을 구체적으로 설명하게 합니다. 이는 생성 목표로 분량을 채우기 위한 사실 추가·반복은 금지하며, 응답 길이 자체를 새로운 실패 조건으로 삼지 않습니다. 현재 결과 화면과 저장 구조로 긴 가이드를 그대로 표시·보관합니다. 모델 입력에 전체 대화 로그를 중복 전송하지 않습니다. `json_schema`인 Ollama 경로도 최종 출력 최대 4,096토큰과 같은 상세 지침을 사용하며 JSON Schema 출력 제약을 유지합니다. 두 경로 모두 근거 없는 JSON을 저장하지 않습니다.
 
@@ -71,3 +75,10 @@
 `result`는 `{record,revision}`을 반환합니다. `record`의 `profile,guide,log,followUps`는 현재 결과·기록 화면과 같습니다. `profile.scores={}`이며 임의 수치 평가는 없습니다. `guide.top`은 칼럼 분류용입니다. `provenance.kind=model`과 모델 이름을 내부적으로 기록합니다.
 
 오류는 `{error:{code,message,request_id}}`입니다. 원문이나 인증 키는 포함하지 않습니다. 주요 상태는 400/422 입력 오류, 401 익명 세션 만료, 403 Origin/CSRF 거부, 404 소유하지 않은 자원, 409 버전 충돌, 429 요청 제한, 502 모델 출력 검증 실패, 503 모델 연결/인증 문제, 504 모델 응답 제한 시간입니다.
+
+
+## 상세 답안과 실제 생성 진행 (v3.8)
+
+`GET /api/intakes/:id/progress`는 해당 세션이 소유한 대화에 대해서만 `{revision,progress:{status,completed:[{label}],current,attempt}}`를 반환합니다. 진행 정보는 실행 중인 요청의 메모리에만 있고 모델 원문·프롬프트·내부 사고는 포함하지 않습니다. 각 모델 호출이 JSON·근거 검증을 통과하면 완료 칸이 하나 추가됩니다. 검토자가 수정을 요청한 단계도 검토 작업 자체는 완료된 것이며 최종 답안의 승인과는 구분됩니다. 재시도는 같은 칸을 채우지 않습니다. 총 단계 수는 수정 여부에 따라 달라지므로 백분율이나 예상 시간을 꾸며내지 않습니다. 결과 POST 실패는 기존 오류·재시도로 처리하며 미검증 결과는 저장하지 않습니다. 완료 후에는 저장된 기록 여부로 complete를 반환하고 세부 진행 목록은 유지하지 않습니다.
+
+일반 상황의 새 기록에는 `conversation_detail:{opening,listening,offer}`를 선택적으로 추가합니다. 각 값은 `{excerpt,why,evidence}`이며 excerpt를 합치면 최종 `guide.script`와 공백을 제외하고 동일해야 합니다. 설명과 인용도 별도 모델 검토를 통과해야 저장합니다. 최대 한 번 설명을 고쳐 재검토하며 실패하면 최종 요청을 중단합니다. 긴급 안내는 일반 대화 상세화 단계를 건너뜁니다. 과거 기록의 detail이 없으면 원래 script를 그대로 표시합니다.

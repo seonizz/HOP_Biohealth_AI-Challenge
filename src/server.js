@@ -10,6 +10,7 @@ import { questionCatalogOf } from './question-bank.js';
 import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate,
   prepareModelAnswer, completeModelAnswer, discardModelAnswer } from './intake.js';
 import { ModelGateway } from './model.js';
+import { generationProgress } from './generation-progress.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -52,7 +53,9 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
     baseUrl:process.env.MODEL_BASE_URL, apiKey:process.env.MODEL_API_KEY,
     model:process.env.MODEL_NAME || 'malssi-gemma4-31b-step100',
     timeoutMs:process.env.MODEL_TIMEOUT_MS ? Number(process.env.MODEL_TIMEOUT_MS) : undefined,
-    protocol:process.env.MODEL_PROTOCOL
+    protocol:process.env.MODEL_PROTOCOL,
+    agentFormat:process.env.MODEL_AGENT_FORMAT || 'json_schema',
+    reasoningEffort:process.env.MODEL_REASONING_EFFORT || 'none'
   }) : null;
   const limits = new Map();
   const resultRuns = new Map();
@@ -150,16 +153,22 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         object(await body(req), []);
         return json(res, 201, view(await store.createIntake(owner, createIntake(await store.questionSet()))));
       }
-      const intakeMatch = /^\/api\/intakes\/([^/]+)(?:\/(answers|back|context|result))?$/.exec(path);
+      const intakeMatch = /^\/api\/intakes\/([^/]+)(?:\/(answers|back|context|result|progress))?$/.exec(path);
       if (intakeMatch) {
         const [,id,action] = intakeMatch;
         if (!UUID.test(id)) throw new HttpError(404, 'NOT_FOUND', '대화를 찾을 수 없어요.');
         if (method === 'GET' && !action) return json(res, 200, view(await store.intake(owner, id)));
         if (method === 'GET' && action === 'context') return json(res, 200, await store.context(owner, id));
+        if (method === 'GET' && action === 'progress') {
+          const row=await store.intake(owner,id);
+          const active=resultRuns.get(`${owner}:${id}:${row.revision}`);
+          return json(res,200,{revision:row.revision,progress:active?.progress.state ||
+            {status:row.state.agentRecord?'complete':'idle',completed:[],current:row.state.agentRecord?'검토·저장 완료':'답안 준비',attempt:1}});
+        }
         if (method === 'POST' && ['answers','back'].includes(action)) {
           const input = object(await body(req), action === 'back' ? ['revision'] : ['revision','question_id','text','selected','custom','skipped','follow_up']);
           const revision = revisionOf(input.revision);
-          if (gateway && action === 'answers' && !input.skipped) {
+          if (gateway && action === 'answers' && (!input.skipped || gateway.protocol==='relationship_agent')) {
             let row = await store.intake(owner, id);
             const retry = row.state.modelPending && sameAnswer(row.state.modelPending.input, input);
             if (revision !== row.revision && !(retry && revision === row.state.modelPending.sourceRevision)) throw revisionConflict();
@@ -189,7 +198,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           const row = await store.updateIntake(owner, id, revision, state => {
             const next = action === 'back' ? backIntake(state) : answerIntake(discardModelAnswer(state), input);
             // A correction invalidates model interpretations of the reverted answers.
-            if (action === 'back') { delete next.agentMemory; delete next.agentResult; delete next.agentRecord; }
+            if (action === 'back') { delete next.agentMemory; delete next.agentRelationshipMemory; delete next.agentResult; delete next.agentRecord; }
             return next;
           }, action === 'back' ? 'correction' : 'user_answer');
           return json(res, 200, view(row));
@@ -198,34 +207,40 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           const input = object(await body(req), ['revision']);
           const revision = revisionOf(input.revision);
           const runKey = `${owner}:${id}:${revision}`;
+          const progress=generationProgress();
           const run = async () => {
             let row = await store.intake(owner, id);
             if (row.state.agentRecord) return { record:await store.saveRecord(owner, row.state.agentRecord, id), revision:row.revision };
             if (row.revision !== revision || row.state.status !== 'ready') throw new HttpError(409, 'INTAKE_NOT_READY', '대화를 마친 뒤 결과를 확인해 주세요.');
             if (!gateway) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
             const context = (await store.context(owner, id)).context;
-            const result = await gateway.respond(context, row.state.agentMemory || null, { requestId });
+            const result = await gateway.respond(context, row.state.agentMemory || null, { requestId,onProgress:event=>progress.event(event) });
+            progress.finish('saving');
             const recordId = await store.nextRecordId();
             const p = { ...context.profileInput, scores:{}, safety:result.assessment.safety,
               symptoms:[], risks:[], protect:[] };
-            // Keep the existing UI's explicit self-harm-option safety card safeguard.
-            p.safety ||= context.payload.answers.some(a => a.selected.some(o => o.meta.s === 'suicidal') || /죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|자해/.test(a.type === 'text' ? a.text : a.custom));
+            // The relationship agent reviews current danger and negation before approving the guide.
+            if (gateway.protocol !== 'relationship_agent') p.safety ||= context.payload.answers.some(a => a.selected.some(o => o.meta.s === 'suicidal') || /죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|자해/.test(a.type === 'text' ? a.text : a.custom));
             row = await store.updateIntake(owner, id, revision, state => {
               const next = { ...applyModelUpdate(state, { patient_state:result.patient_state,
-                name_index:result.name_index, question_plan:{ skip:[] } }), agentResult:result };
+                name_index:result.name_index, question_plan:{ skip:[] },
+                ...(result.relationship_memory ? {relationship_memory:result.relationship_memory} : {}) }), agentResult:result };
               next.log = [...state.log, { who:'ai', text:'고마워요. 들려주신 이야기를 바탕으로 말하는 방법을 정리했어요.', fu:false, face:'thanks' }];
               next.agentRecord = {
                 id:recordId, title:next.chatTitle || next.name || '그분', date:new Date().toISOString(),
                 profile:{ ...p, name:next.name }, guide:result.guide, log:next.log, followUps:state.fuCount,
-                provenance:{ kind:'model', model:gateway.model || 'gemma4:12b', clinically_validated:false }
+                ...(result.relationship_analysis ? {relationship_analysis:result.relationship_analysis} : {}),
+                ...(result.conversation_detail ? {conversation_detail:result.conversation_detail} : {}),
+                provenance:{ kind:'model', model:gateway.model || 'gemma4:12b', clinically_validated:false,
+                  ...(result.agent ? {agent:result.agent} : {}) }
               };
               next.agentRecord.context = buildContext(next);
               return next;
             }, 'model_update');
             return { record:await store.saveRecord(owner, row.state.agentRecord, id), revision:row.revision };
           };
-          if (!resultRuns.has(runKey)) resultRuns.set(runKey, run().finally(() => resultRuns.delete(runKey)));
-          return json(res, 200, await resultRuns.get(runKey));
+          if (!resultRuns.has(runKey)) resultRuns.set(runKey, {progress,promise:run().finally(() => resultRuns.delete(runKey))});
+          return json(res, 200, await resultRuns.get(runKey).promise);
         }
       }
       if (method === 'GET' && path === '/api/records') return json(res, 200, { records:await store.records(owner) });
@@ -240,6 +255,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (known && error.code.startsWith('MODEL_')) console.error(JSON.stringify({
         event:'model_request_failed', request_id:requestId, operation_id:error.modelRequestId || requestId, code:error.code,
         status:error.status, elapsed_ms:Date.now() - requestStarted,
+        ...(['agent_analysis_review_rejected','agent_review_rejected','agent_memory_name_only'].includes(error.modelReason)
+          ? {reason:error.modelReason} : {}),
       }));
       if (!known) console.error(`[${requestId}] request failed`); // No inputs, credentials or counselling content.
       if (!res.headersSent) json(res, known ? error.status : 500, { error:{ code:known ? error.code : 'INTERNAL_ERROR', message:known ? error.message : '저장하지 못했어요. 잠시 후 다시 시도해 주세요.', request_id:requestId } });
