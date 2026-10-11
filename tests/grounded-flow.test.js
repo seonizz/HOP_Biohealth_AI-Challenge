@@ -313,3 +313,11 @@ test('expanded recommendations cannot turn recovery into a meal condition or fam
   const corrected={...base,next:'원하면 같이 먹고 싶은 메뉴를 골라보자.',care:{feel:'가족과 의견이 달라 마음이 쓰이시겠어요.',tips:['친구에게 이야기할 여유가 있는지 물어보세요.']}};
   assert.equal(knownSpeechIssues(corrected,context).length,0);
 });
+
+
+test('a prohibited recovery phrase in care is distinguished from the recommended alternative',()=>{
+ const draft={script:'이야기를 듣고 싶어.',doList:['대답을 기다려 주세요.'],avoid:[],next:'원하면 같이 알아보세요.',care:{feel:'걱정되실 수 있어요.',tips:["'빨리 나아져야만 가능하다'는 조건보다는 '네가 원할 때 같이 가고 싶어'라고 전해 보세요."]}};
+ assert.equal(knownSpeechIssues(draft,ctx()).length,0);
+ draft.care.tips=["'빨리 나아져서 같이 가자'라고 말해 보세요."];
+ assert.ok(knownSpeechIssues(draft,ctx()).some(issue=>issue.field==='care'));
+});

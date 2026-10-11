@@ -194,7 +194,7 @@ test('a model approval cannot override an observed mind-reading failure in an ac
       return envelope(draft);
     });
     if(fixes)assert.ok((await model.respond(context(),memory())).agent.stages.includes('guide_repair'));
-    else await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_review_rejected'});
+    else await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_speech_specific'});
   }
 });
 
@@ -1226,4 +1226,18 @@ test('explanation cannot publish an invented excerpt or survive two rejected rev
   const rejected=gateway(handler,{detailReview:input=>{reviews++;return {approved:false,issues:['설명에 확인되지 않은 감정이 추가됐어요.'],audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'근거 밖 해석입니다.'}))};}});
   await assert.rejects(rejected.respond(context(),memory()),{modelReason:'agent_detail_review_rejected'});
   assert.equal(reviews,2);
+});
+
+test('a vague help offer retries with the exact rejected speech and the selected treatment intent',async()=>{
+  const c=context();c.user_goal.desired_outcomes={...field('goal','상담이나 진료를 권하고 싶어요'),selected:[{label:'상담이나 진료를 권하고 싶어요',meta:{t:'goal_treat'}}]};
+  let attempts=0;
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  const model=gateway(body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]),{speechWrite:input=>{
+    attempts++;
+    assert.match(input.data.task,/상담 또는 진료/);
+    if(attempts===1)return {script:'원하면 도움을 받을 곳을 같이 알아볼까?'};
+    assert.ok(input.validation_feedback.includes('원하면 도움을 받을 곳을 같이 알아볼까?'));
+    return {script:'요즘 어떤 점이 걱정되는지 듣고 싶어. 원하면 상담을 함께 알아볼까?'};
+  }});
+  const result=await model.respond(c,memory());assert.equal(attempts,2);assert.match(result.guide.script,/상담/);
 });

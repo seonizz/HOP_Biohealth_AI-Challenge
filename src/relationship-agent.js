@@ -405,7 +405,8 @@ export function urgentGuideActions(name) {
 }
 
 export function knownSpeechIssues(guide,context) {
-  const texts={script:[guide.script],doList:guide.doList,next:[guide.next||''],care:guide.care?.tips||[],
+  const recommendations=text=>text.replace(/[“"'][^”"']+[”"'](?=(?:라는|는|와 같은|과 같은)?\s*(?:조건|표현|말)?.{0,18}(?:피하|하지|보다는|대신|말고))/gu,'');
+  const texts={script:[guide.script],doList:guide.doList.map(recommendations),next:[recommendations(guide.next||'')],care:(guide.care?.tips||[]).map(recommendations),
     avoid:guide.avoid.map(text=>text.split(/대신|대안[:：]?|보다는/u).slice(1).at(-1)||'')};
   const issues=Object.entries(texts).filter(([,items])=>items.some(text=>mindReading.test(text))).map(([field])=>({field,
     reason:'대상자의 마음이나 행동 원인을 아는 것처럼 말합니다.',
@@ -546,7 +547,8 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     const treatmentGoal=goal?.status==='answered'&&goal.selected?.some(option=>option.meta?.t==='goal_treat');
     // The initial script is provisional; the dedicated speech writer replaces it.
     // Enforce the requested goal on the final speech and every subsequent repair.
-    if(checkSpeech&&treatmentGoal&&!analysis.safety.urgent&&!/상담|진료|전문가|의사|치료사/u.test(draft.guide.script))invalid('agent_goal_missing');
+    if(checkSpeech&&treatmentGoal&&!analysis.safety.urgent&&!/상담|진료|전문가|의사|치료사/u.test(draft.guide.script))invalid('agent_goal_missing',
+      '이용자는 상담/진료 권유를 선택했습니다. “도움을 받을 수 있는 곳”만 쓰면 목적이 불명확합니다. 최종 발화에 상담 또는 진료라는 단어를 명시하여 함께 알아볼지 선택을 물으세요. 거절된 발화: '+draft.guide.script);
     return draft;
   };
   const reviewGuide=async (stage,draft,plan)=>{
@@ -626,14 +628,16 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     }
     if(!analysis.safety.urgent){
       const parts={};
+      const treatmentTask=context.user_goal?.desired_outcomes?.selected?.some(option=>option.meta?.t==='goal_treat')===true
+        ? '이용자가 상담/진료 권유를 선택했습니다. help_choice와 최종 발화에 상담 또는 진료라는 단어를 명시하여 함께 알아볼지 선택을 물으세요. “도움을 받을 곳”으로만 뭉뚱그리지 마세요.' : '';
       for(const [part,role] of Object.entries(SPEECH_PARTS)){
         const fields=part==='opening'?['permission','observed_scene']:part==='listening'?['user_intent','open_question','wait_for_answer']:['small_invitation','help_choice','decline_choice'];
         const schema=object(Object.fromEntries(fields.map(field=>[field,string(600)])));
         parts[part]=await generate('speech_'+part+suffix,COMMON+'\n'+role+'\n발화문만 반환하세요. 다른 단계에서 말할 내용은 반복하지 마세요.',
-          {...writerData,task:role,alias:speechAlias,fields,earlier_parts:parts},schema,1800,value=>validateSchema(value,schema));
+          {...writerData,task:role+(part==='offer'?'\n'+treatmentTask:''),alias:speechAlias,fields,earlier_parts:parts},schema,1800,value=>validateSchema(value,schema));
       }
       const spoken=await generate('speech_write'+suffix,SPEAK,
-        {parts,alias:speechAlias,voice:plan.voice,observations:plan.opening_evidence,user_goal:data.user_goal,
+        {parts,task:treatmentTask,alias:speechAlias,voice:plan.voice,observations:plan.opening_evidence,user_goal:data.user_goal,
           speech_contract:{speaker:'supporter: 내가 듣고 도움을 제안하는 사람',listener:'patient: 자신의 이야기를 말하거나 제안을 거절할 수 있는 사람',
             include_treatment_offer:context.user_goal?.desired_outcomes?.selected?.some(option=>option.meta?.t==='goal_treat')===true,
             excluded_words:['항상','언제든','하루빨리'],
@@ -671,7 +675,13 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         const fixed=await generate('guide_repair'+suffix+(index++?'_'+field:''),
           COMMON+'\n'+(field==='script'?SPEAK:CARD_ROLES[field]||WRITE)+'\n지적된 카드 하나의 오류만 고칩니다. 다른 카드는 작성하지 마세요.',
           {answers:data,plan:writerData.plan,field,current:draft.guide[field],task:issues.map(issue=>issue.repair).join('\n'),issues},
-          schema,2800,value=>validateSchema(value,schema));
+          schema,2800,value=>{
+            validateSchema(value,schema);
+            const candidate=validateDraft({...draft,guide:{...draft.guide,...value}},{checkSpeech:field==='script'});
+            const remaining=knownSpeechIssues(candidate.guide,context).filter(issue=>issue.field===field);
+            if(remaining.length)invalid('agent_speech_specific',remaining.map(issue=>issue.reason+' '+issue.repair).join('\n'));
+            return value;
+          });
         draft={...draft,guide:{...draft.guide,...fixed}};
       }
       validateDraft(draft);
