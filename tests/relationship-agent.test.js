@@ -84,6 +84,11 @@ function gateway(handler,{speechReview,planReview,speechWrite,supportReview,card
       audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'관찰과 열린 질문입니다.'}))});
     if(input.stage.startsWith('state_review'))return envelope({approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:claim.certainty==='reported'?'supported':'plausible',reason:'합성 원문과 일치해요.'}))});
     const response=await handler(body);
+    if(response.ok&&input.stage.startsWith('guide_repair')&&!input.output_schema.properties.guide){
+      const reply=await response.clone().json(),value=JSON.parse(reply.choices[0].message.content);
+      const key=Object.keys(input.output_schema.properties)[0];
+      return envelope(value.guide?{[key]:value.guide[key]}:value);
+    }
     if(response.ok&&/^guide_(write|refine|repair)/u.test(input.stage)){
       const json=await response.clone().json();storedGuide=JSON.parse(json.choices[0].message.content).guide;
     }
@@ -163,7 +168,7 @@ test('claim review covers action cards as well as the script and repairs preserv
     if(stage==='communication_plan')return envelope(plan());
     if(stage==='guide_quality')return envelope({improvements:[]});
     if(stage==='guide_repair'){
-      assert.deepEqual(body.response_format.json_schema.schema.properties.guide.properties.script.enum,[guide().guide.script]);
+      assert.deepEqual(Object.keys(body.response_format.json_schema.schema.properties),['doList']);
       const repaired=guide();repaired.guide.doList=['어떤 도움이 필요한지 먼저 물어보세요.'];return envelope(repaired);
     }
     return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:guide());
@@ -1160,7 +1165,7 @@ test('dedicated support review catches caregiver facts missed by the full review
     if(stage==='communication_plan')return envelope(plan());
     if(stage==='guide_quality')return envelope({improvements:[]});
     if(stage==='guide_repair'){
-      for(const field of ['script','doList','avoid','next'])assert.deepEqual(body.response_format.json_schema.schema.properties.guide.properties[field].enum,[draft.guide[field]]);
+      assert.deepEqual(Object.keys(body.response_format.json_schema.schema.properties),['care']);
       return envelope(guide());
     }
     return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:draft);

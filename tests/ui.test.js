@@ -186,7 +186,7 @@ test('a record refresh started during deletion cannot restore the deleted record
   const records = [1, 2].map(id => ({ id, title: `기록 ${id}`, date: '2026-10-09T00:00:00Z', profile: { rel: '친구', safety: false }, guide: { top: '통합', script: '곁에 있을게요.', next: '연락해 주세요.' }, log: [] }));
   const context = vm.createContext({
     document, M: { basic: 'basic.png', hear: 'hear.png' },
-    GuideCards: { speech:()=>"",list:()=>"", doAvoid: () => '' }, StartScreen: { updRecN() {} },
+    GuideCards: { next:()=>"",speech:()=>"",list:()=>"", doAvoid: () => '' }, StartScreen: { updRecN() {} },
     API: { request(path, options) { calls.push([path, options?.method || 'GET']); return options?.method === 'DELETE' ? removal.promise : refresh.promise; } },
   });
   vm.runInContext(script('core/utils.js') + script('core/store.js') + script('components/RecordsScreen.js') + '\nglobalThis.screen = RecordsScreen; globalThis.cache = { get: loadRecs, set: setRecs };', context);

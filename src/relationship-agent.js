@@ -459,9 +459,12 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   const speechAlias=name?.alias&&!['그분','상대방','대상자'].includes(name.alias)?name.alias:null;
   const stages=[], retrievalTrace=[];
   const generate=async (stage,prompt,payload,schema,tokens,validate)=>{
-    const retrieval=retrieveSources(context,{stage,required:citedSources(payload),
+    const required=citedSources(payload);
+    if(/^(?:card_care|support_review|speech_detail)/u.test(stage))required.push(...Object.keys(context.supporter?.fields||{}).map(question_id=>({subject:'supporter',question_id})));
+    const retrieval=retrieveSources(context,{stage,required,
       query:[payload.analysis?.patient_summary,payload.analysis?.supporter_summary,
-        ...(payload.review?.issues||[]).map(issue=>issue.reason+' '+issue.repair)].filter(Boolean).join(' ')});
+        payload.script,payload.guide?JSON.stringify(payload.guide):'',
+        ...(payload.review?.issues||[]).map(issue=>typeof issue==='string'?issue:issue.reason+' '+issue.repair)].filter(Boolean).join(' ')});
     const scoped=retrievedContext(context,retrieval);
     const result=await gateway.agentComplete(stage,prompt,{...payload,retrieval},groundedEvidenceSchema(schema,scoped),tokens,operation,value=>{
       assertRetrievedEvidence(value,retrieval);
@@ -660,11 +663,29 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     guideRepairs++;
     const suffix=(guideRepairs===1?'':'_2')+phaseSuffix;
     const repairSchema=currentGuideSchema(),changedFields=new Set(review.issues.map(issue=>issue.field));
+    if(!analysis.safety.urgent){
+      let index=0;
+      for(const field of changedFields){
+        const schema=object({[field]:guideSchema.properties.guide.properties[field]});
+        const issues=review.issues.filter(issue=>issue.field===field);
+        const fixed=await generate('guide_repair'+suffix+(index++?'_'+field:''),
+          COMMON+'\n'+(field==='script'?SPEAK:CARD_ROLES[field]||WRITE)+'\n지적된 카드 하나의 오류만 고칩니다. 다른 카드는 작성하지 마세요.',
+          {answers:data,plan:writerData.plan,field,current:draft.guide[field],task:issues.map(issue=>issue.repair).join('\n'),issues},
+          schema,2800,value=>validateSchema(value,schema));
+        draft={...draft,guide:{...draft.guide,...fixed}};
+      }
+      validateDraft(draft);
+      review=await reviewGuide('guide_review_after_repair'+suffix,draft,writerData.plan);
+      continue;
+    }
     for(const [field,schema] of Object.entries(repairSchema.properties.guide.properties)){
       if(!changedFields.has(field))schema.enum=[draft.guide[field]];
     }
     draft=await generate('guide_repair'+suffix,WRITE+'\n검토에서 지적한 필드만 바로잡고 전체 JSON을 다시 작성하세요. 이미 검증한 다른 필드는 스키마 enum 그대로 보존하세요.',
-      {...writerData,draft:draft.guide,review},repairSchema,3600,value=>{validateDraft(value);return validateSchema(value,repairSchema);});
+      {...writerData,draft:draft.guide,review,
+        task:'새 답안을 쓰는 작업이 아니라 아래 오류를 고치는 작업입니다. 각 repair 지시를 해당 필드에 그대로 적용하세요. 회복을 조건으로 한 제안과 재촉은 의도와 달라도 삭제해야 합니다. 수정 대상 이외의 카드는 보존하세요.',
+        required_edits:review.issues.map(issue=>({field:issue.field,problem:issue.reason,change:issue.repair})),
+        edited_fields:[...changedFields]},repairSchema,4200,value=>{validateDraft(value);return validateSchema(value,repairSchema);});
     review=await reviewGuide('guide_review_after_repair'+suffix,draft,writerData.plan);
   }
   let conversationDetail;

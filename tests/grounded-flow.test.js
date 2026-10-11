@@ -301,3 +301,15 @@ test('all-card guards reject invented sibling roles, conditional recovery and he
   assert.equal(knownSpeechIssues({...base,doList:['언제든 내가 도와줄 준비가 되어 있어.']})[0].field,'doList');
   assert.equal(knownSpeechIssues({...base,next:'원하시면 기관 찾기를 도와드릴 수 있습니다.'})[0].field,'next');
 });
+
+test('expanded recommendations cannot turn recovery into a meal condition or family disagreement into sole responsibility',()=>{
+  const context=ctx();context.supporter.fields.feeling=field('feeling','걱정돼요.');
+  context.supporter.fields.cgchange_more=field('cgchange_more','가족들과 의견이 달라요.');
+  const base={script:'어떤 도움이 필요한지 듣고 싶어.',doList:['원하면 함께 먹고 싶은 메뉴를 물어보세요.'],avoid:['재촉 대신 대화 의사를 물어보세요.'],next:'기분이 괜찮아지면 같이 맛있는 거 먹으러 가자.',care:{feel:'혼자 감당해야 하는 부담감이 무거우시겠어요.',tips:['지금은 쉬고 싶구나라고 말해 보세요.']}};
+  const issues=knownSpeechIssues(base,context);
+  assert.ok(issues.some(issue=>issue.field==='next'&&issue.reason.includes('회복')));
+  assert.ok(issues.some(issue=>issue.field==='care'&&issue.reason.includes('혼자')));
+  assert.ok(issues.some(issue=>issue.field==='care'&&issue.reason.includes('거절')));
+  const corrected={...base,next:'원하면 같이 먹고 싶은 메뉴를 골라보자.',care:{feel:'가족과 의견이 달라 마음이 쓰이시겠어요.',tips:['친구에게 이야기할 여유가 있는지 물어보세요.']}};
+  assert.equal(knownSpeechIssues(corrected,context).length,0);
+});

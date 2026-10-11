@@ -50,10 +50,10 @@ const RecordsScreen={
       ${g.care?`<div class="card care" style="margin-top:18px;padding:18px 22px"><img src="${M.empathy}" alt="" style="width:64px"><div><h3>당신의 마음도 소중해요</h3><p>${esc(g.care.feel)}</p>${GuideCards.list(g.care.tips)}</div></div>`:""}
       <div style="margin-top:18px">${GuideCards.speech(g,r.conversation_detail)}</div>
       ${GuideCards.doAvoid(g,{wrapStyle:"margin-top:16px",doStyle:"background:var(--bg)"})}
-      <p style="margin:16px 0 0;white-space:pre-wrap"><b style="font-family:var(--display);font-weight:400;color:var(--stem)">다음 단계</b> · ${esc(g.next)}</p>
+      <div style="margin-top:18px">${GuideCards.next(g)}</div>
       ${r.relationship_analysis?GuideCards.relationship(r.relationship_analysis,{style:"margin-top:18px;background:var(--bg)"}):""}
-      <h3 style="font-family:var(--display);font-weight:400;font-size:20px;margin:26px 0 0">대화 기록</h3>
-      <div class="tlog">${r.log.map(m=>`<div class="t ${m.who==="me"?"me2":"ai"+(m.fu?" fu":"")}">${esc(m.text)}</div>`).join("")}</div>`;
+      <details class="card conversation-history"><summary>대화 기록</summary>
+      <div class="tlog">${r.log.map(m=>`<div class="t ${m.who==="me"?"me2":"ai"+(m.fu?" fu":"")}">${esc(m.text)}</div>`).join("")}</div></details>`;
     $("rdetail").scrollTop=0;
   }
 };

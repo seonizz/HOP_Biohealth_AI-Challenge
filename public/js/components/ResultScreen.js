@@ -16,7 +16,7 @@ const ResultScreen={
        <div class="card care"><img src="${M.empathy}" alt=""><div><h3 style="margin-bottom:6px">당신의 마음도 소중해요</h3><p>${esc(g.care.feel)}</p>${GuideCards.list(g.care.tips)}</div></div>
        ${GuideCards.speech(g,detail,{copy:true})}
        ${GuideCards.doAvoid(g)}
-       <div class="card next"><img src="${M.think}" alt=""><div><h3 style="margin-bottom:4px">다음 단계</h3><p style="margin:0;white-space:pre-wrap">${esc(g.next)}</p></div></div>
+       ${GuideCards.next(g)}
        ${analysis?GuideCards.relationship(analysis):""}
        <div class="actions"><span class="note" style="margin-right:auto;align-self:center">${saved?`"${esc(p.name||"그분")}" 기록으로 저장했어요.`:"기록을 저장하지 못했어요."}</span><button class="ghost" id="toCol">${esc(g.top)} 관련 칼럼</button><button class="ghost" id="toRec">내 기록 보기</button><button class="ghost" id="again">처음부터 다시</button></div>
        ${CrisisLine("위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담 · <b>112 / 119</b>")}

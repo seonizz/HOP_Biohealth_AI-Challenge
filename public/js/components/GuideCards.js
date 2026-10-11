@@ -21,6 +21,9 @@ const GuideCards={
     return `<div class="two guide-actions"${wrapStyle?` style="${wrapStyle}"`:""}><div class="card do"${doStyle?` style="${doStyle}"`:""}><h3>이렇게 해 보세요</h3>${this.list(g.doList)}</div>
     <div class="card avoid"><h3>피하면 좋아요</h3>${this.list(g.avoid)}</div></div>`;
   },
+  next(g){
+    return `<div class="card next"><img src="${M.think}" alt=""><div><h3>다음 단계</h3><p>${esc(g.next)}</p></div></div>`;
+  },
   relationship(a,{style=""}={}){
     if(!a||typeof a!=="object")return "";
     const relation=a.relationship||{},hasText=value=>typeof value==="string"&&value.trim();

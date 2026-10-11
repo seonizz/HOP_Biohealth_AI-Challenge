@@ -98,3 +98,14 @@ test('speech sections display rationale and citations safely while old records k
   assert.doesNotMatch(html,/<원문>|<발화>|<이유>/);
   assert.ok(context.cards.speech(guide).includes(guide.script));
 });
+
+
+test('saved history is collapsed by default and next steps stay inside the shared card',()=>{
+  const {context,document}=harness();
+  context.records.renderDetail({title:'예시',date:'2026-10-11T00:00:00Z',profile,guide,log:[{who:'me',text:'<기록>'}]});
+  const html=document.getElementById('rdetail').innerHTML;
+  assert.match(html,/<details class="card conversation-history"><summary>대화 기록<\/summary>/);
+  assert.doesNotMatch(html,/<details[^>]*\bopen\b/);
+  assert.ok(html.includes('&lt;기록&gt;'));assert.ok(html.includes('class="card next"'));
+  assert.ok(html.includes(guide.next));
+});
