@@ -1,6 +1,6 @@
 import { HttpError } from './errors.js';
 import { contextGoal, validatePatientState } from './agent-state.js';
-import { modelResponseFormat, riskEvidenceQuotes } from './model-schema.js';
+import { modelResponseFormat, safetyEvidenceQuotes } from './model-schema.js';
 import { retrieveSources, retrievedContext, citedSources, citationsRetrieved } from './relationship-retrieval.js';
 import { STATE, ANALYZE, PLAN, WRITE, REVIEW, QUALITY, PROMPT_VERSION } from './relationship-prompts.js';
 
@@ -8,13 +8,16 @@ const string = (maxLength = 2000) => ({ type:'string', minLength:1, maxLength })
 const object = properties => ({ type:'object', properties, required:Object.keys(properties), additionalProperties:false });
 const array = (items, maxItems = 4, minItems = 0) => ({ type:'array', items, maxItems, minItems });
 const evidence = object({ subject:{type:'string',enum:['patient','supporter','user_goal']}, question_id:string(80), quote:string(1000) });
+// Length is bounded by the original intake fields and their exact enum values.
+// Applying an excerpt limit here can remove a later denial or attribution.
+const safetyEvidence = object({ subject:evidence.properties.subject,question_id:string(80),quote:{type:'string',minLength:1} });
 const finding = object({ interpretation:string(500), evidence:array(evidence,3,1), certainty:{type:'string',enum:['reported','tentative']} });
 
 const legacyRelationshipSchema = object({
   patient_summary:string(1000), supporter_summary:string(1000),
   relationship:object({ label:string(100), supporter_role:string(100),
     dynamics:array(finding,3), strengths:array(finding,3), boundaries:array(finding,3) }),
-  unknowns:array(string(400),4), safety:object({ urgent:{type:'boolean'}, evidence:array(evidence,3) }),
+  unknowns:array(string(400),4), safety:object({ urgent:{type:'boolean'}, evidence:array(safetyEvidence,18) }),
 });
 legacyRelationshipSchema.properties.relationship.properties.dynamics.items=structuredClone(finding);
 legacyRelationshipSchema.properties.relationship.properties.dynamics.items.properties.certainty.enum=['tentative'];
@@ -105,8 +108,8 @@ function sourceTexts(field) {
 // actor, question and quote choices form a reference that never appeared.
 export function groundedEvidenceSchema(schema,context) {
   const references=[],safetyReferences=[];
-  const add=(list,subject,field,quotes)=>{
-    for (const quote of quotes) if (quote.trim()&&quote.length<=1000) {
+  const add=(list,subject,field,quotes,maxLength=1000)=>{
+    for (const quote of quotes) if (quote.trim()&&quote.length<=maxLength) {
       const ref={subject,question_id:field.id,quote};
       if (!list.some(item=>JSON.stringify(item)===JSON.stringify(ref))) list.push(ref);
     }
@@ -127,8 +130,7 @@ export function groundedEvidenceSchema(schema,context) {
       }
       add(references,subject,field,quotes);
     }
-    const riskQuotes=riskEvidenceQuotes(field);
-    add(safetyReferences,subject,field,riskQuotes.length?riskQuotes:sources);
+    add(safetyReferences,subject,field,safetyEvidenceQuotes(field),Infinity);
   }
   // Schema templates reuse nodes; each output path needs its own candidate pool.
   const result=JSON.parse(JSON.stringify(schema));
@@ -200,10 +202,11 @@ function validateRelationshipDetails(value,context) {
   value.safety.evidence.forEach(ref=>{
     validateEvidence(ref,context);
     const field=sourceField(context,ref);
-    const riskQuotes=riskEvidenceQuotes(field);
-    const candidates=riskQuotes.length?riskQuotes:sourceTexts(field);
-    const normalize=text=>text.trim().replace(/[.!?。！？]+$/u,'');
-    if (!candidates.some(quote=>normalize(quote)===normalize(ref.quote))) invalid('agent_safety_context');
+    const candidates=safetyEvidenceQuotes(field);
+    if (!candidates.includes(ref.quote)) invalid('agent_safety_context');
+    // A base answer cannot hide its current custom/follow-up correction.
+    if (!candidates.every(quote=>value.safety.evidence.some(other=>other.subject===ref.subject&&
+      other.question_id===ref.question_id&&other.quote===quote))) invalid('agent_safety_context');
   });
   if (value.safety.urgent && !value.safety.evidence.length) invalid('agent_safety_evidence');
   const relation=context.patient?.fields?.rel;

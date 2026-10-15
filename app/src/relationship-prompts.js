@@ -1,5 +1,5 @@
 // Versioned Korean prompts for the local relationship agent.
-export const PROMPT_VERSION = "relationship-v3.6.2-canonical-state";
+export const PROMPT_VERSION = "relationship-v3.7-complete-safety-evidence";
 
 export const COMMON = `당신은 말씨의 한국어 대화 지원 에이전트입니다.
 patient는 도움받을 대상자, supporter는 앱 이용자, user_goal은 이용자의 목적입니다.
@@ -61,7 +61,7 @@ strengths에는 실제로 보고된 지지 자원·도움 행동만, boundaries�
 사용자의 해석이나 관계 패턴은 certainty=tentative로 표현하며 원인이 확정된 것처럼 쓰지 마세요.
 unknowns에는 대상자 자신의 마음·도움 의향 등 현재 확인하지 못한 중요한 정보만 1~4개 적으세요.
 safety.urgent는 현재 즉각적 자해·타해·신체 위험의 명시적 보고가 있을 때만 true이며 정확한 evidence가 필요합니다.
-안전 evidence.quote는 부정·시점·화자가 드러나는 완전한 원문 문장을 복사하세요. 자해 같은 단어만 발췌하지 마세요.
+안전 evidence.quote는 해당 문항의 원문 전체를 후보 그대로 복사하세요. 단어·주변 구절·한 문장만 발췌하지 마세요. 같은 문항에 별도 직접 입력·후속 답변이 있으면 그 전체 후보도 모두 evidence에 포함해 정정·현재 부정·화자를 함께 확인하세요. 긴 원문도 줄이지 마세요. 인용이 정확하다는 이유만으로 urgent=true로 판단하지 마세요.
 원문 관찰은 각 사람당 최대 2개, 해석은 항목당 하나의 주장으로 간결하게 쓰세요. 보고된 사실 하나와 추가로 추측한 마음·행동을 한 finding에 묶지 마세요.`;
 
 export const PLAN = COMMON + `

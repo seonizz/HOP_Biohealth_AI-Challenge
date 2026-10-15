@@ -573,7 +573,8 @@ test('actual mood choices 0 through 8 preserve the suicidal choice before the ev
   for (const final of [false, true]) for (const tighter of [false, true]) {
     const projected = trainedContext(ctx, state, { final, tighter });
     const row = projected.patient.find(row => row[0] === 'mood');
-    assert.ok(row && row[3].includes(danger));
+    assert.ok(row && row[3].some(quote=>quote.includes(danger)));
+    assert.ok(row[3].includes(ctx.patient.fields.mood.rawText));
     assert.equal(row[2], 'answered');
   }
 });
@@ -593,7 +594,7 @@ test('long raw, custom and follow-up danger excerpts keep negation and attributi
     const supporter = projected.supporter.find(row => row[0] === 'cgchange_more');
     assert.ok(patient?.[3].some(quote => quote.includes(phrase)));
     assert.ok(supporter?.[3].some(quote => quote.includes('자해할 생각은 없다고 했어요.')));
-    for (const quote of patient[3]) assert.ok(long.includes(quote));
+    assert.deepEqual(new Set(patient[3]),new Set([ctx.patient.fields.extra.rawText,long]));
     for (const quote of supporter[3]) assert.ok(phraseAtEnd.includes(quote));
   }
 });
@@ -639,6 +640,7 @@ test('reported and unknown memory certainty remain distinct in normal and reduce
     assert.equal(two.memory.facts[0][3], 'unknown');
     assert.notDeepEqual(one, two);
   }
-  assert.ok(riskEvidenceQuotes({ rawText: '😀'.repeat(80) + '자해를 하지는 않아요. ' + '😀'.repeat(80) })
-    .every(quote => quote.length <= 160 && quote.isWellFormed() && quote.includes('자해를 하지는 않아요.')));
+  const complete = '😀'.repeat(80) + '자해를 하지는 않아요. ' + '😀'.repeat(80);
+  assert.deepEqual(riskEvidenceQuotes({rawText:complete}),[complete]);
+  assert.ok(riskEvidenceQuotes({rawText:complete}).every(quote=>quote.isWellFormed()));
 });

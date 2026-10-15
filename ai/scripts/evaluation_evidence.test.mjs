@@ -11,9 +11,12 @@ test('explicit 31B endpoint never inherits legacy 12B identity or credential', (
   assert.equal(modelConfig({MODEL_BASE_URL:'http://localhost:9999/v1'}).model, undefined);
   assert.throws(() => modelConfig({ MODEL_TIMEOUT_MS:'NaN' }), /invalid_model_timeout/);
   assert.throws(() => modelConfig({ MODEL_CHECKPOINT_SHA256:'not-a-hash' }), /invalid_checkpoint/);
+  assert.equal(modelConfig({ MODEL_DEPLOYMENT_ID:'instance-one' }).deploymentId, 'instance-one');
+  assert.throws(() => modelConfig({ MODEL_DEPLOYMENT_ID:' ' }), /invalid_deployment_id/);
 });
 
 const identity = { model_requested:'31b', source:{sha256:'a'}, evaluator:{sha256:'e1'}, prompt_version:'v1',
+  endpoint_sha256_declared:sha256('https://example.test/v1'), deployment_id_sha256_declared:null,
   context_source:'synthetic_fixture', protocol:'relationship_agent', fixture_sha256:'one', questions_sha256:'q', timeout_ms:600000 };
 const run = (id,status,duration,overrides={}) => ({ run_id:id, status, duration_ms:duration, mode:'state', identity, trace:[], ...overrides });
 test('failed runs remain in denominator and timing distribution', () => {
@@ -38,6 +41,19 @@ test('different evaluator implementations and protocols do not share a result gr
     run('3','passed',1,{identity:{...identity,protocol:'json_schema'}}),
     run('4','passed',1,{identity:legacy})]).length,4);
 });
+test('endpoint and declared deployment differences split groups while unidentified legacy runs stay separate', () => {
+  const legacy = {...identity}; delete legacy.endpoint_sha256_declared;
+  const reports = [run('1','passed',1), run('2','passed',1),
+    run('3','passed',1,{identity:{...identity,endpoint_sha256_declared:sha256('https://other.test/v1')}}),
+    run('4','passed',1,{identity:{...identity,deployment_id_sha256_declared:sha256('instance-one')}}),
+    run('5','passed',1,{identity:{...identity,deployment_id_sha256_declared:sha256('instance-two')}}),
+    run('6','passed',1,{identity:legacy}), run('7','failed',1,{identity:legacy})];
+  const groups = summarizeRuns(reports);
+  assert.equal(groups.length, 6);
+  assert.equal(groups[0].runs, 2);
+  assert.ok(groups.slice(-2).every(group => group.runs === 1 && group.endpoint_identity_complete === false));
+  assert.ok(groups.every(group => group.environment_identity_verified === false));
+});
 test('saved web input hashes determine case counts and missing legacy web identity remains unknown',()=>{
   const make=(id,context)=>run(id,'passed',1,{web_context:true,identity:{...identity,context_source:'saved_web_context',context_sha256:context}});
   const [summary]=summarizeRuns([make('1','context-one'),make('2','context-two'),make('3','context-one')]);
@@ -60,6 +76,25 @@ test('evaluation identity hashes actual context and evaluator files without incl
   assert.equal(JSON.stringify(first).includes('private'),false);
   assert.equal(evaluationIdentity({...args,context:null}).context_sha256,null);
 });
+test('endpoint fingerprints exclude credentials, query and fragment and emit no path or deployment secret', () => {
+  const args = {backend:fileURLToPath(new URL('../../app/',import.meta.url)),fixtureBytes:'fixture',questionsBytes:'questions',
+    promptVersion:'v-test',config:{model:'same-alias',protocol:'relationship_agent',timeoutMs:100,
+      baseUrl:'https://private-user:private-pass@server-a.invalid/private-path/v1?api_key=private-key#private-fragment',
+      deploymentId:'private-instance'},checkpointSha256:'a'.repeat(64)};
+  const first = evaluationIdentity(args);
+  const identify = baseUrl => evaluationIdentity({...args,config:{...args.config,baseUrl}});
+  const sanitized = identify('https://server-a.invalid/private-path/v1/');
+  assert.equal(first.endpoint_sha256_declared, sanitized.endpoint_sha256_declared);
+  assert.notEqual(first.endpoint_sha256_declared, identify('https://server-b.invalid/private-path/v1').endpoint_sha256_declared);
+  assert.notEqual(first.endpoint_sha256_declared, identify('https://server-a.invalid/other-path/v1').endpoint_sha256_declared);
+  assert.equal(first.deployment_id_sha256_declared, sha256('private-instance'));
+  assert.equal(first.checkpoint_sha256_declared, 'a'.repeat(64));
+  assert.equal(first.runtime_model_identity_verified, false);
+  assert.equal(first.deployment_verified, false);
+  assert.equal(JSON.stringify(first).includes('private'), false);
+  assert.equal(JSON.stringify(first).includes('server-a'), false);
+  assert.throws(() => identify('not a URL private-secret'), /^Error: invalid_model_endpoint$/);
+});
 test('web resume requires the same requested model, protocol, source and prompt, and rejects unidentified legacy sessions',()=>{
   const current={model_requested:'12b',model_protocol:'relationship_agent',source_sha256:'source',prompt_version:'v-new'};
   assert.doesNotThrow(()=>assertWebSessionIdentity({...current},current));
@@ -75,11 +110,37 @@ test('duplicated runs and malformed failure records are rejected', () => {
   assert.throws(() => summarizeRuns([run('1','failed',undefined)]), /invalid/);
 });
 test('missing usage is unknown and retries include failed attempts', () => {
-  const metrics = attemptMetrics([{attempt:1,reason:'timeout',duration_ms:20},
-    {attempt:2,reason:'success',duration_ms:10,usage:{prompt_tokens:4,completion_tokens:3}}]);
+  const metrics = attemptMetrics([{event:'model_attempt',attempt_id:'one',attempt:1,reason:'timeout',duration_ms:20},
+    {event:'model_attempt',attempt_id:'two',attempt:2,reason:'success',duration_ms:10,usage:{prompt_tokens:4,completion_tokens:3}}]);
   assert.equal(metrics.prompt_tokens,null);
   assert.equal(metrics.completion_tokens,null);
   assert.equal(metrics.retries,1);
   assert.equal(metrics.failed_attempts,1);
   assert.equal(metrics.attempt_wait_ms,30);
+});
+test('wait events never add requests or usage and identical request records count once', () => {
+  const attempt = {event:'model_attempt',attempt_id:'one',attempt:1,reason:'success',duration_ms:20,usage:{prompt_tokens:4,completion_tokens:3}};
+  const metrics = attemptMetrics([attempt, {...attempt}, {event:'model_retry_wait',after_attempt_id:'one',duration_ms:100,reason:'deadline'}]);
+  assert.equal(metrics.attempt_count_verified, true);
+  assert.equal(metrics.attempts, 1);
+  assert.equal(metrics.failed_attempts, 0);
+  assert.equal(metrics.prompt_tokens, 4);
+  assert.equal(metrics.completion_tokens, 3);
+  assert.equal(metrics.attempt_wait_ms, 20);
+  assert.equal(metrics.retry_wait_ms, 100);
+  assert.equal(metrics.retry_wait_deadlines, 1);
+});
+test('legacy, mixed and conflicting traces do not claim exact requests, retries or tokens', () => {
+  const legacy = [{event:'model_attempt',generation:'state',attempt:1,reason:'http_transient',duration_ms:1},
+    {event:'model_attempt',generation:'state',attempt:1,reason:'deadline',duration_ms:100}];
+  const current = {event:'model_attempt',attempt_id:'one',attempt:1,reason:'success',duration_ms:10,usage:{prompt_tokens:4,completion_tokens:3}};
+  for (const trace of [legacy, [...legacy,current], [current,{...current,reason:'deadline'}]]) {
+    const metrics = attemptMetrics(trace);
+    assert.equal(metrics.attempt_count_verified, false);
+    for (const key of ['attempts','failed_attempts','retries','attempt_wait_ms','attempt_p95_ms','prompt_tokens','completion_tokens',
+      'retry_wait_events','retry_wait_deadlines','retry_wait_ms','preflight_failures']) assert.equal(metrics[key], null);
+  }
+  assert.equal(attemptMetrics(legacy).legacy_attempt_events, 2);
+  assert.equal(attemptMetrics([current,{...current,reason:'deadline'}]).conflicting_attempt_ids, 1);
+  assert.equal(attemptMetrics([{event:'unknown'}]).attempt_count_verified, false);
 });

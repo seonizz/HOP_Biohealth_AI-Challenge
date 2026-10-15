@@ -54,3 +54,13 @@ npm run test:evidence
 ```
 
 집계의 분모는 실패를 포함한 모든 실행입니다. 같은 사례의 반복은 별도 실행 수와 고유 사례 수로 구분합니다. 서로 다른 소스·모델·모드·timeout은 합치지 않습니다. p50/p95는 nearest-rank 방식이며 평가 실행 시간과 모델 요청 대기를 구분합니다. 전체 사용자 세션 시간·현장 동시성·비용·독립 test 성능으로 해석하지 않습니다. 사용량 미제공은 0토큰이 아닌 `null`입니다. 사람 평가 조건은 [제출 범위와 검증 계약](../../docs/competition/04_제출범위와_검증계약.md)을 따릅니다.
+
+## 재평가 N2–N4 이후의 기록 계약
+
+실제 fetch에는 고유 `attempt_id`, 한 생성 호출에는 `generation_id`를 부여합니다. 재시도 대기 사건은 `model_retry_wait`로 별도 저장하고 요청·실패·토큰 수에 더하지 않습니다. 요청 ID가 없는 이전 trace나 충돌하는 trace의 정확한 요청 집계는 `null`, `attempt_count_verified:false`로 남깁니다. 기존 원시 기록을 덮어써 숫자를 소급 수정하지 않습니다.
+
+실험군은 비밀 정보를 제외한 endpoint의 SHA256과 선택적 `MODEL_DEPLOYMENT_ID` 선언의 SHA256도 구분합니다. URL의 사용자 정보·query·fragment는 해시 입력에서 제외하고 경로를 포함한 URL 원문이나 키를 결과에 쓰지 않습니다. 같은 endpoint 뒤의 배포가 바뀌면 운영자가 배포 선언도 바꿔야 합니다. 이 해시는 실제 로딩·하드웨어 증명이 아니며 `runtime_model_identity_verified:false`와 `environment_identity_verified:false`를 유지합니다. endpoint가 없는 이전 결과는 실행별로 나눕니다.
+
+웹 smoke는 재개용 세션 파일과 시도 이력을 분리합니다. 실행별 UUID 경로 `ai/local_api/runtime/relationship-smoke-attempts/<attempt_id>/`에 `started.json`과 `result.json`을 배타적으로 생성합니다. 같은 세션의 재실패·성공은 각각 남고, 완료 전 중단도 시작 파일로 확인할 수 있습니다. 기존 실패·성공 파일은 보존합니다. 원문이 포함된 결과와 세션 접근 정보는 계속 Git 제외·소유자 전용이며 예상하지 못한 오류 메시지는 원문 대신 일반 오류 코드로 기록합니다.
+
+변경별 재현 결과와 남은 검증 범위는 [수정 v3](../../docs/competition/결선_재평가_지적_수정_v3.md)에 기록합니다.

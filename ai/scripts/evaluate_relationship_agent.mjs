@@ -70,7 +70,8 @@ const identity=identify(context);
 const reportId=fixture.case_id+(webContext?'-web':'')+(incremental?'-incremental-state':stateOnly?'-state':'');
 const trace=[];const stageOutputs=[];
 const gateway=new ModelGateway({...config,diagnosticLogger:entry=>{
-    trace.push(entry); console.log(JSON.stringify({stage:entry.generation,attempt:entry.attempt,duration_ms:entry.duration_ms,reason:entry.reason}));
+    trace.push(entry); console.log(JSON.stringify({event:entry.event,stage:entry.generation,generation_id:entry.generation_id,
+      attempt:entry.attempt,attempt_id:entry.attempt_id,after_attempt_id:entry.after_attempt_id,duration_ms:entry.duration_ms,reason:entry.reason}));
   }});
 const outputDir=resolve(process.env.MALSSI_EVALUATION_DIR||resolve(root,'local_api/runtime/evaluations'));
 mkdirSync(outputDir,{recursive:true,mode:0o700});

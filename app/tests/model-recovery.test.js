@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelGateway } from '../src/model.js';
+import { attemptMetrics } from '../../ai/scripts/evaluation_evidence.mjs';
 
 const REQUEST_ID = '9a281bfc-24e3-4fd5-a28a-bcf8a494870b';
 const field = (id, text) => ({ id, status: 'answered', question: id, rawText: text, text, custom: '' });
@@ -47,7 +48,15 @@ test('transient connection then busy status recover within three attempts withou
   assert.deepEqual(result.patient_state, memory());
   assert.equal(bodies.length, 3);
   assert.deepEqual(bodies[0], bodies[1]); assert.deepEqual(bodies[1], bodies[2]);
-  assert.deepEqual(records.map(entry => entry.reason), ['connection_transient', 'http_transient', 'success']);
+  const attempts = records.filter(entry => entry.event === 'model_attempt');
+  assert.deepEqual(attempts.map(entry => entry.reason), ['connection_transient', 'http_transient', 'success']);
+  assert.equal(new Set(attempts.map(entry => entry.attempt_id)).size, 3);
+  assert.equal(new Set(records.map(entry => entry.generation_id)).size, 1);
+  const waits = records.filter(entry => entry.event === 'model_retry_wait');
+  assert.ok(waits.length > 0);
+  assert.ok(waits.every(entry => entry.reason === 'retry_ready' && attempts.some(attempt => attempt.attempt_id === entry.after_attempt_id)));
+  assert.equal(attemptMetrics(records).attempts, bodies.length);
+  assert.equal(attemptMetrics(records).retries, 2);
   assert.ok(records.every(entry => entry.request_id === REQUEST_ID));
 });
 
@@ -185,10 +194,48 @@ test('one deadline aborts backoff without another upstream call', async () => {
   const gateway = makeGateway(async (_url, request) => {
     calls++; signal = request.signal;
     return new Response('', { status: 503, headers: { 'Retry-After': '1' } });
-  }, { timeoutMs: 30, diagnosticLogger: entry => records.push(entry) });
+  }, { timeoutMs: 100, diagnosticLogger: entry => records.push(entry) });
   await assert.rejects(gateway.updateState(context()), { code: 'MODEL_TIMEOUT' });
   assert.equal(calls, 1); assert.equal(signal.aborted, true);
   assert.equal(records.at(-1).reason, 'deadline');
+  assert.deepEqual(records.map(entry => entry.event), ['model_attempt', 'model_retry_wait']);
+  assert.equal(records[1].after_attempt_id, records[0].attempt_id);
+  assert.equal(records[1].generation_id, records[0].generation_id);
+  assert.equal(Object.hasOwn(records[1], 'usage'), false);
+  const metrics = attemptMetrics(records);
+  assert.equal(metrics.attempt_count_verified, true);
+  assert.equal(metrics.attempts, 1);
+  assert.equal(metrics.failed_attempts, 1);
+  assert.equal(metrics.retries, 0);
+  assert.equal(metrics.retry_wait_events, 1);
+  assert.equal(metrics.retry_wait_deadlines, 1);
+  assert.equal(metrics.attempt_wait_ms, records[0].duration_ms);
+  assert.equal(metrics.retry_wait_ms, records[1].duration_ms);
+});
+
+test('separate state generations have unique request IDs even when no public request ID is supplied', async () => {
+  const records = [];
+  const gateway = makeGateway(async () => envelope(state()), { diagnosticLogger: entry => records.push(entry) });
+  await gateway.updateState(context());
+  await gateway.updateState(context());
+  assert.equal(new Set(records.map(entry => entry.generation_id)).size, 2);
+  assert.equal(new Set(records.map(entry => entry.attempt_id)).size, 2);
+  assert.ok(records.every(entry => entry.request_id === null && entry.attempt === 1));
+  assert.equal(attemptMetrics(records).attempts, 2);
+});
+
+test('request body failures are recorded without inventing an upstream attempt', async () => {
+  const records = []; let calls = 0;
+  const gateway = makeGateway(async () => { calls++; return envelope(state()); }, { diagnosticLogger: entry => records.push(entry) });
+  await assert.rejects(gateway.operation({}, operation => gateway.request(() => {
+    throw new Error('private request detail');
+  }, operation, value => value, 'state')), { code: 'MODEL_UNAVAILABLE' });
+  assert.equal(calls, 0);
+  assert.equal(records[0].event, 'model_request_failure');
+  assert.equal(records[0].attempt_id, null);
+  assert.equal(attemptMetrics(records).attempts, 0);
+  assert.equal(attemptMetrics(records).preflight_failures, 1);
+  assert.equal(JSON.stringify(records).includes('private request detail'), false);
 });
 
 test('state prerequisite and guide share the public respond deadline', async () => {

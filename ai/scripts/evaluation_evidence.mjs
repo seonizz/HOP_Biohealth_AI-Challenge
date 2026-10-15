@@ -13,10 +13,23 @@ export function modelConfig(env, legacy = {}) {
     model:env.MODEL_NAME || (!explicit && legacy.ollama_url ? 'gemma4:12b' : undefined),
     protocol:'relationship_agent',
     timeoutMs:env.MODEL_TIMEOUT_MS === undefined ? 600000 : Number(env.MODEL_TIMEOUT_MS),
+    deploymentId:env.MODEL_DEPLOYMENT_ID || null,
   };
   if (!Number.isSafeInteger(config.timeoutMs) || config.timeoutMs <= 0) throw new Error('invalid_model_timeout');
   if (env.MODEL_CHECKPOINT_SHA256 && !/^[a-f0-9]{64}$/.test(env.MODEL_CHECKPOINT_SHA256)) throw new Error('invalid_checkpoint_sha256');
+  if (config.deploymentId && (typeof config.deploymentId !== 'string' || !config.deploymentId.trim() || config.deploymentId.length > 1024)) throw new Error('invalid_deployment_id');
   return config;
+}
+
+function endpointHash(baseUrl) {
+  if (!baseUrl) return null;
+  try {
+    const url = new URL(baseUrl);
+    if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
+    url.username = ''; url.password = ''; url.search = ''; url.hash = '';
+    // The path can itself contain credentials: persist only the hash, never the URL.
+    return sha256(url.toString().replace(/\/+$/, ''));
+  } catch { throw new Error('invalid_model_endpoint'); }
 }
 
 export function evaluationIdentity({ backend, fixtureBytes, questionsBytes, promptVersion, config, context = null,
@@ -30,6 +43,8 @@ export function evaluationIdentity({ backend, fixtureBytes, questionsBytes, prom
     fixture_sha256:sha256(fixtureBytes), questions_sha256:sha256(questionsBytes),
     context_sha256:context===null?null:sha256(JSON.stringify(context)),context_source:contextSource,
     model_requested:config.model || null, checkpoint_sha256_declared:checkpointSha256,
+    endpoint_sha256_declared:endpointHash(config.baseUrl),
+    deployment_id_sha256_declared:config.deploymentId ? sha256(config.deploymentId) : null,
     runtime_model_identity_verified:false,
     protocol:config.protocol, timeout_ms:config.timeoutMs,
     // Local source and evaluator identities do not verify a remote web deployment.
@@ -52,14 +67,37 @@ export function percentile(values, fraction) {
 }
 
 export function attemptMetrics(trace) {
-  const durations = trace.map(row => row.duration_ms).filter(value => Number.isFinite(value) && value >= 0);
-  const tokenTotal = key => trace.length && trace.every(row => Number.isSafeInteger(row.usage?.[key]))
-    ? trace.reduce((sum,row) => sum + row.usage[key], 0) : null;
+  const attempts = new Map(), conflicts = new Set();
+  let legacy = 0, unknown = 0;
+  const waits = [], preflight = [];
+  for (const row of trace) {
+    if (row.event === 'model_retry_wait') { waits.push(row); continue; }
+    if (row.event === 'model_request_failure') { preflight.push(row); continue; }
+    if (row.event && row.event !== 'model_attempt') { unknown++; continue; }
+    // Older traces include backoff deadlines as attempts. Their request count cannot be recovered safely.
+    if (typeof row.attempt_id !== 'string' || !row.attempt_id) { legacy++; continue; }
+    if (attempts.has(row.attempt_id) && JSON.stringify(attempts.get(row.attempt_id)) !== JSON.stringify(row)) conflicts.add(row.attempt_id);
+    else attempts.set(row.attempt_id, row);
+  }
+  const verified = legacy === 0 && unknown === 0 && conflicts.size === 0;
+  const rows = [...attempts.values()];
+  const validDuration = row => Number.isFinite(row.duration_ms) && row.duration_ms >= 0;
+  const durations = rows.every(validDuration) ? rows.map(row => row.duration_ms) : null;
+  const tokenTotal = key => verified && rows.length && rows.every(row => Number.isSafeInteger(row.usage?.[key]) && row.usage[key] >= 0)
+    ? rows.reduce((sum,row) => sum + row.usage[key], 0) : null;
   return {
-    attempts:trace.length, failed_attempts:trace.filter(row => row.reason !== 'success').length,
-    retries:trace.filter(row => row.attempt > 1).length,
-    attempt_wait_ms:durations.reduce((sum,value) => sum+value, 0),
-    attempt_p50_ms:percentile(durations, .5), attempt_p95_ms:percentile(durations, .95),
+    attempt_count_verified:verified, legacy_attempt_events:legacy,
+    conflicting_attempt_ids:conflicts.size, unknown_trace_events:unknown,
+    attempts:verified ? rows.length : null,
+    failed_attempts:verified ? rows.filter(row => row.reason !== 'success').length : null,
+    retries:verified ? rows.filter(row => row.attempt > 1).length : null,
+    attempt_wait_ms:verified && durations ? durations.reduce((sum,value) => sum+value, 0) : null,
+    attempt_p50_ms:verified && durations ? percentile(durations, .5) : null,
+    attempt_p95_ms:verified && durations ? percentile(durations, .95) : null,
+    retry_wait_events:verified ? waits.length : null,
+    retry_wait_deadlines:verified ? waits.filter(row => row.reason === 'deadline').length : null,
+    retry_wait_ms:verified && waits.every(validDuration) ? waits.reduce((sum,row) => sum+row.duration_ms, 0) : null,
+    preflight_failures:verified ? preflight.length : null,
     prompt_tokens:tokenTotal('prompt_tokens'), completion_tokens:tokenTotal('completion_tokens'),
     cost_measured:false,
   };
@@ -72,7 +110,10 @@ export function summarizeRuns(reports) {
   if (new Set(reports.map(row => row.run_id)).size !== reports.length) throw new Error('duplicate_run_id');
   const groups = new Map();
   for (const row of reports) {
+    const endpointKnown = /^[a-f0-9]{64}$/.test(row.identity.endpoint_sha256_declared || '');
     const key = JSON.stringify([row.identity.model_requested, row.identity.checkpoint_sha256_declared,
+      endpointKnown ? row.identity.endpoint_sha256_declared : ['unknown_endpoint', row.run_id],
+      row.identity.deployment_id_sha256_declared,
       row.identity.source.sha256, row.identity.evaluator?.sha256, row.identity.prompt_version,
       row.identity.questions_sha256, row.identity.context_source, row.identity.protocol, row.mode,
       row.incremental, row.web_context, row.identity.timeout_ms]);
@@ -88,6 +129,8 @@ export function summarizeRuns(reports) {
       runs:rows.length, unique_cases:rows.some(row=>row.web_context&&!row.identity.context_sha256)?null
         :new Set(rows.map(row => row.identity.context_sha256||row.identity.fixture_sha256)).size,
       context_identity_complete:rows.every(row=>Boolean(row.identity.context_sha256)),
+      endpoint_identity_complete:rows.every(row=>/^[a-f0-9]{64}$/.test(row.identity.endpoint_sha256_declared || '')),
+      environment_identity_verified:false,
       passed:rows.filter(row => row.status === 'passed').length,
       failed:rows.filter(row => row.status === 'failed').length,
       automatic_pass_rate:rows.filter(row => row.status === 'passed').length / rows.length,

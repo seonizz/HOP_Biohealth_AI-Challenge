@@ -639,7 +639,9 @@ test('automatic model recovery shares duplicate requests and commits one validat
     assert.equal(response.data.log.filter(entry => entry.who === 'me').length, 1);
   }
   assert.equal(calls, 3);
-  assert.deepEqual(diagnostics.map(entry => entry.reason), ['http_transient','content_json','success']);
+  assert.deepEqual(diagnostics.filter(entry=>entry.event==='model_attempt').map(entry=>entry.reason),
+    ['http_transient','content_json','success']);
+  assert.deepEqual(diagnostics.filter(entry=>entry.event==='model_retry_wait').map(entry=>entry.reason),['retry_ready']);
   assert.equal(new Set(diagnostics.map(entry => entry.request_id)).size, 1);
   assert.match(diagnostics[0].request_id, /^[0-9a-f-]{36}$/);
   const logged = JSON.stringify(diagnostics);

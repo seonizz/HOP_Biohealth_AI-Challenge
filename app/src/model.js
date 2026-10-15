@@ -1,4 +1,5 @@
 import { HttpError } from './errors.js';
+import { randomUUID } from 'node:crypto';
 import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { modelResponseFormat } from './model-schema.js';
 import { trainedContext } from './model-context.js';
@@ -367,16 +368,18 @@ export class ModelGateway {
   }
 
   async request(body, operation, validate, generation, allowTighter = false) {
+    const generationId=randomUUID();
     let tighter = false; let repairReason = null; let repairs = 0;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       ensureTime(operation);
-      const started = performance.now();
+      let started = performance.now(); let attemptId = null;
       let status = null; let finishReason = null; let usage = null; let response;
       let retry = false; let delay = 0;
       try {
         const requestBody = JSON.stringify(body({ tighter, repairReason, repairs }));
         ensureTime(operation);
         try {
+          started=performance.now();attemptId=randomUUID();
           response = await this.fetchImpl(this.baseUrl + '/chat/completions', {
             method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + this.apiKey },
             signal: operation.controller.signal, body: requestBody,
@@ -420,7 +423,7 @@ export class ModelGateway {
         if (choice.finish_reason !== 'stop') throw invalidResponse('finish_reason');
         const result = validate(parseContent(choice.message.content));
         ensureTime(operation);
-        this.logAttempt(operation, generation, attempt, started, status, finishReason, usage, 'success');
+        this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, 'success');
         return result;
       } catch (error) {
         // Release an unread error body without retaining or logging its contents.
@@ -428,7 +431,7 @@ export class ModelGateway {
         const expired = operation.controller.signal.aborted || performance.now() >= operation.deadline;
         const known = error instanceof HttpError;
         const failure = expired ? timeout() : known ? error : unavailable('internal_failure');
-        this.logAttempt(operation, generation, attempt, started, status, finishReason, usage, failure.modelReason || 'internal_failure');
+        this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, failure.modelReason || 'internal_failure');
         if (expired || !known || attempt === MAX_ATTEMPTS) throw failure;
         if (error.code === 'MODEL_INVALID_RESPONSE') {
           repairReason = error.modelReason; repairs++;
@@ -437,9 +440,13 @@ export class ModelGateway {
         if (!retry) throw failure;
         if (error.modelReason === 'connection_transient') delay = retryDelay(null, attempt);
         if (delay > 0) {
-          try { await waitRetry(delay, operation); }
+          const waitStarted=performance.now();
+          try {
+            await waitRetry(delay, operation);
+            this.logRetryWait(operation,generation,generationId,attempt,attemptId,waitStarted,delay,'retry_ready');
+          }
           catch (waitError) {
-            this.logAttempt(operation, generation, attempt, started, status, finishReason, usage, 'deadline');
+            this.logRetryWait(operation,generation,generationId,attempt,attemptId,waitStarted,delay,'deadline');
             throw waitError;
           }
         }
@@ -447,9 +454,16 @@ export class ModelGateway {
     }
   }
 
-  logAttempt(operation, generation, attempt, started, status, finishReason, usage, reason) {
-    const entry = { event: 'model_attempt', request_id: operation.requestId, generation, attempt, status,
+  logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, reason) {
+    const entry = { event: attemptId?'model_attempt':'model_request_failure', request_id: operation.requestId,
+      generation, generation_id:generationId, attempt, attempt_id:attemptId, status,
       duration_ms: Math.round(performance.now() - started), finish_reason: finishReason, usage, reason };
+    try { this.diagnosticLogger?.(entry); } catch { /* Diagnostics must never fail a validated response. */ }
+  }
+
+  logRetryWait(operation,generation,generationId,attempt,attemptId,started,delay,reason) {
+    const entry={event:'model_retry_wait',request_id:operation.requestId,generation,generation_id:generationId,
+      attempt,after_attempt_id:attemptId,delay_ms:delay,duration_ms:Math.round(performance.now()-started),reason};
     try { this.diagnosticLogger?.(entry); } catch { /* Diagnostics must never fail a validated response. */ }
   }
 }
