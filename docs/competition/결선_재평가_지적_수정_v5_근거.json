@@ -1,0 +1,413 @@
+{
+  "recorded_at": "2026-10-15T05:52:41.528Z",
+  "baseline_commit": "b73dd0297dacc991c8694638ce3a0bd8ae9d061a",
+  "review": {
+    "path": "docs/competition/결선_적대적_재평가_v4.md",
+    "bytes": 20095,
+    "sha256": "c51ad1a603427ef2d9037b6f2716668452fa086f5098c5da38b0407d0ed9b3bc",
+    "issue": "A1",
+    "regraded": false,
+    "prior_score": 68,
+    "prior_denominator": 90,
+    "prior_training_data_score": 14,
+    "prior_training_data_denominator": 20
+  },
+  "criteria": {
+    "path": "docs/competition/05_평가범위와_학습데이터_기준.md",
+    "bytes": 4899,
+    "sha256": "1289b25994703419ffd1b5345f57dad515183ad0728902f155ded02bb5cc3774",
+    "model_itself_scored": false,
+    "processing_time_scored": false
+  },
+  "user_ui_policy": {
+    "path": "app/docs/UI_CONTENT_POLICY.md",
+    "bytes": 1999,
+    "sha256": "3c097404384e76f8a5fecab7382a7d4e1ec12f93c59e8f2b4890cb4459c75c5a"
+  },
+  "app_source": {
+    "sha256": "61a1522b8cb59aab64bd5122308b20d1a579e3e2205be98b32e2f898914ebb76",
+    "files": [
+      {
+        "path": "migrations/001_initial.sql",
+        "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+      },
+      {
+        "path": "migrations/002_questions.sql",
+        "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+      },
+      {
+        "path": "migrations/003_frontend_name.sql",
+        "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+      },
+      {
+        "path": "migrations/004_frontend_questions.sql",
+        "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+      },
+      {
+        "path": "package-lock.json",
+        "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+      },
+      {
+        "path": "package.json",
+        "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+      },
+      {
+        "path": "public/css/about.css",
+        "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+      },
+      {
+        "path": "public/css/base.css",
+        "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+      },
+      {
+        "path": "public/css/chat.css",
+        "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+      },
+      {
+        "path": "public/css/columns.css",
+        "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+      },
+      {
+        "path": "public/css/records.css",
+        "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+      },
+      {
+        "path": "public/css/result.css",
+        "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+      },
+      {
+        "path": "public/css/start.css",
+        "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+      },
+      {
+        "path": "public/index.html",
+        "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+      },
+      {
+        "path": "public/js/app.js",
+        "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+      },
+      {
+        "path": "public/js/components/AboutScreen.js",
+        "sha256": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6"
+      },
+      {
+        "path": "public/js/components/ChatInput.js",
+        "sha256": "c452f010a8ab741306ec62df2e19019ebc6b60a3e228fa996ab64d39864070f0"
+      },
+      {
+        "path": "public/js/components/ChatScreen.js",
+        "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+      },
+      {
+        "path": "public/js/components/ColumnsScreen.js",
+        "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+      },
+      {
+        "path": "public/js/components/GuideCards.js",
+        "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+      },
+      {
+        "path": "public/js/components/RecordsScreen.js",
+        "sha256": "bcebbd96d56804856427ea2cb5516b32dd8957c04bb29dd49db700ced648d233"
+      },
+      {
+        "path": "public/js/components/ResultScreen.js",
+        "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+      },
+      {
+        "path": "public/js/components/StartScreen.js",
+        "sha256": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661"
+      },
+      {
+        "path": "public/js/components/TopBar.js",
+        "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+      },
+      {
+        "path": "public/js/core/api.js",
+        "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+      },
+      {
+        "path": "public/js/core/assets.js",
+        "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+      },
+      {
+        "path": "public/js/core/columnBodies.js",
+        "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+      },
+      {
+        "path": "public/js/core/columns.js",
+        "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+      },
+      {
+        "path": "public/js/core/conversation.js",
+        "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+      },
+      {
+        "path": "public/js/core/questions.js",
+        "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+      },
+      {
+        "path": "public/js/core/store.js",
+        "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+      },
+      {
+        "path": "public/js/core/utils.js",
+        "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+      },
+      {
+        "path": "public/js/test-result.js",
+        "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+      },
+      {
+        "path": "public/test-data/relationship-result.json",
+        "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+      },
+      {
+        "path": "public/test-result.html",
+        "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+      },
+      {
+        "path": "seeds/questions.json",
+        "sha256": "f1f09f22bf47c3fc9766634b0ab7ccbf332327bf4789741517efc369bd80c6c3"
+      },
+      {
+        "path": "src/agent-state.js",
+        "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+      },
+      {
+        "path": "src/answer-sources.js",
+        "sha256": "33769a91b7ca857ef06cee85e5a31563457ffb69be91d9192201192c89f6bc82"
+      },
+      {
+        "path": "src/catalog.js",
+        "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+      },
+      {
+        "path": "src/errors.js",
+        "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+      },
+      {
+        "path": "src/intake.js",
+        "sha256": "ccedef0ebbb52af6ea32c3aaa6c746b5d617c9846f4cc9105992e94a866a4819"
+      },
+      {
+        "path": "src/model-context.js",
+        "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+      },
+      {
+        "path": "src/model-schema.js",
+        "sha256": "d68dbd8f1570c753c727e8e5afa9c04922dc7094fbb735d3c566ade0ebb54a96"
+      },
+      {
+        "path": "src/model.js",
+        "sha256": "551812bec8e95ab0bb69137365f4cc78be4cda4b6667132224f27a23e1e5c1bd"
+      },
+      {
+        "path": "src/question-bank.js",
+        "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+      },
+      {
+        "path": "src/relationship-agent.js",
+        "sha256": "cfee47cb588e7077336854238ef93fc7abde5547711c9c977c265ff92f4a719b"
+      },
+      {
+        "path": "src/relationship-prompts.js",
+        "sha256": "1a0a8feb1cd99e1310ed58c24fdd1cd007e97cdda8fbdbed485209f39c817735"
+      },
+      {
+        "path": "src/relationship-retrieval.js",
+        "sha256": "8d50f7efa069ec71f1e3cee182cd32bfbbaf38d4211160bacaa6e552e74237c6"
+      },
+      {
+        "path": "src/server.js",
+        "sha256": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305"
+      },
+      {
+        "path": "src/source-identity.js",
+        "sha256": "d9ed9e8256278e8758e7bc10019a942daa77f8bbed55ba225b3ff95f4a31bf51"
+      },
+      {
+        "path": "src/store.js",
+        "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+      }
+    ]
+  },
+  "prompt_version": "relationship-v3.8-safety-source-selection",
+  "checks": {
+    "app": {
+      "path": "runtime/adversarial-fixes-v5/app-tests.log",
+      "bytes": 48003,
+      "sha256": "96fee4be709e13ad05629621e3d074659af4a255588a7fba573ed073f01f08ea",
+      "tests": 281,
+      "pass": 281,
+      "fail": 0,
+      "skipped": 0,
+      "command": "TEST_DATABASE_URL=<disposable DB URL> npm test",
+      "database": "PostgreSQL 16-bookworm, loopback only, tmpfs",
+      "model": "mock gateway",
+      "database_cleanup": "disposable container stopped and auto-removed after verification"
+    },
+    "focused": {
+      "path": "runtime/adversarial-fixes-v5/focused-regression-tests.log",
+      "bytes": 7699,
+      "sha256": "d31cc79cdbc869fe2fc75b9e4f6e87428b3586069a5c11810f755277de807b5b",
+      "tests": 77,
+      "pass": 77,
+      "fail": 0,
+      "skipped": 0,
+      "included_in_app_suite": true
+    },
+    "evidence_tools": {
+      "path": "runtime/adversarial-fixes-v5/evidence-tests.log",
+      "bytes": 2586,
+      "sha256": "d4b6ed840d0728049cae3e411165974e3ec8dc65908bf5922ccd5e0d563a9a3f",
+      "tests": 24,
+      "pass": 24,
+      "fail": 0,
+      "skipped": 0,
+      "command": "npm run test:evidence"
+    },
+    "static": {
+      "path": "runtime/adversarial-fixes-v5/static-check.log",
+      "bytes": 156,
+      "sha256": "afebea66435fade683552dd3d46be1bbabde38ae9ac1a0dc155aeaf3aa3439c2",
+      "command": "npm run check",
+      "status": "passed"
+    },
+    "added_regressions": {
+      "total": 13,
+      "ui": 7,
+      "intake": 3,
+      "http_database": 3,
+      "included_in_app_suite": true
+    },
+    "original_counterexample": {
+      "script": {
+        "path": "runtime/adversarial-fixes-v5/app/empty-send-probe.mjs",
+        "bytes": 3716,
+        "sha256": "311e49ff2a5f1f9b3ac030ea96a4d756adc04132575cb898dbd3a19a7b8fb0cc"
+      },
+      "same_script_sha256_as_v4": true,
+      "results": [
+        {
+          "mode": "empty_send",
+          "button_enabled": true,
+          "emitted_skip_marker": true,
+          "emitted_skipped": true,
+          "status": "skipped",
+          "answered_count": 6,
+          "describe_documents": 0,
+          "describe_safety_bundles": 0
+        },
+        {
+          "mode": "explicit_skip",
+          "button_enabled": true,
+          "emitted_skip_marker": true,
+          "emitted_skipped": true,
+          "status": "skipped",
+          "answered_count": 6,
+          "describe_documents": 0,
+          "describe_safety_bundles": 0
+        }
+      ],
+      "source": "current migrated disposable database question set",
+      "question_count": 29,
+      "question": {
+        "id": "describe",
+        "type": "text",
+        "required": false,
+        "noSkip": false
+      },
+      "path_steps": 8,
+      "actual_ui_handler": true,
+      "mock_dom": true,
+      "http_or_browser_e2e": false,
+      "model_execution": false,
+      "processing_time_scored": false,
+      "script_sha256": "311e49ff2a5f1f9b3ac030ea96a4d756adc04132575cb898dbd3a19a7b8fb0cc"
+    },
+    "independent_code_review": {
+      "reviewer": "native subagent, read-only",
+      "result": "no blocking correctness or regression findings",
+      "human_review": false,
+      "remaining_scope": [
+        "historical stored-record migration excluded",
+        "real browser rendering not exercised"
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "path": "app/public/js/components/ChatInput.js",
+      "bytes": 6951,
+      "sha256": "c452f010a8ab741306ec62df2e19019ebc6b60a3e228fa996ab64d39864070f0"
+    },
+    {
+      "path": "app/src/intake.js",
+      "bytes": 20930,
+      "sha256": "ccedef0ebbb52af6ea32c3aaa6c746b5d617c9846f4cc9105992e94a866a4819"
+    },
+    {
+      "path": "app/tests/api.test.js",
+      "bytes": 53877,
+      "sha256": "1064ff5ab52833371de3784fe041bb2ac9ee741bf098590b1d2f0c65c8fb0283"
+    },
+    {
+      "path": "app/tests/intake.test.js",
+      "bytes": 27773,
+      "sha256": "5011e0f4bc1888324809c438a357188d73df3d3dc26eac25898129e11a393fed"
+    },
+    {
+      "path": "app/tests/ui.test.js",
+      "bytes": 48562,
+      "sha256": "f5f9365dd01a7de73db852495b30402dc14777db85f1e838e26f1acee6965450"
+    },
+    {
+      "path": "app/docs/API.md",
+      "bytes": 10991,
+      "sha256": "30bb2f9b6bd17f9357084aafafd82b6d9c3bbf3f72e936c75bd87bdabc823aca"
+    },
+    {
+      "path": "docs/competition/README.md",
+      "bytes": 2333,
+      "sha256": "00677004aef1877de78cb94e97aa773d503814132a24311e0bb490241e5d2401"
+    },
+    {
+      "path": "docs/current/현황과_할일.md",
+      "bytes": 6455,
+      "sha256": "321074dc05ddb3be7eb7bff2a0e3c6fa95db16822c6ca72551a75bc4858e12cf"
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v5.md",
+      "bytes": 4750,
+      "sha256": "bc868e2bcdbde5049928f5afd3329ac67e4db4090904e07395759cc427ce2860"
+    }
+  ],
+  "exclusions": {
+    "real_model_execution": false,
+    "training": false,
+    "data_audit_rerun": false,
+    "browser_e2e": false,
+    "production_database_access": false,
+    "historical_record_migration": false
+  },
+  "previous_data_checks": {
+    "source": "docs/competition/결선_적대적_재평가_v4_근거.json",
+    "pass": 327,
+    "skipped": 8,
+    "rerun": false
+  },
+  "remaining": [
+    "supporter-oriented input/target coverage",
+    "semantic label review coverage",
+    "data independence and representativeness",
+    "operational evidence for access loss, retention and deletion"
+  ],
+  "unchanged": [
+    "historical evaluations and evidence",
+    "training data and model weights",
+    "presentation baseline",
+    "service explanatory copy"
+  ]
+}

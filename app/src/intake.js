@@ -121,8 +121,13 @@ function normalizeAnswer(question, input) {
   }
   if (question.type === 'text') {
     if (selected.length || custom) invalid('invalid_answer', '이 질문에는 글로 답해 주세요.');
-    if (question.required && !rawText.trim()) invalid('answer_required', '이 질문은 꼭 답해 주세요.');
-    return { text: rawText.trim() ? rawText : SKIP, sel: [], custom: '', skipped: false, rawText };
+    // Empty input and the reserved UI skip marker are absence of an answer,
+    // including requests from older clients which omitted the skipped flag.
+    if (!rawText.trim() || rawText.trim() === SKIP) {
+      if (question.required || question.noSkip) invalid('answer_required', '이 질문은 꼭 답해 주세요.');
+      return { text: SKIP, sel: [], custom: '', skipped: true, rawText };
+    }
+    return { text: rawText, sel: [], custom: '', skipped: false, rawText };
   }
   if (selected.some(index => index < 0 || index >= question.opts.length)) invalid('invalid_selection', '선택한 보기가 없어요.');
   if (question.type === 'one' && selected.length > 1) invalid('invalid_selection', '하나의 보기만 골라 주세요.');

@@ -8,6 +8,8 @@ import { createIntake, answerIntake, currentView } from '../src/intake.js';
 import { HttpError } from '../src/errors.js';
 import { ModelGateway } from '../src/model.js';
 import { PROMPT_VERSION } from '../src/relationship-prompts.js';
+import { agentContext, safetySources } from '../src/relationship-agent.js';
+import { retrieveSources, sourceDocuments } from '../src/relationship-retrieval.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const memory = { summary:'사용자가 전한 상황', facts:[], unknowns:['당사자의 직접 의향'], user_goal:'부담 없는 첫마디' };
@@ -78,6 +80,154 @@ test('relationship agent updates and persists internal analysis even for a skipp
   const back=await f.request(session,`/api/intakes/${view.id}/back`,'POST',{revision:view.revision});
   assert.equal(back.status,200);
   assert.equal((await f.request(session,`/api/intakes/${view.id}/context`)).data.context.relationship_state,null);
+});
+
+async function sendCurrent(f, session, view, input) {
+  const response = await f.request(session, `/api/intakes/${view.id}/answers`, 'POST', {
+    revision:view.revision, question_id:view.question.id, follow_up:Boolean(view.question.follow_up), ...input,
+  });
+  assert.equal(response.status, 200, JSON.stringify(response.data));
+  return response.data;
+}
+
+async function intakeAtDescribe(f, session) {
+  const created = await f.request(session, '/api/intakes', 'POST', {});
+  assert.equal(created.status, 201);
+  let view = created.data;
+  for (const [id, input] of [['name',{text:'합성 친구'}], ['want',{text:'친구의 이야기를 부담 없이 듣고 싶어요.'}],
+    ['goal',{skipped:true}], ['rel',{selected:[4]}], ['contact',{skipped:true}]]) {
+    assert.equal(view.question.id, id);
+    view = await sendCurrent(f, session, view, input);
+  }
+  assert.equal(view.question.id, 'mood');
+  view = await sendCurrent(f, session, view, {selected:[view.question.opts.length - 1]});
+  assert.equal(view.question.id, 'describe');
+  return view;
+}
+
+function assertDescribeSkipped(context) {
+  const field = context.patient.fields.describe;
+  assert.equal(field.status, 'skipped');
+  assert.equal(field.skipped, true);
+  assert.equal(field.text, '(건너뛰었어요)');
+  assert.deepEqual(field.selected, []);
+  assert.equal(field.custom, '');
+  assert.equal(context.payload.answers.find(answer => answer.id === 'describe').skipped, true);
+  assert.deepEqual(agentContext(context).patient.find(answer => answer.question_id === 'describe').answers, []);
+  assert.equal(sourceDocuments(context).some(source => source.question_id === 'describe'), false);
+  assert.equal(retrieveSources(context).documents.some(source => source.question_id === 'describe'), false);
+  assert.equal(safetySources(context).some(source => source.question_id === 'describe'), false);
+  return {status:field.status, skipped:field.skipped, text:field.text, selected:field.selected, custom:field.custom};
+}
+
+test('blank optional text matches explicit skip through HTTP, persisted context and final records', {skip:!databaseUrl}, async t => {
+  const updates = [], finalContexts = [];
+  const gateway = {model:'synthetic-model', protocol:'relationship_agent', updateState:async context => {
+    updates.push(context); return update(memory);
+  }, respond:async context => {
+    finalContexts.push(context); return {patient_state:memory, guide, assessment:{safety:false}, name_index:null};
+  }};
+  const f = await fixture(t, gateway), session = await f.browser();
+  assert.equal(session.bootstrap.questions.length, 29);
+  let expected, blankView;
+  for (const input of [{text:'(건너뛰었어요)',skipped:true}, {text:''}, {text:' \t\n '}, {text:'(건너뛰었어요)'}]) {
+    let view = await intakeAtDescribe(f, session);
+    const before = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
+    view = await sendCurrent(f, session, view, input);
+    assert.equal(view.question.id, 'concern');
+    assert.equal(view.pendingFollow, false);
+    const reloaded = await f.request(session, `/api/intakes/${view.id}`);
+    assert.deepEqual(reloaded.data, view);
+    const context = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
+    const actual = assertDescribeSkipped(context);
+    expected ||= actual;
+    assert.deepEqual(actual, expected);
+    assert.equal(context.answered_count, before.answered_count);
+    assertDescribeSkipped(updates.at(-1));
+    const stored = (await f.store.pool.query('SELECT content,owner FROM intakes WHERE id=$1', [view.id])).rows[0];
+    const state = f.store.open(stored.content, `${stored.owner}:intake:${view.id}`);
+    assert.equal(state.ans.describe.skipped, true);
+    assert.equal(state.ans.describe.text, '(건너뛰었어요)');
+    assert.equal(view.log.filter(row => row.who === 'me').at(-1).text, '(건너뛰었어요)');
+    if (input.text === '') blankView = view;
+  }
+  let view = blankView, turns = 0;
+  while (view.status === 'active') {
+    const question = view.question;
+    const input = question.type === 'text'
+      ? question.required || question.noSkip ? {text:'친구의 말을 존중하며 차분히 듣고 싶어요.'} : {skipped:true}
+      : ['cause','support','burden','cgchange_more'].includes(question.id) ? {selected:[1]}
+        : question.required || question.noSkip ? {selected:[0]} : {skipped:true};
+    view = await sendCurrent(f, session, view, input);
+    assert.ok(++turns <= 35, 'The default intake must finish without a follow-up loop');
+  }
+  const result = await f.request(session, `/api/intakes/${view.id}/result`, 'POST', {revision:view.revision});
+  assert.equal(result.status, 200, JSON.stringify(result.data));
+  assert.equal(finalContexts.length, 1);
+  assertDescribeSkipped(finalContexts[0]);
+  assertDescribeSkipped(result.data.record.context);
+  const saved = await f.request(session, `/api/records/${result.data.record.id}`);
+  assert.equal(saved.status, 200);
+  assertDescribeSkipped(saved.data.record.context);
+  assert.deepEqual(saved.data.record.context, result.data.record.context);
+});
+
+test('back after blank optional text restores a prompt and real text including 모름 and 없음 remains evidence', {skip:!databaseUrl}, async t => {
+  const gateway = {model:'synthetic-model', protocol:'relationship_agent', updateState:async () => update(memory)};
+  const f = await fixture(t, gateway), session = await f.browser();
+  let view = await intakeAtDescribe(f, session);
+  const answeredBefore = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context.answered_count;
+  view = await sendCurrent(f, session, view, {text:''});
+  for (const text of ['최근 저녁 식사를 거르는 모습을 보았어요.', '모름', '없음']) {
+    const back = await f.request(session, `/api/intakes/${view.id}/back`, 'POST', {revision:view.revision});
+    assert.equal(back.status, 200); view = back.data;
+    assert.equal(view.question.id, 'describe');
+    const reverted = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
+    assert.equal(reverted.patient.fields.describe.status, 'not_asked');
+    assert.equal(reverted.answered_count, answeredBefore);
+    assert.equal(reverted.agent_state, null);
+    view = await sendCurrent(f, session, view, {text});
+    const context = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
+    const field = context.patient.fields.describe;
+    assert.equal(field.status, 'answered');
+    assert.equal(field.skipped, false);
+    assert.equal(field.rawText, text);
+    assert.equal(field.text, text);
+    assert.equal(context.answered_count, answeredBefore + 1);
+    assert.ok(sourceDocuments(context).some(source => source.question_id === 'describe' && source.text === text));
+    assert.equal(safetySources(context).filter(source => source.question_id === 'describe').length, 1);
+  }
+});
+
+test('required and noSkip text reject empty, whitespace, marker and explicit skip without changing persisted state', {skip:!databaseUrl}, async t => {
+  let calls = 0;
+  const gateway = {model:'synthetic-model', protocol:'relationship_agent', updateState:async () => {calls++;return update(memory);}};
+  const f = await fixture(t, gateway), session = await f.browser();
+  await f.store.pool.query(`INSERT INTO questions(id,kind,sort_order,enabled,subject,definition)
+    VALUES ('no_skip_note','base',150,TRUE,'patient',$1)`, [{type:'text',q:'현재 관찰 내용을 알려 주세요.',sec:'관찰',noSkip:true}]);
+  let view = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  for (const id of ['name','no_skip_note','want']) {
+    assert.equal(view.question.id, id);
+    assert.equal(view.question.type, 'text');
+    assert.ok(view.question.required || view.question.noSkip);
+    const contextBefore = (await f.request(session, `/api/intakes/${view.id}/context`)).data;
+    const storedBefore = (await f.store.pool.query('SELECT revision,content FROM intakes WHERE id=$1', [view.id])).rows[0];
+    const countBefore = (await f.store.pool.query('SELECT count(*)::int AS count FROM patient_state_revisions WHERE intake_id=$1', [view.id])).rows[0].count;
+    const callsBefore = calls;
+    for (const input of [{text:''}, {text:' \t\n '}, {text:'(건너뛰었어요)'}, {skipped:true}]) {
+      const rejected = await f.request(session, `/api/intakes/${view.id}/answers`, 'POST', {
+        revision:view.revision, question_id:id, ...input,
+      });
+      assert.equal(rejected.status, 400, JSON.stringify(rejected.data));
+      assert.equal(rejected.data.error.code, 'answer_required');
+      assert.deepEqual((await f.request(session, `/api/intakes/${view.id}`)).data, view);
+      assert.deepEqual((await f.request(session, `/api/intakes/${view.id}/context`)).data, contextBefore);
+    }
+    assert.equal(calls, callsBefore);
+    assert.deepEqual((await f.store.pool.query('SELECT revision,content FROM intakes WHERE id=$1', [view.id])).rows[0], storedBefore);
+    assert.equal((await f.store.pool.query('SELECT count(*)::int AS count FROM patient_state_revisions WHERE intake_id=$1', [view.id])).rows[0].count, countBefore);
+    view = await sendCurrent(f, session, view, {text:id === 'name' ? '합성 친구' : '실제로 확인한 내용을 적었어요.'});
+  }
 });
 
 test('UI catalog, browser isolation, CSRF and persisted column interactions', { skip:!databaseUrl }, async t => {

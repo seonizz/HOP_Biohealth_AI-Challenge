@@ -40,7 +40,9 @@ const ChatInput={
       box.innerHTML=`<div class="row"><textarea id="ta" rows="${q.short?1:2}" placeholder="${esc(q.ph||"")}"></textarea></div>`;
       box.querySelector(".row").appendChild(acts(mainBtn("send","보내기")));
       const ta=$("ta");ta.focus();
-      $("send").onclick=()=>{const v=ta.value.trim();if(!v&&q.required)return need(ta);submit(v||SKIP,[]);};
+      $("send").onclick=()=>{const v=ta.value.trim();
+        if(!v||v===SKIP){if(!canSkip&&!q.optionalDetail)return need(ta);return submit(SKIP,[],"",true);}
+        return submit(v,[]);};
       ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("send").click();}};addBack();return;
     }
     // 보기 버튼 (묶음 이름 g가 있으면 묶음별 제목을 붙임)
@@ -62,7 +64,8 @@ const ChatInput={
           if(m.input){
             const log=m.ask?ChatScreen.messages.map(message=>({...message})):null;
             if(m.ask)ChatScreen.sync([...pendingConversationLog(),{who:"ai",text:m.ask,face:q.face||"ponder",fu:true}]);
-            return ChatInput.render({type:"text",ph:m.ph,noSkip:!m.ask},t=>onDone(t===SKIP?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),()=>{
+            // The selected option remains an answer even without extra detail.
+            return ChatInput.render({type:"text",ph:m.ph,noSkip:!m.ask,optionalDetail:true},t=>onDone(t===SKIP?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),()=>{
               if(log)ChatScreen.sync(log);
               ChatInput.render(q,onDone,onBack);
             });

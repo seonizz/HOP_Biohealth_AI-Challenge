@@ -191,6 +191,53 @@ test('a response arriving after leaving cannot restore the chat title', async ()
   assert.equal(document.title, '말씨');
 });
 
+for (const action of ['empty-send', 'whitespace-send', 'marker-send', 'empty-enter', 'skip']) {
+  test(`optional text ${action} sends an explicit skip through the conversation handler`, async () => {
+    const calls = [], response = deferred();
+    const { document, context } = conversationHarness((path, options) => {
+      calls.push(options.body); return response.promise;
+    }, { realUI:true });
+    const view = { ...conversationView('친구'), question:{ id:'describe', type:'text' } };
+    context.flow.renderConversation(view, 0);
+    const textarea = document.getElementById('ta');
+    textarea.value = action === 'whitespace-send' ? ' \t\n\u3000 ' : action === 'marker-send' ? ' (건너뛰었어요) ' : '';
+    if (action === 'empty-enter') {
+      let prevented = false;
+      textarea.onkeydown({ key:'Enter', preventDefault() { prevented = true; } });
+      assert.equal(prevented, true);
+    } else {
+      (action === 'skip' ? document.getElementById('input').querySelector('.skip') : document.getElementById('send')).click();
+    }
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].question_id, 'describe');
+    assert.equal(calls[0].skipped, true);
+    assert.equal(calls[0].text, '(건너뛰었어요)');
+    assert.deepEqual(Array.from(calls[0].selected), []);
+    assert.equal(calls[0].custom, '');
+    assert.equal(document.getElementById('log').querySelectorAll('.me').length, 1);
+    response.resolve({ ...view, revision:2, question:{ id:'concern', type:'text' } });
+    await settleUI();
+  });
+}
+
+test('required and no-skip text reject blank Send and Enter without losing the input', async () => {
+  const calls = [];
+  const { document, context } = conversationHarness((path, options) => { calls.push(options.body); }, { realUI:true });
+  for (const rules of [{ required:true }, { noSkip:true }, { required:true, follow_up:true }]) {
+    for (const value of ['', ' \t\n\u3000 ', '(건너뛰었어요)']) {
+      context.flow.renderConversation({ ...conversationView('친구'), question:{ id:'want', type:'text', ...rules } }, 0);
+      const textarea = document.getElementById('ta'); textarea.value = value;
+      await document.getElementById('send').click();
+      textarea.onkeydown({ key:'Enter', preventDefault() {} });
+      assert.equal(calls.length, 0);
+      assert.equal(textarea.value, value);
+      assert.equal(textarea.focused, true);
+      assert.equal(document.getElementById('input').querySelectorAll('.need').length, 1);
+      assert.equal(document.getElementById('input').querySelector('.skip'), null);
+    }
+  }
+});
+
 test('yes detail inputs preserve parenthesized observations for all three questions', async () => {
   const document = documentWith(['input']);
   const context = vm.createContext({ document, questions:structuredClone(questionCatalog) });
@@ -323,8 +370,9 @@ test('closing or refreshing an active conversation warns and completed screens d
   context.flow.show('result');listeners.beforeunload(event());assert.equal(warnings,2);
 });
 
-for(const detail of ['(예전에는) 친구들과 산책했어요.','']) {
-  test(`optional yes detail ${detail?'submits its full text':'can be skipped'} and remains a base answer`,async()=>{
+for(const mode of ['text','skip','empty-send']) {
+  test(`optional yes detail ${mode} remains a base answer`,async()=>{
+    const detail=mode==='text'?'(예전에는) 친구들과 산책했어요.':'';
     const response=deferred(),calls=[];
     const { document,context }=conversationHarness((path,options)=>{calls.push(options.body);return response.promise;},{realUI:true});
     const q={id:'support',type:'one',face:'hear',noOwn:true,noSkip:true,opts:[['네',{input:true,ask:'어떤 사람이나 관계, 활동인가요?',ph:'예: 친구들과 산책해요'}],'아니요']};
@@ -334,7 +382,7 @@ for(const detail of ['(예전에는) 친구들과 산책했어요.','']) {
     box.querySelectorAll('.chip')[0].click();assert.equal(log.querySelectorAll('.fu-tag').length,1);
     await box.querySelector('.back').click();assert.equal(log.querySelector('.fu-tag'),null);assert.equal(calls.length,0);
     box.querySelectorAll('.chip')[0].click();document.getElementById('ta').value=detail;
-    const action=detail?document.getElementById('send'):box.querySelector('.skip');
+    const action=mode==='skip'?box.querySelector('.skip'):document.getElementById('send');
     assert.deepEqual(box.querySelector('.acts').children.map(child=>child.textContent),['건너뛰기','보내기']);
     const pending=action.click();assert.equal(calls.length,1);assert.equal(calls[0].follow_up,false);assert.equal(calls[0].skipped,false);
     assert.deepEqual(Array.from(calls[0].selected),[0]);assert.equal(calls[0].text,detail?`네, ${detail}`:'네');

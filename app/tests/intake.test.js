@@ -228,6 +228,47 @@ test('required answers, current question, option bounds, single/exclusive select
   assert.throws(() => reply(cause, { skipped: true }), { code: 'answer_required' });
 });
 
+test('optional empty text and the reserved marker remain skipped before and after a model turn', () => {
+  const original = advanceTo('describe');
+  const before = structuredClone(original);
+  const count = buildContext(original).answered_count;
+  for (const input of [{}, { text:'' }, { text:' \t\n\u3000 ' }, { text:' (건너뛰었어요) ', skipped:false }, { skipped:true }]) {
+    const pending = prepareModelAnswer(original, { question_id:'describe', ...input }, 12);
+    const context = buildContext(pending);
+    assert.equal(context.patient.fields.describe.status, 'skipped');
+    assert.equal(context.answered_count, count);
+    assert.equal(Boolean(context.patient.fields.describe.follow_up_pending), false);
+    const completed = completeModelAnswer(pending, modelOutput());
+    assert.equal(completed.ans.describe.skipped, true);
+    assert.equal(completed.ans.describe.rawText, input.text ?? '');
+    assert.equal(buildContext(completed).patient.fields.describe.status, 'skipped');
+    assert.equal(buildContext(completed).answered_count, count);
+    assert.equal(currentView(completed).question.id, 'concern');
+    assert.deepEqual(discardModelAnswer(pending), original);
+  }
+  assert.deepEqual(original, before);
+});
+
+test('a required follow-up rejects blank text and the reserved marker without changing its original answer', () => {
+  const pending = reply(advanceTo('concern'), { text:'식사' });
+  const before = structuredClone(pending);
+  for (const input of [{ text:'' }, { text:' \t\n\u3000 ' }, { text:' (건너뛰었어요) ' }, { skipped:true }]) {
+    assert.throws(() => reply(pending, input), { code:'answer_required', status:400 });
+    assert.deepEqual(pending, before);
+  }
+});
+
+test('nonempty text is preserved even when it states uncertainty, absence, or mentions the skip marker', () => {
+  const original = advanceTo('describe');
+  for (const text of ['모름', '없음', '그런 변화는 없어요.', '(예전에는) 함께 산책했어요.', '화면에 (건너뛰었어요)라고 표시돼요.']) {
+    const next = reply(original, { text });
+    assert.equal(next.ans.describe.skipped, false);
+    assert.equal(next.ans.describe.rawText, text);
+    assert.equal(buildContext(next).patient.fields.describe.status, 'answered');
+    assert.equal(buildContext(next).answered_count, buildContext(original).answered_count + 1);
+  }
+});
+
 test('no observed change skips duration/frequency unless extra observations exist', () => {
   const mood = advanceTo('mood');
   const noneIndex = currentView(mood).question.opts.length - 1;
