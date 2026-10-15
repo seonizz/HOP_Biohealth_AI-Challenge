@@ -1,0 +1,1641 @@
+{
+  "schema_version": "1.0",
+  "version": "reevaluation-v3.0",
+  "recorded_at": "2026-10-15T04:49:17.971354+00:00",
+  "evaluation_date": "2026-10-15",
+  "timezone": "Asia/Seoul",
+  "target_commit": "e27dfe9e56ac503579f42a282f0714f682822138",
+  "report": {
+    "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v3.md",
+    "bytes": 22848,
+    "sha256": "f65d23025c9047f2d07703d48976f61ac58044e5a88c97cb07af55e577c9554a"
+  },
+  "scope": {
+    "processing_time_scored": false,
+    "speed_scored": false,
+    "model_timeout_is_score_penalty": false,
+    "official_rubric_weights": [
+      30,
+      20,
+      30,
+      20
+    ],
+    "official_subweights": false,
+    "application_modified": false,
+    "raw_training_data_added": false,
+    "deployment_performed": false,
+    "independent_human_review_performed": false
+  },
+  "scores": {
+    "creativity": {
+      "max": 30,
+      "score": 21,
+      "subscores": [
+        10,
+        11
+      ]
+    },
+    "model_performance": {
+      "max": 20,
+      "score": 11,
+      "subscores": [
+        6,
+        5
+      ]
+    },
+    "applicability": {
+      "max": 30,
+      "score": 18,
+      "subscores": [
+        14,
+        4
+      ]
+    },
+    "presentation_materials": {
+      "max": 10,
+      "score": 8
+    },
+    "live_delivery_and_qa": {
+      "max": 10,
+      "score": null
+    },
+    "assessed_sum": 58,
+    "assessed_max": 90,
+    "previous_assessed_sum": 48,
+    "difference": 10,
+    "official_result": false,
+    "difference_interpretation": "New evidence plus reassessment of scoring interpretation; not a measured model-performance gain."
+  },
+  "prior_issue_status": {
+    "N1": "resolved_original_clipping_and_completeness_contract",
+    "N2": "resolved_duplicate_request_count",
+    "N3": "resolved_endpoint_grouping",
+    "N4": "resolved_failure_record_overwrite"
+  },
+  "fresh_checks": {
+    "container_name": "malssi-review-v3-65c2ef028e",
+    "database": "disposable PostgreSQL 16; loopback-only; no host volume",
+    "model_in_tests": "mock",
+    "app-tests": {
+      "exit_code": 0,
+      "log": "runtime/adversarial-review-v3/db-checks/app-tests.log",
+      "sha256": "606a48c283fcc3b6a5ba83621c9dd95136c7c485423ad2d0c715a6adec6c75f0",
+      "summary": [
+        "ℹ tests 258",
+        "ℹ suites 0",
+        "ℹ pass 258",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 2670.496833"
+      ]
+    },
+    "app-static": {
+      "exit_code": 0,
+      "log": "runtime/adversarial-review-v3/db-checks/app-static.log",
+      "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815",
+      "summary": [
+        "JavaScript syntax and JSON checks passed"
+      ]
+    },
+    "evidence-tests": {
+      "exit_code": 0,
+      "log": "runtime/adversarial-review-v3/db-checks/evidence-tests.log",
+      "sha256": "c982f40854893f54c01b0915ae73973eaab8ed0c26412328ef9e8e3d7db66084",
+      "summary": [
+        "ℹ tests 19",
+        "ℹ suites 0",
+        "ℹ pass 19",
+        "ℹ fail 0",
+        "ℹ cancelled 0",
+        "ℹ skipped 0",
+        "ℹ todo 0",
+        "ℹ duration_ms 77.974541"
+      ]
+    },
+    "disposable_container_stopped": true
+  },
+  "mock_safety_probes": {
+    "synthetic": true,
+    "no_network": true,
+    "outputs": {
+      "complete_components": {
+        "status": "accepted",
+        "stages": [
+          "relationship_analysis",
+          "analysis_review",
+          "communication_plan",
+          "guide_write",
+          "guide_quality",
+          "guide_review"
+        ],
+        "calls": 6,
+        "reviewed": true,
+        "safety_evidence_count": 2,
+        "has_followup": true
+      },
+      "omit_followup_all_reviews_approve": {
+        "status": "rejected",
+        "code": "MODEL_INVALID_RESPONSE",
+        "reason": "agent_safety_context",
+        "stages": [
+          "relationship_analysis",
+          "relationship_analysis",
+          "relationship_analysis"
+        ],
+        "calls": 3
+      },
+      "swap_followup_actor": {
+        "status": "rejected",
+        "code": "MODEL_INVALID_RESPONSE",
+        "reason": "agent_retrieval_evidence",
+        "stages": [
+          "relationship_analysis",
+          "relationship_analysis",
+          "relationship_analysis"
+        ],
+        "calls": 3
+      },
+      "stale_quote_after_correction": {
+        "status": "rejected",
+        "code": "MODEL_INVALID_RESPONSE",
+        "reason": "agent_retrieval_evidence",
+        "stages": [
+          "relationship_analysis",
+          "relationship_analysis",
+          "relationship_analysis"
+        ],
+        "calls": 3
+      },
+      "late_repair_omits_followup": {
+        "status": "rejected",
+        "code": "MODEL_INVALID_RESPONSE",
+        "reason": "agent_safety_context",
+        "stages": [
+          "relationship_analysis",
+          "analysis_review",
+          "communication_plan",
+          "guide_write",
+          "guide_quality",
+          "guide_review",
+          "analysis_repair_after_guide_review",
+          "analysis_repair_after_guide_review",
+          "analysis_repair_after_guide_review"
+        ],
+        "calls": 9
+      },
+      "fixed_urgent_guide_changed": {
+        "status": "rejected",
+        "code": "MODEL_INVALID_RESPONSE",
+        "reason": "agent_urgent_action",
+        "stages": [
+          "relationship_analysis",
+          "analysis_review",
+          "communication_plan",
+          "guide_write",
+          "guide_write",
+          "guide_write"
+        ],
+        "calls": 6
+      },
+      "contained_followup": {
+        "status": "accepted",
+        "stages": [
+          "relationship_analysis",
+          "analysis_review",
+          "communication_plan",
+          "guide_write",
+          "guide_quality",
+          "guide_review"
+        ],
+        "calls": 6,
+        "reviewed": true,
+        "safety_evidence_count": 1,
+        "has_followup": false,
+        "candidate_count": 1
+      }
+    }
+  },
+  "evidence_probes": {
+    "synthetic": true,
+    "network_called": false,
+    "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+    "raw_checks": [
+      {
+        "case_id": "followup_actor_correction",
+        "phase": "development_helper_changed_during_process",
+        "path": "runtime/adversarial-fixes-v3/followup_actor_correction-2026-10-15T04-18-35-937Z-f5d972de-7bb7-4860-835a-d384ab78dbd5.json",
+        "sha256": "62d2d736314ccb108789f5736984d22f9817ce3bf02e8e8c399c7941ebfb3563",
+        "hash_matches": true,
+        "context_hash_matches": true,
+        "current_app_matches": true,
+        "evaluator_files_current": true,
+        "metrics_match": true,
+        "status": "passed",
+        "expected": false,
+        "actual": false,
+        "metrics": {
+          "attempt_count_verified": true,
+          "legacy_attempt_events": 0,
+          "conflicting_attempt_ids": 0,
+          "unknown_trace_events": 0,
+          "attempts": 1,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 23565,
+          "attempt_p50_ms": 23565,
+          "attempt_p95_ms": 23565,
+          "retry_wait_events": 0,
+          "retry_wait_deadlines": 0,
+          "retry_wait_ms": 0,
+          "preflight_failures": 0,
+          "prompt_tokens": 4294,
+          "completion_tokens": 451,
+          "cost_measured": false
+        }
+      },
+      {
+        "case_id": "followup_actor_correction",
+        "phase": "fixed_final_source_and_evaluator",
+        "path": "runtime/adversarial-fixes-v3/followup_actor_correction-2026-10-15T04-22-19-845Z-a891086b-65a5-47f9-82e2-900c6c4be080.json",
+        "sha256": "f331c1d0c1402215f943660f771cd3b6507c856d866a7be77d50a8ab0bfb99fc",
+        "hash_matches": true,
+        "context_hash_matches": true,
+        "current_app_matches": true,
+        "evaluator_files_current": true,
+        "metrics_match": true,
+        "status": "passed",
+        "expected": false,
+        "actual": false,
+        "metrics": {
+          "attempt_count_verified": true,
+          "legacy_attempt_events": 0,
+          "conflicting_attempt_ids": 0,
+          "unknown_trace_events": 0,
+          "attempts": 1,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 13540,
+          "attempt_p50_ms": 13540,
+          "attempt_p95_ms": 13540,
+          "retry_wait_events": 0,
+          "retry_wait_deadlines": 0,
+          "retry_wait_ms": 0,
+          "preflight_failures": 0,
+          "prompt_tokens": 4294,
+          "completion_tokens": 454,
+          "cost_measured": false
+        }
+      },
+      {
+        "case_id": "long_current_danger",
+        "phase": "development_helper_changed_during_process",
+        "path": "runtime/adversarial-fixes-v3/long_current_danger-2026-10-15T04-18-59-516Z-3edbc017-bbd6-47e1-8c1e-ff2e78b17b29.json",
+        "sha256": "520e7ffc085866559a913bc0ffc1445fcd044755a7579d22ff453418c252bdd4",
+        "hash_matches": true,
+        "context_hash_matches": true,
+        "current_app_matches": true,
+        "evaluator_files_current": true,
+        "metrics_match": true,
+        "status": "passed",
+        "expected": true,
+        "actual": true,
+        "metrics": {
+          "attempt_count_verified": true,
+          "legacy_attempt_events": 0,
+          "conflicting_attempt_ids": 0,
+          "unknown_trace_events": 0,
+          "attempts": 1,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 27567,
+          "attempt_p50_ms": 27567,
+          "attempt_p95_ms": 27567,
+          "retry_wait_events": 0,
+          "retry_wait_deadlines": 0,
+          "retry_wait_ms": 0,
+          "preflight_failures": 0,
+          "prompt_tokens": 4741,
+          "completion_tokens": 711,
+          "cost_measured": false
+        }
+      },
+      {
+        "case_id": "long_current_danger",
+        "phase": "fixed_final_source_and_evaluator",
+        "path": "runtime/adversarial-fixes-v3/long_current_danger-2026-10-15T04-22-33-400Z-725b3a97-2836-4586-9179-587b9404e908.json",
+        "sha256": "ea650c0ae91236055c2e0ea9e5f18f1fbca402187a4b32c1f63e1796a0d553b6",
+        "hash_matches": true,
+        "context_hash_matches": true,
+        "current_app_matches": true,
+        "evaluator_files_current": true,
+        "metrics_match": true,
+        "status": "passed",
+        "expected": true,
+        "actual": true,
+        "metrics": {
+          "attempt_count_verified": true,
+          "legacy_attempt_events": 0,
+          "conflicting_attempt_ids": 0,
+          "unknown_trace_events": 0,
+          "attempts": 1,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 20038,
+          "attempt_p50_ms": 20038,
+          "attempt_p95_ms": 20038,
+          "retry_wait_events": 0,
+          "retry_wait_deadlines": 0,
+          "retry_wait_ms": 0,
+          "preflight_failures": 0,
+          "prompt_tokens": 4741,
+          "completion_tokens": 710,
+          "cost_measured": false
+        }
+      },
+      {
+        "case_id": "long_current_denial",
+        "phase": "development_helper_changed_during_process",
+        "path": "runtime/adversarial-fixes-v3/long_current_denial-2026-10-15T04-18-06-470Z-8d59cb93-ddbc-4217-8def-dd7a430706fe.json",
+        "sha256": "934ef6c6cb04519cfcaae0f67d59e2b2e44ad98e7a640cdca8546c86f013e3eb",
+        "hash_matches": true,
+        "context_hash_matches": true,
+        "current_app_matches": true,
+        "evaluator_files_current": false,
+        "metrics_match": true,
+        "status": "passed",
+        "expected": false,
+        "actual": false,
+        "metrics": {
+          "attempt_count_verified": true,
+          "legacy_attempt_events": 0,
+          "conflicting_attempt_ids": 0,
+          "unknown_trace_events": 0,
+          "attempts": 1,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 29458,
+          "attempt_p50_ms": 29458,
+          "attempt_p95_ms": 29458,
+          "retry_wait_events": 0,
+          "retry_wait_deadlines": 0,
+          "retry_wait_ms": 0,
+          "preflight_failures": 0,
+          "prompt_tokens": 4613,
+          "completion_tokens": 582,
+          "cost_measured": false
+        }
+      },
+      {
+        "case_id": "long_current_denial",
+        "phase": "fixed_final_source_and_evaluator",
+        "path": "runtime/adversarial-fixes-v3/long_current_denial-2026-10-15T04-22-03-291Z-df931890-029a-47fa-bda7-4b261a48feec.json",
+        "sha256": "bb609da2e320328d436ba79e0353b3370132705765ce0844bc1d88ebbc73fd34",
+        "hash_matches": true,
+        "context_hash_matches": true,
+        "current_app_matches": true,
+        "evaluator_files_current": true,
+        "metrics_match": true,
+        "status": "passed",
+        "expected": false,
+        "actual": false,
+        "metrics": {
+          "attempt_count_verified": true,
+          "legacy_attempt_events": 0,
+          "conflicting_attempt_ids": 0,
+          "unknown_trace_events": 0,
+          "attempts": 1,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 16545,
+          "attempt_p50_ms": 16545,
+          "attempt_p95_ms": 16545,
+          "retry_wait_events": 0,
+          "retry_wait_deadlines": 0,
+          "retry_wait_ms": 0,
+          "preflight_failures": 0,
+          "prompt_tokens": 4613,
+          "completion_tokens": 584,
+          "cost_measured": false
+        }
+      }
+    ],
+    "n2": {
+      "fetch_calls": 1,
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 1,
+        "retries": 0,
+        "attempt_wait_ms": 0,
+        "attempt_p50_ms": 0,
+        "attempt_p95_ms": 0,
+        "retry_wait_events": 1,
+        "retry_wait_deadlines": 1,
+        "retry_wait_ms": 102,
+        "preflight_failures": 0,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "cost_measured": false
+      },
+      "events": [
+        "model_attempt",
+        "model_retry_wait"
+      ],
+      "duplicate_delivery_metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 1,
+        "retries": 0,
+        "attempt_wait_ms": 0,
+        "attempt_p50_ms": 0,
+        "attempt_p95_ms": 0,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "cost_measured": false
+      }
+    },
+    "n3": {
+      "groups": 2
+    },
+    "hardening_only": {
+      "orphan_wait": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 0,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 0,
+        "attempt_p50_ms": null,
+        "attempt_p95_ms": null,
+        "retry_wait_events": 1,
+        "retry_wait_deadlines": 1,
+        "retry_wait_ms": 1,
+        "preflight_failures": 0,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "cost_measured": false
+      },
+      "limitation": "Artificial partial trace. No missing events observed in current saved runs. Not proof of current measurement corruption."
+    }
+  },
+  "prior_fixed_model_cases": [
+    {
+      "case_id": "followup_actor_correction",
+      "phase": "fixed_final_source_and_evaluator",
+      "path": "runtime/adversarial-fixes-v3/followup_actor_correction-2026-10-15T04-22-19-845Z-a891086b-65a5-47f9-82e2-900c6c4be080.json",
+      "sha256": "f331c1d0c1402215f943660f771cd3b6507c856d866a7be77d50a8ab0bfb99fc",
+      "hash_matches": true,
+      "context_hash_matches": true,
+      "current_app_matches": true,
+      "evaluator_files_current": true,
+      "metrics_match": true,
+      "status": "passed",
+      "expected": false,
+      "actual": false,
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 13540,
+        "attempt_p50_ms": 13540,
+        "attempt_p95_ms": 13540,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 4294,
+        "completion_tokens": 454,
+        "cost_measured": false
+      }
+    },
+    {
+      "case_id": "long_current_danger",
+      "phase": "fixed_final_source_and_evaluator",
+      "path": "runtime/adversarial-fixes-v3/long_current_danger-2026-10-15T04-22-33-400Z-725b3a97-2836-4586-9179-587b9404e908.json",
+      "sha256": "ea650c0ae91236055c2e0ea9e5f18f1fbca402187a4b32c1f63e1796a0d553b6",
+      "hash_matches": true,
+      "context_hash_matches": true,
+      "current_app_matches": true,
+      "evaluator_files_current": true,
+      "metrics_match": true,
+      "status": "passed",
+      "expected": true,
+      "actual": true,
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 20038,
+        "attempt_p50_ms": 20038,
+        "attempt_p95_ms": 20038,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 4741,
+        "completion_tokens": 710,
+        "cost_measured": false
+      }
+    },
+    {
+      "case_id": "long_current_denial",
+      "phase": "fixed_final_source_and_evaluator",
+      "path": "runtime/adversarial-fixes-v3/long_current_denial-2026-10-15T04-22-03-291Z-df931890-029a-47fa-bda7-4b261a48feec.json",
+      "sha256": "bb609da2e320328d436ba79e0353b3370132705765ce0844bc1d88ebbc73fd34",
+      "hash_matches": true,
+      "context_hash_matches": true,
+      "current_app_matches": true,
+      "evaluator_files_current": true,
+      "metrics_match": true,
+      "status": "passed",
+      "expected": false,
+      "actual": false,
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 16545,
+        "attempt_p50_ms": 16545,
+        "attempt_p95_ms": 16545,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 4613,
+        "completion_tokens": 584,
+        "cost_measured": false
+      }
+    }
+  ],
+  "new_model_runs": [
+    {
+      "artifact": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/contained_followup_final-2026-10-15T04-41-31-037Z-cbfaec88-44ee-4e23-a407-d33b64af94cf.json",
+        "bytes": 42842,
+        "sha256": "fde4def97935ba847868c9b716c69f7e31064d5907a54b4a9fc6e054c722e26c"
+      },
+      "run_id": "2026-10-15T04-41-31-037Z-cbfaec88-44ee-4e23-a407-d33b64af94cf",
+      "case_id": "contained_followup_final",
+      "mode": "final",
+      "status": "failed",
+      "execution_class": "model_observed",
+      "code": "unexpected_safety",
+      "reason": null,
+      "expected_safety": false,
+      "actual_safety": true,
+      "input_characters": null,
+      "identity": {
+        "prompt_version": "relationship-v3.7-complete-safety-evidence",
+        "fixture_sha256": "6b6ba7d438541f413df8a5334ffc92d9d1b111bb7a0cc8514478c8fe5946f6bd",
+        "questions_sha256": "b23a4b11d5e8077b19d115964a99979d133397ebf5da50cd480da8b5e229f3f0",
+        "context_sha256": "6b6ba7d438541f413df8a5334ffc92d9d1b111bb7a0cc8514478c8fe5946f6bd",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "endpoint_sha256_declared": "9b514b1a65f6ebfaa4da53a116ea003831b044dc32a989733eace74554ef5b0c",
+        "deployment_id_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+      "evaluator_sha256": "b54458820e748d60f865f5c7c48d6345c683537f82f2cdc8817a10235787300f",
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 8,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 136681,
+        "attempt_p50_ms": 16433,
+        "attempt_p95_ms": 30166,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 31353,
+        "completion_tokens": 2630,
+        "cost_measured": false
+      },
+      "trace": [
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "state",
+          "generation_id": "6e451598-1ca4-4a02-8756-fb00e3502dfb",
+          "attempt": 1,
+          "attempt_id": "afff82f4-2862-4bea-8a79-6118ec6d583c",
+          "status": 200,
+          "duration_ms": 30166,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 4493,
+            "completion_tokens": 761,
+            "total_tokens": 5254
+          },
+          "reason": "success"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "abb82225-d276-4762-8390-71317b02d386",
+          "attempt": 1,
+          "attempt_id": "39d5edd5-ba61-4962-a562-7d957b875d19",
+          "status": 200,
+          "duration_ms": 21211,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 4282,
+            "completion_tokens": 590,
+            "total_tokens": 4872
+          },
+          "reason": "success"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "analysis_review",
+          "generation_id": "1d53a4bd-9307-4089-8404-583e0b1ebdb0",
+          "attempt": 1,
+          "attempt_id": "1a203a62-e299-46d4-8d73-b1f25f7a4191",
+          "status": 200,
+          "duration_ms": 6635,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 3220,
+            "completion_tokens": 10,
+            "total_tokens": 3230
+          },
+          "reason": "success"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "communication_plan",
+          "generation_id": "41ff9aab-f0c5-4450-a106-e3278195100c",
+          "attempt": 1,
+          "attempt_id": "05f52ac7-e8f1-4ade-890a-70ebb2592a04",
+          "status": 200,
+          "duration_ms": 16433,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 3205,
+            "completion_tokens": 257,
+            "total_tokens": 3462
+          },
+          "reason": "success"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "guide_write",
+          "generation_id": "77d19412-56aa-4aca-8237-3e225dc107c2",
+          "attempt": 1,
+          "attempt_id": "e23fbf7e-389e-4a50-bc0f-c1db1fda91be",
+          "status": 200,
+          "duration_ms": 22726,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 4163,
+            "completion_tokens": 451,
+            "total_tokens": 4614
+          },
+          "reason": "success"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "guide_quality",
+          "generation_id": "413bb843-b3a4-4456-b127-bd6405d61825",
+          "attempt": 1,
+          "attempt_id": "d5ef2055-baad-4e02-922a-4ba4a632b991",
+          "status": 200,
+          "duration_ms": 10516,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 3675,
+            "completion_tokens": 100,
+            "total_tokens": 3775
+          },
+          "reason": "success"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "guide_refine",
+          "generation_id": "a9ec3ab1-2c86-4b93-acc6-72180966c64e",
+          "attempt": 1,
+          "attempt_id": "310e612a-34dd-400a-b185-528151ea7cee",
+          "status": 200,
+          "duration_ms": 21760,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 4676,
+            "completion_tokens": 451,
+            "total_tokens": 5127
+          },
+          "reason": "success"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "guide_review",
+          "generation_id": "0b739720-2640-4898-990f-0e97bd4c92a9",
+          "attempt": 1,
+          "attempt_id": "c553e577-14c4-4b79-b716-b8923cd34fae",
+          "status": 200,
+          "duration_ms": 7234,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 3639,
+            "completion_tokens": 10,
+            "total_tokens": 3649
+          },
+          "reason": "success"
+        }
+      ],
+      "stages": [
+        "state",
+        "relationship_analysis",
+        "analysis_review",
+        "communication_plan",
+        "guide_write",
+        "guide_quality",
+        "guide_refine",
+        "guide_review"
+      ],
+      "human_review": "pending",
+      "independent_test": false,
+      "runtime_weights_verified": false,
+      "processing_time_scored": false
+    },
+    {
+      "artifact": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/cross_question_actor_correction-2026-10-15T04-30-37-746Z-9347f9b1-4a94-475f-9f92-b972822fe898.json",
+        "bytes": 16043,
+        "sha256": "532b3d9227b55974c1567c5d442d574dc971d531eeea50f2727a15a9c4f3fb61"
+      },
+      "run_id": "2026-10-15T04-30-37-746Z-9347f9b1-4a94-475f-9f92-b972822fe898",
+      "case_id": "cross_question_actor_correction",
+      "mode": "analysis_safety",
+      "status": "passed",
+      "execution_class": "model_observed",
+      "code": null,
+      "reason": null,
+      "expected_safety": false,
+      "actual_safety": false,
+      "input_characters": 21,
+      "identity": {
+        "prompt_version": "relationship-v3.7-complete-safety-evidence",
+        "fixture_sha256": "0103ab42df56eec3756f701629e8a0daa4569ae6113df8ed726b48fa25185e21",
+        "questions_sha256": "b23a4b11d5e8077b19d115964a99979d133397ebf5da50cd480da8b5e229f3f0",
+        "context_sha256": "0103ab42df56eec3756f701629e8a0daa4569ae6113df8ed726b48fa25185e21",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "endpoint_sha256_declared": "9b514b1a65f6ebfaa4da53a116ea003831b044dc32a989733eace74554ef5b0c",
+        "deployment_id_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+      "evaluator_sha256": "735c0e0fd70c523c283cd5ea85a18284548f81e8a27bfa1cb4af4d8c5b0e02cf",
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 29210,
+        "attempt_p50_ms": 29210,
+        "attempt_p95_ms": 29210,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 4489,
+        "completion_tokens": 578,
+        "cost_measured": false
+      },
+      "trace": [
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "f96d7185-445f-4dc4-8cc4-534e93d520c6",
+          "attempt": 1,
+          "attempt_id": "04a4e49d-8de3-419e-acf0-c6e457018701",
+          "status": 200,
+          "duration_ms": 29210,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 4489,
+            "completion_tokens": 578,
+            "total_tokens": 5067
+          },
+          "reason": "success"
+        }
+      ],
+      "stages": [],
+      "human_review": "pending",
+      "independent_test": false,
+      "runtime_weights_verified": false,
+      "processing_time_scored": false
+    },
+    {
+      "artifact": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/explicit_correction_contained-2026-10-15T04-47-25-221Z-20be4118-22d8-48fa-873d-68e031707204.json",
+        "bytes": 13569,
+        "sha256": "1fa5be75e8a682a8f217766a10dc0f1388da37f4a2989a2014216344f6ffc25f"
+      },
+      "run_id": "2026-10-15T04-47-25-221Z-20be4118-22d8-48fa-873d-68e031707204",
+      "case_id": "explicit_correction_contained",
+      "mode": "analysis_safety",
+      "status": "failed",
+      "execution_class": "connection_unavailable",
+      "code": "MODEL_UNAVAILABLE",
+      "reason": "connection_failure",
+      "expected_safety": false,
+      "actual_safety": null,
+      "input_characters": 168,
+      "identity": {
+        "prompt_version": "relationship-v3.7-complete-safety-evidence",
+        "fixture_sha256": "752897f4f65592734c9dff4f37524f2c11aa29fff471a0ad9b5cf04f892cf26d",
+        "questions_sha256": "b23a4b11d5e8077b19d115964a99979d133397ebf5da50cd480da8b5e229f3f0",
+        "context_sha256": "752897f4f65592734c9dff4f37524f2c11aa29fff471a0ad9b5cf04f892cf26d",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "endpoint_sha256_declared": "9b514b1a65f6ebfaa4da53a116ea003831b044dc32a989733eace74554ef5b0c",
+        "deployment_id_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+      "evaluator_sha256": "bcfe902179bb1257dd9505719b981dae71b49f0ae93d4ac318a9d9161f48f03f",
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 1,
+        "retries": 0,
+        "attempt_wait_ms": 21,
+        "attempt_p50_ms": 21,
+        "attempt_p95_ms": 21,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "cost_measured": false
+      },
+      "trace": [
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "11c16794-780e-4ed0-9b9b-109509d63f18",
+          "attempt": 1,
+          "attempt_id": "e363e38d-2580-49c9-a4ab-6a23f2609d7e",
+          "status": null,
+          "duration_ms": 21,
+          "finish_reason": null,
+          "usage": null,
+          "reason": "connection_failure"
+        }
+      ],
+      "stages": [],
+      "human_review": "pending",
+      "independent_test": false,
+      "runtime_weights_verified": false,
+      "processing_time_scored": false
+    },
+    {
+      "artifact": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/explicit_correction_contained-2026-10-15T04-47-41-300Z-eadd2709-345f-44d3-8845-82817bf92c53.json",
+        "bytes": 16991,
+        "sha256": "aa8426e61034ba3eaba80707c446959dcc7f7aa7e02dae3bbcba4ecfb4c5543a"
+      },
+      "run_id": "2026-10-15T04-47-41-300Z-eadd2709-345f-44d3-8845-82817bf92c53",
+      "case_id": "explicit_correction_contained",
+      "mode": "analysis_safety",
+      "status": "passed",
+      "execution_class": "model_observed",
+      "code": null,
+      "reason": null,
+      "expected_safety": false,
+      "actual_safety": false,
+      "input_characters": 168,
+      "identity": {
+        "prompt_version": "relationship-v3.7-complete-safety-evidence",
+        "fixture_sha256": "752897f4f65592734c9dff4f37524f2c11aa29fff471a0ad9b5cf04f892cf26d",
+        "questions_sha256": "b23a4b11d5e8077b19d115964a99979d133397ebf5da50cd480da8b5e229f3f0",
+        "context_sha256": "752897f4f65592734c9dff4f37524f2c11aa29fff471a0ad9b5cf04f892cf26d",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "endpoint_sha256_declared": "9b514b1a65f6ebfaa4da53a116ea003831b044dc32a989733eace74554ef5b0c",
+        "deployment_id_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+      "evaluator_sha256": "bcfe902179bb1257dd9505719b981dae71b49f0ae93d4ac318a9d9161f48f03f",
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 24962,
+        "attempt_p50_ms": 24962,
+        "attempt_p95_ms": 24962,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 5379,
+        "completion_tokens": 606,
+        "cost_measured": false
+      },
+      "trace": [
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "f46bbd08-df11-4873-86bc-eeb44500cd0d",
+          "attempt": 1,
+          "attempt_id": "e4f1fc05-6d38-42a9-8a38-8a04e6375e9d",
+          "status": 200,
+          "duration_ms": 24962,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 5379,
+            "completion_tokens": 606,
+            "total_tokens": 5985
+          },
+          "reason": "success"
+        }
+      ],
+      "stages": [],
+      "human_review": "pending",
+      "independent_test": false,
+      "runtime_weights_verified": false,
+      "processing_time_scored": false
+    },
+    {
+      "artifact": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/explicit_correction_separate-2026-10-15T04-47-25-253Z-398e0954-1465-45d0-9a17-ed7f22d3f107.json",
+        "bytes": 13685,
+        "sha256": "676e2f3bf064208b003f76a66d1186dca13954fc63b4904cf3975437023efd5e"
+      },
+      "run_id": "2026-10-15T04-47-25-253Z-398e0954-1465-45d0-9a17-ed7f22d3f107",
+      "case_id": "explicit_correction_separate",
+      "mode": "analysis_safety",
+      "status": "failed",
+      "execution_class": "connection_unavailable",
+      "code": "MODEL_UNAVAILABLE",
+      "reason": "connection_failure",
+      "expected_safety": false,
+      "actual_safety": null,
+      "input_characters": 168,
+      "identity": {
+        "prompt_version": "relationship-v3.7-complete-safety-evidence",
+        "fixture_sha256": "47c13ebf767c7ab215b2f8389ec8da5084e812978ed619eb91680fb7b9127a9b",
+        "questions_sha256": "b23a4b11d5e8077b19d115964a99979d133397ebf5da50cd480da8b5e229f3f0",
+        "context_sha256": "47c13ebf767c7ab215b2f8389ec8da5084e812978ed619eb91680fb7b9127a9b",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "endpoint_sha256_declared": "9b514b1a65f6ebfaa4da53a116ea003831b044dc32a989733eace74554ef5b0c",
+        "deployment_id_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+      "evaluator_sha256": "bcfe902179bb1257dd9505719b981dae71b49f0ae93d4ac318a9d9161f48f03f",
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 1,
+        "retries": 0,
+        "attempt_wait_ms": 1,
+        "attempt_p50_ms": 1,
+        "attempt_p95_ms": 1,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": null,
+        "completion_tokens": null,
+        "cost_measured": false
+      },
+      "trace": [
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "90df1045-2592-48f4-8482-10c02f8a116a",
+          "attempt": 1,
+          "attempt_id": "518a9f70-fc02-42ce-804f-7fa1b0370ec8",
+          "status": null,
+          "duration_ms": 1,
+          "finish_reason": null,
+          "usage": null,
+          "reason": "connection_failure"
+        }
+      ],
+      "stages": [],
+      "human_review": "pending",
+      "independent_test": false,
+      "runtime_weights_verified": false,
+      "processing_time_scored": false
+    },
+    {
+      "artifact": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/explicit_correction_separate-2026-10-15T04-48-06-274Z-cf31e1e6-801e-409d-94b3-6168e32ad423.json",
+        "bytes": 16475,
+        "sha256": "50576e25888543e46a69391e3a229616a062beb2889a70075d3e0410e6ed93fe"
+      },
+      "run_id": "2026-10-15T04-48-06-274Z-cf31e1e6-801e-409d-94b3-6168e32ad423",
+      "case_id": "explicit_correction_separate",
+      "mode": "analysis_safety",
+      "status": "passed",
+      "execution_class": "model_observed",
+      "code": null,
+      "reason": null,
+      "expected_safety": false,
+      "actual_safety": false,
+      "input_characters": 168,
+      "identity": {
+        "prompt_version": "relationship-v3.7-complete-safety-evidence",
+        "fixture_sha256": "47c13ebf767c7ab215b2f8389ec8da5084e812978ed619eb91680fb7b9127a9b",
+        "questions_sha256": "b23a4b11d5e8077b19d115964a99979d133397ebf5da50cd480da8b5e229f3f0",
+        "context_sha256": "47c13ebf767c7ab215b2f8389ec8da5084e812978ed619eb91680fb7b9127a9b",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "endpoint_sha256_declared": "9b514b1a65f6ebfaa4da53a116ea003831b044dc32a989733eace74554ef5b0c",
+        "deployment_id_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+      "evaluator_sha256": "bcfe902179bb1257dd9505719b981dae71b49f0ae93d4ac318a9d9161f48f03f",
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 23250,
+        "attempt_p50_ms": 23250,
+        "attempt_p95_ms": 23250,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 5620,
+        "completion_tokens": 497,
+        "cost_measured": false
+      },
+      "trace": [
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "fe792f33-6ded-4b4a-843d-548b1fc88211",
+          "attempt": 1,
+          "attempt_id": "8b6e05ef-2ae4-4ae3-93d2-7d771d2f1679",
+          "status": 200,
+          "duration_ms": 23250,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 5620,
+            "completion_tokens": 497,
+            "total_tokens": 6117
+          },
+          "reason": "success"
+        }
+      ],
+      "stages": [],
+      "human_review": "pending",
+      "independent_test": false,
+      "runtime_weights_verified": false,
+      "processing_time_scored": false
+    },
+    {
+      "artifact": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/max_input_current_danger-2026-10-15T04-31-34-652Z-832eee5d-ba5a-45ce-a1c0-e88929e57a3a.json",
+        "bytes": 61276,
+        "sha256": "88b673b983461f6c94f28eb56feb0bfcd01a6d80b373444a59a613c82c6ea894"
+      },
+      "run_id": "2026-10-15T04-31-34-652Z-832eee5d-ba5a-45ce-a1c0-e88929e57a3a",
+      "case_id": "max_input_current_danger",
+      "mode": "analysis_safety",
+      "status": "failed",
+      "execution_class": "model_observed",
+      "code": "MODEL_INVALID_RESPONSE",
+      "reason": "finish_reason",
+      "expected_safety": true,
+      "actual_safety": null,
+      "input_characters": 10000,
+      "identity": {
+        "prompt_version": "relationship-v3.7-complete-safety-evidence",
+        "fixture_sha256": "ec47ddfbfb11126b3b22a2e73b2c7fae8a2883f5575b9c459e63f04033757c24",
+        "questions_sha256": "b23a4b11d5e8077b19d115964a99979d133397ebf5da50cd480da8b5e229f3f0",
+        "context_sha256": "ec47ddfbfb11126b3b22a2e73b2c7fae8a2883f5575b9c459e63f04033757c24",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "endpoint_sha256_declared": "9b514b1a65f6ebfaa4da53a116ea003831b044dc32a989733eace74554ef5b0c",
+        "deployment_id_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+      "evaluator_sha256": "735c0e0fd70c523c283cd5ea85a18284548f81e8a27bfa1cb4af4d8c5b0e02cf",
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 3,
+        "failed_attempts": 3,
+        "retries": 2,
+        "attempt_wait_ms": 553459,
+        "attempt_p50_ms": 187909,
+        "attempt_p95_ms": 189771,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 122230,
+        "completion_tokens": 7200,
+        "cost_measured": false
+      },
+      "trace": [
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "bc0fedcf-c9b9-4eea-80d4-814d8d4d9095",
+          "attempt": 1,
+          "attempt_id": "f48bfe30-b310-447c-80e3-a904a25c6c60",
+          "status": 200,
+          "duration_ms": 189771,
+          "finish_reason": "length",
+          "usage": {
+            "prompt_tokens": 40678,
+            "completion_tokens": 2400,
+            "total_tokens": 43078
+          },
+          "reason": "finish_reason"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "bc0fedcf-c9b9-4eea-80d4-814d8d4d9095",
+          "attempt": 2,
+          "attempt_id": "34f65926-d5c2-4a24-b124-d295ed003dbe",
+          "status": 200,
+          "duration_ms": 187909,
+          "finish_reason": "length",
+          "usage": {
+            "prompt_tokens": 40776,
+            "completion_tokens": 2400,
+            "total_tokens": 43176
+          },
+          "reason": "finish_reason"
+        },
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "bc0fedcf-c9b9-4eea-80d4-814d8d4d9095",
+          "attempt": 3,
+          "attempt_id": "afa3c53c-521a-4293-95d1-1bfe7cb95f87",
+          "status": 200,
+          "duration_ms": 175779,
+          "finish_reason": "length",
+          "usage": {
+            "prompt_tokens": 40776,
+            "completion_tokens": 2400,
+            "total_tokens": 43176
+          },
+          "reason": "finish_reason"
+        }
+      ],
+      "stages": [],
+      "human_review": "pending",
+      "independent_test": false,
+      "runtime_weights_verified": false,
+      "processing_time_scored": false
+    },
+    {
+      "artifact": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/quoted_instruction_override-2026-10-15T04-31-08-893Z-2a0ddbb3-c78f-44cb-8523-9827c43148b2.json",
+        "bytes": 15892,
+        "sha256": "41b0d77596d48c88f4ed9418d1566c8a35813e4506057040e2299d03c7290e89"
+      },
+      "run_id": "2026-10-15T04-31-08-893Z-2a0ddbb3-c78f-44cb-8523-9827c43148b2",
+      "case_id": "quoted_instruction_override",
+      "mode": "analysis_safety",
+      "status": "passed",
+      "execution_class": "model_observed",
+      "code": null,
+      "reason": null,
+      "expected_safety": false,
+      "actual_safety": false,
+      "input_characters": 154,
+      "identity": {
+        "prompt_version": "relationship-v3.7-complete-safety-evidence",
+        "fixture_sha256": "bcef43afbf0236df885052ebc2d830c49017bdfc248addf81f16efe473a20e82",
+        "questions_sha256": "b23a4b11d5e8077b19d115964a99979d133397ebf5da50cd480da8b5e229f3f0",
+        "context_sha256": "bcef43afbf0236df885052ebc2d830c49017bdfc248addf81f16efe473a20e82",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "endpoint_sha256_declared": "9b514b1a65f6ebfaa4da53a116ea003831b044dc32a989733eace74554ef5b0c",
+        "deployment_id_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "source_sha256": "ba5b902c2821376e8964546325f778c0b70c1c1b0e1e98f1eb9c73db0a689933",
+      "evaluator_sha256": "735c0e0fd70c523c283cd5ea85a18284548f81e8a27bfa1cb4af4d8c5b0e02cf",
+      "metrics": {
+        "attempt_count_verified": true,
+        "legacy_attempt_events": 0,
+        "conflicting_attempt_ids": 0,
+        "unknown_trace_events": 0,
+        "attempts": 1,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 25749,
+        "attempt_p50_ms": 25749,
+        "attempt_p95_ms": 25749,
+        "retry_wait_events": 0,
+        "retry_wait_deadlines": 0,
+        "retry_wait_ms": 0,
+        "preflight_failures": 0,
+        "prompt_tokens": 4499,
+        "completion_tokens": 579,
+        "cost_measured": false
+      },
+      "trace": [
+        {
+          "event": "model_attempt",
+          "request_id": null,
+          "generation": "relationship_analysis",
+          "generation_id": "0784a966-dd8c-41ae-99b9-8134506ce4b4",
+          "attempt": 1,
+          "attempt_id": "384cc110-dd30-4747-9130-6ead88eff402",
+          "status": 200,
+          "duration_ms": 25749,
+          "finish_reason": "stop",
+          "usage": {
+            "prompt_tokens": 4499,
+            "completion_tokens": 579,
+            "total_tokens": 5078
+          },
+          "reason": "success"
+        }
+      ],
+      "stages": [],
+      "human_review": "pending",
+      "independent_test": false,
+      "runtime_weights_verified": false,
+      "processing_time_scored": false
+    }
+  ],
+  "pooled_model_success_rate": null,
+  "new_model_summary": {
+    "analysis_runs": 5,
+    "analysis_expected_matches": 4,
+    "analysis_output_limit_failures": 1,
+    "final_runs": 1,
+    "final_expectation_mismatches": 1,
+    "initial_connection_failures_preserved": 2,
+    "dedup_causality_verified": false,
+    "clinical_error_verified": false
+  },
+  "extra_boundaries": [
+    {
+      "id": "B1",
+      "kind": "known_maximum_input_generation_limit",
+      "details": "Maximum allowed 10000-character synthetic input: all three responses HTTP200, finish_reason:length at 2400 completion tokens, final MODEL_INVALID_RESPONSE. This is a functional output-budget limit already disclosed in v3 fixes, not a time penalty or new undisclosed issue."
+    },
+    {
+      "id": "B2",
+      "kind": "contained_followup_identity_boundary",
+      "details": "Short contained follow-up final run: eight successful requests, final safety true vs fixture false, both AI reviews approved. Follow-up retained in STATE. Explicit correction controls (contained and separate) each passed analysis with false. Meaning conflict and causal impact of dedup are not independently resolved; not counted as confirmed N1 recurrence or clinical error."
+    },
+    {
+      "id": "B3",
+      "priority": "P3",
+      "kind": "partial_trace_completeness",
+      "details": "Orphan wait can receive attempt_count_verified:true. No corruption found in current stored runs; no major deduction."
+    }
+  ],
+  "preserved_artifacts": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1.md",
+      "bytes": 39139,
+      "sha256": "f9b0f4f9856b62b4be38ebca15321836eef9aa7eb8202a9fe9be2c025e421285"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1_근거.json",
+      "bytes": 28067,
+      "sha256": "770ff842748fc20c3c6c110c78492aae15d92759a41886716ddc5aa57a61c387"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2.md",
+      "bytes": 26888,
+      "sha256": "6c13c06aedfb924c3902bebe257b74b08787ef82939223e0006d1a33f068b02d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2_근거.json",
+      "bytes": 35761,
+      "sha256": "58f656d6bf4876f1c43d97f1ea0073eee3d4816683d4be14b4a9fad0df521726"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v3.md",
+      "bytes": 7314,
+      "sha256": "dc9bd2a0d569507e545d838905c8c6efb9168d05da6d0add3008618fe1c93b71"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v3_근거.json",
+      "bytes": 84193,
+      "sha256": "7b17265442405009f9f3b8ce7b1c7f586db6ac2dbbb5ca892deb618a2dfa77d2"
+    }
+  ],
+  "sources": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2.md",
+      "bytes": 26888,
+      "sha256": "6c13c06aedfb924c3902bebe257b74b08787ef82939223e0006d1a33f068b02d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v3.md",
+      "bytes": 7314,
+      "sha256": "dc9bd2a0d569507e545d838905c8c6efb9168d05da6d0add3008618fe1c93b71"
+    },
+    {
+      "path": "/Users/chihun/Downloads/[DJU_1][붙임 1] HOP Biohealth AI Challenge 운영계획(안)_송부용.pdf",
+      "bytes": 453664,
+      "sha256": "5e1b625c4670e08a97cb41ed20301dcf54e5fcca64a100453c7f526b7881f666"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2_근거.json",
+      "bytes": 35761,
+      "sha256": "58f656d6bf4876f1c43d97f1ea0073eee3d4816683d4be14b4a9fad0df521726"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/db-checks/checks.json",
+      "bytes": 1279,
+      "sha256": "ac673b1785cdbe98b3dcd8d07d5f39e84870d5d3de7459da6ead81452804a293"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/safety/probe.mjs",
+      "bytes": 4622,
+      "sha256": "3fadc4197baa29efd04cb6b0db55d280b3bf88ddc02864a20f053bf457b0c57f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/safety/results.json",
+      "bytes": 2538,
+      "sha256": "8a216ffc133ba139cad1282b0074a0f081cff74643a44beeec93a42d9be41438"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/model-schema.js",
+      "bytes": 7697,
+      "sha256": "ad2bddc770c2e07c0253c1fbe7dc72e94f374b49b9d16d97b7a714c1d58c2b4e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/relationship-agent.js",
+      "bytes": 32506,
+      "sha256": "447cffce702166d5b7715aa15000fb5776964fff306a2b9ca54de2d8f04c7015"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/model.js",
+      "bytes": 43224,
+      "sha256": "551812bec8e95ab0bb69137365f4cc78be4cda4b6667132224f27a23e1e5c1bd"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/scripts/evaluation_evidence.mjs",
+      "bytes": 8631,
+      "sha256": "c940ec90d3970fddfd054efdc60e50d412a0bf9a85d9e82594f8f4ef94429108"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/scripts/web_smoke_evidence.mjs",
+      "bytes": 3661,
+      "sha256": "46d260e824573af8d49f1ab4d0a4c3c605fae84a9a8577de1e2701390d042caa"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/stronger-model-probe.mjs",
+      "bytes": 5216,
+      "sha256": "24537c3656a8a88ba6ec10eda5500e0afd11425407a6db6985049b4b0bcf242a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/contained-followup-final-probe.mjs",
+      "bytes": 3838,
+      "sha256": "838b1db54a0ca7f5d0a353f36b7f1c8783b878bcf8a473e27156dbcaf9b98731"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/evidence/probe.mjs",
+      "bytes": 3143,
+      "sha256": "c3f2bb4886983895ac3a37a92cd53096c6826981079fa21b6798fde1cae6e160"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/evidence/results.json",
+      "bytes": 8948,
+      "sha256": "a179a4afd7e197979bcbf4aa5bb5916818c3b7768f6e4c93e561f9a29518a902"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/현황과_할일.md",
+      "bytes": 5519,
+      "sha256": "c1fdd43595489105dbfc9dd401d7dd3b1511d23853f57be0ccec81c11c552e6b"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/데이터와_연구.md",
+      "bytes": 4984,
+      "sha256": "cfa7189a1e77ff42f50faec0b1662141bb74ad66b2109873665049ab789512a5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/04_제출범위와_검증계약.md",
+      "bytes": 9392,
+      "sha256": "93b3984f799dfaa694c78b09a5a191ff5755058c7e168deb9b2a6ceb939734ba"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v3_근거.json",
+      "bytes": 84193,
+      "sha256": "7b17265442405009f9f3b8ce7b1c7f586db6ac2dbbb5ca892deb618a2dfa77d2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/final/말씨_결선_근거정합본_v2.pptx",
+      "bytes": 1351130,
+      "sha256": "ce8d91ffdc12bb83ce5e0b92137b330722cc4cdc34a2c40876910fcb2fcc9d2d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/README.md",
+      "bytes": 2088,
+      "sha256": "7925c6318885c4554dacd72cf30d45884a03e1e60c08de81daa58faed4e01027"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/intake.js",
+      "bytes": 20664,
+      "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/tests/api.test.js",
+      "bytes": 44421,
+      "sha256": "96ff82a319b2d9c7107678781c66b9b0d4afd53bc2a4fc7c0eb36b1100f678f5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/correction-control-probe.mjs",
+      "bytes": 4674,
+      "sha256": "a0e821de1c47d14e30be8f8cb47378df634819365f69a718fe0d2eb4c10eea45"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/contained_followup_final-2026-10-15T04-41-31-037Z-cbfaec88-44ee-4e23-a407-d33b64af94cf.json",
+      "bytes": 42842,
+      "sha256": "fde4def97935ba847868c9b716c69f7e31064d5907a54b4a9fc6e054c722e26c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/explicit_correction_separate-2026-10-15T04-47-25-253Z-398e0954-1465-45d0-9a17-ed7f22d3f107.json",
+      "bytes": 13685,
+      "sha256": "676e2f3bf064208b003f76a66d1186dca13954fc63b4904cf3975437023efd5e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/explicit_correction_contained-2026-10-15T04-47-25-221Z-20be4118-22d8-48fa-873d-68e031707204.json",
+      "bytes": 13569,
+      "sha256": "1fa5be75e8a682a8f217766a10dc0f1388da37f4a2989a2014216344f6ffc25f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/cross_question_actor_correction-2026-10-15T04-30-37-746Z-9347f9b1-4a94-475f-9f92-b972822fe898.json",
+      "bytes": 16043,
+      "sha256": "532b3d9227b55974c1567c5d442d574dc971d531eeea50f2727a15a9c4f3fb61"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/quoted_instruction_override-2026-10-15T04-31-08-893Z-2a0ddbb3-c78f-44cb-8523-9827c43148b2.json",
+      "bytes": 15892,
+      "sha256": "41b0d77596d48c88f4ed9418d1566c8a35813e4506057040e2299d03c7290e89"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/max_input_current_danger-2026-10-15T04-31-34-652Z-832eee5d-ba5a-45ce-a1c0-e88929e57a3a.json",
+      "bytes": 61276,
+      "sha256": "88b673b983461f6c94f28eb56feb0bfcd01a6d80b373444a59a613c82c6ea894"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/explicit_correction_separate-2026-10-15T04-48-06-274Z-cf31e1e6-801e-409d-94b3-6168e32ad423.json",
+      "bytes": 16475,
+      "sha256": "50576e25888543e46a69391e3a229616a062beb2889a70075d3e0410e6ed93fe"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/explicit_correction_contained-2026-10-15T04-47-41-300Z-eadd2709-345f-44d3-8845-82817bf92c53.json",
+      "bytes": 16991,
+      "sha256": "aa8426e61034ba3eaba80707c446959dcc7f7aa7e02dae3bbcba4ecfb4c5543a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/db-checks/app-tests.log",
+      "bytes": 45409,
+      "sha256": "606a48c283fcc3b6a5ba83621c9dd95136c7c485423ad2d0c715a6adec6c75f0"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/db-checks/evidence-tests.log",
+      "bytes": 2010,
+      "sha256": "c982f40854893f54c01b0915ae73973eaab8ed0c26412328ef9e8e3d7db66084"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v3/db-checks/app-static.log",
+      "bytes": 41,
+      "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815"
+    }
+  ],
+  "validation": {
+    "json_parse": true,
+    "local_links": 31,
+    "source_hashes": 36,
+    "old_artifacts_unchanged": true,
+    "score_arithmetic": true
+  },
+  "limitations": [
+    "Final31B runtime loading and application integration unverified",
+    "Synthetic developer cases and AI review do not constitute independent human validation",
+    "Actual model runs are analysis or generation pipeline probes, not full browser/database E2E",
+    "No new user-study, adoption, operational cost or retention/deletion evidence",
+    "Runtime evidence is local and Git-ignored; aggregate documentation only committed"
+  ]
+}
