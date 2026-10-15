@@ -39,3 +39,27 @@ node_modules
 /ai/outputs/handoff
 /data/deliverables
 /presentation/outputs/presentation_collection_FT31_STEP100_20261009T192608Z.zip
+
+# Training data: never commit, regardless of size (including compressed copies).
+datasets/
+training_data/
+training-data/
+source_reference/
+training_kit/data/
+데이터셋/
+학습데이터/
+학습_데이터/
+train.jsonl*
+validation.jsonl*
+test.jsonl*
+train.parquet*
+validation.parquet*
+test.parquet*
+train.csv*
+validation.csv*
+test.csv*
+train.npz
+validation.npz
+test.npz
+source_dialogues.*
+/presentation/outputs/representative_training_data_*/representative_examples*.json
