@@ -1,16 +1,16 @@
 {
   "schema_version": "1.0",
-  "version": "reevaluation-v2.0",
+  "version": "reevaluation-v2.1",
   "evaluation_date": "2026-10-15",
   "timezone": "Asia/Seoul",
   "recorded_at": "2026-10-15T04:09:49.099983+00:00",
   "target_commit": "1e4641697d467fa3bbdd3192f633f9d55d27aed6",
   "report": {
     "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2.md",
-    "bytes": 26292,
-    "sha256": "6714776b3b892e4be2358a5cf3ad9f2bb2d46059273c6c2b79719e37c2572ac9"
+    "bytes": 26888,
+    "sha256": "6c13c06aedfb924c3902bebe257b74b08787ef82939223e0006d1a33f068b02d"
   },
-  "scope": "Adversarial reassessment of current local source and evidence. Application/model/presentation unchanged. Not independent human or clinical validation.",
+  "scope": "Adversarial reassessment of current local source and evidence. Application/model/presentation unchanged. Not independent human or clinical validation. Revision v2.1 excludes response latency, waiting time, processing speed and time-based demo feasibility from assessment; original measured timings retained only as audit observations.",
   "official_rubric": {
     "source": {
       "source_id": "R01",
@@ -55,10 +55,10 @@
     },
     "applicability": {
       "v1": 10,
-      "v2": 12,
+      "v2": 14,
       "max": 30,
       "subscores": [
-        9,
+        11,
         3
       ]
     },
@@ -71,10 +71,12 @@
       "score": null,
       "max": 10
     },
-    "assessed_sum": 46,
+    "assessed_sum": 48,
     "assessed_max": 90,
     "v1_assessed_sum": 39,
-    "delta": 7
+    "delta": 9,
+    "delta_is_like_for_like": false,
+    "delta_interpretation": "Arithmetic difference from historical v1; evaluation scope changed. Not a like-for-like improvement claim."
   },
   "preserved_artifacts": [
     {
@@ -568,7 +570,8 @@
     "reviewer_observation": "Final output inspected by AI reviewer only; automatic fixture expectations passed. Not independent human assessment.",
     "new_case": false,
     "pooled_success_rate": null,
-    "reproduction": "env -u MODEL_BASE_URL -u MODEL_NAME -u MODEL_API_KEY -u MODEL_TIMEOUT_MS MALSSI_EVALUATION_DIR=runtime/adversarial-review-v2/model-runs node ai/scripts/evaluate_relationship_agent.mjs ai/local_api/agent_data/current_danger_friend.json"
+    "reproduction": "env -u MODEL_BASE_URL -u MODEL_NAME -u MODEL_API_KEY -u MODEL_TIMEOUT_MS MALSSI_EVALUATION_DIR=runtime/adversarial-review-v2/model-runs node ai/scripts/evaluate_relationship_agent.mjs ai/local_api/agent_data/current_danger_friend.json",
+    "timing_used_for_scoring": false
   },
   "model_availability": {
     "endpoint_scope": "existing local Ollama loopback",
@@ -597,7 +600,8 @@
         "clipped": "accepted",
         "full": "agent_safety_context"
       },
-      "limitation": "Does not measure actual model misclassification or clinical safety."
+      "limitation": "Does not measure actual model misclassification or clinical safety.",
+      "latency_used_for_scoring": false
     },
     {
       "id": "N2",
@@ -645,7 +649,9 @@
           "cost_measured": false
         }
       },
-      "limitation": "No duplicate-attempt path observed in the seven stored runs or one fresh successful run."
+      "limitation": "No duplicate-attempt path observed in the seven stored runs or one fresh successful run.",
+      "latency_used_for_scoring": false,
+      "assessment_scope": "Incorrect request/failure counts; timeout is a reproduction trigger, not a speed penalty."
     },
     {
       "id": "N3",
@@ -660,7 +666,8 @@
         "input_runs": 2,
         "summary_groups": 1
       },
-      "limitation": "Does not establish that historical runs were actually mixed across servers."
+      "limitation": "Does not establish that historical runs were actually mixed across servers.",
+      "latency_used_for_scoring": false
     },
     {
       "id": "N4",
@@ -673,10 +680,14 @@
         113
       ],
       "observed": [
-        "Failed request duration and overall elapsed omitted from failure file",
         "Same run-id failure path overwritten with default writeFileSync"
       ],
-      "operational_failure_injected": false
+      "operational_failure_injected": false,
+      "latency_used_for_scoring": false,
+      "observations_excluded_from_assessment": [
+        "Failed request duration and overall elapsed omitted from failure file"
+      ],
+      "assessment_scope": "Preservation of failure events and denominator only."
     }
   ],
   "presentation_review": {
@@ -722,7 +733,7 @@
   "limitations": [
     "Final31B integration and runtime checkpoint loading unverified",
     "No new independent test or independent human review",
-    "No latest full web E2E, concurrent load or current-session p95",
+    "No latest full web E2E correctness verification",
     "No new field-user, adoption, operational cost or retention/deletion evidence",
     "Newly discovered findings are not attributed to latest changes without regression evidence",
     "Runtime logs, probes, synthetic outputs remain local and Git-ignored"
@@ -924,6 +935,37 @@
     "linked_existing_files_checked": 36,
     "line_anchors_checked": 12,
     "score_arithmetic_checked": true,
-    "prior_artifacts_unchanged": true
-  }
+    "prior_artifacts_unchanged": true,
+    "time_exclusion_consistency_checked": true
+  },
+  "revision_recorded_at": "2026-10-15T04:12:12.382060+00:00",
+  "evaluation_scope": {
+    "user_instruction": "시간은 빼야해",
+    "response_latency_assessed": false,
+    "waiting_time_assessed": false,
+    "processing_speed_assessed": false,
+    "time_based_demo_feasibility_assessed": false,
+    "timeout_reproduction_conditions_retained": true,
+    "request_failure_accounting_assessed": true,
+    "official_presentation_format_retained": true,
+    "raw_timing_policy": "Preserve original observations for audit only; exclude all timing values from scoring and latency-based improvement requirements."
+  },
+  "revision_history": [
+    {
+      "version": "reevaluation-v2.0",
+      "commit": "bd7163b",
+      "assessed_sum": 46,
+      "report": {
+        "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2.md",
+        "bytes": 26292,
+        "sha256": "6714776b3b892e4be2358a5cf3ad9f2bb2d46059273c6c2b79719e37c2572ac9"
+      }
+    },
+    {
+      "version": "reevaluation-v2.1",
+      "reason": "User explicitly excluded time from evaluation",
+      "assessed_sum": 48,
+      "score_change_reason": "Holistic reassessment of immediate applicability from 9/20 to 11/20 after excluding time; no fixed time penalty existed in v2.0."
+    }
+  ]
 }
