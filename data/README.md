@@ -62,6 +62,41 @@ python3 -B -m counseling_pipeline.token_admission \
 
 이 명령은 저장된 길이 장부와 결합해 원본 JSONL 행을 보존한 새 후보를 만든다. 모델·토크나이저 실행이나 학습은 하지 않는다. 현재 추가 보류 9행과 검증 결과는 [적대적 재검토 기록](../docs/competition/결선_재평가_지적_수정_v6.md)에 기록한다. 과거 학습 kit·발표 집계 스크립트·실험 산출물은 당시 버전을 유지한다.
 
+## 평가 데이터의 과거 사용 이력
+
+`evaluation_history` v2는 실제 원천 release·허용 정책·선별 근거·저장된 토큰 검사와 길이 장부를 명시 입력으로 받는다. `token_admission.validate_and_summarize`로 입력·선별 결정을 검증하고, `source_admission.build_admission`의 기존 규칙을 임시 로컬 경로에서 재계산해 허용 정책·전체 장부와 비교한다. 원천 conversation JSONL의 모든 행 ID·그룹·split을 장부와 대조하고 export 각 행의 원래 JSONL 바이트까지 확인하므로, 장부와 export의 그룹·행 수·보류 사유·원문을 함께 바꾸고 해시를 맞춰도 원천과 다른 후보는 거절한다. 현재 v2 허용 정책을 검증하며 원천과 기존 산출물은 변경하지 않는다.
+
+과거 개발 검토, 데이터 선별, 학습, 튜닝, 프롬프트 설계, 주석 검토를 수행한 행은 **같은 원천 그룹 전체**에 `development_exposed`를 남긴다. 토큰 길이 때문에 제외된 행의 이력도 남은 같은 그룹의 후보에 적용한다. 후보 파일의 이름·압축을 바꾸어도 원래 manifest·입력 해시·그룹 연결을 사용하며, 연결이 끊긴 이력은 무시하지 않고 실패한다.
+
+이벤트 JSONL은 Git 제외 로컬 경로에 보관한다. 각 행의 필수 필드는 다음과 같다. 원문은 이벤트에 복사하지 않는다.
+
+| 필드 | 계약 |
+|---|---|
+| `schema_version`, `event_id` | `malssi-evaluation-history-event-v1`, 중복되지 않는 로컬 이벤트 ID |
+| `purpose`, `occurred_at` | `development_audit`, `data_selection`, `training`, `tuning`, `prompt_design`, `annotation_review`, `custody_record`, `independent_evaluation` 중 하나와 시간대를 포함한 ISO 시각 |
+| `source_manifest_sha256` | export가 가리키는 원천 manifest SHA-256 |
+| `scope` | `{"kind":"source_split","split":"validation"}`, 또는 `kind`가 `rows`/`source_groups`이고 비어 있지 않은 로컬 `ids` 목록. 모르는 행·그룹·범위는 거절 |
+| `input_sha256` | 범위에 해당하는 `conversation/train.jsonl.gz`·`conversation/validation.jsonl.gz`의 원천 해시. 전체 원천 장부를 검사한 근거는 `source_admission_ledger_sha256` 한 개로 연결 가능 |
+| `evidence` | 근거 JSON의 `path`, 실제 `sha256`, 그리고 입력 해시별 `input_pointers`. JSON pointer가 실제 근거의 같은 입력 해시를 가리켜야 함. `/`를 키에 포함하면 `~1`로 표기하며 상대 경로는 이벤트 파일 기준 |
+
+빈 이력과 개발 노출이 기록되지 않은 후보는 `history_unverified`다. `custody_record`나 `independent_evaluation` 이벤트도 과거 개발 노출을 지우거나 이력 완전성을 입증하지 않는다. 이 검사기는 독립 평가셋을 인증하는 기능을 제공하지 않으므로 `--intended-use independent_test`는 두 상태 모두 차단하고 종료 코드 2를 반환한다. 해시는 로컬 근거의 연결·변조 검사용이며, 기록되지 않은 과거 사용이나 작성자 신뢰성을 증명하지 않는다. 목적 적합성·라벨 정확도·사람 검토 완료의 대체 근거도 아니다.
+
+```sh
+"$COUNSELING_PYTHON" -B -m counseling_pipeline.evaluation_history \
+  --export-manifest outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows/export_manifest.json \
+  --source-ledger outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --events ../runtime/finals-upgrade/data/evaluation_history_events.jsonl \
+  --intended-use development \
+  --output ../runtime/finals-upgrade/data/evaluation_history_v2_development.json
+```
+
+기본 토큰 정책·장부 위치는 export 디렉터리의 상위 폴더이며 이동한 경우 `--token-policy`, `--token-ledger`로 지정한다. 출력과 표준 출력에는 행·그룹·대화·이벤트 ID나 원문이 없는 집계와 파일 해시만 남긴다. `independent_test` 검사도 차단 결과를 집계 파일로 남기며, 기존 출력·심볼릭 링크는 덮어쓰지 않는다. 잘못된 JSON 구조는 원문을 포함할 수 있는 traceback 대신 `status: invalid`와 종료 코드 2로 처리한다. 원천, split, 기존 장부, 라벨과 사람 검토 상태는 수정하지 않는다.
+
 ## 파일과 사용 단위
 
 | 산출물 | 내용 |
