@@ -1,0 +1,3159 @@
+{
+  "schema_version": "1.0",
+  "version": "reevaluation-v6.0",
+  "recorded_at": "2026-10-15T06:41:26.948167+00:00",
+  "target_commit": "6187dbe0d9e47d11b8b02bc5057c5c95ffb0a288",
+  "parallel_reference_commit": "5cb3e9133da2f7fbf26242c449f77313031173cf",
+  "report": {
+    "path": "docs/competition/결선_적대적_재평가_v6.md",
+    "bytes": 16583,
+    "sha256": "84c3a280764d69ad8c075afbf5a1bbb19a6877c998a4c1c4c0a8e6ac8ae4f736"
+  },
+  "criteria": "user-data-scope-v1-2026-10-15",
+  "scope": {
+    "project_model_evaluated": false,
+    "project_model_executed": false,
+    "model_quality_or_integration_indirect_penalties": false,
+    "processing_time_scored": false,
+    "training_data_directly_inspected": true,
+    "source_or_training_rows_exported": false,
+    "application_input_and_evidence_contract_modified": true,
+    "dataset_modified_by_this_review": false,
+    "production_database_used": false,
+    "browser_rendered_e2e_performed": false,
+    "official_rubric_changed": false
+  },
+  "scores": {
+    "creativity_completion": {
+      "score": 26,
+      "max": 30,
+      "originality": 11,
+      "completion": 15
+    },
+    "training_data": {
+      "score": 14,
+      "max": 20,
+      "purpose": 3,
+      "quality": 3,
+      "split": 4,
+      "traceability": 4
+    },
+    "applicability": {
+      "score": 22,
+      "max": 30,
+      "immediate": 16,
+      "expansion": 6
+    },
+    "presentation_materials": {
+      "score": 8,
+      "max": 10
+    },
+    "live_presentation_qa": {
+      "score": null,
+      "max": 10,
+      "status": "unobserved"
+    },
+    "observed_total": 70,
+    "observed_max": 90,
+    "previous_total": 68,
+    "delta": 2,
+    "delta_reasons": {
+      "P3_input_contract_closure": 1,
+      "new_source_admission_partial_exposure_control": 1
+    }
+  },
+  "fresh_checks": {
+    "app_and_evidence": {
+      "container_name": "malssi-review-v6-605846d5f4",
+      "database": "disposable PostgreSQL 16; loopback-only; no host volume",
+      "model_in_tests": "mock",
+      "app-tests": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v6/db-checks-final/app-tests.log",
+        "sha256": "72d63df6729068c6248945685e22e2bd2782c85cd69e322895f1c445b3d6df77",
+        "summary": [
+          "ℹ tests 295",
+          "ℹ suites 0",
+          "ℹ pass 295",
+          "ℹ fail 0",
+          "ℹ cancelled 0",
+          "ℹ skipped 0",
+          "ℹ todo 0"
+        ]
+      },
+      "app-static": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v6/db-checks-final/app-static.log",
+        "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815",
+        "summary": [
+          "JavaScript syntax and JSON checks passed"
+        ]
+      },
+      "evidence-tests": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v6/db-checks-final/evidence-tests.log",
+        "sha256": "e6fda0d2546ee96cfdebf8b68158f3785a28a5e462247c5643168fa30e4d3f6a",
+        "summary": [
+          "ℹ tests 24",
+          "ℹ suites 0",
+          "ℹ pass 24",
+          "ℹ fail 0",
+          "ℹ cancelled 0",
+          "ℹ skipped 0",
+          "ℹ todo 0"
+        ]
+      },
+      "disposable_container_stopped": true
+    },
+    "http_database": {
+      "container_name": "malssi-review-v6-http-8ba7ec1c32",
+      "database": "disposable PostgreSQL 16; loopback-only; no host volume",
+      "model_in_tests": "mock",
+      "http-input-boundaries": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v6/http-probe-final/http-input-boundaries.log",
+        "sha256": "6fa27665fdfec90d637046ec3beaf499732625f15b6735e3b4350c059b0adcca",
+        "summary": []
+      },
+      "disposable_container_stopped": true
+    },
+    "http_input_cases": {
+      "actual_http": true,
+      "actual_postgresql": true,
+      "model": "synthetic mock",
+      "question_count": 29,
+      "cases": [
+        {
+          "kind": "required_name",
+          "variant": "empty",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "whitespace",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "marker",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "zwsp",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "word_joiner",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "zwj",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "variation_selector",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "nul",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "marker_plus_zwsp",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "korean",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_name",
+          "variant": "emoji_zwj",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_name",
+          "variant": "mixed_absent",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "hangul_fillers",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "cgj",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "soft_hyphen",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "bidi_only",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "supp_variation",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "inner_marker",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "long_zwsp",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "not_asked",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_name",
+          "variant": "combining",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_name",
+          "variant": "indic",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_name",
+          "variant": "jamo",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_name",
+          "variant": "mixed_real",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_name",
+          "variant": "spaced_real",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "empty",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "whitespace",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "marker",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "zwsp",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "word_joiner",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "zwj",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "variation_selector",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "nul",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "marker_plus_zwsp",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "korean",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "emoji_zwj",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "mixed_absent",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "hangul_fillers",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "cgj",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "soft_hyphen",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "bidi_only",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "supp_variation",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "inner_marker",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "long_zwsp",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "skipped",
+          "source_count": 0,
+          "safety_count": 0,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "combining",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "indic",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "jamo",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "mixed_real",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "optional_describe",
+          "variant": "spaced_real",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 1,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_followup",
+          "variant": "empty",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "whitespace",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "marker",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "zwsp",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "word_joiner",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "zwj",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "variation_selector",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "nul",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "marker_plus_zwsp",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "korean",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 3,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_followup",
+          "variant": "emoji_zwj",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 3,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_followup",
+          "variant": "mixed_absent",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "hangul_fillers",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "cgj",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "soft_hyphen",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "bidi_only",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "supp_variation",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "inner_marker",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "long_zwsp",
+          "http_status": 400,
+          "error_code": "answer_required",
+          "gateway_call_delta": 0,
+          "revision_delta": 0,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 1,
+          "safety_count": 1,
+          "persisted_input_matches": false
+        },
+        {
+          "kind": "required_followup",
+          "variant": "combining",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 3,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_followup",
+          "variant": "indic",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 3,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_followup",
+          "variant": "jamo",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 3,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_followup",
+          "variant": "mixed_real",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 3,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        },
+        {
+          "kind": "required_followup",
+          "variant": "spaced_real",
+          "http_status": 200,
+          "error_code": null,
+          "gateway_call_delta": 1,
+          "revision_delta": 2,
+          "answered_count_delta": 0,
+          "field_status": "answered",
+          "source_count": 3,
+          "safety_count": 1,
+          "persisted_input_matches": true
+        }
+      ],
+      "total_cases": 72,
+      "required_control_only_accepted": 0,
+      "original_fix_control_cases_passed": 9,
+      "expected_absent_cases": 51,
+      "expected_present_cases": 21,
+      "all_expectations_passed": true,
+      "test_rate_limit": 10000,
+      "script_sha256": "61751685ac0a3820da5754a0bb35880789e6568ca210bd8b9047825f2c4c5a84"
+    },
+    "ui_handler_cases": {
+      "question_count": 29,
+      "current_default_migrations_reconstructed": true,
+      "actual_ui_handler": true,
+      "mock_dom": true,
+      "browser_rendering_or_http": false,
+      "total_cases": 128,
+      "all_expectations_passed": true,
+      "expectation_counts": {
+        "blocked": 50,
+        "preserved": 48,
+        "skipped": 10,
+        "none": 10,
+        "selected_yes": 10
+      },
+      "cases": [
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "long_zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "word_joiner",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "zwj",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "nul",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "hangul_fillers",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "mixed",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "marker_cf",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "supp_variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "emoji",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "combining",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "indic",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "jamo",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "real_cf",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "name",
+          "mode": "text",
+          "variant": "spaced",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "zwsp",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "long_zwsp",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "word_joiner",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "zwj",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "variation",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "nul",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "hangul_fillers",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "mixed",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "marker_cf",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "supp_variation",
+          "expected": "skipped",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "emoji",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "combining",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "indic",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "jamo",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "real_cf",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "describe",
+          "mode": "text",
+          "variant": "spaced",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "long_zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "word_joiner",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "zwj",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "nul",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "hangul_fillers",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "mixed",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "marker_cf",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "supp_variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "emoji",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "combining",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "indic",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "jamo",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "real_cf",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "concern",
+          "mode": "follow",
+          "variant": "spaced",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "long_zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "word_joiner",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "zwj",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "nul",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "hangul_fillers",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "mixed",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "marker_cf",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "supp_variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "emoji",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "combining",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "indic",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "jamo",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "real_cf",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "rel",
+          "mode": "custom",
+          "variant": "spaced",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "long_zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "word_joiner",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "zwj",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "nul",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "hangul_fillers",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "mixed",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "marker_cf",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "supp_variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "emoji",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "combining",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "indic",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "jamo",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "real_cf",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "mood",
+          "mode": "custom",
+          "variant": "spaced",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "long_zwsp",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "word_joiner",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "zwj",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "nul",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "hangul_fillers",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "mixed",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "marker_cf",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "supp_variation",
+          "expected": "blocked",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "emoji",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "combining",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "indic",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "jamo",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "real_cf",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "contact",
+          "mode": "custom",
+          "variant": "spaced",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "zwsp",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "long_zwsp",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "word_joiner",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "zwj",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "variation",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "nul",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "hangul_fillers",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "mixed",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "marker_cf",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "supp_variation",
+          "expected": "none",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "emoji",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "combining",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "indic",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "jamo",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "real_cf",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "goal",
+          "mode": "custom",
+          "variant": "spaced",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "zwsp",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "long_zwsp",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "word_joiner",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "zwj",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "variation",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "nul",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "hangul_fillers",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "mixed",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "marker_cf",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "supp_variation",
+          "expected": "selected_yes",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "emoji",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "combining",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "indic",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "jamo",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "real_cf",
+          "expected": "preserved",
+          "passed": true
+        },
+        {
+          "id": "support",
+          "mode": "detail",
+          "variant": "spaced",
+          "expected": "preserved",
+          "passed": true
+        }
+      ],
+      "script_sha256": "ddab0d7655d10b5aefcb2a65741b2254278735a1ee4026d2095a6dceed28136f"
+    },
+    "frozen_data_assets": {
+      "verified_assets": 103,
+      "passed": true,
+      "assets": [
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/train.jsonl.gz",
+          "sha256": "a9e8b2a0c8bb4b2fa6f863dcd2897f3f0a7bb7a3797ea4b437aace7bf5ca56a7",
+          "bytes": 249466420
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/validation.jsonl.gz",
+          "sha256": "078ab0bf8f45c6bf327d73565233d3040b28807f2cc93739c39eaf96e507ad8d",
+          "bytes": 29124210
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/sentence/train.jsonl.gz",
+          "sha256": "5417e64ace6cc2e1d15c0efe7ba568751aa010bb25c8abeb2787efddf442c391",
+          "bytes": 50774065
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/sentence/validation.jsonl.gz",
+          "sha256": "f0a5725cfe44b9a59ed850e207ff2b5d60f938847986741784d0d28040de1e11",
+          "bytes": 6172911
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/word/train.jsonl.gz",
+          "sha256": "2e142f5189349084355777978a49c90d7d76772efb735fb613fd25a435dafdad",
+          "bytes": 489798552
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/word/validation.jsonl.gz",
+          "sha256": "c4353540bc7dc6909146e4e7cc13d02196b9f9657faf8fd1b5ae5025a975b0cc",
+          "bytes": 56487604
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/source_dialogues.train.jsonl.gz",
+          "sha256": "af0eb9384dc39fb6eca59c40781b6ba5c41c7343a821eeae2900a6cdff139c36",
+          "bytes": 21582758
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/source_dialogues.validation.jsonl.gz",
+          "sha256": "a858d48423139269569e78f9a99385ab9ab0a5f2bb4c8ea2bdf58df006f57e4f",
+          "bytes": 2583273
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/review/excluded_targets.jsonl.gz",
+          "sha256": "516efe67ae2e5fe2845ea98320b853c3f946f6c748d2e220945154e601ecbd88",
+          "bytes": 9626228
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/summary.json",
+          "sha256": "4cfc5a13b8f8fcc81e07473b8ffa978e171534d8e448382917f2c6b9db9149d2",
+          "bytes": 1331
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/baseline_smoke.json",
+          "sha256": "50317c372f13dd1e5081e2815c372d952e873fefeda44c6069c44bc997a68ad9",
+          "bytes": 2438
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/README.md",
+          "sha256": "0b58c920b057fc70459b4560a057d14cc628470c6d3a04a016bf92832a3e50a1",
+          "bytes": 7285
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/run_baseline.sh",
+          "sha256": "7cbdfb028c93248809b1de52e87eedb21f35c85c961bcd0c20ccbe2f84b50caf",
+          "bytes": 571
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/train.jsonl",
+          "sha256": "28046aeac76527921e6f96f494e219fe4ae1ef7c315c6b6e68447b7f962c67d7",
+          "bytes": 1777970
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/discarded_other.jsonl",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/README.md",
+          "sha256": "f05d9fe91871560b0a8d4bafd182560546af6f99ba717101097c95480bcb145a",
+          "bytes": 1339
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/all_review_results.jsonl",
+          "sha256": "baaeff6e045086dcfb0e8743256562be12968f9734fcf3da5aeb8a310083f91f",
+          "bytes": 2875153
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/validation.jsonl",
+          "sha256": "bfd50a4599725aab44ff4ebb5f8adec231fcda592c53602069e62f82d9164965",
+          "bytes": 255526
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/manifest.json",
+          "sha256": "955153f53a13c8bb1111d9432d74b3a755860462e61b875fafcaf6794f704fe0",
+          "bytes": 1193
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/duplicate_exclusions.jsonl",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/held_for_review.jsonl",
+          "sha256": "c75e0c416e17f77125beb6b5c53a65afdcb67a71777d8c27ea18f150484307d7",
+          "bytes": 841657
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/additional_input_filter_review.json",
+          "sha256": "c1546c718e769e567c0f6e9cbfb8c108560d02871b56cd6f5005948c901c6891",
+          "bytes": 15819
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/release_independent_review.json",
+          "sha256": "dc5b53181adf9702be45a8af0ff74eb310ce20d12142e3a6624cb9b0d30636c7",
+          "bytes": 8387
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/final_review_resolution.json",
+          "sha256": "e52f1a79fb5145321e49e6b0724cf3deb07cd2edc4d5940fcd4b4cb7495a8c04",
+          "bytes": 712
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/select_sentences.py",
+          "sha256": "19932c4211b2889bb60e61a1a8eb9c324c2687e9ec1f12b884944865b9d6e1de",
+          "bytes": 5137
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/prepare_features.py",
+          "sha256": "3c4c5aecbefc80732a408b88d22aabae23ca70442448bdf1cd8b88f1a6ef33e3",
+          "bytes": 7305
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/build_sentences.py",
+          "sha256": "2730f6fa0f4aceb07f88f1dc03787dc20bbc9a83f5fe1ffc1d7a42dfa8e62ca2",
+          "bytes": 7122
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/csr_io.py",
+          "sha256": "255550eeffd1b98c0bedb009a17c7b60737ba8e68454b8edf9976d218c547a3f",
+          "bytes": 1421
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/test_training_helpers.py",
+          "sha256": "0c134c73b0e416490572603f9ba8801739125d8b624ab9d8ce918320ace4cfbc",
+          "bytes": 1558
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/build_words.py",
+          "sha256": "53431be84fa36262ad94cf785cad9ad6f712b593a3d4984b3e5f8610b558bcc7",
+          "bytes": 13561
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/train_baseline.py",
+          "sha256": "ce2714f36a7bbc46a8d4c1174574e5d39a129dc755f1fc8cef9918d488bd5802",
+          "bytes": 3574
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/load_dataset.py",
+          "sha256": "8927da26d75e1a2a9c6e0d63c7817482f8f76b4fcd1922db04075d9279257081",
+          "bytes": 1581
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/package_release.py",
+          "sha256": "4c3ee27b323f86f04d8894175c9751ff0479522831a291fbe21df372bdd403d7",
+          "bytes": 6250
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/build_conversations.py",
+          "sha256": "5e1f5346c8fa7c1ef514d5e50694b99d399c744196069c8c248763bbc21c542c",
+          "bytes": 22010
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/finalize_release.py",
+          "sha256": "f749b06a48e6a110ccb42bea4c0eda8cdf8da0c6f2fa82bc817f6d3bfbb97a0d",
+          "bytes": 13479
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/train.jsonl",
+          "sha256": "2c0697971117826136a4f0c81a4322c99a36d0ad385d7b835891b39d8e670d91",
+          "bytes": 250707
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/build_summary.json",
+          "sha256": "7d1147afbfde83e30f43f2a43510fb36b83a44043ac3cbd22dcffe809548cd26",
+          "bytes": 3324
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/leakage_verification.json",
+          "sha256": "0fe4a9156bfe7e529d56588cee54bdbf9c160493dd103d8947d95528a9c7fdb3",
+          "bytes": 686
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/all_semantic_decisions.jsonl",
+          "sha256": "bd4bddb0574e6d477b3593030c27ed48fafc233216104600a7cb3529c95b9468",
+          "bytes": 17880908
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/label_map.json",
+          "sha256": "f4fbca65b86abf8bb4f65bb3caff06019eed6f52aaa44b01288acbbff48d40b1",
+          "bytes": 63
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/discarded_other.jsonl",
+          "sha256": "979638dc36fc225d2f4a3ead433b1765fc5840cb12523fc9b4a3a843d4bd8ed0",
+          "bytes": 19096869
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/README.md",
+          "sha256": "c5b3416713632fbc40abd37f39f7781ab499e842767429da56a50774d030fa97",
+          "bytes": 1191
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/validation.jsonl",
+          "sha256": "8a60332e5ab1122bd04a4a488267b37265bfcf466b504069a5b8524b5369d8c9",
+          "bytes": 63848
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/leakage_group_assignments.json",
+          "sha256": "1f2c83087c878bb5eca3295929f0a00bfd935a65a831cc588e7458022f52e309",
+          "bytes": 859711
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/approved_review_input.json",
+          "sha256": "062170b37b295b63d8bca79264a4f5b142d30b9cf85bbb6774e7fd68c01a1b8d",
+          "bytes": 61015
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/approved_semantic_decisions.json",
+          "sha256": "4de90023304c2458d07f383b8ac773ad8094b92ae485547610a6ee96e24deafa",
+          "bytes": 174319
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/held_for_review.jsonl",
+          "sha256": "6a78858f1495d2d8001afa4aae8acaa1f47f852c3d7ceeebbe73d16f759c1cb6",
+          "bytes": 57276
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/train.jsonl",
+          "sha256": "444339b650bf6452f549a527941434f57b9bd89eac1db5602a8d345dd118be9f",
+          "bytes": 56687203
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/source_flag_disagreements.jsonl",
+          "sha256": "a14282bde64920021a3f1fc0a594ba7f7e94660dd433da9eead5c07cb5a50a0b",
+          "bytes": 77047
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/source_preparation_manifest.json",
+          "sha256": "a960f537f62dc7b781d263ffe878fc170b9af3c34796a2b20a20bf7155baadc6",
+          "bytes": 6459
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/input_filter_review.json",
+          "sha256": "b48c120006ec2cb2b88bab0dafbaac1d04fb94e3cdb709277f03b66c15aac70c",
+          "bytes": 247719
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/excluded.jsonl",
+          "sha256": "547d777f813ab43815a423f73abd207bb1078af700a5e478354e9f34a2ed3f19",
+          "bytes": 157786
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/README.md",
+          "sha256": "3af755ca0a8d04a94cf2e6604d6dd99c4a43865e6b7c4d31d91f59321d53717d",
+          "bytes": 1305
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/validation.jsonl",
+          "sha256": "072feebefde9eb428e31d07d4f215fd5ab5aa8db2976cb0b22856c1ff159056b",
+          "bytes": 6590355
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/source_index.jsonl",
+          "sha256": "e724ef069738fdbd24f8ddbe51b1b21e67b5ed8823dd67b6c44a9b8e59c8b9ce",
+          "bytes": 635226
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/test_builder.py",
+          "sha256": "905170e592adad119a20687d121d1f419049f59210390cc80118d601c33cfcf3",
+          "bytes": 5724
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/validation.json",
+          "sha256": "0ecb39d8f530fd11b44181236f3ff2b54df0d2181a499a67cbad13fde3d96855",
+          "bytes": 771
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/manifest.json",
+          "sha256": "73e0728937bad152a651b06e95e53ea86c1adc650c41ae63da8d203c7398b90f",
+          "bytes": 6049
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/train_X.npz",
+          "sha256": "687622c597dcd5d0c72153dda56c4fb099338570563bd11fea4d9d0618debdb9",
+          "bytes": 1459774
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/vocabulary.json",
+          "sha256": "eb9daa47163c665a87d6c95f86799e5708b573c4cfd1ceae12c730744fd74774",
+          "bytes": 142670
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/validation_y.npy",
+          "sha256": "5a0102e7d5cf1ef75020cf3e244c639971ebb4af82efbaf48a1e73500a5ffd9b",
+          "bytes": 952
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/idf.npy",
+          "sha256": "251044c584aefb08144cb1cb550d5660ec3e01256782f59e891e9910b0b6e7c2",
+          "bytes": 29292
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/train_sample_weight.npy",
+          "sha256": "df6a5e87a15b3f079738655378e6b090003d0077492ab6b14562bff376bff1fd",
+          "bytes": 5888
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/validation_rows.json",
+          "sha256": "b40403d73f6bd0419694136723de9b4bb1403dc59b087804f26382833b41ee6b",
+          "bytes": 15453
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/train_rows.json",
+          "sha256": "32b1cff4d8c70d19883aac08557bd09a8085153422e51bd4442cd62e2b285975",
+          "bytes": 108003
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/train_y.npy",
+          "sha256": "7a01482e576e80d7ec1bee19856b85cca47835b7d6cd7a829f00d53d8978916e",
+          "bytes": 5888
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json",
+          "sha256": "58cc24877a35aa9bd80b43ffe97404d02891e5699d16d3521dcc27c5b270ca3d",
+          "bytes": 2828
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/validation_X.npz",
+          "sha256": "524f443d30cae3a13edbafdc94e8c0d1cc09226522874c07f4f34dae8db07a35",
+          "bytes": 207710
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/document_frequency.json",
+          "sha256": "acee1c620e169f155e61fa7a372281338a57ea54ff86384c9a109ef50df96a15",
+          "bytes": 39974
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/candidates.json",
+          "sha256": "3583e3b1475f66f0b100263d6a631cc5648b8484da023ba4addf4187fd482333",
+          "bytes": 3192335
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/a_decisions.json",
+          "sha256": "3eeb91b98fb598f5ebb31b98ae8d2bcdf5be51201caa9c9ea03982b9b718533a",
+          "bytes": 291051
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/root_independent_audit.json",
+          "sha256": "ef1451cb9e9d268370607f64d3250b01dc5a6969b0afd1b706b80eab236bd809",
+          "bytes": 74137
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/b_decisions.json",
+          "sha256": "5d82dcb41e57d340261abaf5329e98a4f9eae46d01d83cd207ce952cdbc27b3a",
+          "bytes": 289680
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/primary_manual.tsv",
+          "sha256": "3832ca59aae9cd57af759a36f39c6f9dfd56d100df34f00443d1c2037d595e97",
+          "bytes": 14560
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/primary_decisions.json",
+          "sha256": "079d4457e3d6792e48051f5270c1735623e89dac93678701ae74e3a544475175",
+          "bytes": 97282
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/selection.json",
+          "sha256": "8befc40065f2a6d34b4b376d1870e86f58e8c62361cd0e7ed2d0313a75a1b8d5",
+          "bytes": 1115
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/protocol.json",
+          "sha256": "384caeed04d03f031b4ec0ad4fb8a4cca45ff18dfe9856d71911d0601fe405df",
+          "bytes": 3469
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/primary_independent_audit.json",
+          "sha256": "ab89a2401351f2b1e48dbae0e057336181fed03a38fb5c9c6882c5f623962444",
+          "bytes": 34443
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/audit_resolution.json",
+          "sha256": "4e1a0ed818ac298796795c2bab3446e91e8662e90874e09ba17f73dc77a4e931",
+          "bytes": 3203
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/primary_self_consistency_review.json",
+          "sha256": "4d999dc65770169c760f4428291f25cb489b6c60c4b4c94509652669b9ec869c",
+          "bytes": 10436
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/integration_review.json",
+          "sha256": "737aa9b9e2bdd4f8e04a7c77e33f5aeec6bc59289e886cb9832e2468c43b550f",
+          "bytes": 12092
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/train_X.npz",
+          "sha256": "5547e8cd28876b70ace0ff7284b304c886230f16c5cf87cb52a0d378b8bf65de",
+          "bytes": 23576
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/vocabulary.json",
+          "sha256": "f81fca91fcce439e49a491359c1d58af68b1113fb65dcf019c35c55ab552c576",
+          "bytes": 25917
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/validation_y.npy",
+          "sha256": "e0c7d6d7a27b6d48baaab2a40482a75aed068df7d1703267bf50c9e441c8d142",
+          "bytes": 432
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/idf.npy",
+          "sha256": "5edeb09209051037917cd14c9ac626625c342a5ee0f71c3075191387df05053e",
+          "bytes": 5556
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/train_sample_weight.npy",
+          "sha256": "4e9bb39ef5463c6d5ca0c49aafe118ca2de44ebd0550df2a45eea34bbd4901fb",
+          "bytes": 1336
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/validation_rows.json",
+          "sha256": "f5293f4c4dfabc6c271b0bd5e7798a361f11a070444d0344b08233bb35579289",
+          "bytes": 2131
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/train_rows.json",
+          "sha256": "d7b43e7cf239350695d3a18f2e0ba76892fb7747217639f9b193f523b418ba09",
+          "bytes": 8459
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/train_y.npy",
+          "sha256": "b6c2b4b2e3fa2361d1a33f6cc88bc4c9c9f4f7bf23820f6ae7aabb5c703c44c5",
+          "bytes": 1336
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json",
+          "sha256": "73c690f2d391e45537056652f3d40f73bc956887d22648a2384d61802ac1c402",
+          "bytes": 2813
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/validation_X.npz",
+          "sha256": "d7c3f1e5dd3f534afb821e98dabc9b7a580a803335a2c816597cf1815b3db3b8",
+          "bytes": 6028
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/document_frequency.json",
+          "sha256": "5665b51e031245024d77efa792574ab7a6d9f78c4fcf60f387fef0caf1cf9589",
+          "bytes": 6888
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/train_X.npz",
+          "sha256": "c649005f10390bc91b9a613686fb5fb2086f4a2aaf28b6924e6a45e1707ea8c5",
+          "bytes": 14921685
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/vocabulary.json",
+          "sha256": "35ea0f5588d04e477f333f8b46a14f815710ed4e7caae8732da1ce2cac24db9d",
+          "bytes": 390100
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/validation_y.npy",
+          "sha256": "6750b0999cd4001b08511d2aa2635a442dc97ebd6e810e3e5237c58138d65161",
+          "bytes": 596
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/idf.npy",
+          "sha256": "c7a5babab34d09f330a2e9f3469ac66fc818d8d3bf0c42c8055e9b068ac27c02",
+          "bytes": 80128
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/train_sample_weight.npy",
+          "sha256": "98ea1a758c7547b9463431f81debf90e616c4fb14e36f1c2423081ea3401497c",
+          "bytes": 4088
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/validation_rows.json",
+          "sha256": "5e72cde6c2831eae1f252ecde279a427cc510654bfb98ee50126e2a1e6a7b8d6",
+          "bytes": 8778
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/train_rows.json",
+          "sha256": "8eef1b698f1d9a237a3f372da6005d8edc9af93ac5e41519d1be79eacfc2f50e",
+          "bytes": 74253
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/train_y.npy",
+          "sha256": "45804f36c017532112eca4ac8aea27325b766c53d825480cfde0add427d2c1ab",
+          "bytes": 4088
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json",
+          "sha256": "46f1e5569f3cfba50f704f6afa9214c0448b8e4b170d11e0d4f6fe94320f7736",
+          "bytes": 2831
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/validation_X.npz",
+          "sha256": "cf45467e4e02243faeebae94d141267ddb6e41243f1308ec8459ffe2205366f1",
+          "bytes": 1770269
+        },
+        {
+          "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/document_frequency.json",
+          "sha256": "b72fb49f1be830a25dbf4cd367903ad385f0f637788cb9ba5778307c8ed7e91a",
+          "bytes": 120631
+        }
+      ],
+      "scope": "Fresh SHA-256 verification of the same 103 v5 source assets; not a fresh semantic label, feature or DB reconstruction audit."
+    },
+    "partial_overlap": {
+      "counts": {
+        "train": 40415,
+        "validation": 4289
+      },
+      "source_groups": {
+        "train": 178,
+        "validation": 21
+      },
+      "cross_split_source_groups": 0,
+      "unique_train_assistant_texts": 81496,
+      "validation_targets_ge100": 2071,
+      "validation_targets_below100_not_searched": 2218,
+      "windows_100_stride50_with_final_window": 10261,
+      "positive_index_controls": 12,
+      "independent_longest_match_pair_checks": 0,
+      "matched_validation_rows": 0,
+      "threshold_rows": {
+        "100": 0,
+        "150": 0,
+        "200": 0,
+        "300": 0
+      },
+      "coverage_rows": {
+        "0.5": 0,
+        "0.8": 0
+      },
+      "full_validation_target_substring_matches": 0,
+      "rows_with_matches_in_at_least10_train_groups": 0,
+      "max_shared_chars": 0,
+      "max_coverage": 0,
+      "anonymous_match_metrics": [],
+      "normalization": "NFKC and collapse whitespace",
+      "coverage_guarantee": "Search all targets >=100 chars. Any exact contiguous shared span >=150 chars must contain a sampled 100-char window; verified hits extended in both directions. Not complete for 100..149 spans.",
+      "limits": "Only contiguous normalized exact overlap inside one train assistant message. Short, semantic and discontinuous overlaps, train user text, real participant identity, target semantic value and downstream model effects are not established.",
+      "input_sha256": {
+        "data/데이터셋/문장별_데이터셋/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz": "7b84f39fc689b9628b42040e3217f3626f0d178d64921a733f6608a234ee731a",
+        "data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/train.jsonl.gz": "a9e8b2a0c8bb4b2fa6f863dcd2897f3f0a7bb7a3797ea4b437aace7bf5ca56a7",
+        "data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/validation.jsonl.gz": "078ab0bf8f45c6bf327d73565233d3040b28807f2cc93739c39eaf96e507ad8d"
+      },
+      "inputs_unchanged": true,
+      "raw_text_or_row_ids_exported": false,
+      "script_sha256": "b80585a8b617facf71ba0d87e4bc563fa4ac4259499952514013fcb2be9c82e7"
+    },
+    "admission_and_export_lineage": {
+      "original_ledger_rows": 45974,
+      "new_ledger_rows": 45974,
+      "newly_held_validation_rows": 9,
+      "changed_fields_counts": {
+        "reasons": 9,
+        "admitted": 9,
+        "status": 9
+      },
+      "newly_held_conversations": 5,
+      "newly_held_source_groups": 3,
+      "old_admitted": {
+        "train": 40415,
+        "validation": 4298
+      },
+      "new_admitted": {
+        "train": 40415,
+        "validation": 4289
+      },
+      "all_new_holds_were_already_excluded_from_old_4096_candidate": true,
+      "new_token_policy_inputs_verified": 7,
+      "export_bindings_verified": 4,
+      "candidate_exports": {
+        "train": {
+          "rows": 15512,
+          "selection_ids_identical": true,
+          "original_uncompressed_lines_identical": true,
+          "compressed_sha256": "56ffe4288501d16bffe4575326b4e48d95b85e2e5ae43ea6079119bbdd887bb9",
+          "uncompressed_sha256": "7459fe74f0dad3226a09a96b6aed6d51d44bc070f01e68149b25912d7f5cf419"
+        },
+        "validation": {
+          "rows": 1724,
+          "selection_ids_identical": true,
+          "original_uncompressed_lines_identical": true,
+          "compressed_sha256": "7f200e26ff309830c063a819f9f337f663e61ae3377238c4783ad70ce6bb8a38",
+          "uncompressed_sha256": "7a0b614738bdd95cbbc3ca8267a470153ea26103b8c89fa86b415367658256c4"
+        }
+      },
+      "metadata_sha256": {
+        "data/outputs/private/malssi_round4_20261009/admission_final/admission_rows.jsonl.gz": "c671c6cd12a4f14e9b706a218d4c596b45c81de74452f1c92cbf43bbb2568e78",
+        "data/데이터셋/문장별_데이터셋/malssi_partial_exposure_20261015/admission/admission_policy.json": "36b03947e5176bd86f9fd621d49935cd67c51481b99334f6f09c143b510aa687",
+        "data/데이터셋/문장별_데이터셋/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz": "7b84f39fc689b9628b42040e3217f3626f0d178d64921a733f6608a234ee731a",
+        "data/데이터셋/문장별_데이터셋/malssi_partial_exposure_20261015/candidate_4096/token_admission_policy.json": "51dfdec8e0fc47f9c42f073e7bd9fc157aadc1ab9d1c8ed659b6980dbc92b4bf",
+        "data/데이터셋/문장별_데이터셋/malssi_partial_exposure_20261015/candidate_4096/token_admission_rows.jsonl.gz": "33d401638939a38f965d862b27270f27d93fc088b3eed4be6ce730cef1210412",
+        "data/데이터셋/문장별_데이터셋/malssi_partial_exposure_20261015/candidate_4096/source_rows/export_manifest.json": "a917a6d445178e52882153ec834e53e670206b4e05d726c78df4c47a7ecc715c"
+      },
+      "raw_content_or_row_ids_exported": false,
+      "script_sha256": "96dd0ad9165042cbe8d59efb5225184c0a7524b10a6d1a4fb57a77eade092ba4"
+    }
+  },
+  "intermediate_failure_preservation": {
+    "initial_app_tests_passed": 294,
+    "new_regression_before_fix": {
+      "passed": 5,
+      "failed": 1,
+      "reason": "agent_safety_context",
+      "log": {
+        "path": "runtime/adversarial-review-v6/safety-contract-before-fix.log",
+        "bytes": 2116,
+        "sha256": "aedb49bc7809740db97a54bbc1b9c8f2ed3d15ff90047b999236873cfcc96a0b"
+      }
+    },
+    "focused_tests_after_fix": {
+      "passed": 22,
+      "failed": 0,
+      "log": {
+        "path": "runtime/adversarial-review-v6/safety-contract-after-fix.log",
+        "bytes": 2593,
+        "sha256": "c8ec615729317686792dfbcfb4adfc33f8bf6f5a187bd6ef126837fda6d3fe9c"
+      }
+    },
+    "focused_tests_included_in_final_295": true,
+    "twelve_variants_are_cases_in_one_test": true
+  },
+  "findings": [
+    {
+      "id": "A2-P3",
+      "status": "closed_for_reproduced_input_classes",
+      "confidence": "high",
+      "new_input_contract": "Cc/Cf/Default_Ignorable_Code_Point removed from inspection copy only; whitespace and skip marker mean absent; meaningful original Unicode preserved"
+    },
+    {
+      "id": "v6-evidence-filter-drift",
+      "status": "reproduced_then_fixed",
+      "confidence": "high",
+      "scope": "reachable API option detail state; shared answerComponents makes retrieval, safety ID hydration and safety quote requirements agree"
+    },
+    {
+      "id": "D1",
+      "status": "contained_in_new_source_admission",
+      "confidence": "high_for_measured_contiguous_text_overlap",
+      "old_ledger_retained": true,
+      "old_positive_rows": 9,
+      "new_positive_rows": 0,
+      "semantic_review_completed": false,
+      "independent_unseen_test_established": false,
+      "old_4096_candidate_changed": false
+    }
+  ],
+  "baseline_reuse": {
+    "v4_semantic_or_feature_audits_rerun": false,
+    "v5_privacy_pattern_probe_rerun": false,
+    "other_task_data_test_counts_not_added_to_fresh_checks": true
+  },
+  "source_snapshot": {
+    "verified_tracked_files": 126,
+    "inventory_files": 146,
+    "excluded_local_cache_and_metadata": [
+      "ai/scripts/__pycache__/apply_relationship_backend.cpython-314.pyc",
+      "ai/scripts/__pycache__/audit_ft31_source_exposure.cpython-314.pyc",
+      "ai/scripts/__pycache__/await_ft31_completion.cpython-314.pyc",
+      "ai/scripts/__pycache__/collect_base12_local.cpython-314.pyc",
+      "ai/scripts/__pycache__/collect_ft31_comparison.cpython-314.pyc",
+      "ai/scripts/__pycache__/deploy_ft31_compatibility.cpython-314.pyc",
+      "ai/scripts/__pycache__/package_ft31_collection.cpython-314.pyc",
+      "ai/scripts/__pycache__/package_project_handoff.cpython-314.pyc",
+      "ai/scripts/__pycache__/preflight_ft31_comparison.cpython-314.pyc",
+      "ai/scripts/__pycache__/prepare_ft31_compatibility.cpython-314.pyc",
+      "ai/scripts/__pycache__/publish_base12_presentation.cpython-314.pyc",
+      "ai/scripts/__pycache__/summarize_base12_local.cpython-314.pyc",
+      "ai/scripts/__pycache__/test_collect_base12_local.cpython-314.pyc",
+      "ai/scripts/__pycache__/test_collect_ft31_comparison.cpython-314.pyc",
+      "ai/scripts/__pycache__/test_project_paths.cpython-314.pyc",
+      "ai/scripts/__pycache__/test_verify_ft31_measurements.cpython-314.pyc",
+      "ai/scripts/__pycache__/verify_ft31_measurements.cpython-314.pyc",
+      "ai/scripts/__pycache__/verify_ft31_xlsx.cpython-314.pyc",
+      "ai/scripts/handoff/__pycache__/configure_local.cpython-314.pyc",
+      "app/public/.DS_Store"
+    ],
+    "all_current_and_target_commit_hashes_match": true,
+    "files": {
+      "ai/scripts/apply_relationship_backend.py": "597c33ff8da932aa9feb791c94adcbfa7efa8f6109290d9e41651ad87820aa4a",
+      "ai/scripts/audit_ft31_source_exposure.py": "6455f272fee287ae8c678f23ff1b33b94da157882a62fba1a88a10cadc15e771",
+      "ai/scripts/await_ft31_completion.py": "45675868c8e98443f7bb94d252030be84906ea1ac170ef549c3ac8ab8a568242",
+      "ai/scripts/build_competition_data.py": "16a599a9148525843a05a3fec5e506cf7fb2710ce8e3d31ed3d770938e8ae244",
+      "ai/scripts/build_competition_workbook.mjs": "1ac66c550931bef9b397e13372d0332e6587a4e5efecca388f6fea3933cdc7c4",
+      "ai/scripts/collect_base12_local.py": "109ed605d50f9387d4cea5dec24341c6afb1c4d6a2b23a1a5aa654b7c98d1517",
+      "ai/scripts/collect_ft31_comparison.py": "759acea8fb12808c451041d709ce8f0cad45769f1c21e16e36075af7d8904a90",
+      "ai/scripts/compare_relationship_state_prior.mjs": "4579297fabccbb181b0f68ffbfa13c47381e6b1ca62bb30ea4ca7f47ddd4fd40",
+      "ai/scripts/deploy_ft31_compatibility.py": "07d4e471175d94e3f80a123cc663a1b5a14fab36575d3ae7ce943619bf357ec7",
+      "ai/scripts/evaluate_relationship_agent.mjs": "fd3b4b21beada90838f22754c11a9391ea8920fe4aed1448e65acd2cff7f38c3",
+      "ai/scripts/evaluation_evidence.mjs": "a35c6ad496bc8e3a1dd97468d396642c94c7000dd5c01385710b8b78cdbe8ef7",
+      "ai/scripts/evaluation_evidence.test.mjs": "f4d3bceca087aa9aa2e94e336f18ca69ee9bb2d5458fbd0233a5eb480b2829cc",
+      "ai/scripts/handoff/configure_local.py": "7c34d7bfb9098103279fb907f78959509b94d79342d2df4315a2507d890faa2c",
+      "ai/scripts/package_ft31_collection.py": "b796d5a34467f8108a15eabcf9d380d51ec39a7ebe1bf4adb3209e10a81ccb44",
+      "ai/scripts/package_project_handoff.py": "38211b48a16ed250c0815113b227f5092b7ae9257ea704c343aa65616e6b4fd0",
+      "ai/scripts/preflight_ft31_comparison.py": "d92df41ca5db09d2f631d1ba3b07cfda3802649847a36ad172febb6c0eeb5acc",
+      "ai/scripts/prepare_ft31_compatibility.py": "844e4df0e61b86c517fb6ee5cffa0238acf6892eed9f260617d06d1e53d9717b",
+      "ai/scripts/publish_base12_presentation.py": "055bd6c8096d774dce00ab979dfababf3cf3f02a6f6ade31fdcfb6a178bc5636",
+      "ai/scripts/reconcile_ft31_first_identity.py": "f92e9befb4eb48ee06348920077655d50ce857548017566778de4eaf257d2fab",
+      "ai/scripts/smoke_relationship_web.mjs": "842dbd0c86b5a8c8c0b6900d46f4a9554c8e823491e58321bb5a865ceaeecc36",
+      "ai/scripts/snapshot_ft31_server.py": "ab867778d262da85562a4cda93b032f4b8539ab10042155bc4ea41d9f26f3ba0",
+      "ai/scripts/summarize_base12_local.py": "5b588e740550cc28d5e4e73a66a8c14d0354bde1a39ce951f5511b4089ec91e2",
+      "ai/scripts/summarize_relationship_evaluations.mjs": "0e7ddbe7a8a5c8742109c632d9b4e3ca86a8ce1fd2118b81bd51fe5cc0eb4004",
+      "ai/scripts/test_collect_base12_local.py": "90fe6ff5b3eb4cf0e2ba608b557879ca7f1523cbf61bc8249ab53be007ad26d2",
+      "ai/scripts/test_collect_ft31_comparison.py": "96599d19f6dccbbaf5cf24957a9c1376ddc50ef7cb86a56958e918f1f52df24e",
+      "ai/scripts/test_project_paths.py": "8cd99f3ebd56fbe4cfcba6a85a17f86233bc622ea8ef5d77e9ce6952d7bec532",
+      "ai/scripts/test_training_collection.py": "738fe3c7ff56fafcb715681f413c8c0378d1596836d49d99ee96453cf67bca79",
+      "ai/scripts/test_verify_ft31_measurements.py": "907b0f035b2c975146d7ba9e3ec248a249f984abd1c030c1980dfc6b7f380f04",
+      "ai/scripts/verify_competition_outputs.py": "126ab2c846f3d0318b1510d5609095bc2b406444a23961bd0daff81b33ecc21b",
+      "ai/scripts/verify_ft31_measurements.py": "4774f1a6674e6289d273bdb3d0c0486bdb46ec1a080143a1ae642c229ccccfa4",
+      "ai/scripts/verify_ft31_xlsx.py": "1fcfef495210f1b2a3003cd4301e76b7dcb8dfe6787c594c4faf63b3ac8e5e6c",
+      "ai/scripts/web_smoke_evidence.mjs": "46d260e824573af8d49f1ab4d0a4c3c605fae84a9a8577de1e2701390d042caa",
+      "ai/scripts/web_smoke_evidence.test.mjs": "b53dbeae40bc8fe2ef7db26b03e150ff6c35a7bda8af25c82d64d73d88fd7534",
+      "app/migrations/001_initial.sql": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9",
+      "app/migrations/002_questions.sql": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769",
+      "app/migrations/003_frontend_name.sql": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549",
+      "app/migrations/004_frontend_questions.sql": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f",
+      "app/public/assets/columns/beside.png": "3b3c9660cf3bee24a0548ee6b3208ee9654f07f4beed2484adcbac4d0faf3fec",
+      "app/public/assets/columns/boundary.png": "81e12d8580f5130c6bfe4f022cddbce8585961b3956b9d804e0e249b4901a69e",
+      "app/public/assets/columns/breathe.png": "708b32a5a1a89112cfb8e5d0fa0295a1b3083ac27fa07393712ad3c9465d9e64",
+      "app/public/assets/columns/empathy.png": "403ef10c6ffe1a48b4286a6f82ba60086076977fc7b11e26b28c9b6ddf7132f8",
+      "app/public/assets/columns/family.png": "a0267496ca7d4c522db80db2518df0357a01143247d09b9b3c21eca60b54c2df",
+      "app/public/assets/columns/listen.png": "d26e692bcf0de1634fb66bdec14f92eae282cfcab743beec3ece53c36dfe9e58",
+      "app/public/assets/columns/quiet.png": "fc2954511e353dbc7904851aa239955318bf01474928e786151d35b769c57c7e",
+      "app/public/assets/columns/sprout.png": "a518b12f7fc8bcd9b73be3e2cc3a0e95db23fd3974367b4ff3a4382288e0b99b",
+      "app/public/assets/columns/together.png": "5ad34b5e74d299cff4c3de633beeb18ed0de4c23b31390c8a15949fe631b5841",
+      "app/public/assets/columns/walk.png": "913ddb8fa541347ec8eb13e2eadc82bcb68ded373809c0adf62a2279fff7fcb5",
+      "app/public/assets/fonts/GowunDodum-OFL.txt": "3e5acd28c1f57250f9486bd280b9f268c563687543f25a186c632a56400bbc25",
+      "app/public/assets/fonts/GowunDodum-Regular.ttf": "a6e457933227483a11758fd0947bc74422a106d46f0bf057fdaa5af94a30067d",
+      "app/public/assets/fonts/Jua-OFL.txt": "37c7903f9c06b3c7935ea3f28f1dbf01f2fe45696da6b7eef5942ec61f4c1c09",
+      "app/public/assets/fonts/Jua-Regular.ttf": "769677aef240bfc3b9965f2b50748075bff885e6c6992fc591a3fb268279f898",
+      "app/public/assets/fonts/NanumSquareRound-Bold.woff2": "9d62d9fa7134ae3ebf1f9a88b075c0da4b09b61a8ea8baebae2ed1790aa46562",
+      "app/public/assets/fonts/NanumSquareRound-OFL.txt": "ff6edae4a2bd3a05b2251c77c27ec8780c96592ce5b4996e40880880fb58ac19",
+      "app/public/assets/fonts/NanumSquareRound-Regular.woff2": "1118a9706ab4097deb02afcd76a6299096e1dc3ba7a93d908e9f5e22645ecb03",
+      "app/public/assets/logo.png": "a873001205c39c7d173d50eee135bb4bf12c1f33cdbe4d965b834e12c9b9e970",
+      "app/public/assets/mascot/basic.png": "6a6bca511c7a403acce61591a5500cbd4a6931332ffa66923b2d703cfdd262d4",
+      "app/public/assets/mascot/cheer.png": "bf32c90b6c612b86ce4cf264ca3edb69a1a589d94b1377faa631787c82888282",
+      "app/public/assets/mascot/empathy.png": "784168bea1733b92734f7dd0a0fcd13a2abc21cdc887e5dc5757e7d22d17eadf",
+      "app/public/assets/mascot/front.png": "51ecea66ae0f70c101b1fb7c55aae47ca513dec1a21c0d1fa369a1bf8ae24536",
+      "app/public/assets/mascot/front_high.png": "686f358efc7ab2dc492e87202ca3d9063ee3cbd9bcd0a339f5fb95c8a27fdcd7",
+      "app/public/assets/mascot/hear.png": "ae2fcc678dfeea7235d2471c36c26c1d86fb0b789d3a07346ee63ad46d372188",
+      "app/public/assets/mascot/hello.png": "29fba1521ef99e9d0ab5d55aa02c02265899c02740a93ed5d7524c63c68b7fd1",
+      "app/public/assets/mascot/hello_high.png": "9cdfd6aa49fa3596b77be61c210eafbabd55324509571c157b61d66a8065035d",
+      "app/public/assets/mascot/joy.png": "0c4b255e9190b523d604b336300b5ee4fb69ca699bc0335e217d11c1b16a0af2",
+      "app/public/assets/mascot/listen.png": "5499f08551019f7971867cd1edf381c7ee93fd6d3abd5955fd7b782f6af6f252",
+      "app/public/assets/mascot/ponder.png": "237b1045a72207db62bb7502e67f305b7a7327d2aa054c4aac2213153bfd5c87",
+      "app/public/assets/mascot/thanks.png": "c1b8a730fe961b4358d0141954c24056fceb2fdcbe9b82e93d6cb275f76c593d",
+      "app/public/assets/mascot/think.png": "301a457c65f5c6210de8b44252fa74c71142f6b66a358864e5c16437f30b5f65",
+      "app/public/css/about.css": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5",
+      "app/public/css/base.css": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e",
+      "app/public/css/chat.css": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197",
+      "app/public/css/columns.css": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8",
+      "app/public/css/records.css": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2",
+      "app/public/css/result.css": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41",
+      "app/public/css/start.css": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb",
+      "app/public/index.html": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80",
+      "app/public/js/app.js": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4",
+      "app/public/js/components/AboutScreen.js": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6",
+      "app/public/js/components/ChatInput.js": "21d873c3e65f9fddfede2114c071fb142572b1ca6918a0fc411558b99f6dc568",
+      "app/public/js/components/ChatScreen.js": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3",
+      "app/public/js/components/ColumnsScreen.js": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1",
+      "app/public/js/components/GuideCards.js": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3",
+      "app/public/js/components/RecordsScreen.js": "bcebbd96d56804856427ea2cb5516b32dd8957c04bb29dd49db700ced648d233",
+      "app/public/js/components/ResultScreen.js": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27",
+      "app/public/js/components/StartScreen.js": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661",
+      "app/public/js/components/TopBar.js": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3",
+      "app/public/js/core/api.js": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12",
+      "app/public/js/core/assets.js": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12",
+      "app/public/js/core/columnBodies.js": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66",
+      "app/public/js/core/columns.js": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626",
+      "app/public/js/core/conversation.js": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f",
+      "app/public/js/core/questions.js": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9",
+      "app/public/js/core/store.js": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef",
+      "app/public/js/core/utils.js": "b7d40ab4eb210741a8ed58a95fe225b05d1d241bae43fcfa700a29237b758e6b",
+      "app/public/js/test-result.js": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0",
+      "app/public/test-data/relationship-result.json": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af",
+      "app/public/test-result.html": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc",
+      "app/src/agent-state.js": "697f4cb592830804c20f6bc78cc23294b0ca05947a18473fe942120e517914a5",
+      "app/src/answer-sources.js": "ba6d4b0fab81428d086523c97ab6b0c4fdda7280f5037d13704c834002686dec",
+      "app/src/catalog.js": "29503549354b19451192b4ad5c9fa089bf2289c7f57275711f2f6c03b029ca37",
+      "app/src/errors.js": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99",
+      "app/src/intake.js": "e316378c027493de32d37f30dbd3b0363cf5385ae4e024eb2a6aa164c3422368",
+      "app/src/model-context.js": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785",
+      "app/src/model-schema.js": "924caf233561abd521f05a5ec39fced73753871176c4cea09fcce42d97ca5a57",
+      "app/src/model.js": "551812bec8e95ab0bb69137365f4cc78be4cda4b6667132224f27a23e1e5c1bd",
+      "app/src/question-bank.js": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282",
+      "app/src/relationship-agent.js": "86c68b8d62eaea2229032d9265dd21324f6c46e3b5531b2af8d2a297ff42a297",
+      "app/src/relationship-prompts.js": "1a0a8feb1cd99e1310ed58c24fdd1cd007e97cdda8fbdbed485209f39c817735",
+      "app/src/relationship-retrieval.js": "8d50f7efa069ec71f1e3cee182cd32bfbbaf38d4211160bacaa6e552e74237c6",
+      "app/src/server.js": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305",
+      "app/src/source-identity.js": "d9ed9e8256278e8758e7bc10019a942daa77f8bbed55ba225b3ff95f4a31bf51",
+      "app/src/store.js": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484",
+      "app/tests/answer-content.test.js": "152f64fae135f1001fe02e459a401e8b73a431ea2711aa009b99a91ec718eeb0",
+      "app/tests/api.test.js": "8ddba223823fcbfd32adde0892e1606ff4073e6ae799a91a8310af9d89917889",
+      "app/tests/frontend-questions.test.js": "1bb31f05513a13bfc0e26e5c8b23ca0604cbd1d3bf436c9c509915b0a7a8ab35",
+      "app/tests/intake.test.js": "d55c78f5999fc3bf3e86e5fdb8b9d100a14a0dc3c193ddaa3a088fb5b8cddfea",
+      "app/tests/model-recovery.test.js": "c9072e522e5bb7c102d5ba91211a9f8fea776bdede3fcb0dc038b92b5e6b95e1",
+      "app/tests/model.test.js": "b9b126792a780c6c6ee15ec9b24a0e81f3c0b1c2130ce94e5e2b91419197f69f",
+      "app/tests/questions.test.js": "c419d31c18005e6c659b413582ffec77d90913a157b995aef4b91e813c34d4e7",
+      "app/tests/relationship-agent.test.js": "df95fc36cc58c77deff3168ccd64d4f10587a945a5b2ba6aa47d85f807045a10",
+      "app/tests/relationship-retrieval.test.js": "24ac46ddd600ae5bc2ed9e3dd7766634044495f7de6049a72efa7903cd649b66",
+      "app/tests/relationship-ui.test.js": "fad37a440b6cea528e246e7cb9637c585cb30eadf81a5c62ec55560524be6a7a",
+      "app/tests/safety-evidence.test.js": "6b6a981361d13373e6b90c30aeb0caec29a0d631f10d52f5cfbb2e18472adf3b",
+      "app/tests/safety-selection.test.js": "3591340137056eca1f104193d925e486146675a0fb738e7c3a3e869e7988158c",
+      "app/tests/store.test.js": "ffa83ab113741cf04a4a4cf171f0bf642e73b722fa88a387a689c805d5682bf9",
+      "app/tests/ui.test.js": "88c48e4603f051d38ed56fbd988396bbb6725721f1f0034a092fbe9dcd5a4873"
+    }
+  },
+  "independent_review": {
+    "app_review": "Separate reader reproduced the hydration mismatch, then verified closure and six regression tests without editing files.",
+    "data_review": "Separate reader independently checked new admission overlap and lineage; 4096 candidate unchanged; no semantic/person-level independence claim."
+  },
+  "known_limits": [
+    "Unicode property contract, not universal invisible-glyph detection.",
+    "Mock DOM, no new rendered browser or real-device E2E.",
+    "App gateway responses are synthetic fixtures, not project-model quality evidence.",
+    "Partial exposure search guarantees normalized contiguous >=150-char matches inside one train assistant message; short, semantic, discontinuous, train-user and real-person overlap not excluded.",
+    "Validation was used for discovery and policy development; it is not a fresh holdout test.",
+    "Nine rows conservatively held pending semantic review; original 4096 exports were already excluding them.",
+    "No new human label review, live user study, adoption agreement or live presentation was produced."
+  ],
+  "sources": [
+    {
+      "path": "docs/competition/05_평가범위와_학습데이터_기준.md",
+      "bytes": 4899,
+      "sha256": "1289b25994703419ffd1b5345f57dad515183ad0728902f155ded02bb5cc3774"
+    },
+    {
+      "path": "app/public/js/core/utils.js",
+      "bytes": 2677,
+      "sha256": "b7d40ab4eb210741a8ed58a95fe225b05d1d241bae43fcfa700a29237b758e6b"
+    },
+    {
+      "path": "app/src/intake.js",
+      "bytes": 21023,
+      "sha256": "e316378c027493de32d37f30dbd3b0363cf5385ae4e024eb2a6aa164c3422368"
+    },
+    {
+      "path": "app/public/js/components/ChatInput.js",
+      "bytes": 7002,
+      "sha256": "21d873c3e65f9fddfede2114c071fb142572b1ca6918a0fc411558b99f6dc568"
+    },
+    {
+      "path": "app/src/model-schema.js",
+      "bytes": 7514,
+      "sha256": "924caf233561abd521f05a5ec39fced73753871176c4cea09fcce42d97ca5a57"
+    },
+    {
+      "path": "app/tests/answer-content.test.js",
+      "bytes": 6842,
+      "sha256": "152f64fae135f1001fe02e459a401e8b73a431ea2711aa009b99a91ec718eeb0"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/safety-contract-before-fix.log",
+      "bytes": 2116,
+      "sha256": "aedb49bc7809740db97a54bbc1b9c8f2ed3d15ff90047b999236873cfcc96a0b"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/safety-contract-after-fix.log",
+      "bytes": 2593,
+      "sha256": "c8ec615729317686792dfbcfb4adfc33f8bf6f5a187bd6ef126837fda6d3fe9c"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/app-input-probe-final.mjs",
+      "bytes": 6632,
+      "sha256": "61751685ac0a3820da5754a0bb35880789e6568ca210bd8b9047825f2c4c5a84"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/app-input-results-final.json",
+      "bytes": 25510,
+      "sha256": "d41132604eeac7ce5dd65d2d99db728d9ab9b83b21a5f31cb1a1c975dcf8a949"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/ui-boundary-probe.mjs",
+      "bytes": 5281,
+      "sha256": "ddab0d7655d10b5aefcb2a65741b2254278735a1ee4026d2095a6dceed28136f"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/ui-boundary-results.json",
+      "bytes": 18020,
+      "sha256": "d3a4f4d05213aaf51e2aedb86575432b13a63d80f72a54f96db1ed34f40c25a3"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks-final/checks.json",
+      "bytes": 1294,
+      "sha256": "6e92f1871013f46562cebcb6c5e6fd9aa2010df2cbc94fe0cc55f81ac26536d0"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/http-probe-final/checks.json",
+      "bytes": 441,
+      "sha256": "369a42f15acf532f96b4d00f7452141b534d30b21fa453b7db2f9a4a7463e6a2"
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v6.md",
+      "bytes": 3724,
+      "sha256": "6aad402247b78eb416e498e47a095e8cb510ca90d2afae50d70e5aaa3bfa7862"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/data/lineage_probe.py",
+      "bytes": 4649,
+      "sha256": "96dd0ad9165042cbe8d59efb5225184c0a7524b10a6d1a4fb57a77eade092ba4"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/data/lineage_probe.json",
+      "bytes": 2482,
+      "sha256": "e851782b1b9b6ed3e0a13433aa8601fc0a8ea4e9adc94dd8125c5191ef81bb49"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/data/partial_overlap.py",
+      "bytes": 6910,
+      "sha256": "b80585a8b617facf71ba0d87e4bc563fa4ac4259499952514013fcb2be9c82e7"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/data/partial_overlap.json",
+      "bytes": 1976,
+      "sha256": "461da217caaf8540400c678391ef045aad59d6233d7458a942e5f2a8d868a722"
+    },
+    {
+      "path": "app/docs/API.md",
+      "bytes": 11887,
+      "sha256": "bf1681215f7f0ff50a30bf878b90bf2b8c550e41db47c71be6bb9cdee5b16214"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/ui-boundary-results-initial.json",
+      "bytes": 18020,
+      "sha256": "d3a4f4d05213aaf51e2aedb86575432b13a63d80f72a54f96db1ed34f40c25a3"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/tested_source_snapshot.json",
+      "bytes": 16228,
+      "sha256": "988a9d78626f949ef2b53b81af0746c2c3ea2eeeab4ffd41e9c6374555e7ea2e"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/run_http_probe_final.py",
+      "bytes": 1985,
+      "sha256": "126c1046e6df6d7475ae74ae5c2c78a1f06417eb87f11a935de0233f04e1a1ed"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/tested_source_snapshot_final.json",
+      "bytes": 16598,
+      "sha256": "121913667a8236f96c52eab657bfc44a4f97fc4ae75f6d62b415b3022dd1d85d"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/app-input-probe.mjs",
+      "bytes": 6626,
+      "sha256": "9c5585b696366cefc8023f3cabd47dfe95b378f50abf3a1545899a09272637dd"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/build_evidence.py",
+      "bytes": 10032,
+      "sha256": "b29296ec1f1bed786a76258024448b97803c99dbb258f8dcb03ae6c4604951a6"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/run_http_probe.py",
+      "bytes": 1973,
+      "sha256": "a70f776e6f181b03836dd4d764cd580226ffd2f69537b2535ff51ed6018cde48"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/app-input-results.json",
+      "bytes": 25510,
+      "sha256": "e894fa170cc6d0f24fa2a98c5f744619e7cc2403bcae9ee83eb98d67850e7244"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/starting_state.json",
+      "bytes": 1002,
+      "sha256": "69a4858c579e3683f7a7badc8c383db0bfb092de2e38bad3fb727d8e91c57705"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/http-probe-final/http-input-boundaries.log",
+      "bytes": 92,
+      "sha256": "6fa27665fdfec90d637046ec3beaf499732625f15b6735e3b4350c059b0adcca"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/http-probe/checks.json",
+      "bytes": 435,
+      "sha256": "ba1d58b0a468d662775827d0d61426047b2d809843e7d8b906af559e2b430066"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/http-probe/http-input-boundaries.log",
+      "bytes": 92,
+      "sha256": "6fa27665fdfec90d637046ec3beaf499732625f15b6735e3b4350c059b0adcca"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks/run.py",
+      "bytes": 2185,
+      "sha256": "9ea67bb182319c6552d9998b6328069851e1852a9776a0eae3b1bb8dd3b7760b"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks/app-tests.log",
+      "bytes": 49285,
+      "sha256": "46113dc13e69f8673941de21c7087eac8547f965a93a4021dc23da9400d2dae7"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks/checks.json",
+      "bytes": 1278,
+      "sha256": "0b13449eee08a6c12f65eacd69c42acc9ad842be6288e9e18d9a869425ac3482"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks/evidence-tests.log",
+      "bytes": 2513,
+      "sha256": "2008f5a019e1dbbd431fe63827447b46353cac2d6297dcf6bf095b939e22b47e"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks/app-static.log",
+      "bytes": 41,
+      "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks-final/run.py",
+      "bytes": 2191,
+      "sha256": "042fc14f35bb22ad4bd989207e2c67dc583a97b7aea97bf2057beb4a5d597dd1"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks-final/app-tests.log",
+      "bytes": 49432,
+      "sha256": "72d63df6729068c6248945685e22e2bd2782c85cd69e322895f1c445b3d6df77"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks-final/evidence-tests.log",
+      "bytes": 2512,
+      "sha256": "e6fda0d2546ee96cfdebf8b68158f3785a28a5e462247c5643168fa30e4d3f6a"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/db-checks-final/app-static.log",
+      "bytes": 41,
+      "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815"
+    },
+    {
+      "path": "runtime/adversarial-review-v6/data/baseline_recheck.json",
+      "bytes": 26487,
+      "sha256": "f50437ba7a9c11a2d90ae982a26ff788ee2057ff63873b86f0223e1068ee19d9"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 2750,
+      "sha256": "095f76cdbafd169b197e9ab15c49ebae58cc6ab930ef84ce6f3beb4a6239dd68"
+    },
+    {
+      "path": "docs/competition/README.md",
+      "bytes": 3123,
+      "sha256": "7ca9698fa5903693d0610f917c4a53c5e74a655e0b4544e27ed98885a6e75dbc"
+    }
+  ],
+  "preserved_artifacts": [
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v3.md",
+      "bytes": 7314,
+      "sha256": "dc9bd2a0d569507e545d838905c8c6efb9168d05da6d0add3008618fe1c93b71"
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v3_근거.json",
+      "bytes": 84193,
+      "sha256": "7b17265442405009f9f3b8ce7b1c7f586db6ac2dbbb5ca892deb618a2dfa77d2"
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v4.md",
+      "bytes": 7904,
+      "sha256": "cbe7dd4c90ca650e47692207019c0fffbb52c6642be8228c155c9cf4c4675e3e"
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v4_근거.json",
+      "bytes": 23189,
+      "sha256": "e6fa68002fca9acb6ff970e7c9e1fc75eb938c85585a7771abc8616073fb1a7f"
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v5.md",
+      "bytes": 4750,
+      "sha256": "bc868e2bcdbde5049928f5afd3329ac67e4db4090904e07395759cc427ce2860"
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v5_근거.json",
+      "bytes": 14110,
+      "sha256": "924bc37e565701be26669f38ebdcda9414785e712eac7274db70e8cf83622c0a"
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v2.md",
+      "bytes": 26888,
+      "sha256": "6c13c06aedfb924c3902bebe257b74b08787ef82939223e0006d1a33f068b02d"
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v2_근거.json",
+      "bytes": 35761,
+      "sha256": "58f656d6bf4876f1c43d97f1ea0073eee3d4816683d4be14b4a9fad0df521726"
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v3.md",
+      "bytes": 22848,
+      "sha256": "f65d23025c9047f2d07703d48976f61ac58044e5a88c97cb07af55e577c9554a"
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v3_근거.json",
+      "bytes": 61115,
+      "sha256": "6789253cbda5f137edb10d5c53c103a4d2f90a6886ef9f5b541ad77d991152af"
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v4.md",
+      "bytes": 20095,
+      "sha256": "c51ad1a603427ef2d9037b6f2716668452fa086f5098c5da38b0407d0ed9b3bc"
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v4_근거.json",
+      "bytes": 63268,
+      "sha256": "b268d85333cc96959a2c2bc13ecaf276952345f606448d4ad12a820a0d547ed3"
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v5.md",
+      "bytes": 15464,
+      "sha256": "1a9b27977f153df991287702b0a76181a7d886cadca76f6ec44633f433bd6fd5"
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v5_근거.json",
+      "bytes": 86184,
+      "sha256": "baa14dc1ec87c4351d850d1d0a6b2472eeeeb8947f92a27e97f656ebd5ac14f2"
+    },
+    {
+      "path": "docs/competition/결선_적대적_평가_v1.md",
+      "bytes": 39139,
+      "sha256": "f9b0f4f9856b62b4be38ebca15321836eef9aa7eb8202a9fe9be2c025e421285"
+    },
+    {
+      "path": "docs/competition/결선_적대적_평가_v1_근거.json",
+      "bytes": 28067,
+      "sha256": "770ff842748fc20c3c6c110c78492aae15d92759a41886716ddc5aa57a61c387"
+    },
+    {
+      "path": "docs/competition/결선_적대적_평가_v2.md",
+      "bytes": 9171,
+      "sha256": "68c4eb5eca1f7abd166847c902251729ee43721af937daec7d4ce6981cfc5401"
+    },
+    {
+      "path": "docs/competition/결선_적대적_평가_v2_근거.json",
+      "bytes": 90494,
+      "sha256": "780da62e52d70150dcfb423bb5af24edf6dab5926ef117f9a5d67931d3d728dd"
+    }
+  ],
+  "parallel_reference_artifacts": [
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v6.md",
+      "bytes": 3724,
+      "sha256": "6aad402247b78eb416e498e47a095e8cb510ca90d2afae50d70e5aaa3bfa7862"
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v6_근거.json",
+      "bytes": 11595,
+      "sha256": "21a40da7e7ea2a3ca207474d2e953ba51abd66115e3d01cc92070d2d732e44aa"
+    }
+  ],
+  "validation": {
+    "linked_files_exist": true,
+    "referenced_lines_valid": true,
+    "score_arithmetic_valid": true,
+    "logs_and_probe_hashes_valid": true,
+    "original_v1_to_v5_artifacts_unchanged": true,
+    "raw_source_text_or_row_ids_in_report": false
+  }
+}
