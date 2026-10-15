@@ -1,0 +1,1471 @@
+{
+  "schema_version": "1.0",
+  "version": "reevaluation-v4.0",
+  "recorded_at": "2026-10-15T05:41:37.993422+00:00",
+  "target_commit": "3af90fb44fb11c58bd545c0e5debd4b75aa5a592",
+  "report": {
+    "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v4.md",
+    "bytes": 20095,
+    "sha256": "c51ad1a603427ef2d9037b6f2716668452fa086f5098c5da38b0407d0ed9b3bc"
+  },
+  "criteria_version": "user-data-scope-v1-2026-10-15",
+  "scope": {
+    "model_itself_scored": false,
+    "model_quality_or_integration_indirect_penalties": false,
+    "processing_time_scored": false,
+    "speed_scored": false,
+    "project_model_execution_performed": false,
+    "actual_training_data_inspected": true,
+    "raw_content_exported": false,
+    "app_or_dataset_modified": false,
+    "new_browser_e2e_performed": false,
+    "official_rubric_changed": false
+  },
+  "scores": {
+    "creativity": {
+      "score": 24,
+      "max": 30,
+      "subscores": [
+        11,
+        13
+      ]
+    },
+    "training_data": {
+      "score": 14,
+      "max": 20,
+      "purpose": 3,
+      "quality": 3,
+      "split_leakage": 4,
+      "traceability": 4
+    },
+    "applicability": {
+      "score": 22,
+      "max": 30,
+      "subscores": [
+        16,
+        6
+      ]
+    },
+    "presentation_materials": {
+      "score": 8,
+      "max": 10
+    },
+    "live_delivery_and_qa": {
+      "score": null,
+      "max": 10
+    },
+    "assessed_sum": 68,
+    "assessed_max": 90,
+    "previous_score": 58,
+    "directly_comparable_with_previous": false,
+    "official_result": false
+  },
+  "fresh_checks": {
+    "app": {
+      "container_name": "malssi-review-v4-d5af81f8c6",
+      "database": "disposable PostgreSQL 16; loopback-only; no host volume",
+      "model_in_tests": "mock",
+      "app-tests": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v4/db-checks/app-tests.log",
+        "sha256": "a8f5d82b7ae0202662af7df4dedc921ba3c0efb0c55bd188b9034a7875390827",
+        "summary": [
+          "ℹ tests 268",
+          "ℹ suites 0",
+          "ℹ pass 268",
+          "ℹ fail 0",
+          "ℹ cancelled 0",
+          "ℹ skipped 0",
+          "ℹ todo 0"
+        ]
+      },
+      "app-static": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v4/db-checks/app-static.log",
+        "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815",
+        "summary": [
+          "JavaScript syntax and JSON checks passed"
+        ]
+      },
+      "evidence-tests": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v4/db-checks/evidence-tests.log",
+        "sha256": "b19871e177968918fd1e1bfa55b7e49b9d352334df11a98368ad07ad4d5717ee",
+        "summary": [
+          "ℹ tests 24",
+          "ℹ suites 0",
+          "ℹ pass 24",
+          "ℹ fail 0",
+          "ℹ cancelled 0",
+          "ℹ skipped 0",
+          "ℹ todo 0"
+        ]
+      },
+      "disposable_container_stopped": true
+    },
+    "data_pipeline": {
+      "exit_code": 0,
+      "command": [
+        "/Users/chihun/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "log": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/pipeline-tests-bundled.log",
+      "sha256": "13ca6637f6e45f77670a14e928d5e771d3d3151ce20e1e7f791395b44f8d8390",
+      "summary": [
+        "ResourceWarning: Enable tracemalloc to get the object allocation traceback",
+        "......................................",
+        "----------------------------------------------------------------------",
+        "",
+        "OK (skipped=8)"
+      ]
+    },
+    "data_pipeline_count": {
+      "discovered": 335,
+      "passed": 327,
+      "failed": 0,
+      "skipped": 8,
+      "skip_reason": "optional torch CPU autograd tests; no score penalty"
+    },
+    "initial_data_pipeline": {
+      "exit_code": 0,
+      "command": [
+        "python3",
+        "-B",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "tests"
+      ],
+      "log": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/pipeline-tests.log",
+      "sha256": "c285c4df11bca498e69597a58b105bd987d674b753a847fdf8ec47427a954d31",
+      "summary": [
+        ".....................................................................................ssssss............................................................ssssssssssssssssssssssss...................................................................................................ssssssss.......ssssssssss....................................",
+        "----------------------------------------------------------------------",
+        "",
+        "OK (skipped=48)"
+      ]
+    }
+  },
+  "data_evidence": {
+    "tabular": {
+      "units": {
+        "conversation": {
+          "numeric": {
+            "passed": true,
+            "train_df_idf_vocabulary_recomputed": true,
+            "text_feature_rows_recomputed": 1107,
+            "input_columns": [
+              "text"
+            ]
+          },
+          "splits": {
+            "train": {
+              "rows": 990,
+              "groups": 182,
+              "conversations": 990,
+              "observed_subjects": 182,
+              "labels": {
+                "기타": 194,
+                "불안": 270,
+                "중독": 262,
+                "우울": 264
+              },
+              "multilabel_rows": 0,
+              "normalized_duplicate_extra_rows": 0,
+              "empty_text_rows": 0,
+              "human_verified_rows": 0,
+              "independent_AI_reviewed_rows": 0,
+              "sha256": "444339b650bf6452f549a527941434f57b9bd89eac1db5602a8d345dd118be9f"
+            },
+            "validation": {
+              "rows": 117,
+              "groups": 23,
+              "conversations": 117,
+              "observed_subjects": 23,
+              "labels": {
+                "중독": 37,
+                "불안": 36,
+                "기타": 20,
+                "우울": 24
+              },
+              "multilabel_rows": 0,
+              "normalized_duplicate_extra_rows": 0,
+              "empty_text_rows": 0,
+              "human_verified_rows": 0,
+              "independent_AI_reviewed_rows": 0,
+              "sha256": "072feebefde9eb428e31d07d4f215fd5ab5aa8db2976cb0b22856c1ff159056b"
+            }
+          },
+          "cross_split": {
+            "normalized_text_overlap": 0,
+            "group_overlap": 0,
+            "conversation_overlap": 0,
+            "observed_subject_overlap": 0
+          }
+        },
+        "sentence": {
+          "numeric": {
+            "passed": true,
+            "train_df_idf_vocabulary_recomputed": true,
+            "text_feature_rows_recomputed": 1646,
+            "input_columns": [
+              "text"
+            ]
+          },
+          "splits": {
+            "train": {
+              "rows": 1440,
+              "groups": 173,
+              "conversations": 600,
+              "observed_subjects": 173,
+              "labels": {
+                "불안": 458,
+                "중독": 510,
+                "우울": 343,
+                "기타": 164
+              },
+              "multilabel_rows": 34,
+              "normalized_duplicate_extra_rows": 0,
+              "empty_text_rows": 0,
+              "human_verified_rows": 0,
+              "independent_AI_reviewed_rows": 187,
+              "sha256": "28046aeac76527921e6f96f494e219fe4ae1ef7c315c6b6e68447b7f962c67d7"
+            },
+            "validation": {
+              "rows": 206,
+              "groups": 23,
+              "conversations": 80,
+              "observed_subjects": 23,
+              "labels": {
+                "중독": 74,
+                "우울": 55,
+                "불안": 62,
+                "기타": 21
+              },
+              "multilabel_rows": 5,
+              "normalized_duplicate_extra_rows": 0,
+              "empty_text_rows": 0,
+              "human_verified_rows": 0,
+              "independent_AI_reviewed_rows": 18,
+              "sha256": "bfd50a4599725aab44ff4ebb5f8adec231fcda592c53602069e62f82d9164965"
+            }
+          },
+          "cross_split": {
+            "normalized_text_overlap": 0,
+            "group_overlap": 0,
+            "conversation_overlap": 0,
+            "observed_subject_overlap": 0
+          }
+        },
+        "word": {
+          "numeric": {
+            "passed": true,
+            "train_df_idf_vocabulary_recomputed": true,
+            "text_feature_rows_recomputed": 378,
+            "input_columns": [
+              "text"
+            ]
+          },
+          "splits": {
+            "train": {
+              "rows": 302,
+              "groups": 194,
+              "conversations": null,
+              "observed_subjects": null,
+              "labels": {
+                "기타": 98,
+                "중독": 98,
+                "불안": 52,
+                "우울": 54
+              },
+              "multilabel_rows": 0,
+              "normalized_duplicate_extra_rows": 0,
+              "empty_text_rows": 0,
+              "human_verified_rows": 0,
+              "independent_AI_reviewed_rows": 0,
+              "sha256": "2c0697971117826136a4f0c81a4322c99a36d0ad385d7b835891b39d8e670d91"
+            },
+            "validation": {
+              "rows": 76,
+              "groups": 48,
+              "conversations": null,
+              "observed_subjects": null,
+              "labels": {
+                "중독": 25,
+                "불안": 13,
+                "기타": 25,
+                "우울": 13
+              },
+              "multilabel_rows": 0,
+              "normalized_duplicate_extra_rows": 0,
+              "empty_text_rows": 0,
+              "human_verified_rows": 0,
+              "independent_AI_reviewed_rows": 0,
+              "sha256": "8a60332e5ab1122bd04a4a488267b37265bfcf466b504069a5b8524b5369d8c9"
+            }
+          },
+          "cross_split": {
+            "normalized_text_overlap": 0,
+            "group_overlap": 0,
+            "conversation_overlap": 0,
+            "observed_subject_overlap": 0
+          }
+        }
+      },
+      "hash_manifest": {
+        "entries": 94,
+        "mismatches": []
+      },
+      "declared_counts": {
+        "passed": true,
+        "manifests_checked": [
+          "conversation/manifest.json",
+          "sentence/manifest.json",
+          "word/build_summary.json",
+          "summary.json"
+        ]
+      },
+      "conversation_lineage": {
+        "index_rows": 1507,
+        "unique_source_conversations": 1462,
+        "source_status_counts": {
+          "success": 1108,
+          "held": 354,
+          "duplicate": 45
+        },
+        "exported_plus_excluded": 1462,
+        "source_coverage_matches": true,
+        "exclusion_reasons": {
+          "incomplete_or_unusable_source_text": 354,
+          "normalized_body_same_split_duplicate": 1
+        }
+      },
+      "sentence_provenance": {
+        "candidates": 2400,
+        "reviewed": 2400,
+        "active": 1646,
+        "held": 754,
+        "integration_actions": 25,
+        "source_field_mismatches": 0,
+        "decision_mismatches": 0,
+        "invalid_evidence_substrings": 0,
+        "export_ledger_mismatches": 0
+      },
+      "sentence_parent_missing_reasons": {
+        "normalized_body_same_split_duplicate": 3
+      },
+      "cross_unit_sentence_containment": {
+        "train": 0,
+        "validation": 0
+      },
+      "sentence_near_duplicate_screen": {
+        "method": "NFKC/no whitespace; length ratio>=.8; 3gram Jaccard>=.6; SequenceMatcher(autojunk=False)>=.9",
+        "pairs": 0,
+        "train_rows": 0,
+        "validation_rows": 0
+      },
+      "word_provenance": {
+        "decisions": 21340,
+        "partition_counts": {
+          "train": 302,
+          "validation": 76,
+          "held_for_review": 70,
+          "discarded_other": 20892
+        },
+        "partition_ids_unique": true,
+        "partition_covers_ledger": true,
+        "partition_core_mismatches": 0,
+        "group_assignment_mismatches": 0,
+        "split_assignment_mismatches": 0,
+        "missing_source_row_hashes": 0
+      },
+      "word_source_resolution": {
+        "declared_inputs": 3,
+        "old_paths_present": 0,
+        "inputs_found_by_same_basename_and_hash": 3
+      },
+      "script_sha256": "c8bc7aaa808b11605e5ca55e8bb6f07c0a53ff13df26d3903347facf1234aade",
+      "model_evaluated": false,
+      "time_scored": false
+    },
+    "tabular_absent_field_note": "Word rows have no conversation or subject IDs. Zero intersections of these absent fields are not evidence of source independence; lexical group and text checks are the applicable word checks.",
+    "full_sft_reconstruction": {
+      "passed": true,
+      "files_checked": 9,
+      "rows_checked": {
+        "conversation/source_dialogues.train.jsonl.gz": 957,
+        "conversation/train.jsonl.gz": 40652,
+        "sentence/train.jsonl.gz": 456621,
+        "word/train.jsonl.gz": 4032438,
+        "conversation/source_dialogues.validation.jsonl.gz": 112,
+        "conversation/validation.jsonl.gz": 5322,
+        "sentence/validation.jsonl.gz": 56549,
+        "word/validation.jsonl.gz": 463887,
+        "review/excluded_targets.jsonl.gz": 105082
+      },
+      "target_source_utterances_checked": 46664,
+      "cross_split_source_group_conflicts": 0,
+      "duplicate_last_client_response_pairs": 0,
+      "future_turns_in_sft": 0,
+      "incorrect_loss_message_masks": 0,
+      "actual_tokenizer_checked": false,
+      "clinical_quality_certified": false,
+      "manifest_sha256": "5928bc8c03263a538411d5f7d2bb5a942589b263ce2e0c9e2a253f60ee9f1dac",
+      "audit_code_sha256": "61244c7e9f94785dea62a95cd15a88495cb76d4fc2f4e2e51d87ec269c71bc9b",
+      "script_sha256": "4af520eeedca4a402084c0e4ea2a8d62b668848e22cd23a4cdd1edc9ae189847",
+      "model_execution": false,
+      "time_scored": false
+    },
+    "source_database": {
+      "database_sha256": "da1511a77e13e51769be7bba2169c2e838b290693a384e67b5c568bb314bd10e",
+      "manifest_database_sha256_matches": true,
+      "database_conversations": 1462,
+      "database_split_counts": {
+        "train": 1299,
+        "validation": 163
+      },
+      "selected_conversations_raw_paragraph_match": 1107,
+      "selected_raw_utterances": 303522,
+      "delivered_source_prefixes_match_original_db": 1069,
+      "raw_content_exported": false
+    },
+    "independent_sft_lineage_and_leakage": {
+      "ledger_rows": 45974,
+      "round3_round4_decisions_and_order_identical": true,
+      "source_admission_counts": {
+        "train": 40415,
+        "validation": 4298
+      },
+      "held_rows": 1261,
+      "checks": {
+        "sft_identity_mask_target_checks": 45974
+      },
+      "scopes": {
+        "original": {
+          "splits": {
+            "train": {
+              "rows": 40652,
+              "conversations": 957,
+              "groups": 180,
+              "max_group_rows": 659,
+              "top5_group_rows": 3012,
+              "max_group_share": 0.01621076453803011,
+              "top5_group_share": 0.07409229558201319
+            },
+            "validation": {
+              "rows": 5322,
+              "conversations": 112,
+              "groups": 23,
+              "max_group_rows": 588,
+              "top5_group_rows": 2473,
+              "max_group_share": 0.1104847801578354,
+              "top5_group_share": 0.4646749342352499
+            }
+          },
+          "cross_split_groups": 0,
+          "first8_shared_blocks_min200chars": 1,
+          "recent8_shared_blocks_min200chars": 0,
+          "validation_targets_equal_train_past_rows": 54,
+          "validation_targets_equal_train_final_rows": 15,
+          "validation_target_substring_of_train_assistant_min80chars_rows": 20,
+          "validation_target_substring_of_train_assistant_min200chars_rows": 10,
+          "substring_scope": "complete normalized validation target inside a single normalized train assistant message; not arbitrary shared fragment or semantic equivalence"
+        },
+        "admitted": {
+          "splits": {
+            "train": {
+              "rows": 40415,
+              "conversations": 948,
+              "groups": 178,
+              "max_group_rows": 659,
+              "top5_group_rows": 3012,
+              "max_group_share": 0.016305827044414203,
+              "top5_group_share": 0.07452678460967463
+            },
+            "validation": {
+              "rows": 4298,
+              "conversations": 97,
+              "groups": 21,
+              "max_group_rows": 588,
+              "top5_group_rows": 2107,
+              "max_group_share": 0.13680781758957655,
+              "top5_group_share": 0.49022801302931596
+            }
+          },
+          "cross_split_groups": 0,
+          "first8_shared_blocks_min200chars": 0,
+          "recent8_shared_blocks_min200chars": 0,
+          "validation_targets_equal_train_past_rows": 0,
+          "validation_targets_equal_train_final_rows": 0,
+          "validation_target_substring_of_train_assistant_min80chars_rows": 0,
+          "validation_target_substring_of_train_assistant_min200chars_rows": 0,
+          "substring_scope": "complete normalized validation target inside a single normalized train assistant message; not arbitrary shared fragment or semantic equivalence"
+        }
+      },
+      "candidate_4096_exact_source_content_and_selection": {
+        "train": 15512,
+        "validation": 1724
+      },
+      "source_db_size_mtime_unchanged": true,
+      "script_sha256": "25120f42b7936032b418f57c4d26da0551ad62ca566d9eff81d7e50f0d967a0d",
+      "no_model_execution": true,
+      "time_scored": false,
+      "metadata_hashes": {
+        "data/데이터셋/말씨_원본상담_SFT_v1_20261009/manifest.json": "5928bc8c03263a538411d5f7d2bb5a942589b263ce2e0c9e2a253f60ee9f1dac",
+        "data/outputs/private/malssi_round4_20261009/admission_final/admission_policy.json": "40eacefe58046fa1bbab02925cbadc985fd66b9d269f4e01904701c238beb2e9",
+        "data/outputs/private/malssi_round4_20261009/admission_final/admission_rows.jsonl.gz": "c671c6cd12a4f14e9b706a218d4c596b45c81de74452f1c92cbf43bbb2568e78",
+        "data/outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json": "efd162a50ef14845cd8453502efc4a4ba371fabe417fa4c5a5262b77362a6b38",
+        "data/outputs/private/malssi_round3_20261009/candidate_4096/source_rows/export_manifest.json": "0eae08fe942c6d736172d23aeac3bf22c9a72ea2cdd93825a5a6beb87052c208"
+      }
+    },
+    "supplemental_supervision": {
+      "rows": 24,
+      "training_allowed_counts": {
+        "False": 24
+      },
+      "human_verified_counts": {
+        "False": 24
+      },
+      "author_type_counts": {
+        "ai": 24
+      },
+      "applicability_counts": {
+        "needs_role_clarification": 10,
+        "no_direct_caregiver_request": 14
+      },
+      "sha256": "0abae5d202c5519b225d6fe15e9ab74f9bfccfd6fba349aaa958070f5be4a9e2"
+    },
+    "classification_initial_basename_resolution": {
+      "declared_inputs": 3,
+      "old_paths_present": 0,
+      "inputs_found_by_same_basename_and_hash": 2
+    },
+    "basename_resolution_note": "Literal Korean basename rglob differed across Python runtimes; NFC basename comparison resolved all 3 input hashes."
+  },
+  "app_adversarial_probe": {
+    "source": "current migrated disposable database question set",
+    "question_count": 29,
+    "question": {
+      "id": "describe",
+      "type": "text",
+      "required": false,
+      "noSkip": false
+    },
+    "path_steps": 8,
+    "results": [
+      {
+        "mode": "empty_send",
+        "button_enabled": true,
+        "emitted_skip_marker": true,
+        "emitted_skipped": false,
+        "status": "answered",
+        "answered_count": 7,
+        "describe_documents": 1,
+        "describe_safety_bundles": 1
+      },
+      {
+        "mode": "explicit_skip",
+        "button_enabled": true,
+        "emitted_skip_marker": true,
+        "emitted_skipped": true,
+        "status": "skipped",
+        "answered_count": 6,
+        "describe_documents": 0,
+        "describe_safety_bundles": 0
+      }
+    ],
+    "actual_ui_handler": true,
+    "mock_dom": true,
+    "http_or_browser_e2e": false,
+    "model_execution": false,
+    "processing_time_scored": false,
+    "script_sha256": "311e49ff2a5f1f9b3ac030ea96a4d756adc04132575cb898dbd3a19a7b8fb0cc"
+  },
+  "app_probe_db": {
+    "container_name": "malssi-review-v4-input-c6d594aa96",
+    "database": "disposable PostgreSQL 16; loopback-only; no host volume",
+    "model_in_tests": "mock",
+    "current-question-empty-input": {
+      "exit_code": 0,
+      "log": "runtime/adversarial-review-v4/app/current-question-empty-input.log",
+      "sha256": "d8c55d202b2eb9d65d85de5cd3874b32550648e10755a6ae585d157f090c5c27",
+      "summary": []
+    },
+    "disposable_container_stopped": true
+  },
+  "findings": [
+    {
+      "id": "A1",
+      "priority": "P2",
+      "confidence": "high",
+      "status": "reproduced",
+      "title": "Blank optional text Send is treated as answered evidence",
+      "source_files": [
+        "app/public/js/components/ChatInput.js:43",
+        "app/public/js/core/conversation.js:94",
+        "app/src/intake.js:125",
+        "app/src/intake.js:327"
+      ],
+      "effect": "One extra answered field, source document and safety candidate compared with explicit Skip. No model semantic outcome asserted.",
+      "limits": "Fresh migrated default 29-question set plus actual UI handler in mock DOM; no HTTP answer persistence or browser rendering E2E."
+    }
+  ],
+  "known_limitations": [
+    "Original counselor-continuation and classification targets do not directly establish supporter-assistance supervision",
+    "Semantic labels have limited independent AI review and no human_verified flags in inspected new annotations; no observed label error rate claimed",
+    "Observed groups are not verified unique people; validation was used for development/selection; no untouched test verified",
+    "Substring and near-duplicate checks are bounded, not complete semantic deduplication",
+    "Source-use scope and complete deidentification not established by structural audit",
+    "Unobserved field use, retention/access-loss operations and live presentation remain outside verified evidence"
+  ],
+  "data_assets": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/train.jsonl.gz",
+      "sha256": "a9e8b2a0c8bb4b2fa6f863dcd2897f3f0a7bb7a3797ea4b437aace7bf5ca56a7",
+      "rows": 40652,
+      "bytes": 249466420
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/validation.jsonl.gz",
+      "sha256": "078ab0bf8f45c6bf327d73565233d3040b28807f2cc93739c39eaf96e507ad8d",
+      "rows": 5322,
+      "bytes": 29124210
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/sentence/train.jsonl.gz",
+      "sha256": "5417e64ace6cc2e1d15c0efe7ba568751aa010bb25c8abeb2787efddf442c391",
+      "rows": 456621,
+      "bytes": 50774065
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/sentence/validation.jsonl.gz",
+      "sha256": "f0a5725cfe44b9a59ed850e207ff2b5d60f938847986741784d0d28040de1e11",
+      "rows": 56549,
+      "bytes": 6172911
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/word/train.jsonl.gz",
+      "sha256": "2e142f5189349084355777978a49c90d7d76772efb735fb613fd25a435dafdad",
+      "rows": 4032438,
+      "bytes": 489798552
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/word/validation.jsonl.gz",
+      "sha256": "c4353540bc7dc6909146e4e7cc13d02196b9f9657faf8fd1b5ae5025a975b0cc",
+      "rows": 463887,
+      "bytes": 56487604
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/source_dialogues.train.jsonl.gz",
+      "sha256": "af0eb9384dc39fb6eca59c40781b6ba5c41c7343a821eeae2900a6cdff139c36",
+      "rows": 957,
+      "bytes": 21582758
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/conversation/source_dialogues.validation.jsonl.gz",
+      "sha256": "a858d48423139269569e78f9a99385ab9ab0a5f2bb4c8ea2bdf58df006f57e4f",
+      "rows": 112,
+      "bytes": 2583273
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/review/excluded_targets.jsonl.gz",
+      "sha256": "516efe67ae2e5fe2845ea98320b853c3f946f6c748d2e220945154e601ecbd88",
+      "rows": 105082,
+      "bytes": 9626228
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/summary.json",
+      "bytes": 1331,
+      "sha256": "4cfc5a13b8f8fcc81e07473b8ffa978e171534d8e448382917f2c6b9db9149d2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/baseline_smoke.json",
+      "bytes": 2438,
+      "sha256": "50317c372f13dd1e5081e2815c372d952e873fefeda44c6069c44bc997a68ad9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/README.md",
+      "bytes": 7285,
+      "sha256": "0b58c920b057fc70459b4560a057d14cc628470c6d3a04a016bf92832a3e50a1"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/run_baseline.sh",
+      "bytes": 571,
+      "sha256": "7cbdfb028c93248809b1de52e87eedb21f35c85c961bcd0c20ccbe2f84b50caf"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/train.jsonl",
+      "bytes": 1777970,
+      "sha256": "28046aeac76527921e6f96f494e219fe4ae1ef7c315c6b6e68447b7f962c67d7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/discarded_other.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/README.md",
+      "bytes": 1339,
+      "sha256": "f05d9fe91871560b0a8d4bafd182560546af6f99ba717101097c95480bcb145a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/all_review_results.jsonl",
+      "bytes": 2875153,
+      "sha256": "baaeff6e045086dcfb0e8743256562be12968f9734fcf3da5aeb8a310083f91f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/validation.jsonl",
+      "bytes": 255526,
+      "sha256": "bfd50a4599725aab44ff4ebb5f8adec231fcda592c53602069e62f82d9164965"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/manifest.json",
+      "bytes": 1193,
+      "sha256": "955153f53a13c8bb1111d9432d74b3a755860462e61b875fafcaf6794f704fe0"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/duplicate_exclusions.jsonl",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/held_for_review.jsonl",
+      "bytes": 841657,
+      "sha256": "c75e0c416e17f77125beb6b5c53a65afdcb67a71777d8c27ea18f150484307d7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/additional_input_filter_review.json",
+      "bytes": 15819,
+      "sha256": "c1546c718e769e567c0f6e9cbfb8c108560d02871b56cd6f5005948c901c6891"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/release_independent_review.json",
+      "bytes": 8387,
+      "sha256": "dc5b53181adf9702be45a8af0ff74eb310ce20d12142e3a6624cb9b0d30636c7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/final_review_resolution.json",
+      "bytes": 712,
+      "sha256": "e52f1a79fb5145321e49e6b0724cf3deb07cd2edc4d5940fcd4b4cb7495a8c04"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/select_sentences.py",
+      "bytes": 5137,
+      "sha256": "19932c4211b2889bb60e61a1a8eb9c324c2687e9ec1f12b884944865b9d6e1de"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/prepare_features.py",
+      "bytes": 7305,
+      "sha256": "3c4c5aecbefc80732a408b88d22aabae23ca70442448bdf1cd8b88f1a6ef33e3"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/build_sentences.py",
+      "bytes": 7122,
+      "sha256": "2730f6fa0f4aceb07f88f1dc03787dc20bbc9a83f5fe1ffc1d7a42dfa8e62ca2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/csr_io.py",
+      "bytes": 1421,
+      "sha256": "255550eeffd1b98c0bedb009a17c7b60737ba8e68454b8edf9976d218c547a3f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/test_training_helpers.py",
+      "bytes": 1558,
+      "sha256": "0c134c73b0e416490572603f9ba8801739125d8b624ab9d8ce918320ace4cfbc"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/build_words.py",
+      "bytes": 13561,
+      "sha256": "53431be84fa36262ad94cf785cad9ad6f712b593a3d4984b3e5f8610b558bcc7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/train_baseline.py",
+      "bytes": 3574,
+      "sha256": "ce2714f36a7bbc46a8d4c1174574e5d39a129dc755f1fc8cef9918d488bd5802"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/load_dataset.py",
+      "bytes": 1581,
+      "sha256": "8927da26d75e1a2a9c6e0d63c7817482f8f76b4fcd1922db04075d9279257081"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/package_release.py",
+      "bytes": 6250,
+      "sha256": "4c3ee27b323f86f04d8894175c9751ff0479522831a291fbe21df372bdd403d7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/build_conversations.py",
+      "bytes": 22010,
+      "sha256": "5e1f5346c8fa7c1ef514d5e50694b99d399c744196069c8c248763bbc21c542c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/repro/finalize_release.py",
+      "bytes": 13479,
+      "sha256": "f749b06a48e6a110ccb42bea4c0eda8cdf8da0c6f2fa82bc817f6d3bfbb97a0d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/train.jsonl",
+      "bytes": 250707,
+      "sha256": "2c0697971117826136a4f0c81a4322c99a36d0ad385d7b835891b39d8e670d91"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/build_summary.json",
+      "bytes": 3324,
+      "sha256": "7d1147afbfde83e30f43f2a43510fb36b83a44043ac3cbd22dcffe809548cd26"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/leakage_verification.json",
+      "bytes": 686,
+      "sha256": "0fe4a9156bfe7e529d56588cee54bdbf9c160493dd103d8947d95528a9c7fdb3"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/all_semantic_decisions.jsonl",
+      "bytes": 17880908,
+      "sha256": "bd4bddb0574e6d477b3593030c27ed48fafc233216104600a7cb3529c95b9468"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/label_map.json",
+      "bytes": 63,
+      "sha256": "f4fbca65b86abf8bb4f65bb3caff06019eed6f52aaa44b01288acbbff48d40b1"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/discarded_other.jsonl",
+      "bytes": 19096869,
+      "sha256": "979638dc36fc225d2f4a3ead433b1765fc5840cb12523fc9b4a3a843d4bd8ed0"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/README.md",
+      "bytes": 1191,
+      "sha256": "c5b3416713632fbc40abd37f39f7781ab499e842767429da56a50774d030fa97"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/validation.jsonl",
+      "bytes": 63848,
+      "sha256": "8a60332e5ab1122bd04a4a488267b37265bfcf466b504069a5b8524b5369d8c9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/leakage_group_assignments.json",
+      "bytes": 859711,
+      "sha256": "1f2c83087c878bb5eca3295929f0a00bfd935a65a831cc588e7458022f52e309"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/approved_review_input.json",
+      "bytes": 61015,
+      "sha256": "062170b37b295b63d8bca79264a4f5b142d30b9cf85bbb6774e7fd68c01a1b8d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/approved_semantic_decisions.json",
+      "bytes": 174319,
+      "sha256": "4de90023304c2458d07f383b8ac773ad8094b92ae485547610a6ee96e24deafa"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/held_for_review.jsonl",
+      "bytes": 57276,
+      "sha256": "6a78858f1495d2d8001afa4aae8acaa1f47f852c3d7ceeebbe73d16f759c1cb6"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/train.jsonl",
+      "bytes": 56687203,
+      "sha256": "444339b650bf6452f549a527941434f57b9bd89eac1db5602a8d345dd118be9f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/source_flag_disagreements.jsonl",
+      "bytes": 77047,
+      "sha256": "a14282bde64920021a3f1fc0a594ba7f7e94660dd433da9eead5c07cb5a50a0b"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/source_preparation_manifest.json",
+      "bytes": 6459,
+      "sha256": "a960f537f62dc7b781d263ffe878fc170b9af3c34796a2b20a20bf7155baadc6"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/input_filter_review.json",
+      "bytes": 247719,
+      "sha256": "b48c120006ec2cb2b88bab0dafbaac1d04fb94e3cdb709277f03b66c15aac70c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/excluded.jsonl",
+      "bytes": 157786,
+      "sha256": "547d777f813ab43815a423f73abd207bb1078af700a5e478354e9f34a2ed3f19"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/README.md",
+      "bytes": 1305,
+      "sha256": "3af755ca0a8d04a94cf2e6604d6dd99c4a43865e6b7c4d31d91f59321d53717d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/validation.jsonl",
+      "bytes": 6590355,
+      "sha256": "072feebefde9eb428e31d07d4f215fd5ab5aa8db2976cb0b22856c1ff159056b"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/source_index.jsonl",
+      "bytes": 635226,
+      "sha256": "e724ef069738fdbd24f8ddbe51b1b21e67b5ed8823dd67b6c44a9b8e59c8b9ce"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/test_builder.py",
+      "bytes": 5724,
+      "sha256": "905170e592adad119a20687d121d1f419049f59210390cc80118d601c33cfcf3"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/validation.json",
+      "bytes": 771,
+      "sha256": "0ecb39d8f530fd11b44181236f3ff2b54df0d2181a499a67cbad13fde3d96855"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/manifest.json",
+      "bytes": 6049,
+      "sha256": "73e0728937bad152a651b06e95e53ea86c1adc650c41ae63da8d203c7398b90f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/train_X.npz",
+      "bytes": 1459774,
+      "sha256": "687622c597dcd5d0c72153dda56c4fb099338570563bd11fea4d9d0618debdb9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/vocabulary.json",
+      "bytes": 142670,
+      "sha256": "eb9daa47163c665a87d6c95f86799e5708b573c4cfd1ceae12c730744fd74774"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/validation_y.npy",
+      "bytes": 952,
+      "sha256": "5a0102e7d5cf1ef75020cf3e244c639971ebb4af82efbaf48a1e73500a5ffd9b"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/idf.npy",
+      "bytes": 29292,
+      "sha256": "251044c584aefb08144cb1cb550d5660ec3e01256782f59e891e9910b0b6e7c2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/train_sample_weight.npy",
+      "bytes": 5888,
+      "sha256": "df6a5e87a15b3f079738655378e6b090003d0077492ab6b14562bff376bff1fd"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/validation_rows.json",
+      "bytes": 15453,
+      "sha256": "b40403d73f6bd0419694136723de9b4bb1403dc59b087804f26382833b41ee6b"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/train_rows.json",
+      "bytes": 108003,
+      "sha256": "32b1cff4d8c70d19883aac08557bd09a8085153422e51bd4442cd62e2b285975"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/train_y.npy",
+      "bytes": 5888,
+      "sha256": "7a01482e576e80d7ec1bee19856b85cca47835b7d6cd7a829f00d53d8978916e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json",
+      "bytes": 2828,
+      "sha256": "58cc24877a35aa9bd80b43ffe97404d02891e5699d16d3521dcc27c5b270ca3d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/validation_X.npz",
+      "bytes": 207710,
+      "sha256": "524f443d30cae3a13edbafdc94e8c0d1cc09226522874c07f4f34dae8db07a35"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/numeric/document_frequency.json",
+      "bytes": 39974,
+      "sha256": "acee1c620e169f155e61fa7a372281338a57ea54ff86384c9a109ef50df96a15"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/candidates.json",
+      "bytes": 3192335,
+      "sha256": "3583e3b1475f66f0b100263d6a631cc5648b8484da023ba4addf4187fd482333"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/a_decisions.json",
+      "bytes": 291051,
+      "sha256": "3eeb91b98fb598f5ebb31b98ae8d2bcdf5be51201caa9c9ea03982b9b718533a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/root_independent_audit.json",
+      "bytes": 74137,
+      "sha256": "ef1451cb9e9d268370607f64d3250b01dc5a6969b0afd1b706b80eab236bd809"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/b_decisions.json",
+      "bytes": 289680,
+      "sha256": "5d82dcb41e57d340261abaf5329e98a4f9eae46d01d83cd207ce952cdbc27b3a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/primary_manual.tsv",
+      "bytes": 14560,
+      "sha256": "3832ca59aae9cd57af759a36f39c6f9dfd56d100df34f00443d1c2037d595e97"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/primary_decisions.json",
+      "bytes": 97282,
+      "sha256": "079d4457e3d6792e48051f5270c1735623e89dac93678701ae74e3a544475175"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/selection.json",
+      "bytes": 1115,
+      "sha256": "8befc40065f2a6d34b4b376d1870e86f58e8c62361cd0e7ed2d0313a75a1b8d5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/protocol.json",
+      "bytes": 3469,
+      "sha256": "384caeed04d03f031b4ec0ad4fb8a4cca45ff18dfe9856d71911d0601fe405df"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/primary_independent_audit.json",
+      "bytes": 34443,
+      "sha256": "ab89a2401351f2b1e48dbae0e057336181fed03a38fb5c9c6882c5f623962444"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/audit_resolution.json",
+      "bytes": 3203,
+      "sha256": "4e1a0ed818ac298796795c2bab3446e91e8662e90874e09ba17f73dc77a4e931"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/primary_self_consistency_review.json",
+      "bytes": 10436,
+      "sha256": "4d999dc65770169c760f4428291f25cb489b6c60c4b4c94509652669b9ec869c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/provenance/sentence_review/integration_review.json",
+      "bytes": 12092,
+      "sha256": "737aa9b9e2bdd4f8e04a7c77e33f5aeec6bc59289e886cb9832e2468c43b550f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/train_X.npz",
+      "bytes": 23576,
+      "sha256": "5547e8cd28876b70ace0ff7284b304c886230f16c5cf87cb52a0d378b8bf65de"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/vocabulary.json",
+      "bytes": 25917,
+      "sha256": "f81fca91fcce439e49a491359c1d58af68b1113fb65dcf019c35c55ab552c576"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/validation_y.npy",
+      "bytes": 432,
+      "sha256": "e0c7d6d7a27b6d48baaab2a40482a75aed068df7d1703267bf50c9e441c8d142"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/idf.npy",
+      "bytes": 5556,
+      "sha256": "5edeb09209051037917cd14c9ac626625c342a5ee0f71c3075191387df05053e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/train_sample_weight.npy",
+      "bytes": 1336,
+      "sha256": "4e9bb39ef5463c6d5ca0c49aafe118ca2de44ebd0550df2a45eea34bbd4901fb"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/validation_rows.json",
+      "bytes": 2131,
+      "sha256": "f5293f4c4dfabc6c271b0bd5e7798a361f11a070444d0344b08233bb35579289"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/train_rows.json",
+      "bytes": 8459,
+      "sha256": "d7b43e7cf239350695d3a18f2e0ba76892fb7747217639f9b193f523b418ba09"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/train_y.npy",
+      "bytes": 1336,
+      "sha256": "b6c2b4b2e3fa2361d1a33f6cc88bc4c9c9f4f7bf23820f6ae7aabb5c703c44c5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json",
+      "bytes": 2813,
+      "sha256": "73c690f2d391e45537056652f3d40f73bc956887d22648a2384d61802ac1c402"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/validation_X.npz",
+      "bytes": 6028,
+      "sha256": "d7c3f1e5dd3f534afb821e98dabc9b7a580a803335a2c816597cf1815b3db3b8"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/numeric/document_frequency.json",
+      "bytes": 6888,
+      "sha256": "5665b51e031245024d77efa792574ab7a6d9f78c4fcf60f387fef0caf1cf9589"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/train_X.npz",
+      "bytes": 14921685,
+      "sha256": "c649005f10390bc91b9a613686fb5fb2086f4a2aaf28b6924e6a45e1707ea8c5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/vocabulary.json",
+      "bytes": 390100,
+      "sha256": "35ea0f5588d04e477f333f8b46a14f815710ed4e7caae8732da1ce2cac24db9d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/validation_y.npy",
+      "bytes": 596,
+      "sha256": "6750b0999cd4001b08511d2aa2635a442dc97ebd6e810e3e5237c58138d65161"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/idf.npy",
+      "bytes": 80128,
+      "sha256": "c7a5babab34d09f330a2e9f3469ac66fc818d8d3bf0c42c8055e9b068ac27c02"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/train_sample_weight.npy",
+      "bytes": 4088,
+      "sha256": "98ea1a758c7547b9463431f81debf90e616c4fb14e36f1c2423081ea3401497c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/validation_rows.json",
+      "bytes": 8778,
+      "sha256": "5e72cde6c2831eae1f252ecde279a427cc510654bfb98ee50126e2a1e6a7b8d6"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/train_rows.json",
+      "bytes": 74253,
+      "sha256": "8eef1b698f1d9a237a3f372da6005d8edc9af93ac5e41519d1be79eacfc2f50e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/train_y.npy",
+      "bytes": 4088,
+      "sha256": "45804f36c017532112eca4ac8aea27325b766c53d825480cfde0add427d2c1ab"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json",
+      "bytes": 2831,
+      "sha256": "46f1e5569f3cfba50f704f6afa9214c0448b8e4b170d11e0d4f6fe94320f7736"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/validation_X.npz",
+      "bytes": 1770269,
+      "sha256": "cf45467e4e02243faeebae94d141267ddb6e41243f1308ec8459ffe2205366f1"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/numeric/document_frequency.json",
+      "bytes": 120631,
+      "sha256": "b72fb49f1be830a25dbf4cd367903ad385f0f637788cb9ba5778307c8ed7e91a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/문장별_데이터셋/corpus.sqlite",
+      "bytes": 12631330816,
+      "sha256": "da1511a77e13e51769be7bba2169c2e838b290693a384e67b5c568bb314bd10e",
+      "hash_verification": "fresh independent_sft_probe.py; size/mtime stable through read-only run"
+    }
+  ],
+  "sources": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/05_평가범위와_학습데이터_기준.md",
+      "bytes": 4899,
+      "sha256": "1289b25994703419ffd1b5345f57dad515183ad0728902f155ded02bb5cc3774"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v3.md",
+      "bytes": 22848,
+      "sha256": "f65d23025c9047f2d07703d48976f61ac58044e5a88c97cb07af55e577c9554a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v4.md",
+      "bytes": 7904,
+      "sha256": "cbe7dd4c90ca650e47692207019c0fffbb52c6642be8228c155c9cf4c4675e3e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/ChatInput.js",
+      "bytes": 6770,
+      "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/core/conversation.js",
+      "bytes": 7066,
+      "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/intake.js",
+      "bytes": 20664,
+      "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/AGENTS.md",
+      "bytes": 2750,
+      "sha256": "095f76cdbafd169b197e9ab15c49ebae58cc6ab930ef84ce6f3beb4a6239dd68"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/db-checks/checks.json",
+      "bytes": 1276,
+      "sha256": "113d9ff4b7ee0b1c0a7a9ba0967f182282ad73a0c883ba1ba9f942494afa0290"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/pipeline-tests-bundled.json",
+      "bytes": 694,
+      "sha256": "0709936e3a193491d985a201bf7279221635eab1089f5300322bb260ee2cccb2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/tabular/audit.py",
+      "bytes": 7592,
+      "sha256": "c8bc7aaa808b11605e5ca55e8bb6f07c0a53ff13df26d3903347facf1234aade"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/tabular/results.json",
+      "bytes": 6724,
+      "sha256": "e822ce481acf2ed7bd76dff108858b28d7d7c2515e95a02818b290a1c3716dee"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/counseling_pipeline/release_audit.py",
+      "bytes": 27889,
+      "sha256": "94ce920a5ddaa26d419a6e0da93319353364e763689e4fb8cd1af95b8936e767"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/full_sft_audit.py",
+      "bytes": 627,
+      "sha256": "4af520eeedca4a402084c0e4ea2a8d62b668848e22cd23a4cdd1edc9ae189847"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/full_sft_audit.json",
+      "bytes": 1073,
+      "sha256": "d11a14434669f50828e73427246c8cd47d1288e25acb5c440c2ada6081c9a710"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/counseling_pipeline/source_sft.py",
+      "bytes": 27668,
+      "sha256": "61244c7e9f94785dea62a95cd15a88495cb76d4fc2f4e2e51d87ec269c71bc9b"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/independent_sft_probe.py",
+      "bytes": 8923,
+      "sha256": "25120f42b7936032b418f57c4d26da0551ad62ca566d9eff81d7e50f0d967a0d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/source_db.json",
+      "bytes": 424,
+      "sha256": "3b0ba050e6c1e545140446f72a552045387bce7b03942594d0dc2ccf61d11865"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/independent_sft_probe.json",
+      "bytes": 3699,
+      "sha256": "e344877fc99701294f91c74c17f8c3884964ffcc24b8af1bd3186725f8815087"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/supplemental_counts.json",
+      "bytes": 350,
+      "sha256": "7a18b85ec9a7219b9d37d7d7de3916380115efa2e641777c82a207a6bde3cd8b"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/docs/support_agent/말씨_원본상담_SFT_데이터계약_2026-10-09.md",
+      "bytes": 9193,
+      "sha256": "22d2926f6cbbb2f27a6003c0036021b4805b7f52a308c6f9401fab48aa41381c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/app/empty-send-probe.mjs",
+      "bytes": 3716,
+      "sha256": "311e49ff2a5f1f9b3ac030ea96a4d756adc04132575cb898dbd3a19a7b8fb0cc"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/app/empty-send-results.json",
+      "bytes": 986,
+      "sha256": "a0e0d2681c280f4e73cf130e897ffa1096e900d67a6a5b7f02e155a046060ded"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/scripts/evaluation_evidence.mjs",
+      "bytes": 13186,
+      "sha256": "a35c6ad496bc8e3a1dd97468d396642c94c7000dd5c01385710b8b78cdbe8ef7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/docs/API.md",
+      "bytes": 10232,
+      "sha256": "9182b34879cf87e4c89ed86826cbf26481c4a41d2bb76ebc7c333fb5cc2f77d0"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/현황과_할일.md",
+      "bytes": 5726,
+      "sha256": "994cd9a121f09fcc00798d61c60456ee3483d73c1c46c7cd5f8358685c20c91c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/README.md",
+      "bytes": 2176,
+      "sha256": "2460d23c137aa945baf7ce8392c80f3df911434095c640897069cfe889011275"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/데이터와_연구.md",
+      "bytes": 4984,
+      "sha256": "cfa7189a1e77ff42f50faec0b1662141bb74ad66b2109873665049ab789512a5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/01_대회요구와_적합성.md",
+      "bytes": 2792,
+      "sha256": "015bd596e084263d981280d7d62c3f2c937a806903d5e8b76389d5c82422fd71"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/docs/support_agent/말씨_4차_실검증_수정_결과_2026-10-09.md",
+      "bytes": 20565,
+      "sha256": "d0a889cbfaf958a3f3b9c6ed7b6bb0cdf922de95366170120606e8c2b29df55c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/app/checks.json",
+      "bytes": 443,
+      "sha256": "43877bf671b71d7f6699302dddf5b90b6b0607a7708ea06225b8580a9aa926b4"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/app/current-question-empty-input.log",
+      "bytes": 763,
+      "sha256": "d8c55d202b2eb9d65d85de5cd3874b32550648e10755a6ae585d157f090c5c27"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/app/run_db_probe.py",
+      "bytes": 1979,
+      "sha256": "b8e2e1000abf52d1e0f54500021c9832bb6a19da001b6285c88b4f75e45b1312"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/db-checks/run.py",
+      "bytes": 2185,
+      "sha256": "fc0f047128a52bb1b737974c5c3a1e932945f307c3890e1937a643c9e276a417"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/db-checks/app-tests.log",
+      "bytes": 46592,
+      "sha256": "a8f5d82b7ae0202662af7df4dedc921ba3c0efb0c55bd188b9034a7875390827"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/db-checks/evidence-tests.log",
+      "bytes": 2509,
+      "sha256": "b19871e177968918fd1e1bfa55b7e49b9d352334df11a98368ad07ad4d5717ee"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/db-checks/app-static.log",
+      "bytes": 41,
+      "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/tabular/results-literal-basename.json",
+      "bytes": 6724,
+      "sha256": "4acd75d74ba8244b6826004c81ed4abf838d38a252ca56b3792c572744dc132a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/pipeline-tests.log",
+      "bytes": 579,
+      "sha256": "c285c4df11bca498e69597a58b105bd987d674b753a847fdf8ec47427a954d31"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/pipeline-tests.json",
+      "bytes": 976,
+      "sha256": "2ee562e6071282bfcd803f3c68174c008fe3521f57d3a21b8bb32eee03508da0"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v4/data/pipeline-tests-bundled.log",
+      "bytes": 3806,
+      "sha256": "13ca6637f6e45f77670a14e928d5e771d3d3151ce20e1e7f791395b44f8d8390"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/말씨_원본상담_SFT_v1_20261009/manifest.json",
+      "bytes": 5740,
+      "sha256": "5928bc8c03263a538411d5f7d2bb5a942589b263ce2e0c9e2a253f60ee9f1dac"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/FILES.sha256.json",
+      "bytes": 9912,
+      "sha256": "14595e9eb193bf45dec9ed6a3a2a66f64ac3c0b806f31f4f2f8c8d3e78c8511e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/summary.json",
+      "bytes": 1331,
+      "sha256": "4cfc5a13b8f8fcc81e07473b8ffa978e171534d8e448382917f2c6b9db9149d2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/counseling_pipeline/source_admission.py",
+      "bytes": 18436,
+      "sha256": "60db0e461f1feaf04305626df03e00d43ec2a4c29082305988ceeb08053f0c8d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/outputs/private/malssi_round4_20261009/admission_final/admission_policy.json",
+      "bytes": 19704,
+      "sha256": "40eacefe58046fa1bbab02925cbadc985fd66b9d269f4e01904701c238beb2e9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/outputs/private/malssi_round4_20261009/admission_final/admission_rows.jsonl.gz",
+      "bytes": 2030699,
+      "sha256": "c671c6cd12a4f14e9b706a218d4c596b45c81de74452f1c92cbf43bbb2568e78"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json",
+      "bytes": 9165,
+      "sha256": "efd162a50ef14845cd8453502efc4a4ba371fabe417fa4c5a5262b77362a6b38"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/outputs/private/malssi_round3_20261009/candidate_4096/source_rows/export_manifest.json",
+      "bytes": 3456,
+      "sha256": "0eae08fe942c6d736172d23aeac3bf22c9a72ea2cdd93825a5a6beb87052c208"
+    }
+  ],
+  "preserved_artifacts": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v3.md",
+      "bytes": 7314,
+      "sha256": "dc9bd2a0d569507e545d838905c8c6efb9168d05da6d0add3008618fe1c93b71"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v3_근거.json",
+      "bytes": 84193,
+      "sha256": "7b17265442405009f9f3b8ce7b1c7f586db6ac2dbbb5ca892deb618a2dfa77d2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v4.md",
+      "bytes": 7904,
+      "sha256": "cbe7dd4c90ca650e47692207019c0fffbb52c6642be8228c155c9cf4c4675e3e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_재평가_지적_수정_v4_근거.json",
+      "bytes": 23189,
+      "sha256": "e6fa68002fca9acb6ff970e7c9e1fc75eb938c85585a7771abc8616073fb1a7f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2.md",
+      "bytes": 26888,
+      "sha256": "6c13c06aedfb924c3902bebe257b74b08787ef82939223e0006d1a33f068b02d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2_근거.json",
+      "bytes": 35761,
+      "sha256": "58f656d6bf4876f1c43d97f1ea0073eee3d4816683d4be14b4a9fad0df521726"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v3.md",
+      "bytes": 22848,
+      "sha256": "f65d23025c9047f2d07703d48976f61ac58044e5a88c97cb07af55e577c9554a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v3_근거.json",
+      "bytes": 61115,
+      "sha256": "6789253cbda5f137edb10d5c53c103a4d2f90a6886ef9f5b541ad77d991152af"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1.md",
+      "bytes": 39139,
+      "sha256": "f9b0f4f9856b62b4be38ebca15321836eef9aa7eb8202a9fe9be2c025e421285"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1_근거.json",
+      "bytes": 28067,
+      "sha256": "770ff842748fc20c3c6c110c78492aae15d92759a41886716ddc5aa57a61c387"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v2.md",
+      "bytes": 9171,
+      "sha256": "68c4eb5eca1f7abd166847c902251729ee43721af937daec7d4ce6981cfc5401"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v2_근거.json",
+      "bytes": 90494,
+      "sha256": "780da62e52d70150dcfb423bb5af24edf6dab5926ef117f9a5d67931d3d728dd"
+    }
+  ],
+  "validation": {
+    "json_parse": true,
+    "source_hashes": true,
+    "score_arithmetic": true,
+    "prior_versions_unchanged": true,
+    "data_20_subscores": true,
+    "no_raw_training_rows_in_documentation": true
+  }
+}
