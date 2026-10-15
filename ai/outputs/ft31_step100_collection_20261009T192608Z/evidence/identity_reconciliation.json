@@ -1,0 +1,10 @@
+{
+  "generation_id": "FT31_STEP100_20261009T192608Z_response_DEV001",
+  "new_ledger_sha256": "76072027a727812a991167e05997ae73b5fcb09dfeaa5caca1859bfa15ee46bc",
+  "previous_ledger_sha256": "31e3f0e81d2361a687b6e8b74cd05b13555591c679c7c6f0c649799b16fc6202",
+  "previous_status": "identity_mismatch",
+  "raw_response_unchanged_sha256": "f1d9ea51e83586065704056aec819a9aee376ece042010479223e54add8f1adb",
+  "reason": "Actual API omits system_fingerprint; anchored authenticated health before/after proves same PID/model/checkpoint/runtime.",
+  "reconciled_status": "valid",
+  "resubmitted": false
+}

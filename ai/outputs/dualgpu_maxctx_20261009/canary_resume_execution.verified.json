@@ -1,0 +1,28 @@
+{
+  "result": {
+    "schema_version": 1,
+    "status": "completed",
+    "mode": "canary",
+    "completed_optimizer_steps": 3,
+    "next_row_cursor": 24,
+    "total_rows": 24,
+    "epoch_completed": true,
+    "checkpoint": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/canary/checkpoints/step-000000003",
+    "run_sha256": "356dabc36c5d4223a10c0a8118267e3dea5bbc1dea390edd3334fa28070e85b7",
+    "hop_readiness": false
+  },
+  "initial_base_adapter_sha256": "dd75effaa0fbede54d5a24a302cab6d1520278ed87051f39a174cd934a719e49",
+  "after_adapter_sha256": "7441687180ab9f46bb84147a5fcc503fb6d10b31cd2e40bd0844702692f4a29d",
+  "gpu_peaks": [
+    {
+      "uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+      "peak_allocated_gib": 21.78898525238037,
+      "peak_reserved_gib": 23.009765625
+    },
+    {
+      "uuid": "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642",
+      "peak_allocated_gib": 19.663138389587402,
+      "peak_reserved_gib": 22.724609375
+    }
+  ]
+}

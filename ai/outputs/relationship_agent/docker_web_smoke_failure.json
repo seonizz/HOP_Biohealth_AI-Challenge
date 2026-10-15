@@ -1,0 +1,297 @@
+{
+  "synthetic": true,
+  "intake_id": "69fc7e6f-395e-4c8f-b9a2-63d513435b20",
+  "code": "MODEL_INVALID_RESPONSE",
+  "turns": [
+    {
+      "question_id": "name",
+      "duration_ms": 12689,
+      "next_question": "want",
+      "internal_findings": {
+        "patient": 0,
+        "supporter": 0,
+        "relationship": 0
+      }
+    },
+    {
+      "question_id": "want",
+      "duration_ms": 14314,
+      "next_question": "goal",
+      "internal_findings": {
+        "patient": 0,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "goal",
+      "duration_ms": 14099,
+      "next_question": "rel",
+      "internal_findings": {
+        "patient": 0,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "rel",
+      "duration_ms": 19148,
+      "next_question": "contact",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "contact",
+      "duration_ms": 24086,
+      "next_question": "mood",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "mood",
+      "duration_ms": 27251,
+      "next_question": "dur",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "dur",
+      "duration_ms": 34239,
+      "next_question": "freq",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "freq",
+      "duration_ms": 22558,
+      "next_question": "describe",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "describe",
+      "duration_ms": 22620,
+      "next_question": "concern",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "concern",
+      "duration_ms": 22843,
+      "next_question": "cause",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "cause",
+      "duration_ms": 22575,
+      "next_question": "events",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "events",
+      "duration_ms": 23732,
+      "next_question": "others_why",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "others_why",
+      "duration_ms": 23427,
+      "next_question": "support",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "support",
+      "duration_ms": 24255,
+      "next_question": "burden",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "burden",
+      "duration_ms": 24508,
+      "next_question": "values",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "values",
+      "duration_ms": 24758,
+      "next_question": "values_effect",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "values_effect",
+      "duration_ms": 25468,
+      "next_question": "extra",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "extra",
+      "duration_ms": 24924,
+      "next_question": "help",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "help",
+      "duration_ms": 26521,
+      "next_question": "barrier",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "barrier",
+      "duration_ms": 26971,
+      "next_question": "need",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "need",
+      "duration_ms": 26787,
+      "next_question": "others_help",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "others_help",
+      "duration_ms": 27096,
+      "next_question": "moment",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "moment",
+      "duration_ms": 36422,
+      "next_question": "moment_freq",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 1,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "moment_freq",
+      "duration_ms": 35024,
+      "next_question": "feeling",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 1,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "feeling",
+      "duration_ms": 31477,
+      "next_question": "cgchange",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 1,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "cgchange",
+      "duration_ms": 32695,
+      "next_question": "cgchange_more",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 1,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "cgchange_more",
+      "duration_ms": 33143,
+      "next_question": "mycoping",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 1,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "mycoping",
+      "duration_ms": 33324,
+      "next_question": "mysupport",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 1,
+        "relationship": 1
+      }
+    },
+    {
+      "question_id": "mysupport",
+      "duration_ms": 33386,
+      "next_question": null,
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 1,
+        "relationship": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,147 @@
+{
+  "source": {
+    "database": "/Users/chihun/Documents/ChatGPT/HOP_data/outputs/private/corpus.sqlite",
+    "statistics": "/Users/chihun/Documents/ChatGPT/HOP_data/outputs/private/numeric/sentence_statistics.npy",
+    "mapping": "/Users/chihun/Documents/ChatGPT/HOP_data/outputs/private/numeric/sentence_rows.jsonl",
+    "mapping_line": 58673,
+    "numeric_row": 58672,
+    "tfidf": "/Users/chihun/Documents/ChatGPT/HOP_data/outputs/private/numeric/sentence_tfidf.npz",
+    "vocabulary": "/Users/chihun/Documents/ChatGPT/HOP_data/outputs/private/numeric/vocabulary.json"
+  },
+  "sentence": {
+    "sentence_id": "sent_0ede49b58535add6753857af0ba40888691ea62d51ac539b9695e43ea0a32f07",
+    "utterance_id": "utt_b72624cdfce6b5ec5bc0021f1c621dc098404efbf85edcbde86bcfc9c984cff1",
+    "conversation_id": "conv_ebdfc4b7c0c5f80f9e1f1c689be2b0a14d771f9c448d8cdadfbbc7896f8b1138",
+    "ordinal": 333,
+    "speaker": "내담자",
+    "text": "죽이 되든 밥이 되든 일단 할 거야.",
+    "start_char": 0,
+    "end_char": 20,
+    "split": "train"
+  },
+  "utterance": {
+    "utterance_id": "utt_b72624cdfce6b5ec5bc0021f1c621dc098404efbf85edcbde86bcfc9c984cff1",
+    "ordinal": 161,
+    "speaker": "내담자",
+    "text": "죽이 되든 밥이 되든 일단 할 거야."
+  },
+  "word_occurrences": [
+    {
+      "word_occurrence_id": "word_3309c919775122a79d8363abf7ba6174e6c94cf30faaf88f5076f5abfa02fc64",
+      "ordinal": 0,
+      "surface": "죽이",
+      "normalized": "죽이",
+      "start_char": 0,
+      "end_char": 2
+    },
+    {
+      "word_occurrence_id": "word_083f6bf5acb152f1787ed0a114983ed8e7880845a86145f7befdbc72dfecef33",
+      "ordinal": 1,
+      "surface": "되든",
+      "normalized": "되든",
+      "start_char": 3,
+      "end_char": 5
+    },
+    {
+      "word_occurrence_id": "word_79d876138df473e992b3b93efa35594fb9b8a655b625c06a011183cf4b96d56b",
+      "ordinal": 2,
+      "surface": "밥이",
+      "normalized": "밥이",
+      "start_char": 6,
+      "end_char": 8
+    },
+    {
+      "word_occurrence_id": "word_b329d9fe036d8a42ede6397ec8daa9e9bfee42ab771b6d59de49c165584c8169",
+      "ordinal": 3,
+      "surface": "되든",
+      "normalized": "되든",
+      "start_char": 9,
+      "end_char": 11
+    },
+    {
+      "word_occurrence_id": "word_a6ec9ee15700a9cacb6bab8416011de147f5a7ac0d6e43ba86e203fe6ab127c5",
+      "ordinal": 4,
+      "surface": "일단",
+      "normalized": "일단",
+      "start_char": 12,
+      "end_char": 14
+    },
+    {
+      "word_occurrence_id": "word_651f65ffbe653c2a3d31ec8805a4dfef728d29032e2d051498e51e9054301164",
+      "ordinal": 5,
+      "surface": "할",
+      "normalized": "할",
+      "start_char": 15,
+      "end_char": 16
+    },
+    {
+      "word_occurrence_id": "word_8bd02c2efbb6c8a51c0b62b9d933480b29292706892f047f2a55fa96be574785",
+      "ordinal": 6,
+      "surface": "거야",
+      "normalized": "거야",
+      "start_char": 17,
+      "end_char": 19
+    }
+  ],
+  "surface_word_counts": {
+    "죽이": 1,
+    "되든": 2,
+    "밥이": 1,
+    "일단": 1,
+    "할": 1,
+    "거야": 1
+  },
+  "stored_statistics": {
+    "characters": 20.0,
+    "nonspace_characters": 14.0,
+    "surface_words": 7.0,
+    "unique_surface_words": 6.0
+  },
+  "stored_tfidf_nonzero_values": [
+    {
+      "column": 42,
+      "term": "u:할",
+      "value": 0.2089270055294037
+    },
+    {
+      "column": 159,
+      "term": "u:일단",
+      "value": 0.27283650636672974
+    },
+    {
+      "column": 242,
+      "term": "u:거야",
+      "value": 0.28853586316108704
+    },
+    {
+      "column": 6499,
+      "term": "b:할\u001f거야",
+      "value": 0.42535141110420227
+    },
+    {
+      "column": 15331,
+      "term": "u:되든",
+      "value": 0.7859598994255066
+    }
+  ],
+  "tfidf_oov_surface_words": [
+    "죽이",
+    "밥이"
+  ],
+  "interpretation": {
+    "kind": "contextual_assistant_interpretation_not_stored_label",
+    "text": "결과가 어떻든 일단 시도하겠다는 뜻의 관용표현으로 읽을 수 있음"
+  },
+  "actual_next_counselor_turn": {
+    "utterance_id": "utt_6f7365af3babf20dd5e83ec0552a1b17b7601a456edab41c96a3d63c03ee3641",
+    "ordinal": 162,
+    "speaker": "상담사",
+    "text": "그러니까 이제 어떤 면에서 내가 정말 원하는, 내가 정말 원하는 것에 있어서 내 주장이 뭐라고 해야 될까요? 자기주장을 하는 편이네요."
+  },
+  "verification": {
+    "original_spans_match": true,
+    "stored_statistics_match": true,
+    "tfidf_read_from_saved_npz": true,
+    "oov_confirmed_against_fitted_vocabulary": true
+  }
+}

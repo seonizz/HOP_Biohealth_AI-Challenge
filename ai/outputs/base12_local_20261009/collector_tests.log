@@ -1,0 +1,11 @@
+test_exact_label_only (test_collect_base12_local.CollectionContracts.test_exact_label_only) ... ok
+test_length_limit_is_failure_even_for_valid_label (test_collect_base12_local.CollectionContracts.test_length_limit_is_failure_even_for_valid_label) ... ok
+test_renderer_groups_assistant_and_removes_historical_thought (test_collect_base12_local.CollectionContracts.test_renderer_groups_assistant_and_removes_historical_thought) ... ok
+test_renderer_native_smoke_count (test_collect_base12_local.CollectionContracts.test_renderer_native_smoke_count) ... ok
+test_truncation_detection (test_collect_base12_local.CollectionContracts.test_truncation_detection) ... ok
+test_unknown_termination_not_success (test_collect_base12_local.CollectionContracts.test_unknown_termination_not_success) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.400s
+
+OK

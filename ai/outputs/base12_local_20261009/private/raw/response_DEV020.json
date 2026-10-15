@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T13:00:50.272586Z",
+  "message": {
+    "role": "assistant",
+    "content": "그분들과 늦게까지 어울리면서 어떤 기분이 드셨어요? 즐거우셨나요, 아니면 다른 생각이 드셨나요?"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 1663527250,
+  "load_duration": 5648167,
+  "prompt_eval_count": 271,
+  "prompt_eval_cached_count": 58,
+  "prompt_eval_duration": 482509583,
+  "eval_count": 32,
+  "eval_duration": 1174319083
+}

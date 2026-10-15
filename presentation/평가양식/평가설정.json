@@ -1,0 +1,230 @@
+{
+  "schema_version": "malssi-mechanical-record-eval-v3",
+  "status": "BASE12_local_measured_pair_comparisons_pending",
+  "protocol_file": "../LLM_학습전후_분류평가.md",
+  "protocol_sha256": "ee88550759f46e4f68789f25009269303d73184df2cd6776a1fb4a1980d7720f",
+  "unknown_representation": "Unset evidence/identifiers/metrics: null = not measured or unknown. BASE31/BASE12 adapters and disabled generation options: null = intentionally unused.",
+  "purpose": "Recalculate counts, file hashes, termination, output format and actual tokens from fixed records; no semantic judgment metrics",
+  "run_readiness_requires": [
+    "Case IDs, source groups, pre-generation applicability denominator, input hashes and exclusions fixed; actual train/dev overlap and dataset scope recorded",
+    "Condition model identity and local files verified; deployed manifest digest may be used with an explicit missing upstream revision binding",
+    "Protocol and enabled-task prompt hashes match saved files",
+    "Actual input serialization, tokenizer, chat template, environment, hardware and generation configuration captured",
+    "BASE31 and FT31 base model hashes match; FT31 full-training completion evidence and adapter hash present before FT31 generation",
+    "Pair comparisons require both completed conditions with the same case IDs, semantic prompt and output budget; all three required for a complete three-condition comparison"
+  ],
+  "tasks": {
+    "action": {
+      "enabled": true,
+      "labels": [
+        "ASK_CFI",
+        "CLARIFY",
+        "SUPPORT",
+        "SUPPORT_LIMITED",
+        "SAFETY_SUPPORT",
+        "END"
+      ],
+      "prompt_file": "행동분류_프롬프트.txt",
+      "prompt_sha256": "19359f3b62c3e4947bbd7ba4e6ccc59979a068bd0929739e4b38b7fc55f8fddf"
+    },
+    "topic": {
+      "enabled": false,
+      "labels": [
+        "ANXIETY",
+        "DEPRESSION",
+        "ADDICTION",
+        "OTHER"
+      ],
+      "prompt_file": "주제분류_프롬프트.txt",
+      "prompt_sha256": "adfed905ed4aa2ca72542d32e5012ea7c073cf8592dec7e374439e200cde4439"
+    }
+  },
+  "conditions": {
+    "BASE31": {
+      "model_id": "unsloth/gemma-4-31B-it-unsloth-bnb-4bit",
+      "model_files_sha256": null,
+      "trained_adapter": false,
+      "adapter_sha256": null,
+      "revision": null,
+      "runtime": {
+        "effective_config_sha256": null,
+        "input_serialization_sha256": null,
+        "tokenizer_sha256": null,
+        "chat_template_sha256": null,
+        "environment_sha256": null,
+        "hardware_and_device_map_sha256": null,
+        "eos_token_id": null,
+        "pad_token_id": null,
+        "verified": false
+      }
+    },
+    "BASE12": {
+      "candidate_name": "Gemma 4 12B IT — verified local Ollama distribution",
+      "selection_basis": "Installed and measured on Apple M5 32 GiB; development/public regression only",
+      "model_id": "google/gemma-4-12B-it",
+      "model_files_sha256": "c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+      "trained_adapter": false,
+      "adapter_sha256": null,
+      "revision": null,
+      "runtime": {
+        "effective_config_sha256": null,
+        "input_serialization_sha256": null,
+        "tokenizer_sha256": null,
+        "chat_template_sha256": null,
+        "environment_sha256": null,
+        "hardware_and_device_map_sha256": null,
+        "eos_token_id": null,
+        "pad_token_id": null,
+        "verified": false,
+        "verification_scope": "Future matched comparison runtime remains unconfigured; completed local runtime and configuration recorded in local_collection"
+      },
+      "deployment_model_id": "gemma4:12b",
+      "deployment_digest": "sha256:c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+      "revision_missing_reason": "Google upstream source revision is not bound to this Ollama distribution; deployment digest is verified separately",
+      "local_collection": {
+        "run_id": "BASE12_MAC_20261009T125814Z",
+        "evidence_directory": "../../outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z",
+        "runtime_verified": true,
+        "scope": "local development/public synthetic regression; not an independent held-out test",
+        "response_attempts": 63,
+        "classification_attempts": 31,
+        "tokenizer_sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+        "model_blobs_verified": 740,
+        "trained_adapter": false,
+        "runner": "mlx",
+        "quantization": "nvfp4",
+        "classification_generation_config_sha256": "92207822f328a2606dfd23f081e46a4a0dad6ccf6fb635e5314248e3064d177b",
+        "case_manifest_sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373",
+        "generations_sha256": "3705721039ab0518b2a7aa1eb224e8f90d0892d3f87e545faa71c76a80e0e6f2",
+        "generation": {
+          "temperature": 0,
+          "thinking": false,
+          "seed": 3407,
+          "context_tokens": 4096,
+          "response_max_new_tokens": 512,
+          "classification_max_new_tokens": 32,
+          "attempts_per_case": 1,
+          "concurrency": 1
+        }
+      },
+      "model_files_sha256_kind": "SHA-256 of the verified Ollama distribution manifest; content-addressed local model blobs, not Google source revision"
+    },
+    "FT31": {
+      "model_id": "unsloth/gemma-4-31B-it-unsloth-bnb-4bit",
+      "model_files_sha256": null,
+      "trained_adapter": true,
+      "adapter_sha256": null,
+      "checkpoint_selection_rule": "Final completed full-training checkpoint; no selection on test",
+      "full_training_completion_evidence": null,
+      "revision": null,
+      "runtime": {
+        "effective_config_sha256": null,
+        "input_serialization_sha256": null,
+        "tokenizer_sha256": null,
+        "chat_template_sha256": null,
+        "environment_sha256": null,
+        "hardware_and_device_map_sha256": null,
+        "eos_token_id": null,
+        "pad_token_id": null,
+        "verified": false
+      }
+    }
+  },
+  "dataset": {
+    "role": "development_and_public_synthetic_regression",
+    "cases_file": "../../outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/case_manifest.jsonl",
+    "cases_sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373",
+    "frozen_at": "2026-10-09T12:58:14.931627+00:00",
+    "case_count_by_task": {
+      "response": 63,
+      "action": 31
+    },
+    "response_scopes": {
+      "legacy_development": 32,
+      "public_synthetic_regression": 31
+    },
+    "public_synthetic_execution_units": 31,
+    "public_synthetic_source_groups": 28,
+    "pre_model_exclusions_reference": "../../outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/dataset_audit.json",
+    "overlap_audit_reference": "../../outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/dataset_audit.json",
+    "full_current_train_dev_overlap_audit": null,
+    "independent_test": false
+  },
+  "generation": {
+    "runtime_verified": false,
+    "do_sample": false,
+    "num_beams": 1,
+    "enable_thinking": false,
+    "max_new_tokens": 32,
+    "max_total_tokens": 4096,
+    "batch_size": 1,
+    "seed": 3407,
+    "forced_eos_token_id": null,
+    "stop_strings": null,
+    "quantization": "4bit target; identical for BASE31/FT31, verify and record BASE12 separately",
+    "compute_dtype": "bfloat16 target; verify per condition",
+    "truncation": false,
+    "attempts_per_case_condition": 1,
+    "status": "common_target_configuration_not_a_claim_about_every_runtime",
+    "actual_BASE12_configuration_reference": "conditions.BASE12.local_collection.generation"
+  },
+  "scoring": {
+    "denominator": "All predeclared assigned cases for each task and scope; keep errors, timeouts, length limits and missing runs",
+    "output_parser": "Strip leading/trailing whitespace only; exact single allowed code",
+    "format_valid_requires_normal_termination": true,
+    "length_limit_is_failure": true,
+    "pending_runs_make_result_partial": true,
+    "metrics": [
+      "assigned_cases",
+      "attempted_cases",
+      "normal_termination_cases",
+      "valid_output_percent",
+      "status_counts",
+      "actual_input_tokens",
+      "actual_output_tokens",
+      "observed_output_label_counts"
+    ],
+    "format_validity_does_not_measure_semantic_correctness": true,
+    "percentage_delta_unit": "percentage_points",
+    "reproducibility_scope": "Identical fixed source files and formulas reproduce aggregates; future model outputs are not guaranteed to repeat",
+    "excluded_environment_dependent_metrics": [
+      "latency",
+      "throughput",
+      "memory"
+    ]
+  },
+  "comparisons": {
+    "FT31_vs_BASE31": {
+      "reference_condition_id": "BASE31",
+      "target_condition_id": "FT31",
+      "interpretation": "same_base_fine_tuning_effect"
+    },
+    "FT31_vs_BASE12": {
+      "reference_condition_id": "BASE12",
+      "target_condition_id": "FT31",
+      "interpretation": "model_size_and_fine_tuning_combined_difference"
+    }
+  },
+  "comparison_constraints": {
+    "same_base_tokenizer_template_required_for": [
+      "FT31_vs_BASE31"
+    ],
+    "same_case_ids_and_semantic_prompt_required_for": [
+      "FT31_vs_BASE31",
+      "FT31_vs_BASE12"
+    ],
+    "native_tokenizer_and_template_per_condition": true,
+    "length_exclusion": "Before generation, exclude from all compared conditions if any tokenizer exceeds the shared budget; record counts and reasons",
+    "nll_comparison_allowed_for": [
+      "FT31_vs_BASE31"
+    ]
+  },
+  "current_results_directory": "../../outputs/presentation_automatic_20261009T132307Z",
+  "current_results": {
+    "comparison.md": "../../outputs/presentation_automatic_20261009T132307Z/comparison.md",
+    "metrics.json": "../../outputs/presentation_automatic_20261009T132307Z/metrics.json",
+    "local_measurements.csv": "../../outputs/presentation_automatic_20261009T132307Z/local_measurements.csv",
+    "verify_measurements.py": "../../outputs/presentation_automatic_20261009T132307Z/verify_measurements.py",
+    "verification.json": "../../outputs/presentation_automatic_20261009T132307Z/verification.json"
+  }
+}

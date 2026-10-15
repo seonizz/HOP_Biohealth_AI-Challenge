@@ -1,0 +1,6 @@
+﻿단계,Train_행,Validation_행,합계_행,원본대비_비율,직전단계_감소행,해석,근거
+원본 응답 SFT,40652,5322,45974,1.0,,휴리스틱 선별 원본 응답; 말씨 승인 정답 아님,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+내용 노출 보류 후,40415,4298,44713,0.9725714534301997,1261,원문 내용 중복 정책의 조건부 수용,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+"4,096토큰 연구 후보",15512,1724,17236,0.37490755644494717,27477,전체 직렬화 길이와 내용 보류를 함께 적용,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+생성 128토큰 예약 후보,15303,1698,17001,0.36979597163614214,235,"기존 4,096 후보 안에서 prefix+128≤4,096",outputs/private/malssi_round5_review_20261009/budget_profile_review.json
+"예약 64~1,024 공통 후보",12259,1335,13594,0.2956888676208292,3407,예약량 조건 비교용 교집합; 최종 test 아님,outputs/private/malssi_round5_review_20261009/budget_profile_review.json

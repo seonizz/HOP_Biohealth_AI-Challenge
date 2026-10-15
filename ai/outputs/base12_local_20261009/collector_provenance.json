@@ -1,0 +1,5 @@
+{
+  "executed_script_sha256": "39ccd1911e6d6f06a959b3069e6fcb12b4e3a51800a0271a17e4fb9fc9c01ba9",
+  "frozen_plan_script_sha256": "72ad282ecce634137b402aa2cbcfef8564cb682593a78e13d92fca3f27a01ed7",
+  "change_between_freeze_and_launch": "Strengthen model verification gate to require verified=true; no input/prompt/generation/selection changes"
+}

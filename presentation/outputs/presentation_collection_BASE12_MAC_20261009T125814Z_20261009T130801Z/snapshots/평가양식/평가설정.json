@@ -1,0 +1,183 @@
+{
+  "schema_version": "malssi-llm-classification-eval-v2",
+  "status": "draft_not_executed",
+  "protocol_file": "../LLM_학습전후_분류평가.md",
+  "protocol_sha256": "1851010282d7bbb1ec69a26fd1be09ae56c83667aa987202e39fe002b21ddcfd",
+  "unknown_representation": "Unset evidence/identifiers/metrics: null = [미확인]. BASE31/BASE12 adapter and disabled forced_eos_token_id/stop_strings: null = intentionally unused.",
+  "purpose": "Auxiliary classification evaluation of a response-generation fine-tune; not a classifier training task",
+  "run_readiness_requires": [
+    "Gold approved by confirmed reviewers; overlap audit against actual train and development data passed",
+    "Test IDs, counts, labels, cases/gold hashes and freeze time fixed",
+    "BASE31 and FT31 base model file hashes match; FT31 completed full-training evidence and adapter hash present",
+    "Protocol and enabled-task prompt hashes match saved files",
+    "Input serialization, tokenizer, chat template, environment and hardware/device-map hashes fixed",
+    "Actual generation configuration captured and development-only generation smoke check passed",
+    "Intentionally disabled options and non-applicable BASE31/BASE12 adapters remain null",
+    "BASE12 exact model ID/revision and local files verified before its run; do not invent a repository ID",
+    "Readiness and scores are condition-specific; both members must be ready/completed for a final pair comparison; all three for full comparison"
+  ],
+  "tasks": {
+    "action": {
+      "enabled": true,
+      "labels": [
+        "ASK_CFI",
+        "CLARIFY",
+        "SUPPORT",
+        "SUPPORT_LIMITED",
+        "SAFETY_SUPPORT",
+        "END"
+      ],
+      "prompt_file": "행동분류_프롬프트.txt",
+      "prompt_sha256": "19359f3b62c3e4947bbd7ba4e6ccc59979a068bd0929739e4b38b7fc55f8fddf"
+    },
+    "topic": {
+      "enabled": false,
+      "labels": [
+        "ANXIETY",
+        "DEPRESSION",
+        "ADDICTION",
+        "OTHER"
+      ],
+      "prompt_file": "주제분류_프롬프트.txt",
+      "prompt_sha256": "adfed905ed4aa2ca72542d32e5012ea7c073cf8592dec7e374439e200cde4439"
+    }
+  },
+  "conditions": {
+    "BASE31": {
+      "model_id": "unsloth/gemma-4-31B-it-unsloth-bnb-4bit",
+      "model_files_sha256": null,
+      "trained_adapter": false,
+      "adapter_sha256": null,
+      "revision": null,
+      "runtime": {
+        "effective_config_sha256": null,
+        "input_serialization_sha256": null,
+        "tokenizer_sha256": null,
+        "chat_template_sha256": null,
+        "environment_sha256": null,
+        "hardware_and_device_map_sha256": null,
+        "eos_token_id": null,
+        "pad_token_id": null,
+        "verified": false
+      }
+    },
+    "BASE12": {
+      "candidate_name": "Gemma 4 12B IT",
+      "selection_basis": "Existing project 12B fallback; exact checkpoint unverified",
+      "model_id": null,
+      "model_files_sha256": null,
+      "trained_adapter": false,
+      "adapter_sha256": null,
+      "revision": null,
+      "runtime": {
+        "effective_config_sha256": null,
+        "input_serialization_sha256": null,
+        "tokenizer_sha256": null,
+        "chat_template_sha256": null,
+        "environment_sha256": null,
+        "hardware_and_device_map_sha256": null,
+        "eos_token_id": null,
+        "pad_token_id": null,
+        "verified": false
+      }
+    },
+    "FT31": {
+      "model_id": "unsloth/gemma-4-31B-it-unsloth-bnb-4bit",
+      "model_files_sha256": null,
+      "trained_adapter": true,
+      "adapter_sha256": null,
+      "checkpoint_selection_rule": "Final completed full-training checkpoint; no selection on test",
+      "full_training_completion_evidence": null,
+      "revision": null,
+      "runtime": {
+        "effective_config_sha256": null,
+        "input_serialization_sha256": null,
+        "tokenizer_sha256": null,
+        "chat_template_sha256": null,
+        "environment_sha256": null,
+        "hardware_and_device_map_sha256": null,
+        "eos_token_id": null,
+        "pad_token_id": null,
+        "verified": false
+      }
+    }
+  },
+  "dataset": {
+    "role": "independent_test",
+    "cases_file": null,
+    "gold_file": null,
+    "cases_sha256": null,
+    "gold_sha256": null,
+    "frozen_at": null,
+    "case_count_by_task": null,
+    "label_counts": null,
+    "conversation_count": null,
+    "source_group_count": null,
+    "pre_model_exclusions": null,
+    "train_and_dev_overlap_audit": null,
+    "independent_reviewers_required": 2,
+    "reviewers_confirmed": null,
+    "test_used_for_model_or_prompt_selection": false
+  },
+  "generation": {
+    "runtime_verified": false,
+    "do_sample": false,
+    "num_beams": 1,
+    "enable_thinking": false,
+    "max_new_tokens": 32,
+    "max_total_tokens": 4096,
+    "batch_size": 1,
+    "seed": 3407,
+    "forced_eos_token_id": null,
+    "stop_strings": null,
+    "quantization": "4bit target; identical for BASE31/FT31, verify and record BASE12 separately",
+    "compute_dtype": "bfloat16 target; verify per condition",
+    "truncation": false,
+    "attempts_per_case_condition": 1
+  },
+  "scoring": {
+    "denominator": "All frozen gold-approved test cases per task",
+    "output_parser": "Strip leading/trailing whitespace only; exact single allowed code",
+    "length_limit_is_failure": true,
+    "execution_or_format_failure_counts_as_incorrect": true,
+    "pending_runs_block_final_scores": true,
+    "macro_f1_requires_all_fixed_labels_have_gold_support": true,
+    "confusion_matrix_failure_column": "INVALID",
+    "invalid_is_macro_f1_class": false,
+    "accuracy_delta_unit": "percentage_points",
+    "macro_f1_scale": 100,
+    "macro_f1_delta_unit": "points",
+    "paired_group_bootstrap": {
+      "optional": true,
+      "resamples": 2000,
+      "seed": 3407,
+      "confidence_level": 0.95
+    }
+  },
+  "comparisons": {
+    "FT31_vs_BASE31": {
+      "reference_condition_id": "BASE31",
+      "target_condition_id": "FT31",
+      "interpretation": "same_base_fine_tuning_effect"
+    },
+    "FT31_vs_BASE12": {
+      "reference_condition_id": "BASE12",
+      "target_condition_id": "FT31",
+      "interpretation": "model_size_and_fine_tuning_combined_difference"
+    }
+  },
+  "comparison_constraints": {
+    "same_base_tokenizer_template_required_for": [
+      "FT31_vs_BASE31"
+    ],
+    "same_case_ids_and_semantic_prompt_required_for": [
+      "FT31_vs_BASE31",
+      "FT31_vs_BASE12"
+    ],
+    "native_tokenizer_and_template_per_condition": true,
+    "length_exclusion": "Before test freeze, exclude from all conditions if any tokenizer exceeds the shared budget",
+    "nll_comparison_allowed_for": [
+      "FT31_vs_BASE31"
+    ]
+  }
+}

@@ -1,0 +1,28 @@
+test_429_recorded_once_and_stops (test_collect_ft31_comparison.CollectorTests.test_429_recorded_once_and_stops) ... ok
+test_attempt_before_ledger_refuses_resubmission (test_collect_ft31_comparison.CollectorTests.test_attempt_before_ledger_refuses_resubmission) ... ok
+test_identity_and_length_and_format (test_collect_ft31_comparison.CollectorTests.test_identity_and_length_and_format) ... ok
+test_original_hash_semantics_and_bytes (test_collect_ft31_comparison.CollectorTests.test_original_hash_semantics_and_bytes) ... ok
+test_timeout_has_unknown_completion_without_retry (test_collect_ft31_comparison.CollectorTests.test_timeout_has_unknown_completion_without_retry) ... ok
+test_absent_raw_fingerprint_requires_explicit_health_binding (test_verify_ft31_measurements.VerifierTests.test_absent_raw_fingerprint_requires_explicit_health_binding) ... ok
+test_absent_raw_fingerprint_valid_with_before_after_health_binding (test_verify_ft31_measurements.VerifierTests.test_absent_raw_fingerprint_valid_with_before_after_health_binding) ... ok
+test_documented_runtime_fingerprint_is_frozen_and_supported (test_verify_ft31_measurements.VerifierTests.test_documented_runtime_fingerprint_is_frozen_and_supported) ... ok
+test_duplicate_first_attempt_rejected (test_verify_ft31_measurements.VerifierTests.test_duplicate_first_attempt_rejected) ... ok
+test_error_measurements_remain_null (test_verify_ft31_measurements.VerifierTests.test_error_measurements_remain_null) ... ok
+test_existing_aggregate_tamper_rejected (test_verify_ft31_measurements.VerifierTests.test_existing_aggregate_tamper_rejected) ... ok
+test_fabricated_completion_rejected (test_verify_ft31_measurements.VerifierTests.test_fabricated_completion_rejected) ... ok
+test_health_binding_cannot_override_different_raw_fingerprint (test_verify_ft31_measurements.VerifierTests.test_health_binding_cannot_override_different_raw_fingerprint) ... ok
+test_health_binding_changed_pid_rejected_even_with_updated_hash (test_verify_ft31_measurements.VerifierTests.test_health_binding_changed_pid_rejected_even_with_updated_hash) ... ok
+test_health_binding_snapshot_tamper_rejected (test_verify_ft31_measurements.VerifierTests.test_health_binding_snapshot_tamper_rejected) ... ok
+test_health_model_fingerprint_alias_supported (test_verify_ft31_measurements.VerifierTests.test_health_model_fingerprint_alias_supported) ... ok
+test_input_serialization_tamper_rejected (test_verify_ft31_measurements.VerifierTests.test_input_serialization_tamper_rejected) ... ok
+test_interrupted_attempt_counted_as_unknown_completion (test_verify_ft31_measurements.VerifierTests.test_interrupted_attempt_counted_as_unknown_completion) ... ok
+test_missing_answer_file_rejected (test_verify_ft31_measurements.VerifierTests.test_missing_answer_file_rejected) ... ok
+test_missing_first_attempt_keeps_denominator_and_blank_rates (test_verify_ft31_measurements.VerifierTests.test_missing_first_attempt_keeps_denominator_and_blank_rates) ... ok
+test_raw_tamper_rejected (test_verify_ft31_measurements.VerifierTests.test_raw_tamper_rejected) ... ok
+test_valid_exports_and_public_boundary (test_verify_ft31_measurements.VerifierTests.test_valid_exports_and_public_boundary) ... ok
+test_wrong_fingerprint_rejected_even_with_matching_row_hash (test_verify_ft31_measurements.VerifierTests.test_wrong_fingerprint_rejected_even_with_matching_row_hash) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 0.532s
+
+OK

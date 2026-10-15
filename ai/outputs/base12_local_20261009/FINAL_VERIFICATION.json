@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "observed_at": "2026-10-09T13:14:32.513301+00:00",
+  "model_blobs_verified": 740,
+  "raw_generation_bindings_verified": 94,
+  "input_token_counts_matched": 94,
+  "independent_ai_reviews_verified": 31,
+  "human_quality_scores_null": true,
+  "public_artifacts_hash_frozen": 40,
+  "private_raw_files_in_public_allowlist": 0,
+  "legacy_snapshot_values_preserved": true,
+  "collector_unit_tests_passed": 6
+}

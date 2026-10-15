@@ -1,0 +1,120 @@
+{
+  "date": "2026-10-09",
+  "scope": "Round 2 local software/data remediation; synthetic controls are not actual permissions, expert approvals or model execution",
+  "input_zip_sha256": "ef3cd3cd29e2570c883a556ad940647c220bedf49fea6a2a40b73a2e42f3c70d",
+  "input_report_sha256": "fa6adecd2620b31c8ebc20d455f69f76f3a8403b93e4abf97568be0a43effd27",
+  "before_reproduction": {
+    "source_payload_files_unchanged": true,
+    "all_eight_commands_match_original_expected_exit_codes": true,
+    "tests_run": 105
+  },
+  "tests_run": 129,
+  "tests_passed": true,
+  "skipped_tests": 0,
+  "findings": {
+    "F01": {
+      "status": "fixed_with_regression_and_control_cases",
+      "passed_tests": [
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f01_all_explicit_safety_indicators_and_normal_control",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f01_support_safety_component_requires_expert_and_policy"
+      ]
+    },
+    "F02": {
+      "status": "fixed_with_regression_and_control_cases",
+      "passed_tests": [
+        "test_agent_evaluation.AgentEvaluationTests.test_condition_consensus_controls_distinguish_disputed_failure",
+        "test_agent_evaluation.AgentEvaluationTests.test_confirmed_condition_failure_survives_other_uncertainty"
+      ]
+    },
+    "F03": {
+      "status": "fixed_with_regression_and_control_cases",
+      "passed_tests": [
+        "test_agent_evaluation.AgentEvaluationTests.test_default_not_run_never_implies_a_pass",
+        "test_agent_evaluation.AgentEvaluationTests.test_direct_evaluator_rejects_empty_or_invalid_group_definitions",
+        "test_agent_evaluation.AgentEvaluationTests.test_empty_group_rejected_by_loader_and_direct_evaluator"
+      ]
+    },
+    "F04": {
+      "status": "fixed_with_regression_and_control_cases",
+      "passed_tests": [
+        "test_release_audit.ReleaseAuditTests.test_conversation_manifest_total_split_and_labels_checked_independently",
+        "test_release_audit.ReleaseAuditTests.test_numeric_manifest_counts_match_actual_rows_even_after_rehash",
+        "test_release_audit.ReleaseAuditTests.test_optional_unit_and_release_summary_counts_match_delivered_rows",
+        "test_release_audit.ReleaseAuditTests.test_renamed_conversation_duplicates_rejected_even_when_counts_are_updated",
+        "test_release_audit.ReleaseAuditTests.test_sentence_manifest_multilabel_counts_do_not_assume_one_label_per_row"
+      ]
+    },
+    "F05": {
+      "status": "fixed_with_regression_and_control_cases",
+      "passed_tests": [
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f05_declared_adaptation_and_other_template_require_permission",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f05_declared_verified_bank_survives_export_with_provenance",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f05_generic_short_expression_does_not_assert_bank_dependency",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f05_resource_version_and_inventory_review_are_bound",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f05_resources_shared_across_splits_are_not_lineage_roots",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f05_target_borrowing_and_inventory_shape",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f05_undeclared_bank_in_history_is_rejected_even_for_support",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_f05_verbatim_sentence_excerpt_and_split_messages_require_inventory"
+      ]
+    },
+    "H01": {
+      "status": "fixed_with_regression_and_control_cases",
+      "passed_tests": [
+        "test_agent_training_round2.RoundTwoTrainingTests.test_h01_claim_requires_content_and_slot",
+        "test_agent_training_round2.RoundTwoTrainingTests.test_h01_safety_subjects_are_nonempty_unique_strings"
+      ]
+    },
+    "H02": {
+      "status": "fixed_with_regression_and_control_cases",
+      "passed_tests": [
+        "test_agent_evaluation.AgentEvaluationTests.test_t30_exact_json_invariance_preserves_boolean_and_number_types",
+        "test_agent_evaluation.AgentEvaluationTests.test_t30_object_key_order_does_not_change_invariance"
+      ]
+    },
+    "H03": {
+      "status": "fixed_with_regression_and_control_cases",
+      "passed_tests": [
+        "test_evaluation_audit.EvaluationAuditTests.test_nonstandard_numeric_directory_reports_actual_mapping_path"
+      ]
+    }
+  },
+  "classification_integrity_passed": true,
+  "hash_files_checked": 94,
+  "feature_rows_recomputed": 3131,
+  "joint_path_gate_passed": false,
+  "unknown_origin_word_rows": 378,
+  "design_cases": 9,
+  "design_training_eligible": 0,
+  "adversarial_groups": 30,
+  "evaluated_adversarial_groups": 0,
+  "llm_training_performed": false,
+  "original_question_bank_and_examples_preserved": true,
+  "source_database_sha256": "da1511a77e13e51769be7bba2169c2e838b290693a384e67b5c568bb314bd10e",
+  "limitations": [
+    "Exact known question-bank borrowing is checked; arbitrary paraphrase or undeclared external resources require author inventory and independent review.",
+    "Model-specific tokenizer and adapter are trusted interfaces pending real-model validation.",
+    "Reviewer identity, qualification and real permission evidence are not authenticated by this local code.",
+    "Unknown word lineage and missing approved generation data still block joint readiness."
+  ],
+  "evidence_files": {
+    "outputs/private/malssi_round2_20261009/tests_result.json": "279918d5eb805deb720db26922b19badeab3d64af3be634f88490b5549be06ce",
+    "outputs/private/malssi_round2_20261009/tests.log": "8505208b0803acaec5d604c87fadd89645bd2b305cb5229ada9f65b393da5ada",
+    "outputs/private/malssi_round2_20261009/release_audit.json": "f0cc748fe57c00aa852fc0bca9b48bbb0ba318f270deca1a22cfec60067a15d0",
+    "outputs/private/malssi_round2_20261009/agent_data_audit.json": "3e3836871e5028d09879ce04296bd64c1e5cb571297866592b5a8d020617157e",
+    "outputs/private/malssi_round2_20261009/actual_design_export_gate.json": "68e8a3080d88566b0b344f5d5b36e4ea80a52a2672eebf09a393eac85fe332c3",
+    "outputs/private/malssi_round2_20261009/adversarial_evaluation.json": "b9df98104bd24710519c17f7ed81b5c62157acf404146c8da9268e4135910135",
+    "outputs/private/malssi_round2_20261009/release_probe_after.json": "49ecad49e222cb2de6992d0127561606c576a734c9296e71e0a0db6729c9360f",
+    "outputs/private/malssi_round2_20261009/release_probe_after.log": "49ecad49e222cb2de6992d0127561606c576a734c9296e71e0a0db6729c9360f",
+    "outputs/private/malssi_round2_20261009/known_conversation_sentence_exposures.jsonl": "53f41dbcb3f20e453b9f8466edd312dbc340975bfad30670ca0676786b58ce31",
+    "outputs/private/malssi_round2_20261009/before/reproduction_summary.json": "bcdf15e57a0eababb0fb9a41bf533ba6610030c82bea4259d1b489873c147928",
+    "outputs/private/malssi_round2_20261009/before/training/probe_training_results.json": "4c60016c55655f5d84bc7f075b362972fb0c1f30afceb9fd4c880622c6791458",
+    "outputs/private/malssi_round2_20261009/before/evaluation/probe_results.json": "96c6206852fe24c792f300bb31c20b6b2c3956f75651c1832b2d0b5a2176bd63",
+    "outputs/private/malssi_round2_20261009/before/release/release_duplicate_probe_results.json": "d1f85264b99f75bd8437d116156007bc70048d150e6d576308d568b8f1f5c200"
+  },
+  "implementation_sha256": {
+    "counseling_pipeline/agent_training.py": "52ed68599b5773e2bb466ba6b1f386a167f318404131bcaa22071cea0705c0ab",
+    "counseling_pipeline/agent_evaluation.py": "0cf52c0f2a9ff914720b137e95da4d954ab9b88ee7a6a5f2eecaf7ed1425921b",
+    "counseling_pipeline/release_audit.py": "94ce920a5ddaa26d419a6e0da93319353364e763689e4fb8cd1af95b8936e767",
+    "counseling_pipeline/evaluation_audit.py": "6866cd1171a74bd987029234be52c1e9d6b63920c404d2008d7177e3d61cd092"
+  }
+}

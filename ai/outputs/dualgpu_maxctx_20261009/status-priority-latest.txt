@@ -1,0 +1,98 @@
+{
+  "utc": "2026-10-09T09:57:24.470532+00:00",
+  "priority": "full_source_training_and_B0_B1_first",
+  "training_maximum_search": "deferred",
+  "inference_maximum_measurements": "after_training_B1_results",
+  "main_training": {
+    "started": false,
+    "completed_optimizer_steps": 0,
+    "total_optimizer_steps": 5052,
+    "latest_loss": null,
+    "last_step": {}
+  },
+  "pipeline": {
+    "status": "running",
+    "phase": "final_config_and_verified_cache_rebind",
+    "active_child": {
+      "pid": 1044808,
+      "command": [
+        "/home/slim/choieram/malssi-validation-20261009/.venv/bin/python",
+        "-B",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/scripts/rebind_token_cache_v2.py",
+        "--kit",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit",
+        "--old-config",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/tokenization_config_28672_split26.json",
+        "--old-bundle",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/pre_final_config_v1/MANIFEST.json"
+      ],
+      "log": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/rebind-final-25316-split28.log"
+    },
+    "updated_utc": "2026-10-09T09:55:29.893611+00:00"
+  },
+  "tokenization": {
+    "status": "passed",
+    "splits": {
+      "train.jsonl.gz": {
+        "rows": 40415,
+        "input_tokens": 237049716,
+        "supervised_tokens": 3291230
+      },
+      "validation.jsonl.gz": {
+        "rows": 4298,
+        "input_tokens": 23736126,
+        "supervised_tokens": 362003
+      }
+    },
+    "rebind_provenance": null
+  },
+  "qualification": {
+    "source": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/qualification_25316_split28_v2/work/qualification.json",
+    "status": "passed",
+    "checks": [
+      {
+        "name": "gpu_pin",
+        "passed": true
+      },
+      {
+        "name": "token_contract",
+        "passed": true
+      },
+      {
+        "name": "fused_loss",
+        "passed": true
+      },
+      {
+        "name": "fused_gradient",
+        "passed": true
+      },
+      {
+        "name": "tiled_mlp_equivalence",
+        "passed": true
+      },
+      {
+        "name": "generation_profile",
+        "passed": true
+      },
+      {
+        "name": "weights_unchanged",
+        "passed": true
+      }
+    ],
+    "error": null
+  },
+  "canary": {
+    "passed": false,
+    "latest_step": {},
+    "separate_from_main_training": true
+  },
+  "B0": {
+    "completed": false,
+    "evaluation": null
+  },
+  "B1": {
+    "completed": false,
+    "evaluation": null
+  },
+  "completion_marker_exists": false
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "malssi-collection-v1",
+  "run_id": null,
+  "created_at": null,
+  "purpose": null,
+  "status": "not_started",
+  "started_at": null,
+  "ended_at": null,
+  "model": {
+    "model_id": null,
+    "revision": null,
+    "local_files_manifest_sha256": null
+  },
+  "tokenizer": {
+    "model_id": null,
+    "files_manifest_sha256": null,
+    "chat_template_sha256": null
+  },
+  "code_snapshot_sha256": null,
+  "environment": {
+    "python": null,
+    "torch": null,
+    "cuda_runtime": null,
+    "cuda_driver": null,
+    "transformers": null,
+    "unsloth": null,
+    "peft": null,
+    "bitsandbytes": null,
+    "gpu_models": [],
+    "gpu_count": null,
+    "vram_bytes_per_gpu": []
+  },
+  "training_config": {
+    "seed": null,
+    "max_sequence_length": null,
+    "packing": null,
+    "truncation": null,
+    "precision": null,
+    "quantization": null,
+    "lora_r": null,
+    "lora_alpha": null,
+    "lora_dropout": null,
+    "target_modules": [],
+    "optimizer": null,
+    "learning_rate": null,
+    "scheduler": null,
+    "warmup": null,
+    "per_device_batch_size": null,
+    "gradient_accumulation_steps": null,
+    "world_size": null,
+    "epochs_or_max_steps": null,
+    "gradient_checkpointing": null,
+    "logging_rule": null,
+    "eval_rule": null,
+    "save_rule": null,
+    "loss_mask_contract": null,
+    "loss_reduction": null
+  },
+  "evidence": {
+    "environment_file": null,
+    "effective_training_config_file": null,
+    "code_snapshot_file": null,
+    "checkpoint_manifest_file": null,
+    "resume_verification_file": null
+  },
+  "successful_optimizer_updates": null,
+  "best_checkpoint_sha256": null,
+  "missing_reasons": {}
+}

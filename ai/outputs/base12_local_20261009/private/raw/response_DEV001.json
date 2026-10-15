@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T12:58:50.794553Z",
+  "message": {
+    "role": "assistant",
+    "content": "그 무서웠던 감정이 지금의 갇혀 있는 나를 만든 것 같네요. 8살 아이가 감당하기에는 너무나 크고 무거운 책임감이었을 거예요. \"내 존재 자체가 잘못된 것 같다\"는 그 생각이 그때부터 시작되었을 수도 있겠네요.\n\n그때 그 무서웠던 감정과 존재에 대한 부정을 느꼈던 그 아이는, 지금의 @NAME님 안에서 어떤 상태로 남아있다고 느껴지시나요? 지금도 그때처럼 무서워하고 있나요?"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 11201124917,
+  "load_duration": 29062667,
+  "prompt_eval_count": 1887,
+  "prompt_eval_cached_count": 2,
+  "prompt_eval_duration": 4232510917,
+  "eval_count": 114,
+  "eval_duration": 6935883208
+}

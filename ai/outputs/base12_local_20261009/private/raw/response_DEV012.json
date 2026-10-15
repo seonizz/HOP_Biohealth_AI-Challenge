@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T12:59:56.607183Z",
+  "message": {
+    "role": "assistant",
+    "content": "그렇군요. 본인과 함께 있을 때 유독 그런 모습이 드러나는 것 같다는 말씀이시네요."
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 4802416542,
+  "load_duration": 6113417,
+  "prompt_eval_count": 1626,
+  "prompt_eval_cached_count": 51,
+  "prompt_eval_duration": 3460804375,
+  "eval_count": 25,
+  "eval_duration": 1334076125
+}

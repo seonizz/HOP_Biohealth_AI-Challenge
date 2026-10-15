@@ -1,0 +1,18 @@
+{
+  "host": "127.0.0.1",
+  "port": 18080,
+  "model_id": "malssi-gemma4-31b-step100",
+  "kit_path": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit",
+  "checkpoint_path": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/training/checkpoints/step-000000100",
+  "checkpoint_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+  "checkpoint_step": 100,
+  "max_context_tokens": 69632,
+  "max_output_tokens": 4096,
+  "default_output_tokens": 256,
+  "prefill_chunk_size": 4096,
+  "grouped_global_attention": true,
+  "max_input_tokens": 65536,
+  "active_cache_policy": "/home/slim/choieram/model_Training/trained_model_api/active_cache_policy.json",
+  "inference_mlp_mode": "original",
+  "inference_eager_decode": true
+}

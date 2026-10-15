@@ -1,0 +1,1536 @@
+{
+  "synthetic": true,
+  "intake_id": "d372665b-2439-42d8-885d-0b213e5f58f4",
+  "code": "missing_required_script_intent",
+  "turns": [
+    {
+      "question_id": "name",
+      "duration_ms": 13932,
+      "next_question": "want",
+      "internal_findings": {
+        "patient": 0,
+        "supporter": 0,
+        "relationship": 0
+      },
+      "internal_analysis": {
+        "patient": [],
+        "supporter": [],
+        "relationship": [],
+        "unknowns": [
+          "대상자의 성별",
+          "대상자와의 관계",
+          "이용자의 감정 및 지원 자원"
+        ]
+      }
+    },
+    {
+      "question_id": "want",
+      "duration_ms": 18705,
+      "next_question": "goal",
+      "internal_findings": {
+        "patient": 0,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 대상자를 엄마로서 이해하고 지지하고자 하는 마음을 가지고 있습니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "대상자의 성별",
+          "대상자와의 관계",
+          "이용자의 감정 및 지원 자원"
+        ]
+      }
+    },
+    {
+      "question_id": "goal",
+      "duration_ms": 15769,
+      "next_question": "rel",
+      "internal_findings": {
+        "patient": 0,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 대상자를 엄마로서 이해하고 지지하고자 하는 마음을 가지고 있습니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "대상자의 성별",
+          "대상자와의 관계",
+          "이용자의 감정 및 지원 자원"
+        ]
+      }
+    },
+    {
+      "question_id": "rel",
+      "duration_ms": 22480,
+      "next_question": "contact",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 이용자의 자녀입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "rel",
+                "quote": "자녀"
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민을 이해하고 지지하며, 혼자 감당하지 않도록 돕고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "대상자의 성별"
+        ]
+      }
+    },
+    {
+      "question_id": "contact",
+      "duration_ms": 22880,
+      "next_question": "mood",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 이용자의 자녀이며, 현재 함께 거주하고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "rel",
+                "quote": "자녀"
+              },
+              {
+                "subject": "patient",
+                "question_id": "contact",
+                "quote": "함께 살아요"
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민을 이해하고 지지하며, 혼자 감당하지 않도록 돕고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "mood",
+      "duration_ms": 26932,
+      "next_question": "dur",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "dur",
+      "duration_ms": 26228,
+      "next_question": "freq",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "freq",
+      "duration_ms": 26561,
+      "next_question": "describe",
+      "internal_findings": {
+        "patient": 1,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "describe",
+      "duration_ms": 32619,
+      "next_question": "concern",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속을 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "concern",
+      "duration_ms": 34246,
+      "next_question": "cause",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속을 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "cause",
+      "duration_ms": 34305,
+      "next_question": "events",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속을 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "events",
+      "duration_ms": 34667,
+      "next_question": "others_why",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속을 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "others_why",
+      "duration_ms": 34469,
+      "next_question": "support",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속을 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "support",
+      "duration_ms": 36900,
+      "next_question": "burden",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속을 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "burden",
+      "duration_ms": 39160,
+      "next_question": "values",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속을 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 지지를 보내고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "values",
+      "duration_ms": 37073,
+      "next_question": "values_effect",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "values_effect",
+      "duration_ms": 36926,
+      "next_question": "extra",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "extra",
+      "duration_ms": 37405,
+      "next_question": "help",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "help",
+      "duration_ms": 39872,
+      "next_question": "barrier",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "barrier",
+      "duration_ms": 39771,
+      "next_question": "need",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "need",
+      "duration_ms": 38766,
+      "next_question": "others_help",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "others_help",
+      "duration_ms": 40547,
+      "next_question": "moment",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 0,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "moment",
+      "duration_ms": 52404,
+      "next_question": "moment_freq",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 1,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [
+          {
+            "interpretation": "이용자는 대상자가 울면서 자책하는 모습을 목격했을 때 큰 마음의 부담을 느꼈습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "moment",
+                "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "moment_freq",
+      "duration_ms": 48203,
+      "next_question": "feeling",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 1,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [
+          {
+            "interpretation": "이용자는 대상자가 울면서 자책하는 모습을 목격했을 때 큰 마음의 부담을 느꼈습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "moment",
+                "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "feeling",
+      "duration_ms": 45677,
+      "next_question": "cgchange",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 1,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [
+          {
+            "interpretation": "이용자는 대상자가 울면서 자책하는 모습을 목격했을 때 큰 마음의 부담을 느꼈습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "moment",
+                "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "cgchange",
+      "duration_ms": 47843,
+      "next_question": "cgchange_more",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 1,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [
+          {
+            "interpretation": "이용자는 대상자가 울면서 자책하는 모습을 목격했을 때 큰 마음의 부담을 느꼈습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "moment",
+                "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "cgchange_more",
+      "duration_ms": 135608,
+      "next_question": "mycoping",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 2,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [
+          {
+            "interpretation": "이용자는 대상자가 울면서 자책하는 모습을 목격했을 때 큰 마음의 부담을 느꼈습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "moment",
+                "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "이용자는 아이 문제로 남편과 갈등을 겪고 있으며, 밤에 아이 방 불빛을 보고 잠에서 깨는 등 수면과 일상에 영향을 받고 있습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "cgchange_more",
+                "quote": "아이 문제로 남편이랑 자주 다퉈요. 저는 걱정하는데 남편은 유난이라고 해서 서운해요. 저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "mycoping",
+      "duration_ms": 52860,
+      "next_question": "mysupport",
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 2,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [
+          {
+            "interpretation": "이용자는 대상자가 울면서 자책하는 모습을 목격했을 때 큰 마음의 부담을 느꼈습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "moment",
+                "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "이용자는 아이 문제로 남편과 갈등을 겪고 있으며, 밤에 아이 방 불빛을 보고 잠에서 깨는 등 수면과 일상에 영향을 받고 있습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "cgchange_more",
+                "quote": "아이 문제로 남편이랑 자주 다퉈요. 저는 걱정하는데 남편은 유난이라고 해서 서운해요. 저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    },
+    {
+      "question_id": "mysupport",
+      "duration_ms": 53714,
+      "next_question": null,
+      "internal_findings": {
+        "patient": 2,
+        "supporter": 2,
+        "relationship": 1
+      },
+      "internal_analysis": {
+        "patient": [
+          {
+            "interpretation": "대상자는 불안 증세와 함께 반복적인 확인을 요구하는 행동을 보이고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "대상자는 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복되며, 주말 약속도 전날 밤에 취소하는 등의 행동을 보입니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "describe",
+                "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "supporter": [
+          {
+            "interpretation": "이용자는 대상자가 울면서 자책하는 모습을 목격했을 때 큰 마음의 부담을 느꼈습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "moment",
+                "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+              }
+            ],
+            "certainty": "reported"
+          },
+          {
+            "interpretation": "이용자는 아이 문제로 남편과 갈등을 겪고 있으며, 밤에 아이 방 불빛을 보고 잠에서 깨는 등 수면과 일상에 영향을 받고 있습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "cgchange_more",
+                "quote": "아이 문제로 남편이랑 자주 다퉈요. 저는 걱정하는데 남편은 유난이라고 해서 서운해요. 저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "relationship": [
+          {
+            "interpretation": "이용자는 자녀인 지민의 걱정을 이해하고자 하며, 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "unknowns": [
+          "성별"
+        ]
+      }
+    }
+  ]
+}

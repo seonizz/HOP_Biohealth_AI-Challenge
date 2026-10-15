@@ -1,0 +1,25 @@
+{
+  "synthetic": true,
+  "model": "gemma4:12b",
+  "measured_at": "2026-10-11T03:11:02.218Z",
+  "status": 200,
+  "valid": true,
+  "duration_ms": 1549,
+  "usage": {
+    "prompt_tokens": 97,
+    "prompt_tokens_details": {
+      "cached_tokens": 0
+    },
+    "completion_tokens": 29,
+    "total_tokens": 126
+  },
+  "output": {
+    "evidence": [
+      {
+        "subject": "patient",
+        "question_id": "mood",
+        "quote": "밤마다 계획표를 다시 고친다고 했어요."
+      }
+    ]
+  }
+}

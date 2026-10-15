@@ -1,0 +1,19 @@
+﻿metric_id,지표,값,단위,분자,분모,상태,해석,근거
+sft_rows,원본 응답 SFT 행,45974,행,,,기존 실행 기록,"1,069개 상담의 파생 응답; 독립 상담 수 아님",데이터셋/말씨_원본상담_SFT_v1_20261009/manifest.json
+hold_rows,내용 노출 고유 보류,1261,행,,,기존 실행 기록,"1,244+54−37; 보류 사유 단순 합산 금지",outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+hold_rate,내용 노출 보류율,0.027428546569800323,비율,1261,45974,이번 계산,원본 응답 SFT 기준,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+candidate_rows,"4,096 연구 후보",17236,행,,,기존 실행 기록,말씨 승인 학습 정답과 구분,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+candidate_retention,"4,096 후보 원본 대비 수용률",0.37490755644494717,비율,17236,45974,이번 계산,내용 보류와 길이 제한 결합,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+candidate_128,128토큰 예약 후보,17001,행,,,기존 실행 기록,"기존4,096 후보 안에서 생성 입력 예산 검사",outputs/private/malssi_round5_review_20261009/budget_profile_review.json
+supervised_total,"4,096 후보 감독 토큰",1200410,토큰,,,기존 실행 기록,Train+Validation 마지막 목표와 종료 직렬화 경계,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+supervised_share,"4,096 후보 감독 토큰 비중",0.03514808966717139,비율,1200410,34152923,이번 계산,손실 대상 토큰/전체 사례 토큰; GPU 계산량 감소율 아님,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+cache_matches,캐시·비캐시 표본 일치,1.0,비율,3155,3155,기존 실행 기록,"1,069개 상담의 3,155행 표본; 전행 동등성 아님",docs/support_agent/말씨_4차_실검증_수정_결과_2026-10-09.md
+common_val,예약 조건 공통 Validation,1335,행,,,기존 실행 기록,5개 예약조건 paired 비교용; 미사용 final test 아님,outputs/private/malssi_round5_review_20261009/budget_profile_review.json
+val_groups,"4,096 후보 Validation 관측 그룹",21,그룹,,,기존 실행 기록,"1,724행이 21그룹; 사람 신원으로 보증하지 않음",outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+optimizer_steps,4차 GPU optimizer 업데이트,0,step,,,기존 실행 기록,생성·손실 진단; 전체 모델 학습 미수행,docs/support_agent/말씨_4차_실검증_수정_결과_2026-10-09.md
+lora_parameters,제한 GPU 검증의 학습 가능 LoRA 파라미터,61214720,개,,,기존 실행 기록,r=8 alpha=8; optimizer 업데이트 없음,docs/support_agent/말씨_3차_실데이터_토큰_GPU_검증_2026-10-09.md
+macro_f1_상담,상담 보조분류 macro-F1,0.553491732513901,F1,,,기존 실행 smoke,단위별 과제·집단이 달라 우열 비교 금지,데이터셋/학습용_3종_v1_20261009/baseline_smoke.json
+macro_f1_문장,문장 보조분류 macro-F1,0.7584150177574834,F1,,,기존 실행 smoke,단위별 과제·집단이 달라 우열 비교 금지,데이터셋/학습용_3종_v1_20261009/baseline_smoke.json
+macro_f1_단어,단어 보조분류 macro-F1,0.6212834663646023,F1,,,기존 실행 smoke,단위별 과제·집단이 달라 우열 비교 금지,데이터셋/학습용_3종_v1_20261009/baseline_smoke.json
+base_llm_helpfulness,기반 LLM 요청 해결률,,비율,,,미측정,실제 동일 평가셋 응답과 독립 검토 필요,서비스_문서/02_기술/05_평가와_품질_관리.md
+malssi_helpfulness,말씨 모델 요청 해결률,,비율,,,미측정,학습 완료·응답 평가 근거 없음,서비스_문서/03_현황/01_현재_상태.md

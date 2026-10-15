@@ -1,0 +1,526 @@
+{
+  "schema_version": 1,
+  "run_id": "BASE12_MAC_20261009T125814Z",
+  "scope": "Frozen captured run only. Recalculation is deterministic for these files; future inference, semantic accuracy, and model safety are not measured or guaranteed.",
+  "token_count_scope": "API-reported counts cross-checked against captured preflight counts; input token IDs are not available.",
+  "status_definition": "normal_stop means done=true, done_reason=stop, matching preflight token count, no thinking text, nonempty content, and an allowed exact label after whitespace stripping for action tasks.",
+  "assigned_request_uniqueness": {
+    "assigned": 94,
+    "unique_task_case_pairs": 94,
+    "unique_generation_ids": 94,
+    "all_assigned_attempted_once": true
+  },
+  "groups": {
+    "response_legacy_dev32": {
+      "assigned": 32,
+      "attempted": 32,
+      "status_counts": {
+        "valid": 32,
+        "length_limit": 0,
+        "generation_error": 0,
+        "format_error": 0,
+        "input_token_mismatch": 0,
+        "incomplete": 0,
+        "unverified_termination": 0,
+        "unexpected_thinking": 0,
+        "empty_output": 0
+      },
+      "attempt_rate": {
+        "numerator": 32,
+        "denominator": 32,
+        "percent": 100.0
+      },
+      "normal_stop_rate": {
+        "numerator": 32,
+        "denominator": 32,
+        "percent": 100.0
+      },
+      "length_limit_rate": {
+        "numerator": 0,
+        "denominator": 32,
+        "percent": 0.0
+      },
+      "error_rate": {
+        "numerator": 0,
+        "denominator": 32,
+        "percent": 0.0
+      },
+      "format_invalid_rate": {
+        "numerator": 0,
+        "denominator": 32,
+        "percent": 0.0
+      },
+      "non_normal_stop_rate": {
+        "numerator": 0,
+        "denominator": 32,
+        "percent": 0.0
+      },
+      "input_token_count_matches": {
+        "numerator": 32,
+        "denominator": 32,
+        "percent": 100.0
+      },
+      "thinking_disabled_requests": {
+        "numerator": 32,
+        "denominator": 32,
+        "percent": 100.0
+      },
+      "outputs_without_thinking_text": {
+        "numerator": 32,
+        "denominator": 32,
+        "percent": 100.0
+      },
+      "nonempty_output": {
+        "numerator": 32,
+        "denominator": 32,
+        "percent": 100.0
+      },
+      "input_tokens": {
+        "n": 32,
+        "total": 46400,
+        "min": 76,
+        "max": 3019,
+        "mean": 1450.0,
+        "mean_exact": {
+          "numerator": 46400,
+          "denominator": 32
+        }
+      },
+      "generated_tokens": {
+        "n": 32,
+        "total": 1947,
+        "min": 16,
+        "max": 208,
+        "mean": 60.84375,
+        "mean_exact": {
+          "numerator": 1947,
+          "denominator": 32
+        }
+      }
+    },
+    "response_public_regression31": {
+      "assigned": 31,
+      "attempted": 31,
+      "status_counts": {
+        "valid": 30,
+        "length_limit": 1,
+        "generation_error": 0,
+        "format_error": 0,
+        "input_token_mismatch": 0,
+        "incomplete": 0,
+        "unverified_termination": 0,
+        "unexpected_thinking": 0,
+        "empty_output": 0
+      },
+      "attempt_rate": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "normal_stop_rate": {
+        "numerator": 30,
+        "denominator": 31,
+        "percent": 96.7741935483871
+      },
+      "length_limit_rate": {
+        "numerator": 1,
+        "denominator": 31,
+        "percent": 3.225806451612903
+      },
+      "error_rate": {
+        "numerator": 0,
+        "denominator": 31,
+        "percent": 0.0
+      },
+      "format_invalid_rate": {
+        "numerator": 0,
+        "denominator": 31,
+        "percent": 0.0
+      },
+      "non_normal_stop_rate": {
+        "numerator": 1,
+        "denominator": 31,
+        "percent": 3.225806451612903
+      },
+      "input_token_count_matches": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "thinking_disabled_requests": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "outputs_without_thinking_text": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "nonempty_output": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "input_tokens": {
+        "n": 31,
+        "total": 9752,
+        "min": 301,
+        "max": 350,
+        "mean": 314.5806451612903,
+        "mean_exact": {
+          "numerator": 9752,
+          "denominator": 31
+        }
+      },
+      "generated_tokens": {
+        "n": 31,
+        "total": 7470,
+        "min": 43,
+        "max": 512,
+        "mean": 240.96774193548387,
+        "mean_exact": {
+          "numerator": 7470,
+          "denominator": 31
+        }
+      }
+    },
+    "action_public_regression31": {
+      "assigned": 31,
+      "attempted": 31,
+      "status_counts": {
+        "valid": 31,
+        "length_limit": 0,
+        "generation_error": 0,
+        "format_error": 0,
+        "input_token_mismatch": 0,
+        "incomplete": 0,
+        "unverified_termination": 0,
+        "unexpected_thinking": 0,
+        "empty_output": 0
+      },
+      "attempt_rate": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "normal_stop_rate": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "length_limit_rate": {
+        "numerator": 0,
+        "denominator": 31,
+        "percent": 0.0
+      },
+      "error_rate": {
+        "numerator": 0,
+        "denominator": 31,
+        "percent": 0.0
+      },
+      "format_invalid_rate": {
+        "numerator": 0,
+        "denominator": 31,
+        "percent": 0.0
+      },
+      "non_normal_stop_rate": {
+        "numerator": 0,
+        "denominator": 31,
+        "percent": 0.0
+      },
+      "input_token_count_matches": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "thinking_disabled_requests": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "outputs_without_thinking_text": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "nonempty_output": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "input_tokens": {
+        "n": 31,
+        "total": 17388,
+        "min": 547,
+        "max": 596,
+        "mean": 560.9032258064516,
+        "mean_exact": {
+          "numerator": 17388,
+          "denominator": 31
+        }
+      },
+      "generated_tokens": {
+        "n": 31,
+        "total": 79,
+        "min": 1,
+        "max": 3,
+        "mean": 2.5483870967741935,
+        "mean_exact": {
+          "numerator": 79,
+          "denominator": 31
+        }
+      },
+      "label_format_valid": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "label_counts": {
+        "ASK_CFI": 0,
+        "CLARIFY": 17,
+        "SUPPORT": 5,
+        "SUPPORT_LIMITED": 0,
+        "SAFETY_SUPPORT": 7,
+        "END": 2
+      }
+    },
+    "response_all63": {
+      "assigned": 63,
+      "attempted": 63,
+      "status_counts": {
+        "valid": 62,
+        "length_limit": 1,
+        "generation_error": 0,
+        "format_error": 0,
+        "input_token_mismatch": 0,
+        "incomplete": 0,
+        "unverified_termination": 0,
+        "unexpected_thinking": 0,
+        "empty_output": 0
+      },
+      "attempt_rate": {
+        "numerator": 63,
+        "denominator": 63,
+        "percent": 100.0
+      },
+      "normal_stop_rate": {
+        "numerator": 62,
+        "denominator": 63,
+        "percent": 98.41269841269842
+      },
+      "length_limit_rate": {
+        "numerator": 1,
+        "denominator": 63,
+        "percent": 1.5873015873015872
+      },
+      "error_rate": {
+        "numerator": 0,
+        "denominator": 63,
+        "percent": 0.0
+      },
+      "format_invalid_rate": {
+        "numerator": 0,
+        "denominator": 63,
+        "percent": 0.0
+      },
+      "non_normal_stop_rate": {
+        "numerator": 1,
+        "denominator": 63,
+        "percent": 1.5873015873015872
+      },
+      "input_token_count_matches": {
+        "numerator": 63,
+        "denominator": 63,
+        "percent": 100.0
+      },
+      "thinking_disabled_requests": {
+        "numerator": 63,
+        "denominator": 63,
+        "percent": 100.0
+      },
+      "outputs_without_thinking_text": {
+        "numerator": 63,
+        "denominator": 63,
+        "percent": 100.0
+      },
+      "nonempty_output": {
+        "numerator": 63,
+        "denominator": 63,
+        "percent": 100.0
+      },
+      "input_tokens": {
+        "n": 63,
+        "total": 56152,
+        "min": 76,
+        "max": 3019,
+        "mean": 891.3015873015873,
+        "mean_exact": {
+          "numerator": 56152,
+          "denominator": 63
+        }
+      },
+      "generated_tokens": {
+        "n": 63,
+        "total": 9417,
+        "min": 16,
+        "max": 512,
+        "mean": 149.47619047619048,
+        "mean_exact": {
+          "numerator": 9417,
+          "denominator": 63
+        }
+      }
+    },
+    "all_requests94": {
+      "assigned": 94,
+      "attempted": 94,
+      "status_counts": {
+        "valid": 93,
+        "length_limit": 1,
+        "generation_error": 0,
+        "format_error": 0,
+        "input_token_mismatch": 0,
+        "incomplete": 0,
+        "unverified_termination": 0,
+        "unexpected_thinking": 0,
+        "empty_output": 0
+      },
+      "attempt_rate": {
+        "numerator": 94,
+        "denominator": 94,
+        "percent": 100.0
+      },
+      "normal_stop_rate": {
+        "numerator": 93,
+        "denominator": 94,
+        "percent": 98.93617021276596
+      },
+      "length_limit_rate": {
+        "numerator": 1,
+        "denominator": 94,
+        "percent": 1.0638297872340425
+      },
+      "error_rate": {
+        "numerator": 0,
+        "denominator": 94,
+        "percent": 0.0
+      },
+      "format_invalid_rate": {
+        "numerator": 0,
+        "denominator": 94,
+        "percent": 0.0
+      },
+      "non_normal_stop_rate": {
+        "numerator": 1,
+        "denominator": 94,
+        "percent": 1.0638297872340425
+      },
+      "input_token_count_matches": {
+        "numerator": 94,
+        "denominator": 94,
+        "percent": 100.0
+      },
+      "thinking_disabled_requests": {
+        "numerator": 94,
+        "denominator": 94,
+        "percent": 100.0
+      },
+      "outputs_without_thinking_text": {
+        "numerator": 94,
+        "denominator": 94,
+        "percent": 100.0
+      },
+      "nonempty_output": {
+        "numerator": 94,
+        "denominator": 94,
+        "percent": 100.0
+      },
+      "input_tokens": {
+        "n": 94,
+        "total": 73540,
+        "min": 76,
+        "max": 3019,
+        "mean": 782.3404255319149,
+        "mean_exact": {
+          "numerator": 73540,
+          "denominator": 94
+        }
+      },
+      "generated_tokens": {
+        "n": 94,
+        "total": 9496,
+        "min": 1,
+        "max": 512,
+        "mean": 101.02127659574468,
+        "mean_exact": {
+          "numerator": 9496,
+          "denominator": 94
+        }
+      }
+    }
+  },
+  "source_validation": {
+    "selected_rows": 32,
+    "selected_groups": 21,
+    "selected_conversations": 32,
+    "source_prefix_and_target_removal_matches": 32,
+    "source_target_sha256_matches": 32,
+    "archive_sha256": "18e5cffe5efa77e79c7aa56e739c52dfdf334af8aa9623f0b24743ead44f35ed",
+    "validation_member_sha256": "1860009f34c586631187461e489f62529905ec0f3c96131376bfba211e3f68d4",
+    "validation_population": 1724,
+    "target_hash_producer_member": "malssi_stage1_training_20261009/verification_source/counseling_pipeline/source_sft.py"
+  },
+  "model_integrity": {
+    "selected_required_blobs": 740,
+    "actual_hash_and_size_matches": 740,
+    "expected_total_bytes": 7714247731,
+    "actual_total_bytes": 7714247731,
+    "selected_distribution_digest": "sha256:c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+    "distribution_index_digest": "sha256:312246b09fab47c3b66cdbeaa50643d5ad5610f71a8f0560d947e17b55f616cf",
+    "manifest_sha256": {
+      "/Users/chihun/.ollama/models/manifests/registry.ollama.ai/library/gemma4/12b": "c6c61e74c905ac3a15f209c421dddf59444e2b28a10f25e8012a3d222e67c6e1",
+      "/Users/chihun/.ollama/models/manifests-v2/ollama.com/library/gemma4/12b": "312246b09fab47c3b66cdbeaa50643d5ad5610f71a8f0560d947e17b55f616cf"
+    },
+    "scope": "Local selected MLX content-addressed distribution only; not upstream authenticity."
+  },
+  "pre_generation_exclusions": [
+    {
+      "case_id": "T29-64",
+      "reason": "pre_generation_context_limit",
+      "tokens": {
+        "response": 4287,
+        "action": 4663
+      }
+    },
+    {
+      "case_id": "T29-256",
+      "reason": "pre_generation_context_limit",
+      "tokens": {
+        "response": 16191,
+        "action": 16951
+      }
+    },
+    {
+      "case_id": "T30",
+      "reason": "data_production_pipeline_not_model_response"
+    }
+  ],
+  "evidence_sha256": {
+    "run_manifest.json": "e5cff3f141ce9baf12091da7625047380e4807a1c7dabfb7fe5a5735e385a878",
+    "case_manifest.jsonl": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373",
+    "generations.jsonl": "3705721039ab0518b2a7aa1eb224e8f90d0892d3f87e545faa71c76a80e0e6f2",
+    "COLLECTION_COMPLETE.json": "c4f611d06d7caa011da1985e0145f88a678d49d05f41b3b0e4f00d543557edf9",
+    "model_verification.json": "fb5529b99243ad1c0968e320830f8849d62996f3831baabddb36165b8bad496e",
+    "dataset_audit.json": "e6db9e4494ed6c332e2352ae5f30872c67e58b3ccd09e879b7ffdb2de716ffa1",
+    "collector_provenance.json": "8937c21d3d5090ef2d0595b0e642df93cce866379c4ae02ca069921361a52940"
+  },
+  "collector_executed_sha256": "39ccd1911e6d6f06a959b3069e6fcb12b4e3a51800a0271a17e4fb9fc9c01ba9",
+  "abnormal_cases": [
+    {
+      "task": "response",
+      "case_id": "T26",
+      "status": "length_limit"
+    }
+  ]
+}

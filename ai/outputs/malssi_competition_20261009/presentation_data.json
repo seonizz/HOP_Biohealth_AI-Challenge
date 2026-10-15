@@ -1,0 +1,1170 @@
+{
+  "date": "2026-10-09",
+  "evidence_scope": "기존 실행 증거+이번 로컬 재집계; 새 GPU·모델 학습·응답 평가 미수행",
+  "funnel": [
+    {
+      "단계": "원본 응답 SFT",
+      "Train_행": 40652,
+      "Validation_행": 5322,
+      "합계_행": 45974,
+      "원본대비_비율": 1.0,
+      "직전단계_감소행": "",
+      "해석": "휴리스틱 선별 원본 응답; 말씨 승인 정답 아님",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "단계": "내용 노출 보류 후",
+      "Train_행": 40415,
+      "Validation_행": 4298,
+      "합계_행": 44713,
+      "원본대비_비율": 0.9725714534301997,
+      "직전단계_감소행": 1261,
+      "해석": "원문 내용 중복 정책의 조건부 수용",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "단계": "4,096토큰 연구 후보",
+      "Train_행": 15512,
+      "Validation_행": 1724,
+      "합계_행": 17236,
+      "원본대비_비율": 0.37490755644494717,
+      "직전단계_감소행": 27477,
+      "해석": "전체 직렬화 길이와 내용 보류를 함께 적용",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "단계": "생성 128토큰 예약 후보",
+      "Train_행": 15303,
+      "Validation_행": 1698,
+      "합계_행": 17001,
+      "원본대비_비율": 0.36979597163614214,
+      "직전단계_감소행": 235,
+      "해석": "기존 4,096 후보 안에서 prefix+128≤4,096",
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "단계": "예약 64~1,024 공통 후보",
+      "Train_행": 12259,
+      "Validation_행": 1335,
+      "합계_행": 13594,
+      "원본대비_비율": 0.2956888676208292,
+      "직전단계_감소행": 3407,
+      "해석": "예약량 조건 비교용 교집합; 최종 test 아님",
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    }
+  ],
+  "caps": [
+    {
+      "토큰상한": 512,
+      "Train_행": 2000,
+      "Validation_행": 203,
+      "합계_행": 2203,
+      "원본대비_수용률": 0.04791838865445687,
+      "GPU_실행가능_판정": "미확정; 길이 수용량만 계산",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "토큰상한": 1024,
+      "Train_행": 4213,
+      "Validation_행": 456,
+      "합계_행": 4669,
+      "원본대비_수용률": 0.10155740200983164,
+      "GPU_실행가능_판정": "미확정; 길이 수용량만 계산",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "토큰상한": 2048,
+      "Train_행": 8252,
+      "Validation_행": 892,
+      "합계_행": 9144,
+      "원본대비_수용률": 0.19889502762430938,
+      "GPU_실행가능_판정": "미확정; 길이 수용량만 계산",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "토큰상한": 4096,
+      "Train_행": 15512,
+      "Validation_행": 1724,
+      "합계_행": 17236,
+      "원본대비_수용률": 0.37490755644494717,
+      "GPU_실행가능_판정": "미확정; 길이 수용량만 계산",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "토큰상한": 8192,
+      "Train_행": 28712,
+      "Validation_행": 3189,
+      "합계_행": 31901,
+      "원본대비_수용률": 0.693892199939096,
+      "GPU_실행가능_판정": "미확정; 길이 수용량만 계산",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "토큰상한": 16384,
+      "Train_행": 40207,
+      "Validation_행": 4298,
+      "합계_행": 44505,
+      "원본대비_수용률": 0.9680471570887893,
+      "GPU_실행가능_판정": "미확정; 길이 수용량만 계산",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "토큰상한": 32768,
+      "Train_행": 40415,
+      "Validation_행": 4298,
+      "합계_행": 44713,
+      "원본대비_수용률": 0.9725714534301997,
+      "GPU_실행가능_판정": "미확정; 길이 수용량만 계산",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    }
+  ],
+  "profiles": [
+    {
+      "생성예약_토큰": 64,
+      "split": "train",
+      "수용_행": 15466,
+      "기존4096후보_행": 15512,
+      "보류_행": 46,
+      "수용률": 0.9970345538937597,
+      "원문앞1_3_행": 13437,
+      "중간1_3_행": 2025,
+      "뒤1_3_행": 4,
+      "앞1_3_비율": 0.8688090003879477,
+      "상담수": 946,
+      "관측그룹수": 178,
+      "최대그룹_비율": 0.017005043320832795,
+      "상위5그룹_비율": 0.07448596922281132,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 64,
+      "split": "validation",
+      "수용_행": 1720,
+      "기존4096후보_행": 1724,
+      "보류_행": 4,
+      "수용률": 0.9976798143851509,
+      "원문앞1_3_행": 1515,
+      "중간1_3_행": 205,
+      "뒤1_3_행": 0,
+      "앞1_3_비율": 0.8808139534883721,
+      "상담수": 96,
+      "관측그룹수": 21,
+      "최대그룹_비율": 0.1308139534883721,
+      "상위5그룹_비율": 0.47325581395348837,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 128,
+      "split": "train",
+      "수용_행": 15303,
+      "기존4096후보_행": 15512,
+      "보류_행": 209,
+      "수용률": 0.9865265600825167,
+      "원문앞1_3_행": 13371,
+      "중간1_3_행": 1928,
+      "뒤1_3_행": 4,
+      "앞1_3_비율": 0.8737502450499902,
+      "상담수": 946,
+      "관측그룹수": 178,
+      "최대그룹_비율": 0.01692478598967523,
+      "상위5그룹_비율": 0.07456054368424492,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 128,
+      "split": "validation",
+      "수용_행": 1698,
+      "기존4096후보_행": 1724,
+      "보류_행": 26,
+      "수용률": 0.9849187935034803,
+      "원문앞1_3_행": 1509,
+      "중간1_3_행": 189,
+      "뒤1_3_행": 0,
+      "앞1_3_비율": 0.8886925795053003,
+      "상담수": 96,
+      "관측그룹수": 21,
+      "최대그룹_비율": 0.13191990577149587,
+      "상위5그룹_비율": 0.4734982332155477,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 256,
+      "split": "train",
+      "수용_행": 14897,
+      "기존4096후보_행": 15512,
+      "보류_행": 615,
+      "수용률": 0.9603532748839608,
+      "원문앞1_3_행": 13192,
+      "중간1_3_행": 1703,
+      "뒤1_3_행": 2,
+      "앞1_3_비율": 0.8855474256561724,
+      "상담수": 946,
+      "관측그룹수": 178,
+      "최대그룹_비율": 0.01698328522521313,
+      "상위5그룹_비율": 0.07457877424984896,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 256,
+      "split": "validation",
+      "수용_행": 1652,
+      "기존4096후보_행": 1724,
+      "보류_행": 72,
+      "수용률": 0.9582366589327146,
+      "원문앞1_3_행": 1490,
+      "중간1_3_행": 162,
+      "뒤1_3_행": 0,
+      "앞1_3_비율": 0.9019370460048426,
+      "상담수": 96,
+      "관측그룹수": 21,
+      "최대그룹_비율": 0.13196125907990314,
+      "상위5그룹_비율": 0.4727602905569007,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 512,
+      "split": "train",
+      "수용_행": 14022,
+      "기존4096후보_행": 15512,
+      "보류_행": 1490,
+      "수용률": 0.9039453326456937,
+      "원문앞1_3_행": 12778,
+      "중간1_3_행": 1243,
+      "뒤1_3_행": 1,
+      "앞1_3_비율": 0.911282270717444,
+      "상담수": 945,
+      "관측그룹수": 178,
+      "최대그룹_비율": 0.01640279560690344,
+      "상위5그룹_비율": 0.07431179574953645,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 512,
+      "split": "validation",
+      "수용_행": 1545,
+      "기존4096후보_행": 1724,
+      "보류_행": 179,
+      "수용률": 0.8961716937354989,
+      "원문앞1_3_행": 1446,
+      "중간1_3_행": 99,
+      "뒤1_3_행": 0,
+      "앞1_3_비율": 0.9359223300970874,
+      "상담수": 96,
+      "관측그룹수": 21,
+      "최대그룹_비율": 0.13009708737864079,
+      "상위5그룹_비율": 0.4686084142394822,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 1024,
+      "split": "train",
+      "수용_행": 12259,
+      "기존4096후보_행": 15512,
+      "보류_행": 3253,
+      "수용률": 0.7902913873130479,
+      "원문앞1_3_행": 11702,
+      "중간1_3_행": 557,
+      "뒤1_3_행": 0,
+      "앞1_3_비율": 0.9545639938004731,
+      "상담수": 945,
+      "관측그룹수": 178,
+      "최대그룹_비율": 0.01639611713842891,
+      "상위5그룹_비율": 0.07398645892813444,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "생성예약_토큰": 1024,
+      "split": "validation",
+      "수용_행": 1335,
+      "기존4096후보_행": 1724,
+      "보류_행": 389,
+      "수용률": 0.7743619489559165,
+      "원문앞1_3_행": 1293,
+      "중간1_3_행": 42,
+      "뒤1_3_행": 0,
+      "앞1_3_비율": 0.9685393258426966,
+      "상담수": 96,
+      "관측그룹수": 21,
+      "최대그룹_비율": 0.13108614232209737,
+      "상위5그룹_비율": 0.47116104868913855,
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    }
+  ],
+  "tokens": [
+    {
+      "split": "train",
+      "길이종류": "full",
+      "행수": 40652,
+      "총토큰": 238128290,
+      "평균_토큰": 5857.726311128604,
+      "p50_토큰": 5472,
+      "p95_토큰": 12421,
+      "p99_토큰": 15103,
+      "최대_토큰": 25316,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "split": "train",
+      "길이종류": "prefix",
+      "행수": 40652,
+      "총토큰": 234818174,
+      "평균_토큰": 5776.300649414543,
+      "p50_토큰": 5386,
+      "p95_토큰": 12349,
+      "p99_토큰": 15039,
+      "최대_토큰": 25290,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "split": "train",
+      "길이종류": "supervised",
+      "행수": 40652,
+      "총토큰": 3310116,
+      "평균_토큰": 81.42566171406081,
+      "p50_토큰": 49,
+      "p95_토큰": 241,
+      "p99_토큰": 503,
+      "최대_토큰": 3922,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "split": "validation",
+      "길이종류": "full",
+      "행수": 5322,
+      "총토큰": 29820692,
+      "평균_토큰": 5603.28673431041,
+      "p50_토큰": 5322,
+      "p95_토큰": 11460,
+      "p99_토큰": 12712,
+      "최대_토큰": 15356,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "split": "validation",
+      "길이종류": "prefix",
+      "행수": 5322,
+      "총토큰": 29380170,
+      "평균_토큰": 5520.512965050732,
+      "p50_토큰": 5251,
+      "p95_토큰": 11354,
+      "p99_토큰": 12611,
+      "최대_토큰": 15308,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "split": "validation",
+      "길이종류": "supervised",
+      "행수": 5322,
+      "총토큰": 440522,
+      "평균_토큰": 82.77376925967681,
+      "p50_토큰": 50,
+      "p95_토큰": 251,
+      "p99_토큰": 504,
+      "최대_토큰": 1198,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "split": "all",
+      "길이종류": "full",
+      "행수": 45974,
+      "총토큰": 267948982,
+      "평균_토큰": 5828.272110323226,
+      "p50_토큰": 5455,
+      "p95_토큰": 12292,
+      "p99_토큰": 14868,
+      "최대_토큰": 25316,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "split": "all",
+      "길이종류": "prefix",
+      "행수": 45974,
+      "총토큰": 264198344,
+      "평균_토큰": 5746.6903902205595,
+      "p50_토큰": 5370,
+      "p95_토큰": 12220,
+      "p99_토큰": 14783,
+      "최대_토큰": 25290,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "split": "all",
+      "길이종류": "supervised",
+      "행수": 45974,
+      "총토큰": 3750638,
+      "평균_토큰": 81.58172010266672,
+      "p50_토큰": 49,
+      "p95_토큰": 242,
+      "p99_토큰": 503,
+      "최대_토큰": 3922,
+      "측정범위": "전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계",
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    }
+  ],
+  "histogram": [
+    {
+      "구간": "0~512",
+      "Train_행": 2014,
+      "Validation_행": 243,
+      "합계_행": 2257,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "구간": "513~1,024",
+      "Train_행": 2230,
+      "Validation_행": 292,
+      "합계_행": 2522,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "구간": "1,025~2,048",
+      "Train_행": 4085,
+      "Validation_행": 522,
+      "합계_행": 4607,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "구간": "2,049~4,096",
+      "Train_행": 7315,
+      "Validation_행": 1042,
+      "합계_행": 8357,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "구간": "4,097~8,192",
+      "Train_행": 13260,
+      "Validation_행": 1799,
+      "합계_행": 15059,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "구간": "8,193~16,384",
+      "Train_행": 11540,
+      "Validation_행": 1424,
+      "합계_행": 12964,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    },
+    {
+      "구간": "16,385~32,768",
+      "Train_행": 208,
+      "Validation_행": 0,
+      "합계_행": 208,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz"
+    }
+  ],
+  "classifiers": [
+    {
+      "단위": "상담",
+      "Train_행": 990,
+      "Validation_행": 117,
+      "macro_F1": 0.553491732513901,
+      "micro_F1": 0.5641025641025641,
+      "우울_F1": 0.5098039215686274,
+      "중독_F1": 0.7164179104477612,
+      "불안_F1": 0.5294117647058824,
+      "기타_F1": 0.4583333333333333,
+      "모델": "NumPy weighted one-vs-rest multinomial Naive Bayes; alpha=0.1",
+      "범위": "기존 실행 smoke; 생성 품질·임상 효과 아님",
+      "근거": "데이터셋/학습용_3종_v1_20261009/baseline_smoke.json"
+    },
+    {
+      "단위": "문장",
+      "Train_행": 1440,
+      "Validation_행": 206,
+      "macro_F1": 0.7584150177574834,
+      "micro_F1": 0.8353221957040573,
+      "우울_F1": 0.8518518518518519,
+      "중독_F1": 0.9178082191780822,
+      "불안_F1": 0.864,
+      "기타_F1": 0.4,
+      "모델": "NumPy weighted one-vs-rest multinomial Naive Bayes; alpha=0.1",
+      "범위": "기존 실행 smoke; 생성 품질·임상 효과 아님",
+      "근거": "데이터셋/학습용_3종_v1_20261009/baseline_smoke.json"
+    },
+    {
+      "단위": "단어",
+      "Train_행": 302,
+      "Validation_행": 76,
+      "macro_F1": 0.6212834663646023,
+      "micro_F1": 0.631578947368421,
+      "우울_F1": 0.6428571428571429,
+      "중독_F1": 0.7450980392156863,
+      "불안_F1": 0.5517241379310345,
+      "기타_F1": 0.5454545454545454,
+      "모델": "NumPy weighted one-vs-rest multinomial Naive Bayes; alpha=0.1",
+      "범위": "기존 실행 smoke; 생성 품질·임상 효과 아님",
+      "근거": "데이터셋/학습용_3종_v1_20261009/baseline_smoke.json"
+    }
+  ],
+  "labels": [
+    {
+      "단위": "상담",
+      "split": "train",
+      "라벨": "우울",
+      "양성라벨_행": 264,
+      "전체_행": 990,
+      "라벨_비율": 0.26666666666666666,
+      "다중라벨_행": 0,
+      "특징차원": 20000,
+      "근거": "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json"
+    },
+    {
+      "단위": "상담",
+      "split": "train",
+      "라벨": "중독",
+      "양성라벨_행": 262,
+      "전체_행": 990,
+      "라벨_비율": 0.26464646464646463,
+      "다중라벨_행": 0,
+      "특징차원": 20000,
+      "근거": "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json"
+    },
+    {
+      "단위": "상담",
+      "split": "train",
+      "라벨": "불안",
+      "양성라벨_행": 270,
+      "전체_행": 990,
+      "라벨_비율": 0.2727272727272727,
+      "다중라벨_행": 0,
+      "특징차원": 20000,
+      "근거": "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json"
+    },
+    {
+      "단위": "상담",
+      "split": "train",
+      "라벨": "기타",
+      "양성라벨_행": 194,
+      "전체_행": 990,
+      "라벨_비율": 0.19595959595959597,
+      "다중라벨_행": 0,
+      "특징차원": 20000,
+      "근거": "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json"
+    },
+    {
+      "단위": "상담",
+      "split": "validation",
+      "라벨": "우울",
+      "양성라벨_행": 24,
+      "전체_행": 117,
+      "라벨_비율": 0.20512820512820512,
+      "다중라벨_행": 0,
+      "특징차원": 20000,
+      "근거": "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json"
+    },
+    {
+      "단위": "상담",
+      "split": "validation",
+      "라벨": "중독",
+      "양성라벨_행": 37,
+      "전체_행": 117,
+      "라벨_비율": 0.3162393162393162,
+      "다중라벨_행": 0,
+      "특징차원": 20000,
+      "근거": "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json"
+    },
+    {
+      "단위": "상담",
+      "split": "validation",
+      "라벨": "불안",
+      "양성라벨_행": 36,
+      "전체_행": 117,
+      "라벨_비율": 0.3076923076923077,
+      "다중라벨_행": 0,
+      "특징차원": 20000,
+      "근거": "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json"
+    },
+    {
+      "단위": "상담",
+      "split": "validation",
+      "라벨": "기타",
+      "양성라벨_행": 20,
+      "전체_행": 117,
+      "라벨_비율": 0.17094017094017094,
+      "다중라벨_행": 0,
+      "특징차원": 20000,
+      "근거": "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json"
+    },
+    {
+      "단위": "문장",
+      "split": "train",
+      "라벨": "우울",
+      "양성라벨_행": 343,
+      "전체_행": 1440,
+      "라벨_비율": 0.23819444444444443,
+      "다중라벨_행": 34,
+      "특징차원": 7291,
+      "근거": "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json"
+    },
+    {
+      "단위": "문장",
+      "split": "train",
+      "라벨": "중독",
+      "양성라벨_행": 510,
+      "전체_행": 1440,
+      "라벨_비율": 0.3541666666666667,
+      "다중라벨_행": 34,
+      "특징차원": 7291,
+      "근거": "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json"
+    },
+    {
+      "단위": "문장",
+      "split": "train",
+      "라벨": "불안",
+      "양성라벨_행": 458,
+      "전체_행": 1440,
+      "라벨_비율": 0.31805555555555554,
+      "다중라벨_행": 34,
+      "특징차원": 7291,
+      "근거": "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json"
+    },
+    {
+      "단위": "문장",
+      "split": "train",
+      "라벨": "기타",
+      "양성라벨_행": 164,
+      "전체_행": 1440,
+      "라벨_비율": 0.11388888888888889,
+      "다중라벨_행": 34,
+      "특징차원": 7291,
+      "근거": "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json"
+    },
+    {
+      "단위": "문장",
+      "split": "validation",
+      "라벨": "우울",
+      "양성라벨_행": 55,
+      "전체_행": 206,
+      "라벨_비율": 0.2669902912621359,
+      "다중라벨_행": 5,
+      "특징차원": 7291,
+      "근거": "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json"
+    },
+    {
+      "단위": "문장",
+      "split": "validation",
+      "라벨": "중독",
+      "양성라벨_행": 74,
+      "전체_행": 206,
+      "라벨_비율": 0.3592233009708738,
+      "다중라벨_행": 5,
+      "특징차원": 7291,
+      "근거": "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json"
+    },
+    {
+      "단위": "문장",
+      "split": "validation",
+      "라벨": "불안",
+      "양성라벨_행": 62,
+      "전체_행": 206,
+      "라벨_비율": 0.30097087378640774,
+      "다중라벨_행": 5,
+      "특징차원": 7291,
+      "근거": "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json"
+    },
+    {
+      "단위": "문장",
+      "split": "validation",
+      "라벨": "기타",
+      "양성라벨_행": 21,
+      "전체_행": 206,
+      "라벨_비율": 0.10194174757281553,
+      "다중라벨_행": 5,
+      "특징차원": 7291,
+      "근거": "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json"
+    },
+    {
+      "단위": "단어",
+      "split": "train",
+      "라벨": "우울",
+      "양성라벨_행": 54,
+      "전체_행": 302,
+      "라벨_비율": 0.17880794701986755,
+      "다중라벨_행": 0,
+      "특징차원": 1357,
+      "근거": "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json"
+    },
+    {
+      "단위": "단어",
+      "split": "train",
+      "라벨": "중독",
+      "양성라벨_행": 98,
+      "전체_행": 302,
+      "라벨_비율": 0.32450331125827814,
+      "다중라벨_행": 0,
+      "특징차원": 1357,
+      "근거": "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json"
+    },
+    {
+      "단위": "단어",
+      "split": "train",
+      "라벨": "불안",
+      "양성라벨_행": 52,
+      "전체_행": 302,
+      "라벨_비율": 0.17218543046357615,
+      "다중라벨_행": 0,
+      "특징차원": 1357,
+      "근거": "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json"
+    },
+    {
+      "단위": "단어",
+      "split": "train",
+      "라벨": "기타",
+      "양성라벨_행": 98,
+      "전체_행": 302,
+      "라벨_비율": 0.32450331125827814,
+      "다중라벨_행": 0,
+      "특징차원": 1357,
+      "근거": "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json"
+    },
+    {
+      "단위": "단어",
+      "split": "validation",
+      "라벨": "우울",
+      "양성라벨_행": 13,
+      "전체_행": 76,
+      "라벨_비율": 0.17105263157894737,
+      "다중라벨_행": 0,
+      "특징차원": 1357,
+      "근거": "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json"
+    },
+    {
+      "단위": "단어",
+      "split": "validation",
+      "라벨": "중독",
+      "양성라벨_행": 25,
+      "전체_행": 76,
+      "라벨_비율": 0.32894736842105265,
+      "다중라벨_행": 0,
+      "특징차원": 1357,
+      "근거": "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json"
+    },
+    {
+      "단위": "단어",
+      "split": "validation",
+      "라벨": "불안",
+      "양성라벨_행": 13,
+      "전체_행": 76,
+      "라벨_비율": 0.17105263157894737,
+      "다중라벨_행": 0,
+      "특징차원": 1357,
+      "근거": "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json"
+    },
+    {
+      "단위": "단어",
+      "split": "validation",
+      "라벨": "기타",
+      "양성라벨_행": 25,
+      "전체_행": 76,
+      "라벨_비율": 0.32894736842105265,
+      "다중라벨_행": 0,
+      "특징차원": 1357,
+      "근거": "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json"
+    }
+  ],
+  "stage_stats": [
+    {
+      "단계": "원본",
+      "행수": 45974,
+      "총토큰": 267948982,
+      "p50_토큰": 5455,
+      "p95_토큰": 12292,
+      "p99_토큰": 14868,
+      "최대_토큰": 25316,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz + outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz"
+    },
+    {
+      "단계": "내용 보류 후",
+      "행수": 44713,
+      "총토큰": 260785842,
+      "p50_토큰": 5463,
+      "p95_토큰": 12318,
+      "p99_토큰": 14927,
+      "최대_토큰": 25316,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz + outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz"
+    },
+    {
+      "단계": "4,096 후보",
+      "행수": 17236,
+      "총토큰": 34152923,
+      "p50_토큰": 1922,
+      "p95_토큰": 3872,
+      "p99_토큰": 4049,
+      "최대_토큰": 4096,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz + outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz"
+    },
+    {
+      "단계": "생성 128 예약 후보",
+      "행수": 17001,
+      "총토큰": 33200577,
+      "p50_토큰": 1892,
+      "p95_토큰": 3812,
+      "p99_토큰": 3991,
+      "최대_토큰": 4092,
+      "근거": "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz + outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz"
+    }
+  ],
+  "gpu": [
+    {
+      "입력길이_토큰": 464,
+      "batch": 1,
+      "반복": 1,
+      "상태": "passed",
+      "소요_초": 0.957609998062253,
+      "입력토큰_초": 484.5396361137783,
+      "최대할당_GiB": 18.999664306640625,
+      "최대예약_GiB": 19.345703125,
+      "optimizer상태_할당": false,
+      "가중치_업데이트": false,
+      "범위": "RTX4090 1장; forward/backward warm run; 학습 step 아님",
+      "근거": "outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json"
+    },
+    {
+      "입력길이_토큰": 790,
+      "batch": 1,
+      "반복": 1,
+      "상태": "passed",
+      "소요_초": 1.47834899101872,
+      "입력토큰_초": 534.3799094797072,
+      "최대할당_GiB": 18.85504150390625,
+      "최대예약_GiB": 18.9765625,
+      "optimizer상태_할당": false,
+      "가중치_업데이트": false,
+      "범위": "RTX4090 1장; forward/backward warm run; 학습 step 아님",
+      "근거": "outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json"
+    },
+    {
+      "입력길이_토큰": 1966,
+      "batch": 1,
+      "반복": 1,
+      "상태": "passed",
+      "소요_초": 3.9538890330586582,
+      "입력토큰_초": 497.23196163629746,
+      "최대할당_GiB": 19.477572917938232,
+      "최대예약_GiB": 19.681640625,
+      "optimizer상태_할당": false,
+      "가중치_업데이트": false,
+      "범위": "RTX4090 1장; forward/backward warm run; 학습 step 아님",
+      "근거": "outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json"
+    },
+    {
+      "입력길이_토큰": 3261,
+      "batch": 1,
+      "반복": 1,
+      "상태": "passed",
+      "소요_초": 6.894000030937605,
+      "입력토큰_초": 473.0200152837096,
+      "최대할당_GiB": 20.18283224105835,
+      "최대예약_GiB": 20.478515625,
+      "optimizer상태_할당": false,
+      "가중치_업데이트": false,
+      "범위": "RTX4090 1장; forward/backward warm run; 학습 step 아님",
+      "근거": "outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json"
+    },
+    {
+      "입력길이_토큰": 4096,
+      "batch": 1,
+      "반복": 1,
+      "상태": "passed",
+      "소요_초": 8.17205505608581,
+      "입력토큰_초": 501.22031384867734,
+      "최대할당_GiB": 20.680275440216064,
+      "최대예약_GiB": 20.96875,
+      "optimizer상태_할당": false,
+      "가중치_업데이트": false,
+      "범위": "RTX4090 1장; forward/backward warm run; 학습 step 아님",
+      "근거": "outputs/private/malssi_round3_20261009/remote/gpu_validation.json"
+    },
+    {
+      "입력길이_토큰": 7670,
+      "batch": 1,
+      "반복": 0,
+      "상태": "oom",
+      "소요_초": null,
+      "입력토큰_초": null,
+      "최대할당_GiB": null,
+      "최대예약_GiB": null,
+      "optimizer상태_할당": false,
+      "가중치_업데이트": false,
+      "범위": "RTX4090 1장; 첫 probe OOM; 학습 step 아님",
+      "근거": "outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json"
+    }
+  ],
+  "metrics": [
+    {
+      "metric_id": "sft_rows",
+      "지표": "원본 응답 SFT 행",
+      "값": 45974,
+      "단위": "행",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "1,069개 상담의 파생 응답; 독립 상담 수 아님",
+      "근거": "데이터셋/말씨_원본상담_SFT_v1_20261009/manifest.json"
+    },
+    {
+      "metric_id": "hold_rows",
+      "지표": "내용 노출 고유 보류",
+      "값": 1261,
+      "단위": "행",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "1,244+54−37; 보류 사유 단순 합산 금지",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "metric_id": "hold_rate",
+      "지표": "내용 노출 보류율",
+      "값": 0.027428546569800323,
+      "단위": "비율",
+      "분자": 1261,
+      "분모": 45974,
+      "상태": "이번 계산",
+      "해석": "원본 응답 SFT 기준",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "metric_id": "candidate_rows",
+      "지표": "4,096 연구 후보",
+      "값": 17236,
+      "단위": "행",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "말씨 승인 학습 정답과 구분",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "metric_id": "candidate_retention",
+      "지표": "4,096 후보 원본 대비 수용률",
+      "값": 0.37490755644494717,
+      "단위": "비율",
+      "분자": 17236,
+      "분모": 45974,
+      "상태": "이번 계산",
+      "해석": "내용 보류와 길이 제한 결합",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "metric_id": "candidate_128",
+      "지표": "128토큰 예약 후보",
+      "값": 17001,
+      "단위": "행",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "기존4,096 후보 안에서 생성 입력 예산 검사",
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "metric_id": "supervised_total",
+      "지표": "4,096 후보 감독 토큰",
+      "값": 1200410,
+      "단위": "토큰",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "Train+Validation 마지막 목표와 종료 직렬화 경계",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "metric_id": "supervised_share",
+      "지표": "4,096 후보 감독 토큰 비중",
+      "값": 0.03514808966717139,
+      "단위": "비율",
+      "분자": 1200410,
+      "분모": 34152923,
+      "상태": "이번 계산",
+      "해석": "손실 대상 토큰/전체 사례 토큰; GPU 계산량 감소율 아님",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "metric_id": "cache_matches",
+      "지표": "캐시·비캐시 표본 일치",
+      "값": 1.0,
+      "단위": "비율",
+      "분자": 3155,
+      "분모": 3155,
+      "상태": "기존 실행 기록",
+      "해석": "1,069개 상담의 3,155행 표본; 전행 동등성 아님",
+      "근거": "docs/support_agent/말씨_4차_실검증_수정_결과_2026-10-09.md"
+    },
+    {
+      "metric_id": "common_val",
+      "지표": "예약 조건 공통 Validation",
+      "값": 1335,
+      "단위": "행",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "5개 예약조건 paired 비교용; 미사용 final test 아님",
+      "근거": "outputs/private/malssi_round5_review_20261009/budget_profile_review.json"
+    },
+    {
+      "metric_id": "val_groups",
+      "지표": "4,096 후보 Validation 관측 그룹",
+      "값": 21,
+      "단위": "그룹",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "1,724행이 21그룹; 사람 신원으로 보증하지 않음",
+      "근거": "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json"
+    },
+    {
+      "metric_id": "optimizer_steps",
+      "지표": "4차 GPU optimizer 업데이트",
+      "값": 0,
+      "단위": "step",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "생성·손실 진단; 전체 모델 학습 미수행",
+      "근거": "docs/support_agent/말씨_4차_실검증_수정_결과_2026-10-09.md"
+    },
+    {
+      "metric_id": "lora_parameters",
+      "지표": "제한 GPU 검증의 학습 가능 LoRA 파라미터",
+      "값": 61214720,
+      "단위": "개",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 기록",
+      "해석": "r=8 alpha=8; optimizer 업데이트 없음",
+      "근거": "docs/support_agent/말씨_3차_실데이터_토큰_GPU_검증_2026-10-09.md"
+    },
+    {
+      "metric_id": "macro_f1_상담",
+      "지표": "상담 보조분류 macro-F1",
+      "값": 0.553491732513901,
+      "단위": "F1",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 smoke",
+      "해석": "단위별 과제·집단이 달라 우열 비교 금지",
+      "근거": "데이터셋/학습용_3종_v1_20261009/baseline_smoke.json"
+    },
+    {
+      "metric_id": "macro_f1_문장",
+      "지표": "문장 보조분류 macro-F1",
+      "값": 0.7584150177574834,
+      "단위": "F1",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 smoke",
+      "해석": "단위별 과제·집단이 달라 우열 비교 금지",
+      "근거": "데이터셋/학습용_3종_v1_20261009/baseline_smoke.json"
+    },
+    {
+      "metric_id": "macro_f1_단어",
+      "지표": "단어 보조분류 macro-F1",
+      "값": 0.6212834663646023,
+      "단위": "F1",
+      "분자": "",
+      "분모": "",
+      "상태": "기존 실행 smoke",
+      "해석": "단위별 과제·집단이 달라 우열 비교 금지",
+      "근거": "데이터셋/학습용_3종_v1_20261009/baseline_smoke.json"
+    },
+    {
+      "metric_id": "base_llm_helpfulness",
+      "지표": "기반 LLM 요청 해결률",
+      "값": null,
+      "단위": "비율",
+      "분자": "",
+      "분모": "",
+      "상태": "미측정",
+      "해석": "실제 동일 평가셋 응답과 독립 검토 필요",
+      "근거": "서비스_문서/02_기술/05_평가와_품질_관리.md"
+    },
+    {
+      "metric_id": "malssi_helpfulness",
+      "지표": "말씨 모델 요청 해결률",
+      "값": null,
+      "단위": "비율",
+      "분자": "",
+      "분모": "",
+      "상태": "미측정",
+      "해석": "학습 완료·응답 평가 근거 없음",
+      "근거": "서비스_문서/03_현황/01_현재_상태.md"
+    }
+  ],
+  "sources": {
+    "outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json": {
+      "sha256": "efd162a50ef14845cd8453502efc4a4ba371fabe417fa4c5a5262b77362a6b38"
+    },
+    "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json": {
+      "sha256": "adb7908b877f6e16691d8fa07ccbfb9b929ffaf01830fa05880b30e838ad8a27"
+    },
+    "outputs/private/malssi_round5_review_20261009/budget_profile_review.json": {
+      "sha256": "cd432f21fbab4b98dbeb790772fc7589a7e0b5fe47b30f254d7317abd01b8f76"
+    },
+    "데이터셋/학습용_3종_v1_20261009/baseline_smoke.json": {
+      "sha256": "50317c372f13dd1e5081e2815c372d952e873fefeda44c6069c44bc997a68ad9"
+    },
+    "데이터셋/말씨_원본상담_SFT_v1_20261009/manifest.json": {
+      "sha256": "5928bc8c03263a538411d5f7d2bb5a942589b263ce2e0c9e2a253f60ee9f1dac"
+    },
+    "outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz": {
+      "sha256": "4c1acf958a349010fbf956084407b84b31ccea5ad6b1b51318b60fbf4e3f5e22"
+    },
+    "outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz": {
+      "sha256": "0f1ef6439f8e1fbd2ea18f993680ffddbba70b4101a083cd23eb7f549565c08b"
+    },
+    "데이터셋/학습용_3종_v1_20261009/conversation/numeric/manifest.json": {
+      "sha256": "46f1e5569f3cfba50f704f6afa9214c0448b8e4b170d11e0d4f6fe94320f7736"
+    },
+    "데이터셋/학습용_3종_v1_20261009/sentence/numeric/manifest.json": {
+      "sha256": "58cc24877a35aa9bd80b43ffe97404d02891e5699d16d3521dcc27c5b270ca3d"
+    },
+    "데이터셋/학습용_3종_v1_20261009/word/numeric/manifest.json": {
+      "sha256": "73c690f2d391e45537056652f3d40f73bc956887d22648a2384d61802ac1c402"
+    },
+    "outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json": {
+      "sha256": "716516717a33da7c5d223bd15824ae7897d1b78ae4a6dd5a58d75ee1d74ea50c"
+    },
+    "outputs/private/malssi_round3_20261009/remote/gpu_validation.json": {
+      "sha256": "1e6ac965cdba7dd39f55529975b8d477e789d65c1f49962a8623bdfa08c01632"
+    },
+    "docs/support_agent/말씨_3차_실데이터_토큰_GPU_검증_2026-10-09.md": {
+      "sha256": "7ac1c9a80cfe18e8a510cc4f1b93d52279df0b96807df16872846638c4d832a8"
+    },
+    "docs/support_agent/말씨_4차_실검증_수정_결과_2026-10-09.md": {
+      "sha256": "d0a889cbfaf958a3f3b9c6ed7b6bb0cdf922de95366170120606e8c2b29df55c"
+    },
+    "docs/support_agent/말씨_5차_보고서_대조검토_2026-10-09.md": {
+      "sha256": "775d36306afe2a28caf02811efd38da8b55ed51e504364921745bf8cf4ca02ae"
+    },
+    "docs/support_agent/말씨_학습데이터_프로젝트적합성_종합검증_2026-10-09.md": {
+      "sha256": "f70d674b992d7f3d049b2c954d17d1ec63a4cd977b15a447a5543a24defdbd29"
+    },
+    "counseling_pipeline/text.py": {
+      "sha256": "ce6c08826e7802122f7eef5d1741f3b9ed0ea2e2a96591d49e3793e0cabc552e"
+    },
+    "counseling_pipeline/source_sft.py": {
+      "sha256": "61244c7e9f94785dea62a95cd15a88495cb76d4fc2f4e2e51d87ec269c71bc9b"
+    },
+    "counseling_pipeline/gemma4_token_validation.py": {
+      "sha256": "4fb2b5bc12c6423bb565bb6b63c72e1655ac1b097000b5d6eb46463f81d6b516"
+    },
+    "데이터셋/학습용_3종_v1_20261009/repro/train_baseline.py": {
+      "sha256": "ce2714f36a7bbc46a8d4c1174574e5d39a129dc755f1fc8cef9918d488bd5802"
+    }
+  },
+  "checks": {
+    "rows": 45974,
+    "ledger_matches_audit": true,
+    "hold_union": 1261,
+    "training_run": false,
+    "new_model_scores_generated": false
+  }
+}

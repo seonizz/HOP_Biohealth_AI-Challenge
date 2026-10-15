@@ -1,0 +1,53 @@
+{
+  "verified_at": "2026-10-09T15:03:52.788582+00:00",
+  "status": "passed",
+  "model": "malssi-gemma4-31b-step100",
+  "checkpoint_step": 100,
+  "checkpoint_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+  "base_url": "http://127.0.0.1:18080/v1",
+  "real_model_http_checks": [
+    {
+      "case": "system_chat",
+      "status": 200,
+      "elapsed_seconds": 1.3836537919996772,
+      "usage": {
+        "prompt_tokens": 33,
+        "completion_tokens": 5,
+        "total_tokens": 38
+      },
+      "finish_reason": "stop",
+      "response_sha256": "d30bab1909a03abbee7b32ea4d1286c62178e9f05b8ebdd805d2bce3c02332ee"
+    },
+    {
+      "case": "multi_turn_chat",
+      "status": 200,
+      "elapsed_seconds": 5.4798930840042885,
+      "usage": {
+        "prompt_tokens": 60,
+        "completion_tokens": 22,
+        "total_tokens": 82
+      },
+      "finish_reason": "stop",
+      "response_sha256": "4da59b4dbf562ccbe3715166fa0368ec692933b00830df678120dc250e67b292"
+    },
+    {
+      "case": "invalid_auth",
+      "status": 401
+    },
+    {
+      "case": "output_limit",
+      "status": 400
+    },
+    {
+      "case": "context_limit",
+      "status": 400
+    },
+    {
+      "case": "reserved_tokens",
+      "status": 400
+    }
+  ],
+  "maximum_context_capacity_measured": false,
+  "behavioral_quality_verified": false,
+  "scope": "HTTP inference checks only; no training commands executed"
+}

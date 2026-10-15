@@ -1,0 +1,1007 @@
+{
+  "run_id": "BASE12_MAC_20261009T125814Z",
+  "observed_at": "2026-10-09T13:13:55.195381+00:00",
+  "sources": [
+    {
+      "evidence_id": "run",
+      "source_path": "run_manifest.json",
+      "field": "model, hardware, runtime, generation configuration",
+      "sha256": "e5cff3f141ce9baf12091da7625047380e4807a1c7dabfb7fe5a5735e385a878",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "cases",
+      "source_path": "case_manifest.jsonl",
+      "field": "task, split, criterion_applicability, input bindings",
+      "sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "generations",
+      "source_path": "generations.jsonl",
+      "field": "status, termination, token counts, durations, response bindings",
+      "sha256": "3705721039ab0518b2a7aa1eb224e8f90d0892d3f87e545faa71c76a80e0e6f2",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "completion",
+      "source_path": "COLLECTION_COMPLETE.json",
+      "field": "run_id, assigned, attempted, generations_sha256",
+      "sha256": "c4f611d06d7caa011da1985e0145f88a678d49d05f41b3b0e4f00d543557edf9",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "model_verification",
+      "source_path": "model_verification.json",
+      "field": "verified, identity, summary",
+      "sha256": "fb5529b99243ad1c0968e320830f8849d62996f3831baabddb36165b8bad496e",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "dataset_audit",
+      "source_path": "dataset_audit.json",
+      "field": "selection, overlap counts, exclusions",
+      "sha256": "e6db9e4494ed6c332e2352ae5f30872c67e58b3ccd09e879b7ffdb2de716ffa1",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "template",
+      "source_path": "snapshots/평가양식/발표수치_결과양식.json",
+      "field": "presentation schema",
+      "sha256": "d8e75e155fc55d9658e1c81d581b8d8a79377fa617441957cee0ca4d28b49cb5",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "ps",
+      "source_path": "ps_latest.json",
+      "field": "models[].size, size_vram; latest snapshot, not peak",
+      "sha256": "3e3accb1838b50603664fb78a112f3d605d0f9b2c141ad63d1cdd17904dc1981",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "warmup",
+      "source_path": "smoke.json",
+      "field": "precollection smoke inference; not included in 94 assigned requests",
+      "sha256": "24604e84cd467cacdc5a2e9e30b01cc9e39aecdb5e12d62280ec39b60e8e075d",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "BASE12 local development/public regression",
+      "status": "verified"
+    },
+    {
+      "evidence_id": "reporter",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/scripts/summarize_base12_local.py",
+      "field": "report aggregation implementation",
+      "sha256": "5b588e740550cc28d5e4e73a66a8c14d0354bde1a39ce951f5511b4089ec91e2",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:13:55.195381+00:00",
+      "scope": "report code"
+    },
+    {
+      "evidence_id": "ai_reviews.jsonl",
+      "source_path": "ai_reviews.jsonl",
+      "field": "*",
+      "sha256": "637b588e08901f8828459769abd38916be858950828d0880810bda9c6409c3ec",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:08:01.342049+00:00",
+      "scope": "independent AI auxiliary judgments, not human approval"
+    },
+    {
+      "evidence_id": "ai_review_protocol.json",
+      "source_path": "ai_review_protocol.json",
+      "field": "*",
+      "sha256": "cba55ebd81ef47ea34a747047167e08b1df2794d4dd0195cc8571933ea9b1eaa",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:08:01.342049+00:00",
+      "scope": "pre-review fixed rubric"
+    },
+    {
+      "evidence_id": "environment.json",
+      "source_path": "environment.json",
+      "field": "*",
+      "sha256": "4321f7990420c487bff584bc2218f6a99f209b003258e7b05e9cf8fbd6db438f",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:08:01.342049+00:00",
+      "scope": "local runtime fingerprint"
+    },
+    {
+      "evidence_id": "tags_after.json",
+      "source_path": "tags_after.json",
+      "field": "*",
+      "sha256": "8a8861e9870dbaa5f2f1d0388b50aa4b77128746e491e59ce063d67aa51b7a7d",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:08:01.342049+00:00",
+      "scope": "unchanged model digest after collection"
+    },
+    {
+      "evidence_id": "collector_provenance.json",
+      "source_path": "collector_provenance.json",
+      "field": "*",
+      "sha256": "8937c21d3d5090ef2d0595b0e642df93cce866379c4ae02ca069921361a52940",
+      "run_id": "BASE12_MAC_20261009T125814Z",
+      "observed_at": "2026-10-09T13:08:01.342049+00:00",
+      "scope": "executed code fingerprint"
+    }
+  ],
+  "collection_completed_at": "2026-10-09T13:08:01.342049+00:00",
+  "hash_checks": {
+    "case_manifest": true,
+    "generation_ledger": true,
+    "input_request_raw_response_bindings": true,
+    "verified_generation_records": 94
+  },
+  "private_evidence": [
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV001",
+      "case_id": "DEV001",
+      "task": "response",
+      "response_sha256": "2b9d0828fb6c8f2a0a801fda842928fb3b82b6479d2f804f886083c0d73aa993",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV001.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV001.json",
+      "raw_sha256": "1c3d6e820e333e5dc208701e76c657f23ea699758262481c2a00ebb17a2eb3fa"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV002",
+      "case_id": "DEV002",
+      "task": "response",
+      "response_sha256": "8b9c34917949e0bcf1045aa0ba8fe5e18c0be0be4a0a212c06d65709c796c96a",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV002.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV002.json",
+      "raw_sha256": "d33165006308d706122146ba7196c05bd60d6dca4e78f1359716390a7f6032f2"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV003",
+      "case_id": "DEV003",
+      "task": "response",
+      "response_sha256": "f50f69c4007197989505e81059df709105d9599aaa0f18690aeecfcdf853cbf8",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV003.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV003.json",
+      "raw_sha256": "cdff57d67e3db15eb0064566f1adff9987a2970f08d01f19885ddbc91b2ee27e"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV004",
+      "case_id": "DEV004",
+      "task": "response",
+      "response_sha256": "f7bfecbdb7cbb38096f54d20f007a6c26f93c42f2bf6d583639c20907d7cea9b",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV004.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV004.json",
+      "raw_sha256": "8dc38bf4d4a0b5f2a44d13080a8309f1971bc93eee2c5c35dfa75fa49b8f0f0d"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV005",
+      "case_id": "DEV005",
+      "task": "response",
+      "response_sha256": "e01443fcce68977135f2549f84f5b8e069ccd587ada3a0ad21fa3befd7d84cf0",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV005.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV005.json",
+      "raw_sha256": "66eeb7000123bb01b78f59497e3060b523171d087416c7d74a3be9982e663cac"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV006",
+      "case_id": "DEV006",
+      "task": "response",
+      "response_sha256": "f022c3e7c9709cd0dd92f415c2918c93a2438155d33fd0170df145cafd817e81",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV006.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV006.json",
+      "raw_sha256": "eaed26a5504247d6043f1edc4b0fcacb029f0dbb09f487071ce396cbf73d2237"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV007",
+      "case_id": "DEV007",
+      "task": "response",
+      "response_sha256": "015fc5fc12a243a61032a3f4529dd305006f9f1c2b892e095979e7cbec373c01",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV007.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV007.json",
+      "raw_sha256": "5e3beda95a1e23dcf835c74038a500959fe371aefe823c03997b0173e72fd77d"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV008",
+      "case_id": "DEV008",
+      "task": "response",
+      "response_sha256": "6b2290ab83a0ef5dc6644ae651628a47ef99485e277131b3102163a854efef61",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV008.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV008.json",
+      "raw_sha256": "c709e29772550b23f1241845aba01f336930e5a2858ce7bedf17d51cc1d7ce09"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV009",
+      "case_id": "DEV009",
+      "task": "response",
+      "response_sha256": "2573fc9cbeb00e9d04ee43f42203294951b263a0ab9f57c023658dae0335887b",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV009.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV009.json",
+      "raw_sha256": "2778870c491364ebbdb99bfb94df70359698a585bdaaeedaf9a2ed4633582091"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV010",
+      "case_id": "DEV010",
+      "task": "response",
+      "response_sha256": "cfd45863c65279b424140767ba50472d491b4be721ca8e400768663f75838b40",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV010.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV010.json",
+      "raw_sha256": "974de061fc50c609eb928eaf2affe770fbed1992a07f89e61f5d9627d792ac45"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV011",
+      "case_id": "DEV011",
+      "task": "response",
+      "response_sha256": "ad21e3c0dc72d3847b5b258e83bb97709f720857eaf5b8552ce25e98c03cd48d",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV011.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV011.json",
+      "raw_sha256": "e4e7b0fc567f0266505d8d293ed981651d19e736eda706ebc49e88d8899bb6c6"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV012",
+      "case_id": "DEV012",
+      "task": "response",
+      "response_sha256": "cfab61eb0b387394c199dbcfbc03a629de38f0ecb8b4c932014dd9e73b456497",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV012.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV012.json",
+      "raw_sha256": "088718c0bae10d65c0c139a72a67a48dcf76e4ffae01a85ca22a940d637965a1"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV013",
+      "case_id": "DEV013",
+      "task": "response",
+      "response_sha256": "4e64aea157bc3d8acac06b4cf13f721ebeb5ecda8684e8c0d7476d9d1ac48d07",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV013.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV013.json",
+      "raw_sha256": "57d0908dcf8ae8e6fd9d030333171a6c532f2956b7282fd7443e3d722a7cc06e"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV014",
+      "case_id": "DEV014",
+      "task": "response",
+      "response_sha256": "1a395bb0ead62c72c3a9515fba9cfcd2cf0ec66d0f78091d53b4084f27835a37",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV014.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV014.json",
+      "raw_sha256": "ee176e7df5690a7a5a6e5e2994a9507cdfa74dcd6830b0e96024a30662fc25c9"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV015",
+      "case_id": "DEV015",
+      "task": "response",
+      "response_sha256": "fd11a2cea43decc3c58e9eb62519b584279ff26ac2cdd0c37f41cea438538b37",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV015.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV015.json",
+      "raw_sha256": "39d6412a89becc1c244ab12c68b8e84a44437bba28044af1e7aa24701d58829a"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV016",
+      "case_id": "DEV016",
+      "task": "response",
+      "response_sha256": "64a058c8372cffec5a22df76c2e3ae8d7bafae881b645306f3d82d5ad2407302",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV016.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV016.json",
+      "raw_sha256": "4e7b95bf9a2b98d8832f392a82317c6aeb432650abcb537a345e10d141dbe8ac"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV017",
+      "case_id": "DEV017",
+      "task": "response",
+      "response_sha256": "aac802501b550c763a014524e3a243de6fbe690246481d1adc6854b60e1cd910",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV017.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV017.json",
+      "raw_sha256": "f426616a58e34d018f2aac92099825da9be4bece01b5de6d7800e818db1ef3d2"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV018",
+      "case_id": "DEV018",
+      "task": "response",
+      "response_sha256": "5dbe051330f1f8d01d758d2faf5ffa6dc08ba4ce795496fcc876fe4086f93272",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV018.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV018.json",
+      "raw_sha256": "fa67318bfb3f93f6fe26eb492966dc40577b20d75489f6b1a0bb6911765bdbf8"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV019",
+      "case_id": "DEV019",
+      "task": "response",
+      "response_sha256": "a4e9916ce45a853181cf308973e13076a66d43f76cf9b4e938b30b61199cac56",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV019.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV019.json",
+      "raw_sha256": "e4e4d6e52d1be798539c1fc24b8a113f2611a25015bb51ef405cae0db71d2f52"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV020",
+      "case_id": "DEV020",
+      "task": "response",
+      "response_sha256": "09b6bd1248045a2e9f77a6c1a899e2c1fa1792f004404e6da224fe83c87d1fc8",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV020.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV020.json",
+      "raw_sha256": "2ad31df9d59331e823db5a89b0de430b51d68294387dad7b0141506f434766de"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV021",
+      "case_id": "DEV021",
+      "task": "response",
+      "response_sha256": "229993746e0e77e737d91de1f6185a22751c4e2098dbb3a5fca1b66e32da99e0",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV021.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV021.json",
+      "raw_sha256": "bd887c9082bac577b8e331270558f8c14fbb17112b421998ca393a7f2b38f3af"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV022",
+      "case_id": "DEV022",
+      "task": "response",
+      "response_sha256": "e9d0d58f06a3fddac36131c991ac0bf6c2c178596ef67279b0ca59f9221c2139",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV022.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV022.json",
+      "raw_sha256": "dcc4b55495f607f91301aa7ce178f0477d86499de4fb7b447f33f7785da300a0"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV023",
+      "case_id": "DEV023",
+      "task": "response",
+      "response_sha256": "8cb872fde7dccaf11089522b6ad0f48a45bd67ae6b160e4cd6ae75e6c01e5196",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV023.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV023.json",
+      "raw_sha256": "6d3c0f32e2b3fea30c3cb133daf89ffdcb2fc6013106c726aa049702e7b7e86b"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV024",
+      "case_id": "DEV024",
+      "task": "response",
+      "response_sha256": "4357b83ec1c92a3210d78bc577152386c622cfc480b49ca0fef81bc0dcf33eff",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV024.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV024.json",
+      "raw_sha256": "d77780336ff518be857853778bfadd36cff08016b07c4434b3e17713801c7731"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV025",
+      "case_id": "DEV025",
+      "task": "response",
+      "response_sha256": "0f986995f68c6ba28a495ba3209f305d73f2b495005075841acf60624514ca41",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV025.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV025.json",
+      "raw_sha256": "e0a1370f9f2824f2881733eb2e175ccd1612aba22b7f2af98c5ab9fb3716b503"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV026",
+      "case_id": "DEV026",
+      "task": "response",
+      "response_sha256": "4c29bc4712067a38bf76ca72c58117d643080bee93e8b31bf9e975aa9028cced",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV026.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV026.json",
+      "raw_sha256": "a5c5940219eec853da20ec8a2b6d0b0239cc67877223b9bb98ee1237d78f3477"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV027",
+      "case_id": "DEV027",
+      "task": "response",
+      "response_sha256": "66167fdea9fa1e52305614303d0ae67181f2f54f638a1c5ffcd391c7759a3f0c",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV027.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV027.json",
+      "raw_sha256": "e1ea763c28fb8ad31543c7dfeea79d692696843934b8240a8efecec38c31773a"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV028",
+      "case_id": "DEV028",
+      "task": "response",
+      "response_sha256": "1eac68a737c154572f7601f57461abab7b6c6cd1d41457bb38f7ce9029671324",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV028.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV028.json",
+      "raw_sha256": "d0265a3fb9bf8e93d2b6ea6fede53ce3d8aab078988f4c86375da11062cddb50"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV029",
+      "case_id": "DEV029",
+      "task": "response",
+      "response_sha256": "39bc44c2affa7e6414ffc9c29295821622c9b56a8726a223f8f8817789905731",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV029.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV029.json",
+      "raw_sha256": "6c53c91b293ec801ac522bb8d3cc5373386e5cceb0ecad8bc0a0c7fbd47adcad"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV030",
+      "case_id": "DEV030",
+      "task": "response",
+      "response_sha256": "5976a7e5628afbe5071c923af35869035272324a708226f602c4abd0bdac4e9e",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV030.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV030.json",
+      "raw_sha256": "c620ca7ecadf7b586ccc182bc30fc7d0d6348259537cbcb3a5126de0ca2b1870"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV031",
+      "case_id": "DEV031",
+      "task": "response",
+      "response_sha256": "26b3385735b4fa6cb380d00c475097a91f77cc72db173ea09c3419d9c7e76959",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV031.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV031.json",
+      "raw_sha256": "bf432aafeeba0e7dfda05980207934451f121939ba89a8baeccd74211d143f7e"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_DEV032",
+      "case_id": "DEV032",
+      "task": "response",
+      "response_sha256": "984d8824bb9f7a3019db2be4434c8c34f57b7e2f38fa79d51eaba784a12eacd7",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_DEV032.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_DEV032.json",
+      "raw_sha256": "7ece63b1dc8b1d0e9550e38068560fae9b1466a739e8414b257fe614027d23d6"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T01",
+      "case_id": "T01",
+      "task": "response",
+      "response_sha256": "d084d42eb1677f6bfa8be30572363e5ee86ccb5bf06d55886ce31fa9ad1237ae",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T01.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T01.json",
+      "raw_sha256": "b2b6f344ec2f1614cc70cbe09b0b5ae938532e2af48494da87a08d65ae9b9bd4"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T01",
+      "case_id": "T01",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T01.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T01.json",
+      "raw_sha256": "ce4c0f77e8acbbecbe67642c431967dce1d11642b90b026ed112ea4c31d072fe"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T02",
+      "case_id": "T02",
+      "task": "response",
+      "response_sha256": "390accf057e2901c9da202830c8f14d0608a9860cd4100c6315475ff98efd9b8",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T02.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T02.json",
+      "raw_sha256": "4cd18450fd348d18bc29795567e3e04179009f42b9e6e70506c82eae1a598466"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T02",
+      "case_id": "T02",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T02.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T02.json",
+      "raw_sha256": "f3a219c6bb63b729c6a8e2bfe0368f885606395489656cc2b39428de8225a4a3"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T03",
+      "case_id": "T03",
+      "task": "response",
+      "response_sha256": "16273774a9e4adb964c8d9468bddeede73bd90b3e32d39cd6cfbb5ce6e2dcd4d",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T03.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T03.json",
+      "raw_sha256": "de5b90444aa2f97c90bd78541cfa99372b12531b1569ee20130477a9e52743a3"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T03",
+      "case_id": "T03",
+      "task": "action",
+      "response_sha256": "a42b8352b4c79f604f3ca0f8c703cbd08f648e86099ec682ce98bd4a11286741",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T03.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T03.json",
+      "raw_sha256": "007d9c3b2ef2a784a928baa0eb3807981220d0f08869e41f1f39c5b63a9fa46c"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T04",
+      "case_id": "T04",
+      "task": "response",
+      "response_sha256": "650504ee090f0bf327abb64871344f409c096561feb996e2e0da0fe1800abb4d",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T04.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T04.json",
+      "raw_sha256": "797b56c04b0f9561076f454d4c0c860b410a286a4c47cebc3248c2d29209b778"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T04",
+      "case_id": "T04",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T04.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T04.json",
+      "raw_sha256": "ad08912687e5141ff325141ae04f5cb700bdd9254c8a70806d06bdaed80cd129"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T05",
+      "case_id": "T05",
+      "task": "response",
+      "response_sha256": "445f13152d7538d22eb34f126a38903614496985ddd990592d9c034bc4d09939",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T05.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T05.json",
+      "raw_sha256": "c8e80749acd40beee3446a547866467693934ac4da0182637f2904ba64fcad2b"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T05",
+      "case_id": "T05",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T05.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T05.json",
+      "raw_sha256": "a4c22b37a5141ad963674310c6614240e334aa919b3e6f0b0c0f2b619b606e33"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T06",
+      "case_id": "T06",
+      "task": "response",
+      "response_sha256": "0d080755f1007ad2cb2815dbc37d0904754bde6bc11f19c0f54be154671e0356",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T06.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T06.json",
+      "raw_sha256": "5c53b5ee8edb5f5e9b27dc190577ce8c75c705729dfe60bb77dcbcd65b5f623f"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T06",
+      "case_id": "T06",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T06.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T06.json",
+      "raw_sha256": "3ce5ae8318797f95640b770dd7241d4ddaeb9c968f7473deca23cb283429ad68"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T07",
+      "case_id": "T07",
+      "task": "response",
+      "response_sha256": "60f5a97e2e5127e100deb74258ac75b26164414f55c98bd82c9a39a4e3700e0f",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T07.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T07.json",
+      "raw_sha256": "9e67175c6e14ba663f02e575f16bc2a7ce04fc2fbeaffb78bb32c5432f6500b1"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T07",
+      "case_id": "T07",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T07.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T07.json",
+      "raw_sha256": "c9b1221aa4f62507dea21d00954499b58f544b3fea37bda69055ff9240f56764"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T08",
+      "case_id": "T08",
+      "task": "response",
+      "response_sha256": "931e48c9019c7f3c4ce15102b840fd75a67a87c2748c9e2f380b276e05492c43",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T08.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T08.json",
+      "raw_sha256": "c3c4d6a6a07f0e9f09884c45a01dbfa1af947fd2349ebbd61a03c86373515272"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T08",
+      "case_id": "T08",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T08.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T08.json",
+      "raw_sha256": "b00306df83f91c4c2f8f15954d68c558b69e2e98af7ee421925e75f365b3381b"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T09",
+      "case_id": "T09",
+      "task": "response",
+      "response_sha256": "925aec9c8b40a3ffba319b55c65309ab4e1266fb76491331c95694c4c248a288",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T09.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T09.json",
+      "raw_sha256": "d7d42ecce5faf21a6e55bdcec9805ff24f17658fd6b4fc15aacab11b43aff4da"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T09",
+      "case_id": "T09",
+      "task": "action",
+      "response_sha256": "a42b8352b4c79f604f3ca0f8c703cbd08f648e86099ec682ce98bd4a11286741",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T09.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T09.json",
+      "raw_sha256": "d52edec9043b0b6a0d675959d870edd3bc8d67584e49805235d96c4655a92280"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T10",
+      "case_id": "T10",
+      "task": "response",
+      "response_sha256": "1167738b15cea912e7b9d56af1fd9dab1239f746bab7daf6d4fbbc3629c2faa6",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T10.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T10.json",
+      "raw_sha256": "e6ee468491befb62b8eb8f480184d7306c57e361d1234a82f65afc4515ab2047"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T10",
+      "case_id": "T10",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T10.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T10.json",
+      "raw_sha256": "48016e16f4e06563f4c30d1c844bfd4703291d9eff4ec7d0bb6548c122e43457"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T11",
+      "case_id": "T11",
+      "task": "response",
+      "response_sha256": "82ccff4718f94873fb8cf992b2ed5f21e7db3df8ab4b5a663d0a2fa815811037",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T11.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T11.json",
+      "raw_sha256": "fbc5d9312f213ec1e04529d5171df279f8940cde2d78f670769e3281f80eeff2"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T11",
+      "case_id": "T11",
+      "task": "action",
+      "response_sha256": "b891f9e2a69626266100a5fa3161423408bdf539816e578cc6464a315b138668",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T11.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T11.json",
+      "raw_sha256": "b95b43d6b5d00fede889b347bd7ee326b55809c976b54c7fbe3669baa340a3fe"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T12",
+      "case_id": "T12",
+      "task": "response",
+      "response_sha256": "6010e4233540f04b27efce6764b4b74e3bb821c325c62749b714a54a97edb62b",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T12.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T12.json",
+      "raw_sha256": "ac8d9974088e24bf6289be4465afec2ac7a9b55fbb699340d3019b0458aed246"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T12",
+      "case_id": "T12",
+      "task": "action",
+      "response_sha256": "b891f9e2a69626266100a5fa3161423408bdf539816e578cc6464a315b138668",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T12.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T12.json",
+      "raw_sha256": "6c11c970a5d4773f423ca3af8e5979045353a53c8c830381a31a3986439a54b1"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T13",
+      "case_id": "T13",
+      "task": "response",
+      "response_sha256": "07cf19c318bb27716b366f5b4d07f354fcc989d0cf84086a46827493c9c717e2",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T13.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T13.json",
+      "raw_sha256": "2522fe64534b7e6ae310f15ab476b8dbaae3ec6992a516ba68de7a674ecd7245"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T13",
+      "case_id": "T13",
+      "task": "action",
+      "response_sha256": "a42b8352b4c79f604f3ca0f8c703cbd08f648e86099ec682ce98bd4a11286741",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T13.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T13.json",
+      "raw_sha256": "18ce2c321914d6c3202bacf7928e0897cc44e2a0216b77b224ddd195c46bb612"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T14",
+      "case_id": "T14",
+      "task": "response",
+      "response_sha256": "ce10176b0a85ddeb514f2d2bfb2d3c945efae48467e310900633f62d1c9eb091",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T14.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T14.json",
+      "raw_sha256": "548c6b302941e083bd121af8e1ed9647f8be08c60d054c72a075515b4d595c62"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T14",
+      "case_id": "T14",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T14.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T14.json",
+      "raw_sha256": "b825ea20de27500314a542c81b521e3dbaae97d04ff29ae0a76cce6b257e9f0d"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T15",
+      "case_id": "T15",
+      "task": "response",
+      "response_sha256": "e82343cbf0d65a658f1ecedfc15e2a6a68c93e882a49448dc89f37e389eb407e",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T15.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T15.json",
+      "raw_sha256": "931ac7fc65967c9d3e6fd3ae661a871d75e4784e9d5c8d013ebd92c8958b1477"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T15",
+      "case_id": "T15",
+      "task": "action",
+      "response_sha256": "04af24b41169c12ac09377749f753fa51fcf884447bfb62b5d777c95d15f1a85",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T15.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T15.json",
+      "raw_sha256": "e62c648ed949301c8928955af304ab1a7fb6c00f4b21482a42bcb761dbf4aabf"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T16",
+      "case_id": "T16",
+      "task": "response",
+      "response_sha256": "b8261aebcb7d15f8c1a304a2c3c693d0bc2547703a7cda87e4d52c389f682f55",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T16.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T16.json",
+      "raw_sha256": "ac80e0c1c1564e90e9a1bc836c62559f31d57917876a5fd55857810a48b7a8f5"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T16",
+      "case_id": "T16",
+      "task": "action",
+      "response_sha256": "04af24b41169c12ac09377749f753fa51fcf884447bfb62b5d777c95d15f1a85",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T16.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T16.json",
+      "raw_sha256": "9d0eb31dcfbb5a38f51b7dd1fd1436d1a84b9acc73e4b71ee4d98c78600921eb"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T17",
+      "case_id": "T17",
+      "task": "response",
+      "response_sha256": "82c84e9972691dff51349b8ae6e988fbf9db87f42fb1961268bfe64eb5c1a923",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T17.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T17.json",
+      "raw_sha256": "166606146c551c6e39ca8d2309d5711c9b4762aa13566f81925397b03ef2af3a"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T17",
+      "case_id": "T17",
+      "task": "action",
+      "response_sha256": "04af24b41169c12ac09377749f753fa51fcf884447bfb62b5d777c95d15f1a85",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T17.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T17.json",
+      "raw_sha256": "de518a700b8caafe6088097657d7bba302b584cfd27a4c99f3d965c603d9a84f"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T18",
+      "case_id": "T18",
+      "task": "response",
+      "response_sha256": "cb338656f6ca6ee42e2da3b0065cd1ab6066a5a4ca5b12c7e07e1f295fc8aa5e",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T18.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T18.json",
+      "raw_sha256": "b052af77a17f11293656ed209ceb4d10ca44db688a4a4a8b545165ee46b78df7"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T18",
+      "case_id": "T18",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T18.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T18.json",
+      "raw_sha256": "660d4485f959146764e1ef89d36cd975692f46918c9816ca7ea5a6b11ebe9cb7"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T19",
+      "case_id": "T19",
+      "task": "response",
+      "response_sha256": "fcd9ac93cc01e72166db42d85ce5b1a4f792ad0c1d8d001a6b30e4abdced3ab2",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T19.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T19.json",
+      "raw_sha256": "a237b5a63dcafee1dd390933f0448d22af0df1b3576f4d2028dfee146eb6eadd"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T19",
+      "case_id": "T19",
+      "task": "action",
+      "response_sha256": "04af24b41169c12ac09377749f753fa51fcf884447bfb62b5d777c95d15f1a85",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T19.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T19.json",
+      "raw_sha256": "24290bbb46bd2683c5972f4fe5083b7fa76593c2dbde7cbc00d24134cf055319"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T20",
+      "case_id": "T20",
+      "task": "response",
+      "response_sha256": "3cef140222965b2ca8acd7ac46671644c3fe252471963bfd4eb7a68dee998dcd",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T20.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T20.json",
+      "raw_sha256": "bd09b43e5cc5d8a5ffd426ccf9b6712134b47c0fd257ae8b813aa1dcb4001176"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T20",
+      "case_id": "T20",
+      "task": "action",
+      "response_sha256": "04af24b41169c12ac09377749f753fa51fcf884447bfb62b5d777c95d15f1a85",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T20.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T20.json",
+      "raw_sha256": "7c5c94e9f1c41182e227b27ba263e60ff3f6aba41370daf29ae5b15fc8471dc1"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T21",
+      "case_id": "T21",
+      "task": "response",
+      "response_sha256": "876e348fc65117f4dd7da3501a929572fac1242b08859addd7c8940f737a21b1",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T21.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T21.json",
+      "raw_sha256": "f09098e11508a06c561cf7bbe9ecb24f4bf6d85e67af06788feaf083f26f6d13"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T21",
+      "case_id": "T21",
+      "task": "action",
+      "response_sha256": "04af24b41169c12ac09377749f753fa51fcf884447bfb62b5d777c95d15f1a85",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T21.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T21.json",
+      "raw_sha256": "5142b4e0f8d23b23d73c122f856222da9bb569b6813b5ac6d339d205c8fa8f2d"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T22",
+      "case_id": "T22",
+      "task": "response",
+      "response_sha256": "30aae7fc9c95b14a1c6ddf8a7b4d7535f29d34686644237a09657394fdfe5218",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T22.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T22.json",
+      "raw_sha256": "bd551cd97041b9d5ad43af517a53e1834dc70c3881ded2a7c17ca457b06ceb5d"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T22",
+      "case_id": "T22",
+      "task": "action",
+      "response_sha256": "a42b8352b4c79f604f3ca0f8c703cbd08f648e86099ec682ce98bd4a11286741",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T22.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T22.json",
+      "raw_sha256": "ad84f92a3f03f51331fdf71c2f654ce9500f0f4607c8de5abce7a5f743d88afe"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T23",
+      "case_id": "T23",
+      "task": "response",
+      "response_sha256": "45156656c7a4862d039ef2e2e4fd8f544534f3076b15f9277660165481e8eb00",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T23.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T23.json",
+      "raw_sha256": "4d5f7baf82cf7abbe81a5a1cf0489d1cf7ce955ab1f4b0157fef4d2b029a012a"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T23",
+      "case_id": "T23",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T23.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T23.json",
+      "raw_sha256": "95acd70131b35a935d240ac64d71733b806f499561584bbea0dbeca989de5498"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T24",
+      "case_id": "T24",
+      "task": "response",
+      "response_sha256": "ea9a98fe2e0c241b182dd3d22ad75dc6623bf4312f139f6c5040383865ff75d6",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T24.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T24.json",
+      "raw_sha256": "b199c8b5e82bad2d484d5ada600c3e74fdc6d1ac2d784c7042ac1f504886dcb3"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T24",
+      "case_id": "T24",
+      "task": "action",
+      "response_sha256": "04af24b41169c12ac09377749f753fa51fcf884447bfb62b5d777c95d15f1a85",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T24.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T24.json",
+      "raw_sha256": "8f3399dd40a256574af8fe5ad781016b6dd031e6367419ab503760145e19893d"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T25",
+      "case_id": "T25",
+      "task": "response",
+      "response_sha256": "a5079d963df87f6a5a5bc8267215db080e37d54cb505938cbdad66fd90a945df",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T25.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T25.json",
+      "raw_sha256": "fc8b990b52f3fd9f6659793fa102be406bd2396cc495bacad0f6ac3b24731b36"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T25",
+      "case_id": "T25",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T25.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T25.json",
+      "raw_sha256": "28808f27e1e22aecac23b3c703960b1ada356ba99769c14d181794c25a169b50"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T26",
+      "case_id": "T26",
+      "task": "response",
+      "response_sha256": "2862da8d05184eb93687cbd87d3ddb92f3f7812dafa9a256fffc645fef7d13e1",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T26.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T26.json",
+      "raw_sha256": "4741e268d23b7692602f5100bd730fa7badeb0d61262ac3098768fde59c0d72b"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T26",
+      "case_id": "T26",
+      "task": "action",
+      "response_sha256": "a42b8352b4c79f604f3ca0f8c703cbd08f648e86099ec682ce98bd4a11286741",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T26.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T26.json",
+      "raw_sha256": "394d2f4bf07bc3dd3c98d98e9a910c9e134ad5c1cf67f1e199e46454b9a2e5fa"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T27",
+      "case_id": "T27",
+      "task": "response",
+      "response_sha256": "2f565aa4eacae0779632abb40c78fb5d19177bcd6a018fb7097417546f4463e8",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T27.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T27.json",
+      "raw_sha256": "e333b8c10922e9bd500e1e44b14991c482d49e890d2da1ff05c499e7fa01c39a"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T27",
+      "case_id": "T27",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T27.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T27.json",
+      "raw_sha256": "715d05c5f884ee031020458c2655a75bd4df9033fddbb7cf2f75662c1965d73a"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T28-a",
+      "case_id": "T28-a",
+      "task": "response",
+      "response_sha256": "1800d020119dc99d9f8ee507d3af0d58a1b2454a1624e88b2e35b4b7b3935c38",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T28-a.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T28-a.json",
+      "raw_sha256": "14b2a48613e632ad2b4902f6c2be461b27c092c190b3a6925289e8c49b04e662"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T28-a",
+      "case_id": "T28-a",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T28-a.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T28-a.json",
+      "raw_sha256": "30e18ba03f71014f4e4925801bc2319d54ccf0d7f610c9e6c16895f90814505f"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T28-b",
+      "case_id": "T28-b",
+      "task": "response",
+      "response_sha256": "0be5f19cb05f9b7f19b112ad32b4bdf745f8da58d52bedfe31bec1320e6ab005",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T28-b.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T28-b.json",
+      "raw_sha256": "54810659ead9d3a75a5c19d3e42d1599f7c04ed4f4093c1e3aa4b53625bb6565"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T28-b",
+      "case_id": "T28-b",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T28-b.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T28-b.json",
+      "raw_sha256": "090d42a10384262335de09a2153cda4d8461428f0b6d618c3dfa5cef4c623e36"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T28-c",
+      "case_id": "T28-c",
+      "task": "response",
+      "response_sha256": "db3aea4c32dd4a49c3f7d290c66dc01e3470796b483d75c050a31a9211b56ed8",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T28-c.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T28-c.json",
+      "raw_sha256": "41dc8790f0a06210d50582f34abe3586ffcf7a656a6e876c144695c92b673b34"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T28-c",
+      "case_id": "T28-c",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T28-c.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T28-c.json",
+      "raw_sha256": "ab78812696861ec1be22aca4dd11a893bd01d8ef36413b40eeb28e4027b58f55"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_response_T28-d",
+      "case_id": "T28-d",
+      "task": "response",
+      "response_sha256": "b3e8c94d7237c6ee530f313524feb37677e6734e55f24ebce3905b65f444a793",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/response_T28-d.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/response_T28-d.json",
+      "raw_sha256": "795c0f1c6c569543d1ff4a99d05193ea2e82bfb93d35ca236c5ca2f4d3ccda42"
+    },
+    {
+      "generation_id": "BASE12_MAC_20261009T125814Z_action_T28-d",
+      "case_id": "T28-d",
+      "task": "action",
+      "response_sha256": "f612bca9a4ff774b437340c36f194e74443eaa9cdbdab289eddf46497b99b733",
+      "source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/responses/action_T28-d.txt",
+      "raw_source_path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/private/raw/action_T28-d.json",
+      "raw_sha256": "95737ea1770eafde64d188d110fbb04775bf937c3cadc41b0158c8747a6030d5"
+    }
+  ],
+  "note": "Private evidence index contains paths and hashes only; no counseling text.",
+  "private_evidence_root": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009"
+}

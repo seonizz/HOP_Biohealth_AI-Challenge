@@ -1,0 +1,87 @@
+{
+  "python": "3.12.3",
+  "libraries": {
+    "torch": "2.13.0+cu126",
+    "transformers": "5.17.0",
+    "tokenizers": "0.23.2",
+    "unsloth": "2026.10.3",
+    "unsloth_zoo": "2026.10.3",
+    "peft": "0.21.2",
+    "bitsandbytes": "0.50.2",
+    "accelerate": "1.15.0",
+    "triton": "3.7.1"
+  },
+  "tokenizer_json_sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f",
+  "files": [
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/server.py",
+      "sha256": "7799bc1f1c8c1dc90891b603287c155ce9b02737bacf258dcbed2710d28ab424",
+      "local_file": "evidence/server_snapshot/server.py"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/backend.py",
+      "sha256": "1113f49e4c12ecae34577c7d83a3d71c4f9b5f4e539b352ab4003953ece99682",
+      "local_file": "evidence/server_snapshot/backend.py"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/active_cache_server.py",
+      "sha256": "b985485bd6f2bdc2ccc074adf2a522da2a52341347c0e56acb2a4bea25dfbe15",
+      "local_file": "evidence/server_snapshot/active_cache_server.py"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/active_cache_runtime.py",
+      "sha256": "a0134915e10c0dddeab4df6cf63f0f830decd6fccd0bc085cd776af178930a71",
+      "local_file": "evidence/server_snapshot/active_cache_runtime.py"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/inference_decode.py",
+      "sha256": "1e8552358f2d8ceb37bdb4267dae39f7997a2409c1ce546e0171b42c713b9cf5",
+      "local_file": "evidence/server_snapshot/inference_decode.py"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/config.json",
+      "sha256": "1d19024666c0b9322f91bc65f312eba200d294bd0418ee5514b0f62fb8c51dcf",
+      "local_file": "evidence/server_snapshot/config.json"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/run_server.sh",
+      "sha256": "671273511f48d13fd774a27bb57a218f8493fdfdbd411753e69aacf03e6d16b1",
+      "local_file": "evidence/server_snapshot/run_server.sh"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/active_cache_policy.json",
+      "sha256": "44a51a48a11c92fdba6ec6b0e0cb926a251db1cf9f9ba1b86ebdd5f64224fec0",
+      "local_file": "evidence/server_snapshot/active_cache_policy.json"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/training/checkpoints/step-000000100/CHECKPOINT.json",
+      "sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+      "local_file": "evidence/server_snapshot/CHECKPOINT.json"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/training/checkpoints/step-000000100/adapter_config.json",
+      "sha256": "caa301a0dcfb5d1f3a8813b87d8e46a72420238146a42f3dbfd8795f28c9bebd",
+      "local_file": "evidence/server_snapshot/adapter_config.json"
+    },
+    {
+      "path": "/home/slim/choieram/model_Training/trained_model_api/runtime/decode-opt-20261010/qualification.json",
+      "sha256": "fd0884fedc39df29e8ea1ef07051da8cb25b4d6473c542b934eb36361c074876",
+      "local_file": "evidence/server_snapshot/qualification.json"
+    },
+    {
+      "path": "/home/slim/choieram/models/gemma-4-31B-it-unsloth-bnb-4bit/chat_template.jinja",
+      "sha256": "845f1ee48e39fc942fe190da9df6a1c5db229e17a96ea08966ad1c9274e73d1b",
+      "local_file": "evidence/server_snapshot/chat_template.jinja"
+    },
+    {
+      "path": "/home/slim/choieram/models/gemma-4-31B-it-unsloth-bnb-4bit/tokenizer_config.json",
+      "sha256": "239e1a284bd1e75f2d968b11ea148aab984f753fcb437c4deef8c7ee9e5e6a6a",
+      "local_file": "evidence/server_snapshot/tokenizer_config.json"
+    },
+    {
+      "path": "/home/slim/choieram/models/gemma-4-31B-it-unsloth-bnb-4bit/generation_config.json",
+      "sha256": "70110aa886fa7ee25ce47346d102dd29ca5f967500490b4362fc72068e1db70a",
+      "local_file": "evidence/server_snapshot/generation_config.json"
+    }
+  ]
+}

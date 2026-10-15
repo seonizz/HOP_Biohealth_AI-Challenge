@@ -1,0 +1,71 @@
+{
+  "schema_version": "malssi.stage1-readiness.v1",
+  "mode": "optimizer_canary",
+  "status": "passed",
+  "optimizer_steps": 3,
+  "bindings": {
+    "dataset_sha256": "75acd9ef215057c1d62976e5d690def92284bbff82321eb57811383f1b616d50",
+    "config_sha256": "763ff13f6de1b91cf9f7ee0e02ba8aa4a19ce9dcccf3fdca8b822e4723e608bc",
+    "model_sha256": "3834bee34ebfb601c03e1de0c19510aa969cb1087d9a1501434d1333fcfff1d5",
+    "template_sha256": "845f1ee48e39fc942fe190da9df6a1c5db229e17a96ea08966ad1c9274e73d1b",
+    "code_sha256": "442357f3139e531b9a6726209ae245b0a90fbeeda0dce35fa52bac34ed92f519",
+    "environment_sha256": "984128ac0d5cfcf38652259d3a463ec63c86d56e2189a9012e3d2427e583b689"
+  },
+  "checks": [
+    {
+      "name": "weights_updated",
+      "passed": true,
+      "evidence": {
+        "before": "dd75effaa0fbede54d5a24a302cab6d1520278ed87051f39a174cd934a719e49",
+        "after": "7441687180ab9f46bb84147a5fcc503fb6d10b31cd2e40bd0844702692f4a29d"
+      }
+    },
+    {
+      "name": "checkpoint_saved",
+      "passed": true,
+      "evidence": {
+        "checkpoint": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/canary/checkpoints/step-000000003"
+      }
+    },
+    {
+      "name": "checkpoint_resumed",
+      "passed": true,
+      "evidence": {
+        "step2_manifest_sha256": "f12cf22c64f7d691e2099141d858301e5591eb5fe490568f343dbad47019e6ab",
+        "step2_adapter_sha256": "5ab0573eada11ed87bdd7d8fb6a94d8ebb5285b616f0bcaf3a742f1640432d7c",
+        "step3_adapter_sha256": "d684ca346587b624a79e662ee0e14bc09fd21ec5bea36678d4dc61aa13dee3b3",
+        "resumed_in_separate_process": true
+      }
+    },
+    {
+      "name": "longest_source_context",
+      "passed": true,
+      "evidence": {
+        "max_source_sequence_length": 25316,
+        "configured_context_limit": 25316,
+        "microbatch_size": 1,
+        "accumulation_steps": 8,
+        "gpu_uuids": [
+          "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+          "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642"
+        ],
+        "canary_only_repeat_longest_eight_each_step": true,
+        "max_sequence_length_each_step": [
+          25316,
+          25316,
+          25316
+        ]
+      }
+    }
+  ],
+  "artifacts": {
+    "canary/RUN.json": "71473620e8a17e64fc2b05e9419153e252e3fb1a3f1d90cdcd89dbc9ba48855c",
+    "canary/TRAINING_RESULT.json": "72612e33f4aab49c6cae49443e550cb7b26dc3540104886256ecdffa814a7b9b",
+    "canary_execution.json": "ed019ee489afcfe930cc211bae1efd30c6e2b2adc193ab5b084e903f8d88802a",
+    "canary-resume_execution.json": "dfce60a4b197bec8ffaebc27725c40957137ad95b035fe7a3ed17823f6052e95",
+    "canary/checkpoints/step-000000002/CHECKPOINT.json": "f12cf22c64f7d691e2099141d858301e5591eb5fe490568f343dbad47019e6ab",
+    "canary/checkpoints/step-000000003/CHECKPOINT.json": "f29f263726b8c5e2f53a796110e781da79fca0dafa4abc43e732259a71934cae",
+    "canary/train.jsonl": "9bf9993d5d5add6cf4028e33731256c2e01b19be8ce5c772a6aed8c078de6842"
+  },
+  "hop_readiness": false
+}

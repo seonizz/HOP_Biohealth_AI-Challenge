@@ -1,0 +1,20 @@
+{
+  "case_id": "T28-c",
+  "task": "response",
+  "attempt_index": 1,
+  "status": "unknown_completion",
+  "resubmitted": false,
+  "checked_at": "2026-10-09T20:28:05.110886+00:00",
+  "reviewer": "native read-only api_path subagent",
+  "findings": {
+    "collection_route": "stateless; no DB commit or persisted response body",
+    "sqlite_requests_in_failure_window": 0,
+    "sqlite_latest_updated_utc": "2026-10-09T18:08:00Z",
+    "timing_log_latest_completed_utc": "2026-10-09T17:32:48.936Z",
+    "server_log_latest_modified_utc": "2026-10-09T19:33:57.988936Z",
+    "server_log_sha256": "ea8fe1d71c14287124ea00425465bd0400579d51d095122c6ae21c4c084e5b11",
+    "completion_body_recoverable": false,
+    "generation_on_server_confirmed": null
+  },
+  "resolution": "Preserve original transport error and unknown first attempt; resume only previously unattempted cases. Missing answer and token values remain null."
+}

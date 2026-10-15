@@ -1,0 +1,11 @@
+{
+  "attempt_index": 1,
+  "case_id": "T28-a",
+  "generation_id": "FT31_STEP100_20261009T192608Z_action_T28-a",
+  "input_sha256": "e4d962d6ec24c6e9ff8066e938870e87735f299c9caf29c13020f33db2c3a8d0",
+  "request_file": "private/requests/action_T28-a.json",
+  "request_sha256": "6be2338026f9470b7aae50461b15e8d19cc156d54fa9dc5e33f5d37481217e97",
+  "run_id": "FT31_STEP100_20261009T192608Z",
+  "started_at": "2026-10-09T20:21:56.554425+00:00",
+  "task": "action"
+}

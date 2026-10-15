@@ -1,0 +1,22 @@
+{
+  "initial_oov": "죽이 · 1회 · 원문에 보존 · 현재 TF-IDF 어휘 밖",
+  "repeated_word": "되든 · 2회 · TF-IDF 0.7860",
+  "selected_oov": "밥이 · 1회 · 원문에 보존 · 현재 TF-IDF 어휘 밖",
+  "responsive": [
+    {
+      "width": 736,
+      "client": 704,
+      "scroll": 704,
+      "bars": 5,
+      "svgWidth": 382.09375
+    },
+    {
+      "width": 320,
+      "client": 288,
+      "scroll": 288,
+      "bars": 5,
+      "svgWidth": 288
+    }
+  ],
+  "page_errors": []
+}

@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+review_app/*.sqlite*
+review_app/*.jsonl
+review_app/*.png
+audit_2026-10-09/word_review_candidates.jsonl

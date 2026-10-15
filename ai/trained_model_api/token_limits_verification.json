@@ -1,0 +1,63 @@
+{
+  "status": "passed",
+  "checkpoint_step": 100,
+  "configured_context_tokens": 131072,
+  "configured_output_tokens": 131071,
+  "source_training_context": 25316,
+  "source_longest_supervised_response": 3922,
+  "generated_output_maximum_measured": false,
+  "checks": [
+    {
+      "case": "maximum_input_plus_one",
+      "input_tokens": 131071,
+      "requested_output_tokens": 1,
+      "status_code": 200,
+      "elapsed_seconds": 165.65404178597964,
+      "usage": {
+        "prompt_tokens": 131071,
+        "completion_tokens": 1,
+        "total_tokens": 131072
+      },
+      "finish_reason": "length"
+    },
+    {
+      "case": "maximum_output_reservation",
+      "input_tokens": 64,
+      "requested_output_tokens": 131008,
+      "status_code": 200,
+      "elapsed_seconds": 0.871117937960662,
+      "usage": {
+        "prompt_tokens": 64,
+        "completion_tokens": 3,
+        "total_tokens": 67
+      },
+      "finish_reason": "stop"
+    },
+    {
+      "case": "one_token_over_context",
+      "input_tokens": 131072,
+      "requested_output_tokens": 1,
+      "status_code": 400,
+      "elapsed_seconds": 0.15035680797882378,
+      "error": {
+        "message": "Prompt (131072) plus max_tokens (1) exceeds the 131072-token context budget; no text was truncated",
+        "type": "invalid_request_error"
+      }
+    },
+    {
+      "case": "short_after_long_requests",
+      "input_tokens": 64,
+      "requested_output_tokens": 16,
+      "status_code": 200,
+      "elapsed_seconds": 0.8532277039485052,
+      "usage": {
+        "prompt_tokens": 64,
+        "completion_tokens": 3,
+        "total_tokens": 67
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "updated_utc": "2026-10-09T16:20:34.833858+00:00",
+  "phase": "completed"
+}

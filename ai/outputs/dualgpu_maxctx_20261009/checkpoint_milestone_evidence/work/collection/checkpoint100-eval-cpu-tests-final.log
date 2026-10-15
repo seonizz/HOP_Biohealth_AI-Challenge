@@ -1,0 +1,15 @@
+test_completed_recovery_is_idempotent_and_rejects_changed_measurement_identity (test_checkpoint100_eval.EvaluationTests.test_completed_recovery_is_idempotent_and_rejects_changed_measurement_identity) ... ok
+test_counts_bind_all_100_real_windows_and_reject_missing_or_wrong_tokens (test_checkpoint100_eval.EvaluationTests.test_counts_bind_all_100_real_windows_and_reject_missing_or_wrong_tokens) ... ok
+test_fixed_sample_is_read_only_and_rejects_changed_original_manifest (test_checkpoint100_eval.EvaluationTests.test_fixed_sample_is_read_only_and_rejects_changed_original_manifest) ... ok
+test_interrupted_publication_recovers_saved_timing_after_training_advances (test_checkpoint100_eval.EvaluationTests.test_interrupted_publication_recovers_saved_timing_after_training_advances) ... ok
+test_original_driver_identity_cannot_be_rebound_to_new_evaluator (test_checkpoint100_eval.EvaluationTests.test_original_driver_identity_cannot_be_rebound_to_new_evaluator) ... ok
+test_previous_baseline_and_step16_results_are_verified_against_original_public_result (test_checkpoint100_eval.EvaluationTests.test_previous_baseline_and_step16_results_are_verified_against_original_public_result) ... ok
+test_protected_snapshot_detects_training_and_previous_report_changes (test_checkpoint100_eval.EvaluationTests.test_protected_snapshot_detects_training_and_previous_report_changes) ... ok
+test_public_report_privacy_deltas_hash_sidecar_and_preserves_original_results (test_checkpoint100_eval.EvaluationTests.test_public_report_privacy_deltas_hash_sidecar_and_preserves_original_results) ... ok
+test_restore_refuses_step99_and_cursor799_before_loading_state (test_checkpoint100_eval.EvaluationTests.test_restore_refuses_step99_and_cursor799_before_loading_state) ... ok
+test_actual_cpu_checkpoint100_restore_evaluate_no_parameter_or_file_changes (test_checkpoint100_eval.TorchEvaluationTests.test_actual_cpu_checkpoint100_restore_evaluate_no_parameter_or_file_changes) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 11.227s
+
+OK

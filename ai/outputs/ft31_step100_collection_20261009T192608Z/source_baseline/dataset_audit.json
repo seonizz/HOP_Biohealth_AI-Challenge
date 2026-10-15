@@ -1,0 +1,49 @@
+{
+  "observed_at": "2026-10-09T12:58:14.544312+00:00",
+  "archive": "/Users/chihun/Documents/ChatGPT/HOP_agent/말씨_학습_에이전트_인수인계_2026-10-09.zip",
+  "archive_sha256": "18e5cffe5efa77e79c7aa56e739c52dfdf334af8aa9623f0b24743ead44f35ed",
+  "validation_member": "malssi_stage1_training_20261009/data/validation.jsonl.gz",
+  "validation_member_sha256": "1860009f34c586631187461e489f62529905ec0f3c96131376bfba211e3f68d4",
+  "validation_population": 1724,
+  "common_candidate_rows": 1335,
+  "native_length_eligible_rows": 1335,
+  "selected_source_rows": 32,
+  "selected_source_groups": 21,
+  "selected_source_conversations": 32,
+  "selection_seed": 3407,
+  "selection_rule": "sha256(seed+id) order; one per group first, then distinct conversations",
+  "last_target_removed_from_all_source_inputs": true,
+  "legacy_train_validation_overlap_counts": {
+    "id": 0,
+    "source_conversation_id": 0,
+    "source_group_id": 0
+  },
+  "independent_test": false,
+  "full_current_train_dev_overlap_audit": null,
+  "pre_generation_exclusions": [
+    {
+      "case_id": "T29-64",
+      "reason": "pre_generation_context_limit",
+      "tokens": {
+        "response": 4287,
+        "action": 4663
+      }
+    },
+    {
+      "case_id": "T29-256",
+      "reason": "pre_generation_context_limit",
+      "tokens": {
+        "response": 16191,
+        "action": 16951
+      }
+    },
+    {
+      "case_id": "T30",
+      "reason": "data_production_pipeline_not_model_response"
+    }
+  ],
+  "task_counts": {
+    "response": 63,
+    "action": 31
+  }
+}

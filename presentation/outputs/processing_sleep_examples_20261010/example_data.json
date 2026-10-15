@@ -1,0 +1,429 @@
+{
+  "data_kind": "observed_source_dialogue_excerpt",
+  "source": {
+    "sqlite_path": "/Users/chihun/Documents/ChatGPT/HOP_data/outputs/private/corpus.sqlite",
+    "training_path": "/Users/chihun/Documents/ChatGPT/HOP_data/deliverables/malssi_stage1_training_20261009/data/train.jsonl.gz",
+    "training_jsonl_line": 3719,
+    "sft_id": "sft_6a520c1157977c0bd6be556f69ba0025eb2f3aa1fc05b1f55fb92526ff20f98d",
+    "source_conversation_id": "conv_3e65164dcec8f43dedb30df0a442d603db984bfe47e98367e8beb0bf0c99ad21",
+    "split": "train",
+    "numeric_directory": "/Users/chihun/Documents/ChatGPT/HOP_data/outputs/private/numeric"
+  },
+  "client_turn": {
+    "utterance_id": "utt_14a52c60237dce342f74c4bef460fed173fbc9f51bc482fbf415061777b9e445",
+    "ordinal": 19,
+    "speaker": "내담자",
+    "text": "네, 잠이 안 와서 한 2시간 잤나? 잠을 못 자겠는 거예요, 생각이 계속 나서. 그날 저녁에 그러고 그다음엔 괜찮았어요."
+  },
+  "previous_counselor": {
+    "utterance_id": "utt_790785e2d47110d167eed6d9343023fb0e7b93713305a186a021884598310e00",
+    "ordinal": 18,
+    "speaker": "상담사",
+    "text": "그날 꺼내는 그날은 조금 그게 더 많이 생각이 나서 잠도 못 잘 정도로 불안까지 느낀 건가요, 혹시 불안감까지?"
+  },
+  "target": {
+    "utterance_id": "utt_6824ba205ac11189d2ce2aa216bb6b3d304f5c0e738d09ab72304f070985612d",
+    "ordinal": 20,
+    "speaker": "상담사",
+    "text": "우리 선생님이 이렇게 잠을 들지 못하고 이렇게 뒤척거리게 했던 그 생각 중에서 제일 많이 선생님을 힘들게 했던 게 있을까요?"
+  },
+  "sentences": [
+    {
+      "sentence_id": "sent_e46796cfcbb2d5d33be71806bbfa8a3e23351aa3ec46d6c3a76756a5591c3df2",
+      "ordinal": 34,
+      "text": "네, 잠이 안 와서 한 2시간 잤나?",
+      "start_char": 0,
+      "end_char": 20,
+      "words": [
+        {
+          "surface": "네",
+          "normalized": "네",
+          "start_char": 0,
+          "end_char": 1
+        },
+        {
+          "surface": "잠이",
+          "normalized": "잠이",
+          "start_char": 3,
+          "end_char": 5
+        },
+        {
+          "surface": "안",
+          "normalized": "안",
+          "start_char": 6,
+          "end_char": 7
+        },
+        {
+          "surface": "와서",
+          "normalized": "와서",
+          "start_char": 8,
+          "end_char": 10
+        },
+        {
+          "surface": "한",
+          "normalized": "한",
+          "start_char": 11,
+          "end_char": 12
+        },
+        {
+          "surface": "2시간",
+          "normalized": "2시간",
+          "start_char": 13,
+          "end_char": 16
+        },
+        {
+          "surface": "잤나",
+          "normalized": "잤나",
+          "start_char": 17,
+          "end_char": 19
+        }
+      ],
+      "characters": 20,
+      "nonspace_characters": 14,
+      "tokens": 7,
+      "unique_tokens": 7,
+      "numeric_row": 893600,
+      "mapping_line": 893601,
+      "stored_statistics": [
+        20.0,
+        14.0,
+        7.0,
+        7.0
+      ]
+    },
+    {
+      "sentence_id": "sent_9469ff34f8ecc8d43b006c36d2c77f25d88b88f07799eea8e98afa1b9974f4eb",
+      "ordinal": 35,
+      "text": "잠을 못 자겠는 거예요, 생각이 계속 나서.",
+      "start_char": 21,
+      "end_char": 45,
+      "words": [
+        {
+          "surface": "잠을",
+          "normalized": "잠을",
+          "start_char": 21,
+          "end_char": 23
+        },
+        {
+          "surface": "못",
+          "normalized": "못",
+          "start_char": 24,
+          "end_char": 25
+        },
+        {
+          "surface": "자겠는",
+          "normalized": "자겠는",
+          "start_char": 26,
+          "end_char": 29
+        },
+        {
+          "surface": "거예요",
+          "normalized": "거예요",
+          "start_char": 30,
+          "end_char": 33
+        },
+        {
+          "surface": "생각이",
+          "normalized": "생각이",
+          "start_char": 35,
+          "end_char": 38
+        },
+        {
+          "surface": "계속",
+          "normalized": "계속",
+          "start_char": 39,
+          "end_char": 41
+        },
+        {
+          "surface": "나서",
+          "normalized": "나서",
+          "start_char": 42,
+          "end_char": 44
+        }
+      ],
+      "characters": 24,
+      "nonspace_characters": 18,
+      "tokens": 7,
+      "unique_tokens": 7,
+      "numeric_row": 581238,
+      "mapping_line": 581239,
+      "stored_statistics": [
+        24.0,
+        18.0,
+        7.0,
+        7.0
+      ]
+    },
+    {
+      "sentence_id": "sent_c871c0ba9115584352ae71cddabc9b2f694d3b41c2a7b33331cd748a83e99e66",
+      "ordinal": 36,
+      "text": "그날 저녁에 그러고 그다음엔 괜찮았어요.",
+      "start_char": 46,
+      "end_char": 68,
+      "words": [
+        {
+          "surface": "그날",
+          "normalized": "그날",
+          "start_char": 46,
+          "end_char": 48
+        },
+        {
+          "surface": "저녁에",
+          "normalized": "저녁에",
+          "start_char": 49,
+          "end_char": 52
+        },
+        {
+          "surface": "그러고",
+          "normalized": "그러고",
+          "start_char": 53,
+          "end_char": 56
+        },
+        {
+          "surface": "그다음엔",
+          "normalized": "그다음엔",
+          "start_char": 57,
+          "end_char": 61
+        },
+        {
+          "surface": "괜찮았어요",
+          "normalized": "괜찮았어요",
+          "start_char": 62,
+          "end_char": 67
+        }
+      ],
+      "characters": 22,
+      "nonspace_characters": 18,
+      "tokens": 5,
+      "unique_tokens": 5,
+      "numeric_row": 784466,
+      "mapping_line": 784467,
+      "stored_statistics": [
+        22.0,
+        18.0,
+        5.0,
+        5.0
+      ]
+    }
+  ],
+  "direct_statistics": {
+    "characters": 68,
+    "sentences": 3,
+    "surface_words": 19,
+    "frequencies": {
+      "네": 1,
+      "잠이": 1,
+      "안": 1,
+      "와서": 1,
+      "한": 1,
+      "2시간": 1,
+      "잤나": 1,
+      "잠을": 1,
+      "못": 1,
+      "자겠는": 1,
+      "거예요": 1,
+      "생각이": 1,
+      "계속": 1,
+      "나서": 1,
+      "그날": 1,
+      "저녁에": 1,
+      "그러고": 1,
+      "그다음엔": 1,
+      "괜찮았어요": 1
+    }
+  },
+  "local_cooccurrences_by_sentence": [
+    [
+      {
+        "left": "네",
+        "right": "잠이",
+        "distance": 1
+      },
+      {
+        "left": "네",
+        "right": "안",
+        "distance": 2
+      },
+      {
+        "left": "잠이",
+        "right": "안",
+        "distance": 1
+      },
+      {
+        "left": "잠이",
+        "right": "와서",
+        "distance": 2
+      },
+      {
+        "left": "안",
+        "right": "와서",
+        "distance": 1
+      },
+      {
+        "left": "안",
+        "right": "한",
+        "distance": 2
+      },
+      {
+        "left": "와서",
+        "right": "한",
+        "distance": 1
+      },
+      {
+        "left": "와서",
+        "right": "2시간",
+        "distance": 2
+      },
+      {
+        "left": "한",
+        "right": "2시간",
+        "distance": 1
+      },
+      {
+        "left": "한",
+        "right": "잤나",
+        "distance": 2
+      },
+      {
+        "left": "2시간",
+        "right": "잤나",
+        "distance": 1
+      }
+    ],
+    [
+      {
+        "left": "잠을",
+        "right": "못",
+        "distance": 1
+      },
+      {
+        "left": "잠을",
+        "right": "자겠는",
+        "distance": 2
+      },
+      {
+        "left": "못",
+        "right": "자겠는",
+        "distance": 1
+      },
+      {
+        "left": "못",
+        "right": "거예요",
+        "distance": 2
+      },
+      {
+        "left": "자겠는",
+        "right": "거예요",
+        "distance": 1
+      },
+      {
+        "left": "자겠는",
+        "right": "생각이",
+        "distance": 2
+      },
+      {
+        "left": "거예요",
+        "right": "생각이",
+        "distance": 1
+      },
+      {
+        "left": "거예요",
+        "right": "계속",
+        "distance": 2
+      },
+      {
+        "left": "생각이",
+        "right": "계속",
+        "distance": 1
+      },
+      {
+        "left": "생각이",
+        "right": "나서",
+        "distance": 2
+      },
+      {
+        "left": "계속",
+        "right": "나서",
+        "distance": 1
+      }
+    ],
+    [
+      {
+        "left": "그날",
+        "right": "저녁에",
+        "distance": 1
+      },
+      {
+        "left": "그날",
+        "right": "그러고",
+        "distance": 2
+      },
+      {
+        "left": "저녁에",
+        "right": "그러고",
+        "distance": 1
+      },
+      {
+        "left": "저녁에",
+        "right": "그다음엔",
+        "distance": 2
+      },
+      {
+        "left": "그러고",
+        "right": "그다음엔",
+        "distance": 1
+      },
+      {
+        "left": "그러고",
+        "right": "괜찮았어요",
+        "distance": 2
+      },
+      {
+        "left": "그다음엔",
+        "right": "괜찮았어요",
+        "distance": 1
+      }
+    ]
+  ],
+  "cooccurrence_definition": "Original word occurrences within the same sentence, distance <=2; directly counted, not fitted global matrix values",
+  "training": {
+    "full_input_messages_including_system": 21,
+    "context_original_ordinals": [
+      0,
+      19
+    ],
+    "target_original_ordinal": 20,
+    "loss_message_mask": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1
+    ],
+    "target_origin": "observed_counselor_utterance",
+    "display_is_excerpt": true
+  },
+  "verification": {
+    "full_prefix_matches": true,
+    "source_spans_match": true,
+    "stored_npy_statistics_match": true,
+    "target_mask_matches": true
+  }
+}

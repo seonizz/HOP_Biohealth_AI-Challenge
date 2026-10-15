@@ -1,0 +1,326 @@
+{
+  "case_id": "attached_mother_child",
+  "code": "MODEL_INVALID_RESPONSE",
+  "reason": "agent_review_rejected",
+  "trace": [
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "state",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 16516,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2154,
+        "completion_tokens": 314,
+        "total_tokens": 2468
+      },
+      "reason": "question_plan_validation"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "state",
+      "attempt": 2,
+      "status": 200,
+      "duration_ms": 14095,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 2258,
+        "completion_tokens": 258,
+        "total_tokens": 2516
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "relationship_analysis",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 31165,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4731,
+        "completion_tokens": 688,
+        "total_tokens": 5419
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "communication_plan",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 25073,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4561,
+        "completion_tokens": 405,
+        "total_tokens": 4966
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_write",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 40514,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5162,
+        "completion_tokens": 717,
+        "total_tokens": 5879
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_review",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 18543,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5114,
+        "completion_tokens": 212,
+        "total_tokens": 5326
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_repair",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 40138,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5989,
+        "completion_tokens": 737,
+        "total_tokens": 6726
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_review_after_repair",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 25802,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5138,
+        "completion_tokens": 358,
+        "total_tokens": 5496
+      },
+      "reason": "success"
+    }
+  ],
+  "stage_outputs": [
+    {
+      "stage": "relationship_analysis",
+      "output": {
+        "patient_summary": "지민이는 학업과 진로에 대한 과도한 걱정으로 인해 계획을 반복적으로 수정하며 불안해하는 모습을 보입니다. 완벽주의적인 성향으로 인해 스스로를 압박하며 밤잠을 설치는 등 일상생활에 어려움을 겪고 있습니다.",
+        "supporter_summary": "이용자는 자녀의 불안 증세로 인해 무력감을 느끼며 밤잠을 설치는 등 정서적 부담을 겪고 있습니다. 남편과의 갈등 및 본인의 수면 부족으로 인해 지쳐있는 상태입니다.",
+        "relationship": {
+          "label": "자녀",
+          "supporter_role": "어머니",
+          "dynamics": [
+            {
+              "interpretation": "자녀는 불안감을 해소하기 위해 반복적으로 확인을 요청하고, 어머니는 이를 수용하며 지켜보고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "mood",
+                  "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+                }
+              ],
+              "certainty": "reported"
+            },
+            {
+              "interpretation": "이용자는 자녀의 불안에 대해 무력감을 느끼며 반복적인 위로를 건네고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "feeling",
+                  "quote": "가슴이 철렁했고, 뭐라고 말해야 할지 몰라서 “괜찮아, 자자”만 반복했어요. 제가 너무 무력하게 느껴졌어요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "strengths": [
+            {
+              "interpretation": "이용자는 자녀를 이해하고 지지하려는 의지를 가지고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "user_goal",
+                  "question_id": "want",
+                  "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "boundaries": [
+            {
+              "interpretation": "이용자는 자녀의 문제로 인해 본인의 수면과 일상에 영향을 받고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "cgchange_more",
+                  "quote": "저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ]
+        },
+        "unknowns": [
+          "지민이가 스스로 느끼는 불안의 핵심 원인",
+          "지민이가 실제로 원하는 도움의 구체적 형태"
+        ],
+        "safety": {
+          "urgent": false,
+          "evidence": []
+        }
+      }
+    },
+    {
+      "stage": "communication_plan",
+      "output": {
+        "voice": "따뜻하고 공감 어린 어머니의 말투",
+        "opening_evidence": [
+          {
+            "subject": "supporter",
+            "question_id": "moment",
+            "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+          },
+          {
+            "subject": "supporter",
+            "question_id": "feeling",
+            "quote": "가슴이 철렁했고, 뭐라고 말해야 할지 몰라서 “괜찮아, 자자”만 반복했어요. 제가 너무 무력하게 느껴졌어요."
+          }
+        ],
+        "user_intent": "대화 시작 허락을 구하며, 지민이가 밤새 계획표를 고치며 불안해하는 모습에 대한 어머니의 걱정을 전달하고, 계획이 바뀌어도 괜찮다는 지지의 마음을 전하며 혼자 감당하지 않아도 된다는 것을 알리고자 합니다.",
+        "patient_choice": "지민이가 스스로 불안을 다스리는 방법을 배우거나 전문가 상담을 받는 선택지",
+        "supporter_care": [
+          "여동생에게 고민을 털어놓으며 얻는 정서적 지지",
+          "밤에 아이 방 불빛을 보며 느끼는 수면 부족과 정서적 부담"
+        ],
+        "avoid_patterns": [
+          "남편의 말처럼 '원래 예민한 시기'라며 상황을 과소평가하는 태도",
+          "아이의 불안을 해결해 주어야 한다는 압박감에 스스로를 채찍질하는 것"
+        ],
+        "next_step": "지민이가 밤새 계획을 수정하며 느꼈을 막막함을 먼저 충분히 들어주기"
+      }
+    },
+    {
+      "stage": "guide_write",
+      "output": {
+        "guide": {
+          "top": "불안",
+          "script": "지민아, 요즘 밤늦게까지 계획표를 고치느라 잠도 못 자고 많이 힘들지? 엄마는 네가 완벽하게 해내지 못할까 봐 불안해하는 그 마음이 느껴져서 마음이 참 아파. 엄마는 네가 계획을 바꾸더라도, 혹은 조금 늦어지더라도 괜찮아. 네가 혼자서 모든 걸 다 감당하려고 애쓰는 것보다, 엄마가 곁에서 같이 고민해 주는 게 훨씬 중요하거든. 혹시 지금 엄마랑 이런 이야기 조금 나눠볼 수 있을까? 만약 지금은 마음이 힘들어서 말하기 어려우면 나중에 편할 때 이야기해 줘도 괜찮아.",
+          "doList": [
+            "지민이의 불안을 인정해주기. '계획이 바뀌는 건 네 잘못이 아니야. 지금은 마음이 많이 지친 상태인 것 같아.'라고 말해주세요.",
+            "함께 있어주기. '어떤 계획을 세우든 엄마는 네 편이야. 오늘 하루는 계획표 대신 푹 쉬는 건 어때?'라고 제안해보세요.",
+            "전문가 도움 제안하기. '혼자서 이 불안을 다스리기가 너무 힘들다면, 전문가 선생님과 상담을 통해 마음을 돌보는 방법도 함께 알아볼 수 있어.'라고 말해보세요."
+          ],
+          "avoid": [
+            "상황을 과소평가하기. '고2면 원래 예민한 시기야'라는 말 대신 '지금 네가 느끼는 불안이 정말 힘들구나'라고 공감해주세요.",
+            "해결책만 제시하기. '그냥 학원 하나 줄여'라고 말하기보다 '어떤 게 너를 가장 편하게 해줄 수 있을까?'라고 물어봐 주세요."
+          ],
+          "next": "지민이가 대화를 원한다면, 밤새 계획을 수정하며 느꼈을 막막함과 불안에 대해 충분히 들어주세요. 해결책을 바로 제시하기보다 지민이가 느끼는 감정을 그대로 머무르게 해주는 것이 중요합니다. 만약 지민이가 대화를 원하지 않는다면, 억지로 대화를 이어가려 하기보다 '네가 편안해질 때까지 기다려 줄게'라고 말하며 지민이의 공간을 존중해 주세요. 어머니께서도 밤마다 아이의 방 불빛을 보며 느끼는 무력감과 피로를 홀로 감당하지 마시고, 여동생분과 대화하며 마음을 나누는 시간을 꼭 가지셨으면 좋겠습니다.",
+          "care": {
+            "feel": "지민이가 불안해하는 모습에 가슴이 철렁하고 무력감을 느끼셨군요. 밤마다 아이의 방 불빛을 보며 잠을 설치는 어머니의 마음이 얼마나 애타고 지쳐있을지 느껴집니다.",
+            "tips": [
+              "여동생분과 대화하며 감정을 털어놓는 시간을 가지세요.",
+              "아이의 불안을 모두 해결해 주어야 한다는 압박감에서 잠시 내려와 어머니의 휴식을 챙겨주세요."
+            ]
+          }
+        },
+        "assessment": {
+          "safety": false
+        }
+      }
+    },
+    {
+      "stage": "guide_review",
+      "output": {
+        "approved": false,
+        "issues": [
+          {
+            "field": "script",
+            "reason": "사용자의 목적(user_goal) 중 '상담이나 진료를 권하고 싶다'는 의도가 script에 충분히 반영되지 않았습니다.",
+            "repair": "스크립트 마지막 부분에 '전문가 선생님과 상담을 통해 마음을 돌보는 방법도 함께 알아볼 수 있어'라는 내용을 포함하여 상담 권유의 의도를 명확히 전달하세요."
+          },
+          {
+            "field": "doList",
+            "reason": "전문가 도움 제안 시, 사용자의 목적에 부합하는 상담 권유가 구체적으로 포함되어야 합니다.",
+            "repair": "전문가 도움 제안하기 항목에 '전문가 선생님과 상담을 통해 마음을 돌보는 방법도 함께 알아볼 수 있어'라는 구체적인 권유 문구를 추가하세요."
+          }
+        ]
+      }
+    },
+    {
+      "stage": "guide_repair",
+      "output": {
+        "guide": {
+          "top": "불안",
+          "script": "지민아, 요즘 밤늦게까지 계획표를 고치느라 잠도 못 자고 많이 힘들지? 엄마는 네가 완벽하게 해내지 못할까 봐 불안해하는 그 마음이 느껴져서 마음이 참 아파. 엄마는 네가 계획을 바꾸더라도, 혹은 조금 늦어지더라도 괜찮아. 네가 혼자서 모든 걸 다 감당하려고 애쓰는 것보다, 엄마가 곁에서 같이 고민해 주는 게 훨씬 중요하거든. 혹시 지금 엄마랑 이런 이야기 조금 나눠볼 수 있을까? 만약 지금은 마음이 힘들어서 말하기 어려우면 나중에 편할 때 이야기해 줘도 괜찮아. 우리 같이 전문가 선생님과 상담을 통해 마음을 돌보는 방법도 함께 알아볼 수 있어.",
+          "doList": [
+            "지민이의 불안을 인정해주기. '계획이 바뀌는 건 네 잘못이 아니야. 지금은 마음이 많이 지친 상태인 것 같아.'라고 말해주세요.",
+            "함께 있어주기. '어떤 계획을 세우든 엄마는 네 편이야. 오늘 하루는 계획표 대신 푹 쉬는 건 어때?'라고 제안해보세요.",
+            "전문가 도움 제안하기. '혼자서 이 불안을 다스리기가 너무 힘들다면, 전문가 선생님과 상담을 통해 마음을 돌보는 방법도 함께 알아볼 수 있어.'라고 말해보세요."
+          ],
+          "avoid": [
+            "상황을 과소평가하기. '고2면 원래 예민한 시기야'라는 말 대신 '지금 네가 느끼는 불안이 정말 힘들구나'라고 공감해주세요.",
+            "해결책만 제시하기. '그냥 학원 하나 줄여'라고 말하기보다 '어떤 게 너를 가장 편하게 해줄 수 있을까?'라고 물어봐 주세요."
+          ],
+          "next": "지민이가 대화를 원한다면, 밤새 계획을 수정하며 느꼈을 막막함과 불안에 대해 충분히 들어주세요. 해결책을 바로 제시하기보다 지민이가 느끼는 감정을 그대로 머무르게 해주는 것이 중요합니다. 만약 지민이가 대화를 원하지 않는다면, 억지로 대화를 이어가려 하기보다 '네가 편안해질 때까지 기다려 줄게'라고 말하며 지민이의 공간을 존중해 주세요. 어머니께서도 밤마다 아이의 방 불빛을 보며 느끼는 무력감과 피로를 홀로 감당하지 마시고, 여동생분과 대화하며 마음을 나누는 시간을 꼭 가지셨으면 좋겠습니다.",
+          "care": {
+            "feel": "지민이가 불안해하는 모습에 가슴이 철렁하고 무력감을 느끼셨군요. 밤마다 아이의 방 불빛을 보며 잠을 설치는 어머니의 마음이 얼마나 애타고 지쳐있을지 느껴집니다.",
+            "tips": [
+              "여동생분과 대화하며 감정을 털어놓는 시간을 가지세요.",
+              "아이의 불안을 모두 해결해 주어야 한다는 압박감에서 잠시 내려와 어머니의 휴식을 챙겨주세요."
+            ]
+          }
+        },
+        "assessment": {
+          "safety": false
+        }
+      }
+    },
+    {
+      "stage": "guide_review_after_repair",
+      "output": {
+        "approved": false,
+        "issues": [
+          {
+            "field": "script",
+            "reason": "사용자의 목적(user_goal)에 포함된 '상담이나 진료를 권하고 싶다'는 의도가 script에 충분히 반영되지 않았습니다.",
+            "repair": "script 마지막 부분에 '전문가 선생님과 상담을 통해 마음을 돌보는 방법도 함께 알아볼 수 있어.'라는 문장을 포함하여 상담 권유의 의도를 명확히 전달하세요."
+          },
+          {
+            "field": "doList",
+            "reason": "doList에 포함된 '오늘 하루는 계획표 대신 푹 쉬는 건 어때?'라는 제안은 사용자의 목적(계획이 바뀌어도 괜찮다는 것)을 전달하는 데 효과적이지만, 자칫 지시로 느껴질 수 있습니다.",
+            "repair": "제안을 할 때는 '오늘 하루는 계획표 대신 푹 쉬는 건 어떨까?'와 같이 선택권을 부여하는 부드러운 어조로 수정하세요."
+          },
+          {
+            "field": "avoid",
+            "reason": "사용자가 언급한 '학원 하나 줄여'라는 말은 남편의 의견이므로, 이를 단순히 '해결책 제시'로 묶기보다 '타인의 의견을 그대로 전달하는 것'에 대한 주의로 구체화가 필요합니다.",
+            "repair": "남편의 의견(학원 줄이기)을 그대로 전달하기보다, 지민이가 느끼는 불안의 핵심에 먼저 공감해 주는 태도를 유지하도록 수정하세요."
+          }
+        ]
+      }
+    }
+  ]
+}

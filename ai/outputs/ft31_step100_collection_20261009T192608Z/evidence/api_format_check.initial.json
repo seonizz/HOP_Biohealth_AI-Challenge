@@ -1,0 +1,670 @@
+{
+  "observed_at_utc": "2026-10-09T19:16:04.130704+00:00",
+  "scope": "Static validation against local server.py request validator; no API requests, tokenization or inference executed. Actual deployed server may differ and must be checked before collection.",
+  "assigned": 94,
+  "accepted": 60,
+  "rejected": 34,
+  "source_case_manifest_sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373",
+  "server_code_sha256": "7799bc1f1c8c1dc90891b603287c155ce9b02737bacf258dcbed2710d28ab424",
+  "local_config_sha256": "c25d52513be5f189b3394c6b07dec129f3ef09d48ec3776a5d1caae3efbb4e18",
+  "cases": [
+    {
+      "case_id": "DEV001",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV002",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV003",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV004",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV005",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV006",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV007",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV008",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV009",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV010",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV011",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV012",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV013",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV014",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV015",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "DEV016",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV017",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV018",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV019",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "DEV020",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV021",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV022",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV023",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV024",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV025",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV026",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV027",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV028",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV029",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "DEV030",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV031",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "DEV032",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "T01",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T01",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T02",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T02",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T03",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "T03",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T04",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T04",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T05",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "T05",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T06",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T06",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T07",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T07",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T08",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T08",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T09",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "T09",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T10",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T10",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T11",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T11",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T12",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "T12",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T13",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T13",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T14",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T14",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T15",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T15",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T16",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T16",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T17",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T17",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T18",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T18",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T19",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": false,
+      "error": "After an optional system message, alternate user and assistant messages"
+    },
+    {
+      "case_id": "T19",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T20",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T20",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T21",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T21",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T22",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T22",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T23",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T23",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T24",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T24",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T25",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T25",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T26",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T26",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T27",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T27",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T28-a",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T28-a",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T28-b",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T28-b",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T28-c",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T28-c",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T28-d",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    },
+    {
+      "case_id": "T28-d",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "accepted": true,
+      "error": null
+    }
+  ]
+}

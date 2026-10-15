@@ -1,0 +1,43 @@
+{
+  "sample_sha256": "38b324dda59ce4abbf6b05640fb4a760087904ce18f4be0a20ff2d39360fbf36",
+  "source_sha256": "cbae6e7b9ca6ab46ed15ee687d31d6e7732082a06390dd8324f58683d6a1e908",
+  "seed": 3407,
+  "method": "sequence_length_rank_quartiles_eight_without_replacement",
+  "selected_before_predictions": true,
+  "population_rows": 4298,
+  "sample_rows": 32,
+  "strata": [
+    {
+      "maximum_length": 2510,
+      "minimum_length": 77,
+      "population_rows": 1074,
+      "quartile": 1,
+      "sample_rows": 8
+    },
+    {
+      "maximum_length": 5265,
+      "minimum_length": 2516,
+      "population_rows": 1075,
+      "quartile": 2,
+      "sample_rows": 8
+    },
+    {
+      "maximum_length": 8284,
+      "minimum_length": 5268,
+      "population_rows": 1074,
+      "quartile": 3,
+      "sample_rows": 8
+    },
+    {
+      "maximum_length": 14014,
+      "minimum_length": 8284,
+      "population_rows": 1075,
+      "quartile": 4,
+      "sample_rows": 8
+    }
+  ],
+  "total_sequence_tokens": 172842,
+  "total_target_tokens": 2905,
+  "max_sequence_length": 12323,
+  "min_sequence_length": 318
+}

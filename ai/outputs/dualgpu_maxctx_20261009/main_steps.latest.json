@@ -1,0 +1,15 @@
+[
+  {
+    "elapsed_seconds": 157.2637843589764,
+    "gradient_norm_before_clip": 9.388717651367188,
+    "learning_rates": [
+      1.3157894736842107e-07
+    ],
+    "microbatches": 8,
+    "mode": "train",
+    "next_row_cursor": 8,
+    "step": 1,
+    "supervised_tokens": 461,
+    "target_mean_loss": 4.578688892521724
+  }
+]

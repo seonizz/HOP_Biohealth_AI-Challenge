@@ -1,0 +1,344 @@
+{
+  "case_id": "attached_mother_child",
+  "code": "missing_required_script_intent",
+  "trace": [
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "relationship_analysis",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 65690,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 11631,
+        "completion_tokens": 1187,
+        "total_tokens": 12818
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "analysis_review",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 16596,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 6883,
+        "completion_tokens": 10,
+        "total_tokens": 6893
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "communication_plan",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 28895,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 8214,
+        "completion_tokens": 305,
+        "total_tokens": 8519
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_write",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 41060,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 7391,
+        "completion_tokens": 639,
+        "total_tokens": 8030
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_quality",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 34639,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 7403,
+        "completion_tokens": 494,
+        "total_tokens": 7897
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_refine",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 38534,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 8475,
+        "completion_tokens": 644,
+        "total_tokens": 9119
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_review",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 15169,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 7426,
+        "completion_tokens": 10,
+        "total_tokens": 7436
+      },
+      "reason": "success"
+    }
+  ],
+  "stage_outputs": [
+    {
+      "stage": "relationship_analysis",
+      "output": {
+        "patient_summary": "지민은 고등학교 2학년이 된 이후 학업과 진로에 대한 걱정이 커지면서 불안정한 모습을 보이고 있습니다. 계획을 세우고 반복적으로 수정하거나 확인받는 행동을 보이며, 밤에 잠을 잘 못 자거나 초조해하는 모습이 자주 관찰됩니다.",
+        "supporter_summary": "사용자는 지민의 불안한 모습에 큰 무력감을 느끼며, 특히 새벽에 울며 힘들어하는 지민을 보며 마음이 많이 쓰였습니다. 아이 문제로 배우자와 갈등을 겪으며 정서적 부담을 느끼고 있으며, 여동생에게 의지하며 버티고 있습니다.",
+        "relationship": {
+          "label": "자녀",
+          "supporter_role": "어머니",
+          "dynamics": [
+            {
+              "interpretation": "사용자는 지민의 불안을 이해하고 지지하려 노력하며, 지민은 반복적인 확인을 통해 불안을 해소하려 합니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "mood",
+                  "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+                },
+                {
+                  "subject": "user_goal",
+                  "question_id": "want",
+                  "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+                }
+              ],
+              "certainty": "tentative"
+            },
+            {
+              "interpretation": "사용자는 지민의 변화를 지켜보며 무력감을 느끼고, 지민의 행동에 대해 주변 가족과 의견 차이를 보입니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "feeling",
+                  "quote": "가슴이 철렁했고, 뭐라고 말해야 할지 몰라서 “괜찮아, 자자”만 반복했어요. 제가 너무 무력하게 느껴졌어요."
+                },
+                {
+                  "subject": "supporter",
+                  "question_id": "cgchange_more",
+                  "quote": "아이 문제로 남편이랑 자주 다퉈요. 저는 걱정하는데 남편은 유난이라고 해서 서운해요. 저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+                }
+              ],
+              "certainty": "tentative"
+            }
+          ],
+          "strengths": [
+            {
+              "interpretation": "사용자는 지민의 고민을 들어주는 여동생이라는 지지 자원을 보유하고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "mysupport",
+                  "quote": "가족, 친구, 가족 중에서는 여동생에게 기댈 수 있어요."
+                }
+              ],
+              "certainty": "reported"
+            },
+            {
+              "interpretation": "사용자는 지민의 불안을 이해하고 지지하려 노력하며, 지민은 반복적인 확인을 통해 불안을 해소하려 합니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "mood",
+                  "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+                },
+                {
+                  "subject": "user_goal",
+                  "question_id": "want",
+                  "quote": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+                }
+              ],
+              "certainty": "tentative"
+            },
+            {
+              "interpretation": "사용자는 지민의 변화를 지켜보며 무력감을 느끼고, 지민의 행동에 대해 주변 가족과 의견 차이를 보입니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "feeling",
+                  "quote": "가슴이 철렁했고, 뭐라고 말해야 할지 몰라서 “괜찮아, 자자”만 반복했어요. 제가 너무 무력하게 느껴졌어요."
+                },
+                {
+                  "subject": "supporter",
+                  "question_id": "cgchange_more",
+                  "quote": "아이 문제로 남편이랑 자주 다퉈요. 저는 걱정하는데 남편은 유난이라고 해서 서운해요. 저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+                }
+              ],
+              "certainty": "tentative"
+            }
+          ],
+          "boundaries": [
+            {
+              "interpretation": "사용자는 지민의 문제를 해결해 주어야 한다는 부담과 가족 내에서의 갈등으로 인한 정서적 한계를 느끼고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "cgchange_more",
+                  "quote": "아이 문제로 남편이랑 자주 다퉈요. 저는 걱정하는데 남편은 유난이라고 해서 서운해요. 저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ]
+        },
+        "unknowns": [
+          "지민이 스스로 느끼는 불안의 핵심 원인",
+          "지민이 외부 도움을 받는 것에 대한 실제적인 의향"
+        ],
+        "safety": {
+          "urgent": false,
+          "evidence": []
+        }
+      }
+    },
+    {
+      "stage": "analysis_review",
+      "output": {
+        "approved": true,
+        "issues": []
+      }
+    },
+    {
+      "stage": "communication_plan",
+      "output": {
+        "voice": "자녀를 둔 어머니로서의 따뜻하고 공감 어린 말투",
+        "opening_evidence": [
+          {
+            "subject": "supporter",
+            "question_id": "moment",
+            "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+          }
+        ],
+        "user_intent": "지민이의 불안을 이해하고 싶다는 마음을 전하며, 혼자 감당하지 않아도 된다는 지지를 전달하고 상담이나 진료를 함께 알아보자고 제안합니다.",
+        "patient_choice": "걱정을 혼자 다스리는 방법을 배우는 것, 전문가 상담",
+        "supporter_care": [
+          "여동생에게 고민을 털어놓으며 정서적 지지 얻기"
+        ],
+        "avoid_patterns": [
+          "아이의 행동을 '완벽주의'나 '강박' 같은 임상적 용어로 정의하기",
+          "남편과의 갈등 상황을 지민의 문제로 직접 연결하기",
+          "무력감을 느끼는 사용자의 감정을 지민의 상태로 투영하기"
+        ],
+        "next_step": "지민이와 대화를 나누며 전문가 상담이나 Wee클래스 활용에 대해 함께 알아보기로 제안하기"
+      }
+    },
+    {
+      "stage": "guide_write",
+      "output": {
+        "guide": {
+          "top": "불안",
+          "script": "지민아, 지금 잠깐 이야기 좀 나눌 수 있을까? 엄마는 네가 계획이 조금 바뀌어도 괜찮다는 걸 꼭 말해주고 싶어. 요즘 네가 얼마나 많이 고민하고 노력하는지 잘 알고 있고, 엄마는 네가 답답해서가 아니라 네 마음을 이해하고 싶어. 혼자서 모든 걸 다 감당하려고 애쓰지 않아도 괜찮아. 엄마가 늘 네 곁에 있다는 걸 기억해 줬으면 좋겠어. 혹시 지금 당장 이야기하기 힘들다면 나중에 편할 때 다시 이야기해도 괜찮아. 우리 같이 고민을 조금씩 나누어 볼까?",
+          "doList": [
+            "지민이가 계획표를 보여줄 때, 결과보다는 그동안 고민한 과정에 대해 먼저 칭찬해 주세요. '정말 많이 고민했구나'라고 말해 주세요.",
+            "지민이가 반복해서 확인을 요청할 때, '응, 괜찮아'라고 답해주기보다 '어떤 부분이 특히 걱정되는지' 물어봐 주세요.",
+            "지민이가 힘들어할 때, 함께 학교 Wee클래스 상담이나 전문가의 도움을 받아볼 수 있는지 조심스럽게 물어봐 주세요."
+          ],
+          "avoid": [
+            "재촉하기. 대신 '지금 말하기 편한지' 먼저 물어보세요.",
+            "비교하거나 훈계하기. 대신 '많이 힘들었겠다'며 감정을 먼저 읽어주세요.",
+            "해결책만 제시하기. 대신 '엄마가 어떻게 도와주면 좋을까?'라고 물어보세요."
+          ],
+          "next": "지민이가 대화를 원한다면, 학교 Wee클래스 상담이나 전문가 상담을 함께 알아볼 수 있는지 물어보며 구체적인 도움을 찾아보세요. 만약 지민이가 지금은 대화하기 어려워한다면, 지민이가 편안해질 때까지 기다려 주시고 엄마의 마음도 돌보셔야 합니다. 오늘 밤에는 지민이의 방 불빛을 보며 걱정하기보다, 엄마 자신을 위해 따뜻한 차 한 잔을 마시거나 여동생분과 대화를 나누며 마음을 환기해 보세요.",
+          "care": {
+            "feel": "지민이가 울면서 힘들어하는 모습을 보았을 때 가슴이 철렁하고 무력감을 느끼셨군요. 아이의 불안을 온전히 책임지려다 보니 엄마의 일상과 수면까지 영향을 받고 있는 상황이 참 많이 힘드실 것 같아요.",
+            "tips": [
+              "여동생분께 고민을 털어놓으며 정서적인 지지를 받으세요.",
+              "아이의 문제와 분리하여 엄마만의 휴식 시간을 확보하세요."
+            ]
+          }
+        },
+        "assessment": {
+          "safety": false
+        }
+      }
+    },
+    {
+      "stage": "guide_quality",
+      "output": {
+        "improvements": [
+          {
+            "field": "script",
+            "reason": "사용자가 지민의 불안을 이해하고 싶다는 의도를 더 명확히 전달하면서도, 자녀의 부담을 덜어주는 따뜻한 어조를 강화할 필요가 있습니다.",
+            "repair": "지민아, 잠깐 이야기 좀 나눌 수 있을까? 엄마는 네가 계획이 조금 바뀌어도 괜찮다는 걸 꼭 말해주고 싶어. 요즘 네가 얼마나 많이 고민하고 노력하는지 잘 알고 있고, 엄마는 네가 답답해서가 아니라 네 마음을 이해하고 싶어. 혼자서 모든 걸 다 감당하려고 애쓰지 않아도 괜찮아. 엄마가 늘 네 곁에 있다는 걸 기억해 줬으면 좋겠어. 혹시 지금 당장 이야기하기 힘들다면 나중에 편할 때 다시 이야기해도 괜찮아. 우리 같이 고민을 조금씩 나누어 볼까?"
+          },
+          {
+            "field": "doList",
+            "reason": "지민이가 반복적으로 확인을 요청하는 행동은 불안을 낮추려는 시도이므로, 단순히 질문에 답하기보다 그 이면의 감정을 수용하는 구체적인 대화법이 필요합니다.",
+            "repair": "지민이가 반복해서 확인을 요청할 때, '응, 괜찮아'라고만 답하기보다 '어떤 부분이 특히 걱정되는지 말해줄 수 있어? 엄마가 같이 고민해 줄게'라고 물어봐 주세요. 지민이가 계획표를 보여줄 때, 결과보다는 그동안 고민한 과정에 대해 '정말 많이 고민했구나'라고 먼저 칭찬해 주세요."
+          },
+          {
+            "field": "next",
+            "reason": "사용자가 느끼는 무력감과 정서적 소진을 고려하여, 지민과의 대화뿐만 아니라 사용자의 자기 돌봄을 더 구체적으로 포함해야 합니다.",
+            "repair": "지민이가 대화를 원한다면, 학교 Wee클래스나 전문가 상담을 함께 알아볼 수 있는지 물어보며 구체적인 도움을 찾아보세요. 만약 지민이가 지금 대화하기 어려워한다면, 지민이가 편안해질 때까지 기다려 주시고 엄마의 마음도 돌보셔야 합니다. 오늘 밤에는 지민이의 방 불빛을 보며 걱정하기보다, 여동생분과 대화를 나누거나 따뜻한 차 한 잔을 마시며 엄마만의 휴식 시간을 가져보세요."
+          }
+        ]
+      }
+    },
+    {
+      "stage": "guide_refine",
+      "output": {
+        "guide": {
+          "top": "불안",
+          "script": "지민아, 지금 잠깐 이야기 좀 나눌 수 있을까? 엄마는 네가 계획이 조금 바뀌어도 괜찮다는 걸 꼭 말해주고 싶어. 요즘 네가 얼마나 많이 고민하고 노력하는지 잘 알고 있고, 엄마는 네가 답답해서가 아니라 네 마음을 이해하고 싶어. 혼자서 모든 걸 다 감당하려고 애쓰지 않아도 괜찮아. 엄마가 늘 네 곁에 있다는 걸 기억해 줬으면 좋겠어. 혹시 지금 당장 이야기하기 힘들다면 나중에 편할 때 다시 이야기해도 괜찮아. 우리 같이 고민을 조금씩 나누어 볼까?",
+          "doList": [
+            "지민이가 계획표를 보여줄 때, 결과보다는 그동안 고민한 과정에 대해 '정말 많이 고민했구나'라고 먼저 칭찬해 주세요.",
+            "지민이가 반복해서 확인을 요청할 때, '응, 괜찮아'라고만 답하기보다 '어떤 부분이 특히 걱정되는지 말해줄 수 있어? 엄마가 같이 고민해 줄게'라고 물어봐 주세요.",
+            "지민이가 힘들어할 때, 학교 Wee클래스 상담이나 전문가의 도움을 받아볼 수 있는지 조심스럽게 물어봐 주세요."
+          ],
+          "avoid": [
+            "재촉하기. 대신 '지금 말하기 편한지' 먼저 물어보세요.",
+            "비교하거나 훈계하기. 대신 '많이 힘들었겠다'며 감정을 먼저 읽어주세요.",
+            "해결책만 제시하기. 대신 '엄마가 어떻게 도와주면 좋을까?'라고 물어보세요."
+          ],
+          "next": "지민이가 대화를 원한다면, 학교 Wee클래스나 전문가 상담을 함께 알아볼 수 있는지 물어보며 구체적인 도움을 찾아보세요. 만약 지민이가 지금 대화하기 어려워한다면, 지민이가 편안해질 때까지 기다려 주시고 엄마의 마음도 돌보셔야 합니다. 오늘 밤에는 지민이의 방 불빛을 보며 걱정하기보다, 여동생분과 대화를 나누거나 따뜻한 차 한 잔을 마시며 엄마만의 휴식 시간을 가져보세요.",
+          "care": {
+            "feel": "지민이가 울면서 힘들어하는 모습을 보았을 때 가슴이 철렁하고 무력감을 느끼셨군요. 아이의 불안을 온전히 책임지려다 보니 엄마의 일상과 수면까지 영향을 받고 있는 상황이 참 많이 힘드실 것 같아요.",
+            "tips": [
+              "여동생분께 고민을 털어놓으며 정서적인 지지를 받으세요.",
+              "아이의 문제와 분리하여 엄마만의 휴식 시간을 확보하세요."
+            ]
+          }
+        },
+        "assessment": {
+          "safety": false
+        }
+      }
+    },
+    {
+      "stage": "guide_review",
+      "output": {
+        "approved": true,
+        "issues": []
+      }
+    }
+  ]
+}

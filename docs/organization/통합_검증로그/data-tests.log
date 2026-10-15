@@ -1,0 +1,63 @@
+
+> malssi-project@0.1.0 data:test
+> cd data && "${MALSSI_PYTHON:-python3}" -B -m unittest discover -s tests
+
+.......................................................................................................................................................numeric: fit vocabulary on 2 train sentences
+numeric: transforming sentence
+numeric: transforming conversation
+numeric: structure and original label masks
+numeric: fit vocabulary on 2 train sentences
+numeric: transforming sentence
+numeric: transforming conversation
+numeric: structure and original label masks
+suitability: source validity and text completeness
+suitability: split overlap and source-label imbalance
+.......................................................{"checked_rows":36,"elapsed_seconds":0.01,"event":"complete","source_conversations":9,"status":"passed","statuses":{"matched":36}}
+....................................................................ssssssss........./Volumes/Dev/HOP_Projet/말씨/data/counseling_pipeline/suitability.py:51: RuntimeWarning: overflow encountered in cast
+  if abs(value) > np.finfo(np.float32).max:
+...numeric: fit vocabulary on 2 train sentences
+numeric: transforming sentence
+numeric: transforming conversation
+numeric: structure and original label masks
+suitability: source validity and text completeness
+suitability: split overlap and source-label imbalance
+.numeric: fit vocabulary on 2 train sentences
+numeric: transforming sentence
+numeric: transforming conversation
+numeric: structure and original label masks
+suitability: source validity and text completeness
+suitability: split overlap and source-label imbalance
+/Volumes/Dev/HOP_Projet/말씨/data/counseling_pipeline/suitability.py:333: ResourceWarning: unclosed file <_io.TextIOWrapper name='/var/folders/m6/znr7ptyx2vd2j3fv8mvx83sc0000gn/T/tmp_h3dzsgc/out/numeric/utterance_metadata_rows.jsonl' mode='r' encoding='UTF-8'>
+  rows = [json.loads(line) for line in (numeric / mapping).open()]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.numeric: fit vocabulary on 2 train sentences
+numeric: transforming sentence
+numeric: transforming conversation
+numeric: structure and original label masks
+suitability: source validity and text completeness
+suitability: split overlap and source-label imbalance
+suitability: source validity and text completeness
+suitability: split overlap and source-label imbalance
+.numeric: fit vocabulary on 2 train sentences
+numeric: transforming sentence
+numeric: transforming conversation
+numeric: structure and original label masks
+suitability: source validity and text completeness
+suitability: split overlap and source-label imbalance
+/Volumes/Dev/HOP_Projet/말씨/data/counseling_pipeline/suitability.py:333: ResourceWarning: unclosed file <_io.TextIOWrapper name='/var/folders/m6/znr7ptyx2vd2j3fv8mvx83sc0000gn/T/tmpcthy0kvz/out/numeric/conversation_rows.jsonl' mode='r' encoding='UTF-8'>
+  rows = [json.loads(line) for line in (numeric / mapping).open()]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/Volumes/Dev/HOP_Projet/말씨/data/counseling_pipeline/suitability.py:333: ResourceWarning: unclosed file <_io.TextIOWrapper name='/var/folders/m6/znr7ptyx2vd2j3fv8mvx83sc0000gn/T/tmpcthy0kvz/out/numeric/sentence_rows.jsonl' mode='r' encoding='UTF-8'>
+  rows = [json.loads(line) for line in (numeric / mapping).open()]
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+.numeric: fit vocabulary on 2 train sentences
+numeric: transforming sentence
+numeric: transforming conversation
+numeric: structure and original label masks
+suitability: source validity and text completeness
+suitability: split overlap and source-label imbalance
+.....................................
+----------------------------------------------------------------------
+Ran 335 tests in 3.523s
+
+OK (skipped=8)

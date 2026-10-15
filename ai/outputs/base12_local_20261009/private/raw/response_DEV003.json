@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T12:58:56.736023Z",
+  "message": {
+    "role": "assistant",
+    "content": "교회를 못 가셨군요. 그럴 때 마음이 어떠셨어요?"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 1246312459,
+  "load_duration": 7844084,
+  "prompt_eval_count": 100,
+  "prompt_eval_cached_count": 44,
+  "prompt_eval_duration": 276498833,
+  "eval_count": 17,
+  "eval_duration": 961268958
+}

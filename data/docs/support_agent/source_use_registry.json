@@ -1,0 +1,54 @@
+{
+  "question_bank": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "사용자가 제공한 한국어 질문지. 사용 허용 범위와 파생 관계의 증거 미확인.",
+    "version": "1.0-design",
+    "content_sha256": "5c355a560944e2e7defead5a8462b36b8a311c11211d1a470046506c767ab7ba"
+  },
+  "design:demo_01_observation_needed": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  },
+  "design:demo_02_barrier_needed": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  },
+  "design:demo_03_enough_after_answer": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  },
+  "design:demo_04_previous_words_unclear": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  },
+  "design:demo_05_does_not_know": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  },
+  "design:demo_06_declined_background": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  },
+  "design:demo_07_support_and_burden": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  },
+  "design:demo_08_safety_priority": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  },
+  "design:demo_09_end": {
+    "status": "unverified",
+    "local_training_allowed": false,
+    "source_description": "기존 합성 설계 예시. 실제 학습 승인 미진행."
+  }
+}

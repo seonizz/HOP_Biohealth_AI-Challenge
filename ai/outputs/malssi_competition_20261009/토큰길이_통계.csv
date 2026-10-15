@@ -1,0 +1,10 @@
+﻿split,길이종류,행수,총토큰,평균_토큰,p50_토큰,p95_토큰,p99_토큰,최대_토큰,측정범위,근거
+train,full,40652,238128290,5857.726311128604,5472,12421,15103,25316,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+train,prefix,40652,234818174,5776.300649414543,5386,12349,15039,25290,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+train,supervised,40652,3310116,81.42566171406081,49,241,503,3922,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+validation,full,5322,29820692,5603.28673431041,5322,11460,12712,15356,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+validation,prefix,5322,29380170,5520.512965050732,5251,11354,12611,15308,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+validation,supervised,5322,440522,82.77376925967681,50,251,504,1198,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+all,full,45974,267948982,5828.272110323226,5455,12292,14868,25316,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+all,prefix,45974,264198344,5746.6903902205595,5370,12220,14783,25290,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+all,supervised,45974,3750638,81.58172010266672,49,242,503,3922,전체 원본 SFT; 기존 실토큰 장부에서 이번에 재집계,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz

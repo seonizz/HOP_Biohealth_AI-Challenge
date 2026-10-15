@@ -1,0 +1,15 @@
+{
+  "assigned": 94,
+  "attempted": 91,
+  "eligible": 94,
+  "excluded": 0,
+  "full_94_collected": false,
+  "generations_sha256": "42f9667926acb7cdbc814412d82e347466e1170081957c7b503dba0fd23b049e",
+  "ledger_records": 91,
+  "reason": "Stopped after response_T28-c: unknown_completion HTTP None; no automatic retry",
+  "recorded_at": "2026-10-09T20:23:39.138018+00:00",
+  "responses": 90,
+  "run_id": "FT31_STEP100_20261009T192608Z",
+  "state": "blocked",
+  "unexecuted": 3
+}

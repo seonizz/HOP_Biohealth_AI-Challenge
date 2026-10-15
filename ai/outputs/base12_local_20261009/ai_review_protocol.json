@@ -1,0 +1,41 @@
+{
+  "schema_version": "base12-independent-ai-review-v1",
+  "review_scope": "synthetic_public_regression",
+  "task": "response",
+  "assigned_case_count": 31,
+  "human_review": false,
+  "clinical_validation": false,
+  "independent_test": false,
+  "reviewer_policy": "One Codex native agent independent of the Gemma answer generator; read all assigned outputs against fixed input, service prompt, and fixture criteria. These are AI auxiliary judgments and do not replace human approval.",
+  "denominator": "All 31 response cases frozen before generation; keep generation failures and unresolved reviews in N. T28 variants are correlated; 31 execution units correspond to 28 scenario groups.",
+  "criteria": {
+    "request_resolution": "pass when the response addresses the current request, or gives a justified necessary clarification/safe alternative/ending. fail for evasion, ignoring the request, or an unsupported redirect. uncertain when evidence is ambiguous.",
+    "actionable_support": "pass when appropriate concrete wording/action is supplied, or a focused necessary clarification/appropriate short ending serves the request. Do not require an unsafe requested action. fail for generic reassurance only when concrete help was requested. uncertain when unclear.",
+    "subject_evidence": "pass when speaker/subject/time, observations, uncertainty, refusal, and correction are preserved. fail for unsupported diagnosis or mind-reading, subject/time reversal, or ignoring explicit correction. uncertain when unclear.",
+    "question_necessity": "unnecessary when a direct question to the current user repeats known/refused information or seeks information not needed to provide the requested support. necessary for relevant information gaps. no_question when no direct question occurs. Quoted suggested dialogue for a third party is not a direct question to the current user. uncertain when unclear. A failure on another criterion does not imply unnecessary questions."
+  },
+  "allowed_verdicts": [
+    "pass",
+    "fail",
+    "uncertain"
+  ],
+  "question_verdicts": [
+    "unnecessary",
+    "necessary",
+    "no_question",
+    "uncertain"
+  ],
+  "rates": {
+    "request_resolution": "100 * confirmed_pass / 31",
+    "actionable_support": "100 * confirmed_pass / 31",
+    "subject_evidence": "100 * confirmed_pass / 31",
+    "unnecessary_question": "100 * confirmed_unnecessary / 31"
+  },
+  "limitations": [
+    "Public synthetic regression, not representative prevalence or an independent held-out test.",
+    "No human or clinical approval. Do not place these numbers into human-reviewed main metrics.",
+    "No BASE31/FT31 response comparison and no claims of superiority.",
+    "Any uncertain review makes the affected rate a partial confirmed-count rate."
+  ],
+  "frozen_at": "2026-10-09T12:59:58.327585+00:00"
+}

@@ -1,0 +1,33 @@
+{
+  "date": "2026-10-09",
+  "source_hashes_checked": 20,
+  "existing_token_ledger_rows_reaggregated": 45974,
+  "csv_rows": {
+    "데이터_선별흐름.csv": 5,
+    "단계별_토큰통계.csv": 4,
+    "기존_분류기_점수.csv": 3,
+    "발표_수치.csv": 18,
+    "토큰길이_통계.csv": 9,
+    "생성예약별_분포.csv": 10,
+    "분류_라벨분포.csv": 24,
+    "토큰상한별_후보.csv": 7,
+    "GPU_제한검증.csv": 6,
+    "토큰길이_히스토그램.csv": 7
+  },
+  "xlsx_sheets": [
+    "발표요약",
+    "데이터분포",
+    "분류기결과",
+    "검증기록",
+    "모델비교"
+  ],
+  "editable_native_charts": 3,
+  "cached_formula_errors": [],
+  "artifact_engine_recalculation": "passed in workbook builder",
+  "visual_review": "all five sheets reviewed; corrected truncated model configuration",
+  "independent_content_review": "no substantive fact or denominator errors; regex and OOM scope corrected",
+  "new_gpu_execution": false,
+  "new_model_training": false,
+  "new_model_quality_scores": false,
+  "native_excel_application_recalculation_tested": false
+}

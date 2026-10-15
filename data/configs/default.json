@@ -1,0 +1,15 @@
+{
+  "version": "1",
+  "source": "16.심리상담 데이터",
+  "output": "outputs/private",
+  "word_vocabulary_limit": 20000,
+  "char_hash_dimensions": 8192,
+  "word_hash_dimensions": 8192,
+  "cooccurrence_vocabulary_limit": 2048,
+  "cooccurrence_window": 2,
+  "svd_dimensions": 32,
+  "random_seed": 17,
+  "ai_max_rechecks": 1,
+  "context": "same utterance and adjacent utterances; offline annotation",
+  "new_dependencies": false
+}

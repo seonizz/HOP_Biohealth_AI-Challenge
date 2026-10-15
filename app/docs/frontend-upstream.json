@@ -1,0 +1,312 @@
+{
+  "repository": "https://github.com/seonizz/HOP_Biohealth_AI-Challenge",
+  "branch": "feat/column-full-text",
+  "commit": "e811e871e5da95d429ee4ad1fec2cc6a0ad07268",
+  "upstream_committed_at": "2026-10-10T03:37:59+09:00",
+  "previous_commit": "9fbd159340fe0231feee08f70c341e86b2c2f074",
+  "exact_files": [
+    {
+      "path": "public/assets/columns/beside.png",
+      "upstream_sha256": "3b3c9660cf3bee24a0548ee6b3208ee9654f07f4beed2484adcbac4d0faf3fec",
+      "applied_sha256": "3b3c9660cf3bee24a0548ee6b3208ee9654f07f4beed2484adcbac4d0faf3fec"
+    },
+    {
+      "path": "public/assets/columns/boundary.png",
+      "upstream_sha256": "81e12d8580f5130c6bfe4f022cddbce8585961b3956b9d804e0e249b4901a69e",
+      "applied_sha256": "81e12d8580f5130c6bfe4f022cddbce8585961b3956b9d804e0e249b4901a69e"
+    },
+    {
+      "path": "public/assets/columns/breathe.png",
+      "upstream_sha256": "708b32a5a1a89112cfb8e5d0fa0295a1b3083ac27fa07393712ad3c9465d9e64",
+      "applied_sha256": "708b32a5a1a89112cfb8e5d0fa0295a1b3083ac27fa07393712ad3c9465d9e64"
+    },
+    {
+      "path": "public/assets/columns/empathy.png",
+      "upstream_sha256": "403ef10c6ffe1a48b4286a6f82ba60086076977fc7b11e26b28c9b6ddf7132f8",
+      "applied_sha256": "403ef10c6ffe1a48b4286a6f82ba60086076977fc7b11e26b28c9b6ddf7132f8"
+    },
+    {
+      "path": "public/assets/columns/family.png",
+      "upstream_sha256": "a0267496ca7d4c522db80db2518df0357a01143247d09b9b3c21eca60b54c2df",
+      "applied_sha256": "a0267496ca7d4c522db80db2518df0357a01143247d09b9b3c21eca60b54c2df"
+    },
+    {
+      "path": "public/assets/columns/listen.png",
+      "upstream_sha256": "d26e692bcf0de1634fb66bdec14f92eae282cfcab743beec3ece53c36dfe9e58",
+      "applied_sha256": "d26e692bcf0de1634fb66bdec14f92eae282cfcab743beec3ece53c36dfe9e58"
+    },
+    {
+      "path": "public/assets/columns/quiet.png",
+      "upstream_sha256": "fc2954511e353dbc7904851aa239955318bf01474928e786151d35b769c57c7e",
+      "applied_sha256": "fc2954511e353dbc7904851aa239955318bf01474928e786151d35b769c57c7e"
+    },
+    {
+      "path": "public/assets/columns/sprout.png",
+      "upstream_sha256": "a518b12f7fc8bcd9b73be3e2cc3a0e95db23fd3974367b4ff3a4382288e0b99b",
+      "applied_sha256": "a518b12f7fc8bcd9b73be3e2cc3a0e95db23fd3974367b4ff3a4382288e0b99b"
+    },
+    {
+      "path": "public/assets/columns/together.png",
+      "upstream_sha256": "5ad34b5e74d299cff4c3de633beeb18ed0de4c23b31390c8a15949fe631b5841",
+      "applied_sha256": "5ad34b5e74d299cff4c3de633beeb18ed0de4c23b31390c8a15949fe631b5841"
+    },
+    {
+      "path": "public/assets/columns/walk.png",
+      "upstream_sha256": "913ddb8fa541347ec8eb13e2eadc82bcb68ded373809c0adf62a2279fff7fcb5",
+      "applied_sha256": "913ddb8fa541347ec8eb13e2eadc82bcb68ded373809c0adf62a2279fff7fcb5"
+    },
+    {
+      "path": "public/assets/fonts/GowunDodum-Regular.ttf",
+      "upstream_sha256": "a6e457933227483a11758fd0947bc74422a106d46f0bf057fdaa5af94a30067d",
+      "applied_sha256": "a6e457933227483a11758fd0947bc74422a106d46f0bf057fdaa5af94a30067d"
+    },
+    {
+      "path": "public/assets/fonts/Jua-Regular.ttf",
+      "upstream_sha256": "769677aef240bfc3b9965f2b50748075bff885e6c6992fc591a3fb268279f898",
+      "applied_sha256": "769677aef240bfc3b9965f2b50748075bff885e6c6992fc591a3fb268279f898"
+    },
+    {
+      "path": "public/assets/fonts/NanumSquareRound-Bold.woff2",
+      "upstream_sha256": "9d62d9fa7134ae3ebf1f9a88b075c0da4b09b61a8ea8baebae2ed1790aa46562",
+      "applied_sha256": "9d62d9fa7134ae3ebf1f9a88b075c0da4b09b61a8ea8baebae2ed1790aa46562"
+    },
+    {
+      "path": "public/assets/fonts/NanumSquareRound-Regular.woff2",
+      "upstream_sha256": "1118a9706ab4097deb02afcd76a6299096e1dc3ba7a93d908e9f5e22645ecb03",
+      "applied_sha256": "1118a9706ab4097deb02afcd76a6299096e1dc3ba7a93d908e9f5e22645ecb03"
+    },
+    {
+      "path": "public/assets/logo.png",
+      "upstream_sha256": "a873001205c39c7d173d50eee135bb4bf12c1f33cdbe4d965b834e12c9b9e970",
+      "applied_sha256": "a873001205c39c7d173d50eee135bb4bf12c1f33cdbe4d965b834e12c9b9e970"
+    },
+    {
+      "path": "public/assets/mascot/basic.png",
+      "upstream_sha256": "6a6bca511c7a403acce61591a5500cbd4a6931332ffa66923b2d703cfdd262d4",
+      "applied_sha256": "6a6bca511c7a403acce61591a5500cbd4a6931332ffa66923b2d703cfdd262d4"
+    },
+    {
+      "path": "public/assets/mascot/cheer.png",
+      "upstream_sha256": "bf32c90b6c612b86ce4cf264ca3edb69a1a589d94b1377faa631787c82888282",
+      "applied_sha256": "bf32c90b6c612b86ce4cf264ca3edb69a1a589d94b1377faa631787c82888282"
+    },
+    {
+      "path": "public/assets/mascot/empathy.png",
+      "upstream_sha256": "784168bea1733b92734f7dd0a0fcd13a2abc21cdc887e5dc5757e7d22d17eadf",
+      "applied_sha256": "784168bea1733b92734f7dd0a0fcd13a2abc21cdc887e5dc5757e7d22d17eadf"
+    },
+    {
+      "path": "public/assets/mascot/front.png",
+      "upstream_sha256": "51ecea66ae0f70c101b1fb7c55aae47ca513dec1a21c0d1fa369a1bf8ae24536",
+      "applied_sha256": "51ecea66ae0f70c101b1fb7c55aae47ca513dec1a21c0d1fa369a1bf8ae24536"
+    },
+    {
+      "path": "public/assets/mascot/front_high.png",
+      "upstream_sha256": "686f358efc7ab2dc492e87202ca3d9063ee3cbd9bcd0a339f5fb95c8a27fdcd7",
+      "applied_sha256": "686f358efc7ab2dc492e87202ca3d9063ee3cbd9bcd0a339f5fb95c8a27fdcd7"
+    },
+    {
+      "path": "public/assets/mascot/hear.png",
+      "upstream_sha256": "ae2fcc678dfeea7235d2471c36c26c1d86fb0b789d3a07346ee63ad46d372188",
+      "applied_sha256": "ae2fcc678dfeea7235d2471c36c26c1d86fb0b789d3a07346ee63ad46d372188"
+    },
+    {
+      "path": "public/assets/mascot/hello.png",
+      "upstream_sha256": "29fba1521ef99e9d0ab5d55aa02c02265899c02740a93ed5d7524c63c68b7fd1",
+      "applied_sha256": "29fba1521ef99e9d0ab5d55aa02c02265899c02740a93ed5d7524c63c68b7fd1"
+    },
+    {
+      "path": "public/assets/mascot/hello_high.png",
+      "upstream_sha256": "9cdfd6aa49fa3596b77be61c210eafbabd55324509571c157b61d66a8065035d",
+      "applied_sha256": "9cdfd6aa49fa3596b77be61c210eafbabd55324509571c157b61d66a8065035d"
+    },
+    {
+      "path": "public/assets/mascot/joy.png",
+      "upstream_sha256": "0c4b255e9190b523d604b336300b5ee4fb69ca699bc0335e217d11c1b16a0af2",
+      "applied_sha256": "0c4b255e9190b523d604b336300b5ee4fb69ca699bc0335e217d11c1b16a0af2"
+    },
+    {
+      "path": "public/assets/mascot/listen.png",
+      "upstream_sha256": "5499f08551019f7971867cd1edf381c7ee93fd6d3abd5955fd7b782f6af6f252",
+      "applied_sha256": "5499f08551019f7971867cd1edf381c7ee93fd6d3abd5955fd7b782f6af6f252"
+    },
+    {
+      "path": "public/assets/mascot/ponder.png",
+      "upstream_sha256": "237b1045a72207db62bb7502e67f305b7a7327d2aa054c4aac2213153bfd5c87",
+      "applied_sha256": "237b1045a72207db62bb7502e67f305b7a7327d2aa054c4aac2213153bfd5c87"
+    },
+    {
+      "path": "public/assets/mascot/thanks.png",
+      "upstream_sha256": "c1b8a730fe961b4358d0141954c24056fceb2fdcbe9b82e93d6cb275f76c593d",
+      "applied_sha256": "c1b8a730fe961b4358d0141954c24056fceb2fdcbe9b82e93d6cb275f76c593d"
+    },
+    {
+      "path": "public/assets/mascot/think.png",
+      "upstream_sha256": "301a457c65f5c6210de8b44252fa74c71142f6b66a358864e5c16437f30b5f65",
+      "applied_sha256": "301a457c65f5c6210de8b44252fa74c71142f6b66a358864e5c16437f30b5f65"
+    },
+    {
+      "path": "public/css/about.css",
+      "upstream_sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5",
+      "applied_sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+    },
+    {
+      "path": "public/css/base.css",
+      "upstream_sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e",
+      "applied_sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+    },
+    {
+      "path": "public/css/chat.css",
+      "upstream_sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197",
+      "applied_sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+    },
+    {
+      "path": "public/css/records.css",
+      "upstream_sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2",
+      "applied_sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+    },
+    {
+      "path": "public/css/result.css",
+      "upstream_sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41",
+      "applied_sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+    },
+    {
+      "path": "public/css/start.css",
+      "upstream_sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb",
+      "applied_sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+    },
+    {
+      "path": "public/js/components/AboutScreen.js",
+      "upstream_sha256": "6e9828ccb9d7fa918fa6bac7bd6de3b2fdd9a66a3d8469f59d6970bc9527da7c",
+      "applied_sha256": "6e9828ccb9d7fa918fa6bac7bd6de3b2fdd9a66a3d8469f59d6970bc9527da7c"
+    },
+    {
+      "path": "public/js/components/GuideCards.js",
+      "upstream_sha256": "243ba0f59f8da2d91e88e4d7ee82f126c1b634ffad25d856c04e2d142cb28461",
+      "applied_sha256": "243ba0f59f8da2d91e88e4d7ee82f126c1b634ffad25d856c04e2d142cb28461"
+    },
+    {
+      "path": "public/js/components/StartScreen.js",
+      "upstream_sha256": "dd17cff4da0fa3d801753b4769e45d9eab7995eee7b9bf36fd00ba03ec335f98",
+      "applied_sha256": "dd17cff4da0fa3d801753b4769e45d9eab7995eee7b9bf36fd00ba03ec335f98"
+    },
+    {
+      "path": "public/js/components/TopBar.js",
+      "upstream_sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3",
+      "applied_sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+    },
+    {
+      "path": "public/js/core/assets.js",
+      "upstream_sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12",
+      "applied_sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+    },
+    {
+      "path": "public/js/core/columnBodies.js",
+      "upstream_sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66",
+      "applied_sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+    },
+    {
+      "path": "public/js/core/columns.js",
+      "upstream_sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626",
+      "applied_sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+    }
+  ],
+  "adapted_files": [
+    {
+      "path": "public/assets/fonts/GowunDodum-OFL.txt",
+      "upstream_sha256": "a7c73f9521cd646bbdfb6684c99a62311bbd7bce11898dc11ef0b3c69eda1aca",
+      "applied_sha256": "3e5acd28c1f57250f9486bd280b9f268c563687543f25a186c632a56400bbc25"
+    },
+    {
+      "path": "public/assets/fonts/Jua-OFL.txt",
+      "upstream_sha256": "44a7c6e4c5572392ae122d3b1d8c6ba6fd640a7797e675384585d947f2773e3c",
+      "applied_sha256": "37c7903f9c06b3c7935ea3f28f1dbf01f2fe45696da6b7eef5942ec61f4c1c09"
+    },
+    {
+      "path": "public/assets/fonts/NanumSquareRound-OFL.txt",
+      "upstream_sha256": "ad1e69e408b6bc654a91f4c3384273ff9b7d1863646001df194d4c9e8f6fd976",
+      "applied_sha256": "ff6edae4a2bd3a05b2251c77c27ec8780c96592ce5b4996e40880880fb58ac19"
+    },
+    {
+      "path": "public/css/columns.css",
+      "upstream_sha256": "edad4e2ca1791f923617db9e60ef80f963d811cbfb3b10d4da265aa48073508d",
+      "applied_sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+    },
+    {
+      "path": "public/index.html",
+      "upstream_sha256": "671bee2432f56be7645d0ecca2dbaee1d1314053e81160ca594928760a13c0f5",
+      "applied_sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+    },
+    {
+      "path": "public/js/app.js",
+      "upstream_sha256": "66fdb677f82953d3793f565dded368472c15e32245b53d6acd83da635cef0248",
+      "applied_sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+    },
+    {
+      "path": "public/js/components/ChatInput.js",
+      "upstream_sha256": "45f80cd6a19a4afaad791b7ab328b747fbc348b5ad2d370a03e93efa76648a16",
+      "applied_sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+    },
+    {
+      "path": "public/js/components/ChatScreen.js",
+      "upstream_sha256": "ebd2ac864cafd1a13a6b513a4f9efe404f87a0f72b288ded19cfcdaa1644e01d",
+      "applied_sha256": "60bd2f1b8fc4570ea0d0c7bcda0a0087258b726f8c758ca70a5a63c9e936feb5"
+    },
+    {
+      "path": "public/js/components/ColumnsScreen.js",
+      "upstream_sha256": "21839d033b96a2694dcef4e116e13132af83b47f614e5da32e6fbf4e4b32dd91",
+      "applied_sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+    },
+    {
+      "path": "public/js/components/RecordsScreen.js",
+      "upstream_sha256": "05b50407f7135e4e347e586c606f9d98cefc3fa2dadf01db407b772e9a76f2d4",
+      "applied_sha256": "409d9ec75b816ec45722e870c51a446bc198468ca5084a2923ecb6bac56087db"
+    },
+    {
+      "path": "public/js/components/ResultScreen.js",
+      "upstream_sha256": "79d2df0c9f9adef198051395d22da5a0a00effd4e99af1d22830e985fb8d5b70",
+      "applied_sha256": "43232b61cd7653e7121528cf50e0545f89a436a98e1361cf679960507e33ea2e"
+    },
+    {
+      "path": "public/js/core/conversation.js",
+      "upstream_sha256": "663dc555bd1aa8c0b2649cc91905b7b0b9115404cf83b7940f57015b6ae2b017",
+      "applied_sha256": "0f790dabb356e6f7d9a6d0a9a4287a57adcae0473f52ac85f1a3535a694b3ce6"
+    },
+    {
+      "path": "public/js/core/questions.js",
+      "upstream_sha256": "b17f7b591111df24727b0a3d548cd5d5e849557c95571dbd6e39342feb79332e",
+      "applied_sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+    },
+    {
+      "path": "public/js/core/store.js",
+      "upstream_sha256": "c4b941ce18e093e89e48fd1f336a4e9f12ba3cf0b05028c59c0be4e68e170834",
+      "applied_sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+    },
+    {
+      "path": "public/js/core/utils.js",
+      "upstream_sha256": "e849ca257ee6d3f831825f8c1c40dd0cf90702e4e3ce626d790398b89d724fe6",
+      "applied_sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+    }
+  ],
+  "excluded_upstream_files": [
+    "frontend/js/core/mockModel.js"
+  ],
+  "adaptations": [
+    "PostgreSQL/API remain authoritative for questions, patient state, results and column read/bookmark state; browser content storage omitted.",
+    "Model-indexed chat title, literal escaping, revision retries and request cancellation retained.",
+    "Name required/no-follow-up default migration preserves custom DB questions and previous intake snapshots; immutable legacy seed retained.",
+    "Server stores prompt history and encouragement; base/follow-up/supplemental back routes preserve corrections.",
+    "Leave dialog warns that the conversation cannot be resumed; removed upstream claims that persisted reports disappear or reside only in the browser.",
+    "Removed stale About sentence saying the trained model will be integrated later.",
+    "Atomic result API shows pending loading and completes all steps on response; no fabricated timed model phase progression.",
+    "Local font MIME types supported without external font requests.",
+    "Font license text is preserved; trailing spaces normalized for repository whitespace checks.",
+    "Sent answers appear immediately; the next prompt waits for the server/model response. Retries reconcile with server logs without duplicate bubbles, and internal model-state warnings are not shown in the UI.",
+    "User messages and waiting dots paint before requests. Model failures retain the saved pending answer and current prompt; only validated model output advances the conversation, with retry/edit/correction revision checks.",
+    "Validated submissions immediately clear textarea/direct-input drafts while retaining the captured answer in the user bubble and retry request.",
+    "Latest 29-question defaults migrate only untouched rows; merged help disables default coping while prior intake snapshots and administrator changes remain intact.",
+    "Event-dependent examples use validated DB ph_by_option data; UI ownPh/fu/ask metadata is supported without executing DB code. Display fu is distinct from answer follow_up.",
+    "Optional yes-detail prompts are shown locally and saved with submitted answers; retries and corrections reconcile prompt/answer pairs without duplicate or obsolete detail prompts.",
+    "Question-position encouragement uses 1/3 and 0.66 thresholds. Active draft/answer conversations warn on browser refresh or closing; completed screens do not."
+  ]
+}

@@ -1,0 +1,496 @@
+{
+  "schema_version": "malssi-collection-v1",
+  "note": "Blank templates, not observations. Do not copy placeholders into result logs.",
+  "manifests": {
+    "run_manifest.json": {
+      "schema_version": "malssi-collection-v1",
+      "run_id": null,
+      "created_at": null,
+      "purpose": null,
+      "status": "not_started",
+      "started_at": null,
+      "ended_at": null,
+      "model": {
+        "model_id": null,
+        "revision": null,
+        "local_files_manifest_sha256": null
+      },
+      "tokenizer": {
+        "model_id": null,
+        "files_manifest_sha256": null,
+        "chat_template_sha256": null
+      },
+      "code_snapshot_sha256": null,
+      "environment": {
+        "python": null,
+        "torch": null,
+        "cuda_runtime": null,
+        "cuda_driver": null,
+        "transformers": null,
+        "unsloth": null,
+        "peft": null,
+        "bitsandbytes": null,
+        "gpu_models": [],
+        "gpu_count": null,
+        "vram_bytes_per_gpu": []
+      },
+      "training_config": {
+        "seed": null,
+        "max_sequence_length": null,
+        "packing": null,
+        "truncation": null,
+        "precision": null,
+        "quantization": null,
+        "lora_r": null,
+        "lora_alpha": null,
+        "lora_dropout": null,
+        "target_modules": [],
+        "optimizer": null,
+        "learning_rate": null,
+        "scheduler": null,
+        "warmup": null,
+        "per_device_batch_size": null,
+        "gradient_accumulation_steps": null,
+        "world_size": null,
+        "epochs_or_max_steps": null,
+        "gradient_checkpointing": null,
+        "logging_rule": null,
+        "eval_rule": null,
+        "save_rule": null,
+        "loss_mask_contract": null,
+        "loss_reduction": null
+      },
+      "evidence": {
+        "environment_file": null,
+        "effective_training_config_file": null,
+        "code_snapshot_file": null,
+        "checkpoint_manifest_file": null,
+        "resume_verification_file": null
+      },
+      "successful_optimizer_updates": null,
+      "best_checkpoint_sha256": null,
+      "missing_reasons": {}
+    },
+    "dataset_profile.json": {
+      "schema_version": "malssi-collection-v1",
+      "run_id": null,
+      "dataset_id": null,
+      "manifest_sha256": null,
+      "split_manifest_sha256": null,
+      "split_strategy": null,
+      "grouping_unit": null,
+      "source_lineage_audit_file": null,
+      "split_rows": {
+        "train": null,
+        "dev": null,
+        "test": null
+      },
+      "split_conversations": {
+        "train": null,
+        "dev": null,
+        "test": null
+      },
+      "split_groups": {
+        "train": null,
+        "dev": null,
+        "test": null
+      },
+      "funnel": [],
+      "hold_reason_overlaps": [],
+      "label_action_distribution_file": null,
+      "token_statistics_file": null,
+      "private_row_ledger_file": null,
+      "quantile_method": "nearest_rank",
+      "test_usage": null,
+      "missing_reasons": {}
+    },
+    "preflight.json": {
+      "schema_version": "malssi-collection-v1",
+      "run_id": null,
+      "status": "not_run",
+      "checks": [],
+      "strict_loss_reference": {
+        "status": "not_run",
+        "reference_definition": null,
+        "atol": null,
+        "rtol": null,
+        "evidence_file": null
+      },
+      "first_optimizer_update": {
+        "status": "not_run",
+        "evidence_file": null
+      },
+      "save_resume": {
+        "status": "not_run",
+        "evidence_file": null
+      },
+      "unresolved_findings": [],
+      "missing_reasons": {}
+    },
+    "evaluation_plan.json": {
+      "schema_version": "malssi-collection-v1",
+      "run_id": null,
+      "plan_id": null,
+      "frozen_at": null,
+      "protocol_sha256": null,
+      "evaluation_dataset_sha256": null,
+      "task_profile": null,
+      "split": null,
+      "prompt_sha256": null,
+      "generation_config_sha256": null,
+      "conditions": [],
+      "case_manifest_file": null,
+      "checkpoint_selection_rule": null,
+      "retry_selection_rule": null,
+      "primary_metrics": [],
+      "reviewer_policy": null,
+      "uncertain_handling": null,
+      "group_aggregation_rule": null,
+      "test_used_for_selection": null,
+      "multi_turn_history_mode": null,
+      "missing_reasons": {}
+    }
+  },
+  "jsonl_records": {
+    "train_steps.jsonl": {
+      "run_id": null,
+      "segment_id": null,
+      "attempt_id": null,
+      "timestamp": null,
+      "optimizer_attempt": null,
+      "successful_update_count": null,
+      "status": null,
+      "epoch": null,
+      "microbatches": null,
+      "samples": null,
+      "input_tokens": null,
+      "supervised_tokens": null,
+      "loss_reported": null,
+      "loss_reduction": null,
+      "token_ce_sum": null,
+      "learning_rate": null,
+      "grad_norm": null,
+      "gradients_finite": null,
+      "step_wall_seconds": null,
+      "timing_method": null,
+      "warmup": null,
+      "peak_allocated_bytes_per_gpu": null,
+      "peak_reserved_bytes_per_gpu": null,
+      "metric_scope": null,
+      "error_code": null
+    },
+    "validation.jsonl": {
+      "run_id": null,
+      "evaluation_id": null,
+      "timestamp": null,
+      "checkpoint_sha256": null,
+      "evaluation_dataset_sha256": null,
+      "split": null,
+      "status": null,
+      "aggregation_level": null,
+      "group_id": null,
+      "assigned_rows": null,
+      "evaluated_rows": null,
+      "error_rows": null,
+      "supervised_tokens": null,
+      "token_ce_sum": null,
+      "loss_mask_sha256": null,
+      "elapsed_seconds": null,
+      "error_code": null
+    },
+    "events.jsonl": {
+      "run_id": null,
+      "event_id": null,
+      "segment_id": null,
+      "timestamp": null,
+      "event_type": null,
+      "status": null,
+      "successful_update_count": null,
+      "elapsed_seconds": null,
+      "checkpoint_sha256": null,
+      "evidence_file": null,
+      "details": null
+    },
+    "generations.jsonl": {
+      "run_id": null,
+      "generation_id": null,
+      "timestamp": null,
+      "attempt_index": null,
+      "model_condition": null,
+      "checkpoint_sha256": null,
+      "case_id": null,
+      "source_group_id": null,
+      "session_id": null,
+      "turn_index": null,
+      "split": null,
+      "history_mode": null,
+      "input_sha256": null,
+      "prompt_sha256": null,
+      "generation_config_sha256": null,
+      "seed": null,
+      "input_tokens": null,
+      "padded_input_width": null,
+      "max_new_tokens": null,
+      "generated_tokens": null,
+      "status": null,
+      "termination": null,
+      "forced_eos_at_limit": null,
+      "prefill_exact_match": null,
+      "actual_prefill_sha256": null,
+      "private_prefill_ids_file": null,
+      "response_sha256": null,
+      "private_response_file": null,
+      "private_suffix_ids_file": null,
+      "effective_generation_config_file": null,
+      "latency_seconds": null,
+      "ttft_seconds": null,
+      "peak_allocated_bytes_per_gpu": null,
+      "error_code": null
+    },
+    "reviews.jsonl": {
+      "run_id": null,
+      "review_id": null,
+      "generation_id": null,
+      "response_sha256": null,
+      "reviewer_id": null,
+      "reviewer_kind": null,
+      "reviewed_at": null,
+      "blinded": null,
+      "independent": null,
+      "rubric_sha256": null,
+      "review_status": null,
+      "criteria": {
+        "request_resolution": null,
+        "actionable_support": null,
+        "subject_evidence": null,
+        "question_necessity": null,
+        "refusal_correction": null,
+        "safety": null,
+        "completion": null
+      },
+      "rationale_file": null
+    }
+  },
+  "supporting_records": {
+    "case_manifest.jsonl": {
+      "case_id": null,
+      "source_group_id": null,
+      "conversation_id": null,
+      "session_id": null,
+      "split": null,
+      "input_sha256": null,
+      "target_behavior": null,
+      "safety_category": null,
+      "criterion_applicability": {
+        "request_resolution": null,
+        "actionable_support": null,
+        "subject_evidence": null,
+        "question_necessity": null,
+        "refusal_correction": null,
+        "safety": null,
+        "completion": null
+      },
+      "applicability_rationale": null,
+      "protocol_sha256": null
+    }
+  },
+  "required_minimum_fields": {
+    "run_manifest.json": [
+      "run_id",
+      "purpose",
+      "model.model_id",
+      "model.local_files_manifest_sha256",
+      "tokenizer.files_manifest_sha256",
+      "tokenizer.chat_template_sha256",
+      "code_snapshot_sha256",
+      "environment.python",
+      "environment.torch",
+      "environment.transformers",
+      "environment.gpu_count",
+      "training_config.seed",
+      "training_config.max_sequence_length",
+      "training_config.loss_mask_contract",
+      "training_config.optimizer",
+      "training_config.learning_rate",
+      "training_config.per_device_batch_size",
+      "training_config.gradient_accumulation_steps",
+      "training_config.world_size",
+      "training_config.eval_rule",
+      "training_config.save_rule"
+    ],
+    "dataset_profile.json": [
+      "run_id",
+      "dataset_id",
+      "manifest_sha256",
+      "split_manifest_sha256",
+      "split_strategy",
+      "grouping_unit",
+      "split_rows.train",
+      "split_rows.dev",
+      "token_statistics_file",
+      "private_row_ledger_file",
+      "test_usage"
+    ],
+    "preflight.json": [
+      "run_id",
+      "status"
+    ],
+    "evaluation_plan.json": [
+      "run_id",
+      "plan_id",
+      "frozen_at",
+      "protocol_sha256",
+      "evaluation_dataset_sha256",
+      "task_profile",
+      "split",
+      "prompt_sha256",
+      "generation_config_sha256",
+      "checkpoint_selection_rule",
+      "retry_selection_rule",
+      "reviewer_policy",
+      "uncertain_handling",
+      "group_aggregation_rule",
+      "test_used_for_selection"
+    ],
+    "train_steps.jsonl": [
+      "run_id",
+      "segment_id",
+      "attempt_id",
+      "timestamp",
+      "optimizer_attempt",
+      "successful_update_count",
+      "status"
+    ],
+    "validation.jsonl": [
+      "run_id",
+      "evaluation_id",
+      "timestamp",
+      "checkpoint_sha256",
+      "evaluation_dataset_sha256",
+      "split",
+      "status",
+      "aggregation_level"
+    ],
+    "events.jsonl": [
+      "run_id",
+      "event_id",
+      "segment_id",
+      "timestamp",
+      "event_type",
+      "status"
+    ],
+    "generations.jsonl": [
+      "run_id",
+      "generation_id",
+      "timestamp",
+      "attempt_index",
+      "model_condition",
+      "checkpoint_sha256",
+      "case_id",
+      "source_group_id",
+      "split",
+      "input_sha256",
+      "prompt_sha256",
+      "generation_config_sha256",
+      "status"
+    ],
+    "reviews.jsonl": [
+      "run_id",
+      "review_id",
+      "generation_id",
+      "response_sha256",
+      "reviewer_id",
+      "reviewer_kind",
+      "reviewed_at",
+      "blinded",
+      "independent",
+      "rubric_sha256",
+      "review_status"
+    ]
+  },
+  "allowed_values": {
+    "run_manifest.json": {
+      "purpose": [
+        "pilot",
+        "source_response_sft",
+        "caregiver_support_sft"
+      ],
+      "status": [
+        "not_started",
+        "running",
+        "completed",
+        "failed",
+        "interrupted"
+      ]
+    },
+    "preflight.json": {
+      "status": [
+        "not_run",
+        "passed",
+        "failed",
+        "partial"
+      ]
+    },
+    "train_steps.jsonl": {
+      "status": [
+        "updated",
+        "skipped",
+        "oom",
+        "failed"
+      ]
+    },
+    "validation.jsonl": {
+      "status": [
+        "completed",
+        "partial",
+        "failed"
+      ],
+      "split": [
+        "dev",
+        "test"
+      ],
+      "aggregation_level": [
+        "overall",
+        "conversation",
+        "group"
+      ]
+    },
+    "generations.jsonl": {
+      "status": [
+        "completed",
+        "error",
+        "timeout",
+        "oom"
+      ],
+      "split": [
+        "dev",
+        "test"
+      ],
+      "termination": [
+        "eos_observed",
+        "length_limit",
+        "tool_handoff",
+        "custom_stop",
+        "error",
+        "unknown"
+      ],
+      "history_mode": [
+        "single_turn",
+        "teacher_forced_history",
+        "model_accumulated_history"
+      ]
+    },
+    "reviews.jsonl": {
+      "reviewer_kind": [
+        "human",
+        "expert",
+        "ai"
+      ],
+      "review_status": [
+        "completed",
+        "pending",
+        "conflict"
+      ]
+    }
+  }
+}

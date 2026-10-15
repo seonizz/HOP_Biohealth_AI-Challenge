@@ -1,0 +1,182 @@
+{
+  "date": "2026-10-10",
+  "model": "malssi-gemma4-31b-step100",
+  "checkpoint_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+  "adapter_sha256": "79258bc8ca13ea4a0b0fa91722453c0c0de46dbb539675876d63b30b4cc6f004",
+  "parameter_devices": [
+    "cuda:0",
+    "cuda:1"
+  ],
+  "mlp": {
+    "status": "passed",
+    "baseline_tps": 4.253565827343719,
+    "untiled_tps": 4.440911173507436,
+    "speed_ratio": 1.0440443039483207,
+    "comparisons": [
+      {
+        "tokens_equal": true,
+        "logits_equal": true,
+        "max_abs_logit_diff": 0.0
+      },
+      {
+        "tokens_equal": true,
+        "logits_equal": true,
+        "max_abs_logit_diff": 0.0
+      }
+    ]
+  },
+  "decode": {
+    "status": "passed",
+    "speed_ratio": 1.1232986250624581,
+    "cpu_time_ratio": 0.8938461183977809,
+    "comparison": {
+      "tokens_equal": true,
+      "logits_equal": false,
+      "max_abs_logit_diff": 0.359375
+    }
+  },
+  "cases": [
+    {
+      "label": "warmup",
+      "input_tokens": 34,
+      "output_tokens": 4,
+      "decode_tps": 0.6757018563806613,
+      "prefill_ms": 5851.038975059055,
+      "cpu_seconds": 10.292140188999994,
+      "peak_bytes": {
+        "0": 11229974016,
+        "1": 8347558400
+      }
+    },
+    {
+      "label": "compiled_baseline",
+      "input_tokens": 34,
+      "output_tokens": 32,
+      "decode_tps": 4.437980948019136,
+      "prefill_ms": 248.87361808214337,
+      "cpu_seconds": 7.242515388000001,
+      "peak_bytes": {
+        "0": 11229974016,
+        "1": 8347558400
+      }
+    },
+    {
+      "label": "eager_warmup",
+      "input_tokens": 34,
+      "output_tokens": 4,
+      "decode_tps": 4.202707427735504,
+      "prefill_ms": 249.2363549536094,
+      "cpu_seconds": 0.9660835609999907,
+      "peak_bytes": {
+        "0": 11230498304,
+        "1": 8347558400
+      }
+    },
+    {
+      "label": "eager_decode",
+      "input_tokens": 34,
+      "output_tokens": 32,
+      "decode_tps": 4.98517789696328,
+      "prefill_ms": 247.6316470419988,
+      "cpu_seconds": 6.473694266999999,
+      "peak_bytes": {
+        "0": 11230498304,
+        "1": 8347558400
+      }
+    },
+    {
+      "label": "capacity_input_65536_decode_2",
+      "input_tokens": 65536,
+      "output_tokens": 2,
+      "decode_tps": 2.5375419366006935,
+      "prefill_ms": 62182.78216209728,
+      "cpu_seconds": 62.621311741,
+      "peak_bytes": {
+        "0": 17665267200,
+        "1": 15961295872
+      }
+    }
+  ],
+  "live": {
+    "http_status": 200,
+    "health": {
+      "status": "ready",
+      "state": "ready",
+      "pid": 1059342,
+      "model": "malssi-gemma4-31b-step100",
+      "model_id": "malssi-gemma4-31b-step100",
+      "port": 18080,
+      "checkpoint_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+      "checkpoint_step": 100,
+      "max_context_tokens": 69632,
+      "max_input_tokens": 65536,
+      "max_output_tokens": 4096,
+      "policy_id": "active-cache-64k-v1",
+      "model_fingerprint": "5e266a95c9846ca08d62a2e86c0ca8dec3b012b31bc46d0fb411155ba138caec"
+    },
+    "usage": {
+      "prompt_tokens": 34,
+      "completion_tokens": 32,
+      "total_tokens": 66
+    },
+    "metrics": {
+      "prefill_ms": 289.22492207493633,
+      "ttft_ms": 292.5851149484515,
+      "decode_ms": 6275.012404075824,
+      "total_ms": 6567.597519024275,
+      "output_tokens_per_second": 4.940229278250429,
+      "prefill_chunks": 1,
+      "memory_before": {
+        "0": {
+          "allocated": 11131860480,
+          "reserved": 12801015808,
+          "peak": 11131860480,
+          "free": 12062425088,
+          "total": 25393692672,
+          "usable": 24863440896
+        },
+        "1": {
+          "allocated": 8248350720,
+          "reserved": 10055843840,
+          "peak": 8248350720,
+          "free": 14791409664,
+          "total": 25391333376,
+          "usable": 24847253504
+        }
+      },
+      "memory_after": {
+        "0": {
+          "allocated": 11168605696,
+          "reserved": 12830375936,
+          "peak": 11251076608,
+          "free": 12024676352,
+          "total": 25393692672,
+          "usable": 24855052288
+        },
+        "1": {
+          "allocated": 8287767552,
+          "reserved": 10085203968,
+          "peak": 8368660992,
+          "free": 14753660928,
+          "total": 25391333376,
+          "usable": 24838864896
+        }
+      },
+      "queue_ms": 0.011913012713193893
+    },
+    "cache": {
+      "hit": false,
+      "reused_tokens": 0,
+      "suffix_tokens": 34,
+      "consumed_tokens": 65,
+      "published": false,
+      "bytes_by_device": {
+        "0": 27688960,
+        "1": 30883840
+      },
+      "reason": "stateless"
+    },
+    "finish_reason": "length",
+    "process_cpu_seconds": 6.5800000000000125
+  }
+}

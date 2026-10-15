@@ -1,0 +1,188 @@
+{
+  "date": "2026-10-15",
+  "moved_roots": 41,
+  "moved_files": 1022,
+  "moved_bytes": 3053804543,
+  "deleted_original_files": 0,
+  "edited_files": 51,
+  "checked_original_files": 7204,
+  "original_manifest_differences": [
+    "HOP_agent/.DS_Store",
+    "HOP_agent/.git/index",
+    "HOP_agent/outputs/.DS_Store",
+    "HOP_backend/.git/index",
+    "HOP_data/.DS_Store",
+    "HOP_data/.git/index",
+    "HOP_data/데이터셋/.DS_Store"
+  ],
+  "moved_original_hashes_verified": true,
+  "original_symlinks": [
+    {
+      "path": "90_보관자료/03_발표제작_중간본/HOP_Home/.ppt-build/말씨_2페이지_20261010/node_modules",
+      "exists": true,
+      "resolved": true
+    },
+    {
+      "path": "90_보관자료/03_발표제작_중간본/HOP_Home/.ppt-build/말씨_기대효과_20261010/node_modules",
+      "exists": true,
+      "resolved": true
+    },
+    {
+      "path": "HOP_data/16.심리상담 데이터",
+      "exists": true,
+      "resolved": true
+    },
+    {
+      "path": "HOP_data/심리상담_단어라벨_개선v4_20261009",
+      "exists": true,
+      "resolved": true
+    },
+    {
+      "path": "HOP_data/outputs/private",
+      "exists": true,
+      "resolved": true
+    },
+    {
+      "path": "HOP_pptdata/outputs/ft31_datasheet_setup_20261010/node_modules",
+      "exists": true,
+      "resolved": true
+    },
+    {
+      "path": "HOP_pptdata/outputs/presentation_collection_FT31_STEP100_20261009T192608Z/node_modules",
+      "exists": true,
+      "resolved": true
+    }
+  ],
+  "compatibility_links": 4,
+  "checked_markdown_links": 803,
+  "existing_broken_links_in_edited_docs": [
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Downloads/말씨_PPT용_기술요약.md"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/docs/VALIDATION.md:20"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_pptdata/LLM_학습전후_분류평가.md:15"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_pptdata/LLM_학습전후_분류평가.md:85"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_pptdata/발표용_데이터_추출_활용안.md:38"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/src/model.js:288"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/src/agent-state.js:33"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/src/agent-state.js:48"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/src/agent-state.js:120"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/src/model.js:20"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/deliverables/HOP_project_2026-10-09/05_status/status_and_roadmap.md:24"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/docs/support_agent/말씨_학습형식_준비완료_2026-10-09.md:21"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/docs/support_agent/말씨_3차_검증_데이터_판정_2026-10-09.md:30"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/counseling_pipeline/source_sft.py:25"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/counseling_pipeline/source_sft.py:124"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/docs/support_agent/말씨_원본상담_SFT_데이터계약_2026-10-09.md:37"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/malssi_competition_20261009/GPU_제한검증.csv:6"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/dualgpu_maxctx_20261009/CAPACITY_PROGRESS.md:65"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_agent/trained_model_api/CAPACITY_REPORT.md:15"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/docs/support_agent/말씨_3차_실데이터_토큰_GPU_검증_2026-10-09.md:21"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/src/agent-state.js:88"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/src/model.js:18"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_backend/docs/VALIDATION.md:10"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_pptdata/발표용_데이터_추출_활용안.md:60"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/docs/support_agent/말씨_4차_실검증_수정_결과_2026-10-09.md:55"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/dualgpu_maxctx_20261009/training_kit/counseling_pipeline/stage1_preparation.py:269"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/dualgpu_maxctx_20261009/STOP_AND_API_HANDOFF.md:50"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/counseling_pipeline/source_sft.py:149"
+    },
+    {
+      "file": "90_보관자료/01_과거문서/HOP_Home/말씨_PPT용_기술요약_검토결과_2026-10-10.md",
+      "target": "/Users/chihun/Documents/ChatGPT/HOP_data/docs/support_agent/말씨_원본상담_SFT_데이터계약_2026-10-09.md:28"
+    }
+  ],
+  "duplicate_groups": 961,
+  "duplicate_extra_files": 1939,
+  "duplicate_groups_with_archived_files": 388,
+  "python_syntax_checked": 3,
+  "errors": [],
+  "scope": "Local path/hash/link/syntax verification only; no model/server execution",
+  "final_entry_documents_checked": 5,
+  "final_entry_links_checked": 48,
+  "final_entry_link_errors": [],
+  "archived_generator_emitted_paths_checked": 5,
+  "independent_review": "One relative-link generation regression found and fixed; pure helper checked without rewriting historical evidence",
+  "archive_mode": "0o700"
+}

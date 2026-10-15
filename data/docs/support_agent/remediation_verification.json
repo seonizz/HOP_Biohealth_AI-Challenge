@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-09",
+  "scope": "local data/code remediation; not model/clinical validation",
+  "report_source_sha256": "5c6b38609907659f5767b6ad19386c49665031b33f634fcebab0a468d7711d05",
+  "classification_integrity_passed": true,
+  "hash_files_checked": 94,
+  "feature_rows_recomputed": 3131,
+  "known_source_exposures": 1108,
+  "joint_path_gate_passed": false,
+  "unknown_origin_word_rows": 378,
+  "tests_run": 105,
+  "tests_passed": true,
+  "skipped_tests": 0,
+  "design_cases": 9,
+  "design_training_eligible": 0,
+  "adversarial_groups": 30,
+  "evaluated_adversarial_groups": 0,
+  "original_question_bank_and_examples_preserved": true,
+  "llm_training_performed": false,
+  "finding_status": {
+    "R1": "missing_data_confirmed_admission_gate_implemented",
+    "R2": "review_policy_and_fixtures_added_model_behavior_not_evaluated",
+    "R3": "subject_context_review_rules_added_runtime_and_expert_policy_pending",
+    "R4": "evidence_gate_added_usage_rights_and_operational_controls_unverified",
+    "R5": "action_components_and_question_constraints_implemented",
+    "R6": "prefix_view_and_input_isolation_implemented_legacy_view_not_invented",
+    "R7": "classification_verified_joint_path_blocked_on_unknown_word_lineage",
+    "R8": "content_bound_independent_review_and_serialized_row_checks_implemented",
+    "R9": "review_bound_evaluation_implemented_actual_comparison_pending",
+    "R10": "auxiliary_benefit_unproven_comparison_protocol_preserved"
+  },
+  "evidence_files": {
+    "outputs/private/malssi_audit_20261009/release_audit.json": "f8cb9d5547c1cb9a5016895fb855f1531f7328d580b12d75b5d423f45e42b907",
+    "outputs/private/malssi_audit_20261009/agent_data_audit.json": "b5bc8b76d88c3b24e2dd47220be74b3e4cf3967f027e9e03fb4b7221e248e672",
+    "outputs/private/malssi_audit_20261009/adversarial_evaluation.json": "ec5636a2027fecd13a28805c2b3138b1c80f40b5f37b8d20ad77f96f11e825cd",
+    "outputs/private/malssi_audit_20261009/classification_baseline_reproduced.json": "1ec49b92cf140b46e0229e4a24849dc724f652fbc7d803cd469aac9e2a55a555",
+    "outputs/private/malssi_audit_20261009/actual_design_export_gate.json": "778f0e745b68ddc1711448286966bd2cdf453073ff64d180f977d0645a9dc7cd",
+    "outputs/private/malssi_audit_20261009/tests_result.json": "8221d642f006d22972aaec5f7c3dbab77fb2407862ba9c65b3c89b2079ad1ffc"
+  }
+}

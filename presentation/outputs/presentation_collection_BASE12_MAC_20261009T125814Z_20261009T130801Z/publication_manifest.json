@@ -1,0 +1,179 @@
+{
+  "destination": "/Users/chihun/Documents/ChatGPT/HOP_pptdata/outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z",
+  "run_id": "BASE12_MAC_20261009T125814Z",
+  "private_evidence_root": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009",
+  "public_artifacts": [
+    {
+      "path": "metrics.json",
+      "sha256": "ccc41be2991852abf77aae8027002144a8ed0d4fc2688a22e558c6cbe0d66ee9"
+    },
+    {
+      "path": "comparison.md",
+      "sha256": "176a11ad435f56e56bc2f45bc688205f61bc732402dc80593e96a920b328f2e3"
+    },
+    {
+      "path": "missing.md",
+      "sha256": "d258f6c535c3a74b575dc4da93c5f02f07db4b1540f30d0796ac7f64e9feccb9"
+    },
+    {
+      "path": "answer_comparisons.json",
+      "sha256": "ad3e98e2782093b0362c84141afee2aa7cc43a70702959334940510b05fb4a46"
+    },
+    {
+      "path": "public_answers.md",
+      "sha256": "aff4d4e7db69f304ce89b0f03e7d20e8ab469e5895ffa9a23774c555d122bbee"
+    },
+    {
+      "path": "local_measurements.csv",
+      "sha256": "ec45dd16c939d5eff6806c0ec1d5a74e013f6f42227c29b462944fb0c128376e"
+    },
+    {
+      "path": "review_queue.jsonl",
+      "sha256": "1f3ea433e6ff147139b3a9f68bcb83695be90dc0dbb8dc746e5a93c15d547aed"
+    },
+    {
+      "path": "evidence_manifest.json",
+      "sha256": "5a23594b64fecef10ce3411e4ce0cdc0772554053e675ffed529b0eb75e0a634"
+    },
+    {
+      "path": "ai_reviews.jsonl",
+      "sha256": "637b588e08901f8828459769abd38916be858950828d0880810bda9c6409c3ec"
+    },
+    {
+      "path": "ai_review_protocol.json",
+      "sha256": "cba55ebd81ef47ea34a747047167e08b1df2794d4dd0195cc8571933ea9b1eaa"
+    },
+    {
+      "path": "ai_review_report.md",
+      "sha256": "bf8e493396ec55f267a18f681ac2b6a743fe99dc81bdde23ee633e984f840dce"
+    },
+    {
+      "path": "ai_review_summary.json",
+      "sha256": "6cb3cd0458a48e832ccf7fd9935ffdd6c5f9a9df96b4744a37048130d78ceee9"
+    },
+    {
+      "path": "ai_review_metrics.csv",
+      "sha256": "9adc51da37d97a98d4e93cae7b649f9d90070f67435581fe44cad10c1859efe9"
+    },
+    {
+      "path": "run_manifest.json",
+      "sha256": "e5cff3f141ce9baf12091da7625047380e4807a1c7dabfb7fe5a5735e385a878"
+    },
+    {
+      "path": "case_manifest.jsonl",
+      "sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373"
+    },
+    {
+      "path": "generations.jsonl",
+      "sha256": "3705721039ab0518b2a7aa1eb224e8f90d0892d3f87e545faa71c76a80e0e6f2"
+    },
+    {
+      "path": "COLLECTION_COMPLETE.json",
+      "sha256": "c4f611d06d7caa011da1985e0145f88a678d49d05f41b3b0e4f00d543557edf9"
+    },
+    {
+      "path": "model_verification.json",
+      "sha256": "fb5529b99243ad1c0968e320830f8849d62996f3831baabddb36165b8bad496e"
+    },
+    {
+      "path": "dataset_audit.json",
+      "sha256": "e6db9e4494ed6c332e2352ae5f30872c67e58b3ccd09e879b7ffdb2de716ffa1"
+    },
+    {
+      "path": "environment.json",
+      "sha256": "4321f7990420c487bff584bc2218f6a99f209b003258e7b05e9cf8fbd6db438f"
+    },
+    {
+      "path": "collector.executed.py",
+      "sha256": "39ccd1911e6d6f06a959b3069e6fcb12b4e3a51800a0271a17e4fb9fc9c01ba9"
+    },
+    {
+      "path": "collector_provenance.json",
+      "sha256": "8937c21d3d5090ef2d0595b0e642df93cce866379c4ae02ca069921361a52940"
+    },
+    {
+      "path": "collector_tests.log",
+      "sha256": "ba355e80607f078f96eb2c5f89477426d6940d3b9249eae69d81b08929408792"
+    },
+    {
+      "path": "tags.json",
+      "sha256": "8a8861e9870dbaa5f2f1d0388b50aa4b77128746e491e59ce063d67aa51b7a7d"
+    },
+    {
+      "path": "tags_after.json",
+      "sha256": "8a8861e9870dbaa5f2f1d0388b50aa4b77128746e491e59ce063d67aa51b7a7d"
+    },
+    {
+      "path": "show.json",
+      "sha256": "b06b91ca9468827667840e5e6a7e9a7d91e5081dd8efe3225e422a6097732ef6"
+    },
+    {
+      "path": "version.json",
+      "sha256": "1fdc5b4b85e2cbce02bcd23bad479bc3054f8103592bd44b98e0bd1e22e0cc08"
+    },
+    {
+      "path": "ps_latest.json",
+      "sha256": "3e3accb1838b50603664fb78a112f3d605d0f9b2c141ad63d1cdd17904dc1981"
+    },
+    {
+      "path": "snapshots/LLM_학습전후_분류평가.md",
+      "sha256": "1851010282d7bbb1ec69a26fd1be09ae56c83667aa987202e39fe002b21ddcfd"
+    },
+    {
+      "path": "snapshots/발표데이터_최신확인_20261009.json",
+      "sha256": "888bfd92811df003a475b3356f107c20b3597e584927e210335fd80040c18ded"
+    },
+    {
+      "path": "snapshots/발표용_데이터_추출_활용안.md",
+      "sha256": "7fcad935f3d4d4e1e3745bd387de36c6ed29381d0474d62e00e7d0f762a74dd3"
+    },
+    {
+      "path": "snapshots/에이전트용_발표수치_수집지침.md",
+      "sha256": "10638d0cb6aba5d45ecc8a4dd581dbcbfafe629a367e2a247f56e63a1c06a64e"
+    },
+    {
+      "path": "snapshots/평가양식/기록양식.json",
+      "sha256": "178017488206a08925dac460bbcc502577bc3d7a7edfbd97d5d7add6dc2272d4"
+    },
+    {
+      "path": "snapshots/평가양식/발표수치_결과양식.json",
+      "sha256": "d8e75e155fc55d9658e1c81d581b8d8a79377fa617441957cee0ca4d28b49cb5"
+    },
+    {
+      "path": "snapshots/평가양식/주제분류_프롬프트.txt",
+      "sha256": "adfed905ed4aa2ca72542d32e5012ea7c073cf8592dec7e374439e200cde4439"
+    },
+    {
+      "path": "snapshots/평가양식/평가설정.json",
+      "sha256": "13120e92169936f65ebf2ab777aa93bd3fc40b8fa47a5bb1cebe602b9629f383"
+    },
+    {
+      "path": "snapshots/평가양식/행동분류_프롬프트.txt",
+      "sha256": "19359f3b62c3e4947bbd7ba4e6ccc59979a068bd0929739e4b38b7fc55f8fddf"
+    },
+    {
+      "path": "evidence/model_metadata.json",
+      "sha256": "c44951f7808dd1c720858998959491eac7c3898e47f1d09cb1da0ced66cafcaf"
+    },
+    {
+      "path": "evidence/model_tensor_inventory.json",
+      "sha256": "d9fe1eb8d1dde1325b15ca9568de67261c1b08b921861321bf538256b351e99a"
+    },
+    {
+      "path": "evidence/model_verify_files.py",
+      "sha256": "c5159dcab1b951623cc397dace5861ae50d29756a1cad549a4aaa2272fb1057b"
+    }
+  ],
+  "target_files": [
+    {
+      "name": "발표용_데이터_추출_활용안.md",
+      "before_sha256": "7fcad935f3d4d4e1e3745bd387de36c6ed29381d0474d62e00e7d0f762a74dd3",
+      "after_sha256": "d8d3d4ae747c2e1041295ac2360b5024221c1daecc517d73351496744cde18f5"
+    },
+    {
+      "name": "발표데이터_최신확인_20261009.json",
+      "before_sha256": "888bfd92811df003a475b3356f107c20b3597e584927e210335fd80040c18ded",
+      "after_sha256": "ae8fe5c622d31ecc25c06152efdf31424230adb51d8fc52b62e3de0bc7633659"
+    }
+  ]
+}

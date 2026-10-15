@@ -1,0 +1,33 @@
+{
+  "schema_version": "malssi-collection-v1",
+  "run_id": null,
+  "dataset_id": null,
+  "manifest_sha256": null,
+  "split_manifest_sha256": null,
+  "split_strategy": null,
+  "grouping_unit": null,
+  "source_lineage_audit_file": null,
+  "split_rows": {
+    "train": null,
+    "dev": null,
+    "test": null
+  },
+  "split_conversations": {
+    "train": null,
+    "dev": null,
+    "test": null
+  },
+  "split_groups": {
+    "train": null,
+    "dev": null,
+    "test": null
+  },
+  "funnel": [],
+  "hold_reason_overlaps": [],
+  "label_action_distribution_file": null,
+  "token_statistics_file": null,
+  "private_row_ledger_file": null,
+  "quantile_method": "nearest_rank",
+  "test_usage": null,
+  "missing_reasons": {}
+}

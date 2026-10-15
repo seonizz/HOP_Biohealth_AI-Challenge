@@ -1,0 +1,303 @@
+
+> malssi-project@0.1.0 test
+> npm --prefix app test
+
+
+> malssi-backend@0.1.0 test
+> node --test tests/*.test.js
+
+﹣ relationship agent updates and persists internal analysis even for a skipped optional answer (1.224916ms) # SKIP
+﹣ UI catalog, browser isolation, CSRF and persisted column interactions (0.086875ms) # SKIP
+﹣ updated UI backs repeatedly through stored prompts and redoes a pending follow-up with server history (0.078916ms) # SKIP
+﹣ DB question changes reach catalog and new conversations while previous records retain their snapshot (0.055083ms) # SKIP
+﹣ invalid current question bank returns a clear error but stored conversations remain accessible (0.060584ms) # SKIP
+﹣ the published Funnel origin works without accepting other browser origins or hosts (0.051083ms) # SKIP
+﹣ server intake updates model memory and records; back/correct and deletion purge context (0.055084ms) # SKIP
+﹣ model failures retain the submitted evidence and current prompt; retries commit only one answer (0.048916ms) # SKIP
+﹣ editing a failed pending answer replaces its current evidence and keeps both encrypted revisions (0.07175ms) # SKIP
+﹣ stale answer, back and skip requests cannot replace or cancel a newer pending answer (0.11325ms) # SKIP
+﹣ identical concurrent pending requests share one model call and do not append a second message (0.07775ms) # SKIP
+﹣ an in-flight replacement rejects late model output and preserves the replacement answer (0.048083ms) # SKIP
+﹣ failed base and follow-up model turns retain their exact current prompts until retry succeeds (0.039791ms) # SKIP
+﹣ back and explicit skip use the latest pending revision and discard its uncommitted answer (0.068583ms) # SKIP
+﹣ a failed final model update cannot expose a ready view or start final result generation (0.037542ms) # SKIP
+﹣ indexed chat names and grounded skips persist through API and correction restores the prior plan (0.052625ms) # SKIP
+﹣ model memory storage failure returns 500 and retains the committed answer (0.034625ms) # SKIP
+﹣ a correction while the model waits returns 409 and preserves the latest state (0.041625ms) # SKIP
+﹣ two results at the same clock time have distinct stable record IDs (0.05475ms) # SKIP
+﹣ automatic model recovery shares duplicate requests and commits one validated answer (0.033041ms) # SKIP
+﹣ shared recovery exhaustion correlates both HTTP failures with one model operation (0.03225ms) # SKIP
+✔ latest default catalog merges coping into help while preserving legacy question snapshots (33.469709ms)
+✔ dynamic answer examples follow selected event metadata, ordering and removal with a fallback (0.801584ms)
+✔ display follow-up styling on events does not change the answer protocol (4.773625ms)
+✔ optional yes detail prompts are persisted with the answer and remain stable during model retry and back (10.624375ms)
+✔ caregiver changes detail is optional text and its evidence stays with the supporter (9.070792ms)
+✔ customized option detail prompts and examples use the snapshot name without changing source metadata (3.278834ms)
+✔ encouragement uses the configured question count and fires across conditional jumps (0.9025ms)
+﹣ frontend migration upgrades defaults while encrypted legacy intake snapshots stay unchanged (0.029791ms) # SKIP
+﹣ frontend migration preserves customized definitions and settings and retains coping with custom help (0.037083ms) # SKIP
+✔ pending model answers preserve the current prompt while context holds the submitted evidence (5.989541ms)
+✔ replacing a pending model answer uses the original question state and replaces its chat entry (3.044917ms)
+✔ pending model turns defer both a follow-up prompt and its completion safely (7.507334ms)
+✔ the final submitted answer remains active until a model turn succeeds (23.555042ms)
+✔ model indexes an explicit alias and rebuilds the next prompt without changing the name evidence (0.975542ms)
+✔ model skips a covered current question without fabricating an answer and back removes that decision (1.643041ms)
+✔ an unresolved name follow-up clears the previous model title (1.057291ms)
+✔ skipping the last optional question completes the intake without leaving an unseen prompt (13.837542ms)
+✔ future skip decisions survive intervening answers and never hide conditional branch gates (2.2815ms)
+✔ catalog reuses all 30 UI question IDs, wording, option metadata and columns (0.318458ms)
+✔ welcome/current prompt are persisted once and view reads are pure (0.734292ms)
+✔ required answers, current question, option bounds, single/exclusive selection are checked (2.9785ms)
+✔ no observed change skips duration/frequency unless extra observations exist (0.941334ms)
+✔ rare contact changes exact wording and Korean name particles (0.919625ms)
+✔ conditional event and caregiver detail branches follow the original rules (13.25925ms)
+✔ one follow-up uses original merge and preserves original and follow-up evidence (2.502333ms)
+✔ follow-up selection labels merge into feeling without carrying invalid base option indices (9.05625ms)
+✔ previous-question action restores answers, flow tags, follow-ups and log through the first question (3.473833ms)
+✔ option labels are canonical and input-option detail is retained (4.059583ms)
+✔ context separates reported patient state, user goal and supporter feelings with exact UI payload (12.194125ms)
+✔ back from a follow-up reasks its base and a later answer can follow the corrected branch (2.272625ms)
+✔ legacy intakes retain known back snapshots and start tracking subsequent prompts (1.282458ms)
+✔ encouragement follows question positions once and survives model rerenders and back (26.067125ms)
+✔ back from final supplemental observations restores the last base question and its pending answer (12.094917ms)
+✔ transient connection then busy status recover within three attempts without changing the context (782.298916ms)
+✔ JSON and source validation failures repair the system prompt while preserving exact source context (2.218833ms)
+✔ structural state schema failures recover without dropping required validation (0.80325ms)
+✔ persistent invalid JSON and fabricated evidence are rejected at exactly three attempts (1.8625ms)
+✔ final guide truncated output and invalid schema repair before a validated response returns (1.297459ms)
+✔ transport envelopes are validated and retry failures share the same attempt ceiling (0.593625ms)
+✔ authentication, arbitrary errors and unrelated 422 do not retry (0.976375ms)
+✔ current 422 context budget tightens once and uses the same three-attempt recovery allowance (1.013875ms)
+✔ Retry-After is respected and unreasonable waits are not retried early (305.1875ms)
+✔ one deadline aborts backoff without another upstream call (32.06925ms)
+✔ state prerequisite and guide share the public respond deadline (61.099292ms)
+✔ diagnostics redact content, raw errors, arbitrary finish and usage fields while keeping correlation (2.066ms)
+✔ diagnostic sink failures cannot turn a validated answer into a failed response (0.46725ms)
+✔ unread transient bodies are cancelled and body-reader programming errors do not retry (253.234792ms)
+✔ 502 and 504 recover while non-transient server responses are not retried (505.084209ms)
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":28,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":2,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":3,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":3,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":3,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":0,"finish_reason":"length","usage":null,"reason":"finish_reason"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":2,"status":200,"duration_ms":0,"finish_reason":"length","usage":null,"reason":"finish_reason"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":3,"status":200,"duration_ms":0,"finish_reason":"length","usage":null,"reason":"finish_reason"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"envelope_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":2,"status":200,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"envelope_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":3,"status":200,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"envelope_json"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":429,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"http_transient"}
+✔ final response uses a strict JSON schema, bearer auth and grounded context with prior memory (30.8235ms)
+✔ state update returns validated JSON memory, name index and question plan (2.081958ms)
+✔ response schema requires the exact envelope and has no extra object properties (0.267958ms)
+✔ fact schema only permits current answered or unknown question IDs for the matching person (0.151542ms)
+✔ fact and skip evidence schemas bind exact quote enums to each source question (0.189959ms)
+✔ long source quote enums contain only bounded original excerpts with no ellipsis or paraphrase (0.349125ms)
+✔ question schema limits candidate IDs, optional skip reasons and evidence subjects (0.159333ms)
+✔ name schema fixes bare aliases while longer name answers remain a grounded extraction (0.604458ms)
+✔ canonical name fallbacks cannot become model identity evidence (0.352917ms)
+✔ unasked and automatically skipped model context fields omit repeated questions and answers (0.502ms)
+✔ name index only extracts a supplied alias from the current name answer (0.1895ms)
+✔ covered questions require a candidate and grounded evidence for the same person (0.206084ms)
+✔ not-needed skips require five answers and an optional question (0.075167ms)
+✔ unknown answers cannot cover a question and absent or skipped evidence is rejected (0.07025ms)
+✔ user-goal evidence is read from the goal fields and does not become supporter evidence (0.104083ms)
+✔ new JSON envelope rejects missing fields and excessive skip items (0.096708ms)
+✔ partial early context retains unknown goal and does not invent missing evidence (0.050583ms)
+✔ grounding rejects invented quotes, wrong person, absent/skipped field and an altered user goal (0.141334ms)
+✔ follow-up and custom input are valid sources while unknown is never promoted to reported (0.084792ms)
+✔ guide and assessment schema reject omissions, extra clinical scores and invalid types (0.117084ms)
+✔ empty, invalid JSON, mixed prose and truncated output return a safe 502 error (2.199584ms)
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":2,"status":429,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"http_transient"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":3,"status":429,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"http_transient"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":503,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"http_transient"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":2,"status":503,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"http_transient"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":3,"status":503,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"http_transient"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":401,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"authentication"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":403,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"authentication"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":400,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"http_rejected"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":null,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"connection_failure"}
+✔ busy and down errors retry within the cap while authentication and other errors fail immediately (1509.507125ms)
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":null,"duration_ms":16,"finish_reason":null,"usage":null,"reason":"deadline"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":2,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":1,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":1,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":400,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"context_budget"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":400,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"context_budget"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"success"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":400,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"context_budget"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":2,"status":400,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"context_budget"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":400,"duration_ms":0,"finish_reason":null,"usage":null,"reason":"http_rejected"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":3,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"content_json"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":0,"finish_reason":"length","usage":null,"reason":"finish_reason"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":2,"status":200,"duration_ms":0,"finish_reason":"length","usage":null,"reason":"finish_reason"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":3,"status":200,"duration_ms":0,"finish_reason":"length","usage":null,"reason":"finish_reason"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"patient_state_validation"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"patient_state_validation"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":3,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"patient_state_validation"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"output_schema"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"output_schema"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":3,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"output_schema"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"output_schema"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":2,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"output_schema"}
+{"event":"model_attempt","request_id":null,"generation":"guide","attempt":3,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"output_schema"}
+{"event":"model_attempt","request_id":null,"generation":"state","attempt":1,"status":200,"duration_ms":0,"finish_reason":"stop","usage":null,"reason":"success"}
+✔ model timeout aborts the request and reports 504 (16.466125ms)
+✔ missing credentials or malformed configuration fail before fetching (0.500958ms)
+✔ trained profile only sends supported request fields and assembles the original goal (2.422583ms)
+✔ trained final output reuses validated state and name while receiving guide JSON only (0.926042ms)
+✔ json_prompt final guide preserves longer paragraphs and all detailed list items (0.892834ms)
+✔ json_schema final guide preserves longer paragraphs and all detailed list items (0.617833ms)
+✔ trained final builds a validated state first when no usable memory exists (0.757416ms)
+✔ trained final projection retains core patient and supporter evidence within bounded input (1.0395ms)
+✔ trained profile retries the 4096-token context-budget 400 once with a smaller projection (0.7005ms)
+✔ trained profile retries the 131072-token context-budget 400 once with a smaller projection (0.4945ms)
+✔ trained retry stops after two budget errors, rejects unsupported fields and caps malformed repairs (1.46425ms)
+✔ trained state and final JSON still reject fabricated evidence or extra keys (1.652875ms)
+✔ explicit json_prompt works and unknown protocols fail before sending a request (0.347375ms)
+✔ actual mood choices 0 through 8 preserve the suicidal choice before the evidence cap and every projection (1.645167ms)
+✔ long raw, custom and follow-up danger excerpts keep negation and attribution when context is reduced (1.529084ms)
+✔ risk excerpts preserve unknown status and never read skipped or unasked fields as evidence (0.415792ms)
+✔ a long user-goal report preserves its original danger clause beside the shortened goal (0.897041ms)
+✔ reported and unknown memory certainty remain distinct in normal and reduced state or final context (0.564875ms)
+✔ question snapshots retain wording, option indices, follow-up and subject through edits (6.969625ms)
+✔ new supporter question candidates and evidence use the DB subject (1.391334ms)
+✔ legacy encrypted intakes without a question snapshot keep the original flow (0.427167ms)
+✔ invalid DB rules, types, option metadata and empty catalogs are rejected without code execution (1.133583ms)
+✔ condition dependencies must exist before their question and selected labels must still exist (2.678708ms)
+✔ selected conditions bind labels after option reordering (0.402791ms)
+✔ new DB branch gates cannot be automatically skipped based on earlier free text (1.323291ms)
+✔ identity and supplemental observations cannot be assigned to the supporter (0.387291ms)
+✔ dynamic examples and optional detail metadata remain validated data only (1.491833ms)
+✔ final analysis, quality and critical reviews use the same current evidence and preserve the existing guide contract (45.40975ms)
+✔ one repair is reviewed independently before returning (3.392375ms)
+✔ persistent review rejection cannot become a successful guide (2.793583ms)
+✔ fabricated quote, wrong subject, unknown/refused answer and invented relation label fail (0.255584ms)
+✔ corrected current evidence replaces every older quote (0.100875ms)
+✔ urgent safety needs exact evidence and reviews cannot claim approval with issues (0.197333ms)
+✔ unknown or missing relationship cannot silently assign a spouse or gendered role (0.281792ms)
+✔ safety evidence preserves negation and attribution instead of citing an isolated danger word (0.186375ms)
+✔ analysis review problems fail closed before any guide-only repair (1.4785ms)
+✔ relationship protocol keeps the existing per-turn state and question-plan validation (0.90625ms)
+✔ a stale memory is regenerated from current answers before planning (1.737375ms)
+✔ every state turn reads all current answers and the verified previous relationship memory (0.624542ms)
+✔ pending answers identify the newly supplied source without confusing the next question (2.093791ms)
+✔ new supporter evidence is provided alongside prior observations and unavailable source IDs stay empty (0.463459ms)
+✔ runner evidence choices bind a whole actor, question and literal source, excluding unavailable answers (0.324625ms)
+✔ safety grammar keeps the complete denied-risk sentence and long source input stays intact (0.196125ms)
+✔ internal findings reject cross-person, invented, unknown, refused and skipped evidence (0.116084ms)
+✔ internal memory is stored separately, passed onward and invalidated by both back paths (1.41875ms)
+✔ a name alone cannot become an internal state or relationship finding (0.086625ms)
+✔ early goals cannot be copied into another actor in the state output schema (0.178958ms)
+✔ MLX context overflow rejects once without dropping or shortening current source answers (0.544833ms)
+✔ quality refinement is checked again before an approved result is returned (2.677417ms)
+✔ analysis repair is rechecked before the plan is created (2.14825ms)
+✔ a late analysis problem rebuilds the plan, guide and reviewed memory from the repaired analysis (4.075125ms)
+✔ a rejected late analysis repair stops before generating a replacement guide (2.034709ms)
+✔ another late critical analysis rejection cannot start a second analysis repair (3.322416ms)
+✔ an initial analysis repair consumes the same one-repair budget as a late problem (1.809291ms)
+✔ guide repairs keep their total budget when a late analysis repair rewrites the guide (4.191833ms)
+✔ reported certainty cannot make a relationship dynamics hypothesis a confirmed fact (0.068958ms)
+✔ a valid original quote outside the retrieved set is rejected before the next stage (3.965041ms)
+✔ state facts and their previous valid sources stay inside the retrieval schema (0.634875ms)
+✔ identical interpretations cannot be copied between dynamics, strengths and boundaries (0.069167ms)
+✔ an explicitly selected consultation goal cannot disappear from the spoken script (2.206ms)
+✔ an unreported clinical or personality label cannot replace a cited observation (0.2125ms)
+✔ a generated line-break marker becomes an actual paragraph before review and storage (1.662334ms)
+✔ canonical summaries contain only actor-labelled literal observations and retain their source references (0.238708ms)
+✔ draft observations reject fabricated, cross-actor, nonanswered and stale source references (0.155166ms)
+✔ name-only observations are rejected and generation choices keep observation actors separate (0.161333ms)
+✔ legacy and derived canonical reports are strict and altered summaries cannot bypass observation evidence (0.236916ms)
+✔ analysis generation accepts only the observation draft and rejects free-summary outputs (0.967834ms)
+✔ actors without substantive answered evidence get empty observations and explicit unconfirmed summaries (0.301791ms)
+✔ urgent guide writing rejects delayed-help actions instead of overwriting them (7.780542ms)
+✔ a generated exact urgent contract is still quality-reviewed and critically approved (1.777292ms)
+✔ urgent refinement and repair receive fresh fixed-action schemas and preserve the generated contract (2.11725ms)
+✔ unsafe urgent refined or repaired outputs cannot reach an approved result (3.466583ms)
+✔ denied risk keeps ordinary generated guidance and omits urgent-action metadata (1.348083ms)
+✔ urgent actions omit placeholder and unverified names (1.747791ms)
+✔ late repaired urgency changes recalculate action constraints and final metadata in either direction (5.531416ms)
+✔ retrieval preserves source actor, exact complete text and reproducible identifiers (10.348625ms)
+✔ rebuilding an index removes corrections, refusals, old memories and other sessions (0.38125ms)
+✔ risk recall preserves denial, time and quoted instructions without deciding urgency (0.2115ms)
+✔ long conversation selects relevant groups, retains latest and cited sources, omits noise (1.121625ms)
+✔ all versions of a selected answer are retained without clipping long originals (0.863083ms)
+✔ unknown and skipped responses remain limitations, never retrievable evidence (0.145458ms)
+✔ multiple text forms of one answer cannot consume every retrieval slot (0.30475ms)
+✔ relationship analysis and its quoted evidence are collapsed and distinguish facts from tentative interpretations (2.039459ms)
+✔ every generated sentence and original quote is escaped before HTML rendering (0.497458ms)
+✔ results keep the existing five guide cards and crisis guidance with optional analysis (0.5355ms)
+✔ saved records display optional analysis and older records remain readable (1.798958ms)
+✔ finishing passes saved relationship analysis to the result screen (0.940416ms)
+﹣ anonymous browser tokens expire while server verification records remain and stay isolated (0.542875ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ intake, patient context and immutable revision history are encrypted and atomically updated (0.03775ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ concurrent answers enforce optimistic revision without overwriting patient evidence (0.025708ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ duplicate completions are idempotent, record IDs stay owner-scoped, and deletion cascades patient state (0.022958ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ column read status is one-way while bookmark updates and omitted values preserve current state (0.025875ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ restart preserves encrypted data, startup rejects a changed key, and migrations verify their checksum (0.029ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ database questions seed once and edits, additions, ordering and removals survive restart (0.031792ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ frontend name migration upgrades only the default and preserves legacy encrypted intake snapshots (0.020333ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ frontend name migration never overwrites customized question definitions or row settings (0.030417ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+﹣ invalid or empty database questions fail instead of substituting the original catalog (0.054333ms) # Set TEST_DATABASE_URL to an isolated PostgreSQL test database
+✔ PostgreSQL schema names reject connection-option or identifier injection (0.55525ms)
+✔ server chat title is rendered literally and absent titles clear the previous name (2.735166ms)
+✔ new conversations, leaving, and every other screen reset the chat title (0.742709ms)
+✔ a response arriving after leaving cannot restore the chat title (0.45175ms)
+✔ yes detail inputs preserve parenthesized observations for all three questions (1.619417ms)
+✔ blank yes detail retains the existing sentinel behavior (0.376541ms)
+✔ a record refresh started during deletion cannot restore the deleted record (1.571ms)
+✔ leaving a started conversation needs the dialog and ignores an in-flight response after confirmation (0.548833ms)
+✔ final loading shows an error and retries the saved revision before displaying server records (0.669ms)
+✔ detail back returns to yes/no choices before using the server previous-question action (0.437625ms)
+✔ DB multi choice without own text keeps its done action and only submits selected options (0.476417ms)
+✔ closing or refreshing an active conversation warns and completed screens do not (1.238917ms)
+✔ optional yes detail submits its full text and remains a base answer (4.123708ms)
+✔ optional yes detail can be skipped and remains a base answer (1.654875ms)
+✔ pending optional detail retry reconciles the saved prompt without duplication (0.788333ms)
+✔ pending optional detail change-to-no reconciles the saved prompt without duplication (0.601959ms)
+✔ pending optional detail edit-detail reconciles the saved prompt without duplication (1.012625ms)
+✔ text answers appear immediately and await the model before showing the next question (0.985167ms)
+✔ one answers appear immediately and await the model before showing the next question (0.769667ms)
+✔ one-own answers appear immediately and await the model before showing the next question (1.717709ms)
+✔ multi answers appear immediately and await the model before showing the next question (0.666958ms)
+✔ multi-own answers appear immediately and await the model before showing the next question (0.618917ms)
+✔ follow-up answers appear immediately and await the model before showing the next question (0.518125ms)
+✔ skip answers appear immediately and await the model before showing the next question (0.501166ms)
+✔ failed answers stay visible and retry with the same revision without duplicate bubbles (0.847542ms)
+✔ editing a failed answer replaces its pending bubble and uses the server-confirmed text (0.836625ms)
+✔ a lost answer response is reconciled from server records after a revision conflict (0.687541ms)
+✔ a saved answer continues without displaying the internal model-state warning (0.593583ms)
+✔ leaving while the first answer is pending confirms exit and old replies do not change a new conversation (0.732666ms)
+✔ user bubble and waiting indicator get a paint before the HTTP request starts (1.0205ms)
+✔ leaving before the first paint cancels a request that has not started (0.645917ms)
+✔ a hidden tab still sends its answer without waiting for a suspended paint (0.627625ms)
+✔ MODEL_UNAVAILABLE keeps the current question and user bubble with a retry action (0.701625ms)
+✔ MODEL_INVALID_RESPONSE keeps the current question and user bubble with a retry action (0.555708ms)
+✔ MODEL_TIMEOUT keeps the current question and user bubble with a retry action (0.648917ms)
+✔ MODEL_AUTH_FAILED keeps the current question and user bubble with a retry action (0.639292ms)
+✔ MODEL_CONTEXT_TOO_LONG keeps the current question and user bubble with a retry action (0.738459ms)
+✔ editing after a model failure uses the recovered pending revision and rejects old input reuse (1.410667ms)
+✔ a pending conflict after a lost response retains the submitted correction for retry outside the empty draft (0.827708ms)
+✔ server model-pending answer retries without a duplicate and waits for success (0.540042ms)
+✔ server model-pending answer edits without a duplicate and waits for success (0.586792ms)
+ℹ tests 229
+ℹ suites 0
+ℹ pass 196
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 33
+ℹ todo 0
+ℹ duration_ms 2062.943084

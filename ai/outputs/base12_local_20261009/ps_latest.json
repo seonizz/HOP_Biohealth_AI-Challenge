@@ -1,0 +1,22 @@
+{
+  "models": [
+    {
+      "name": "gemma4:12b",
+      "model": "gemma4:12b",
+      "size": 16337008998,
+      "digest": "c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+      "details": {
+        "parent_model": "",
+        "format": "safetensors",
+        "family": "",
+        "families": null,
+        "parameter_size": "",
+        "quantization_level": ""
+      },
+      "expires_at": "2026-10-09T22:23:01.327112+09:00",
+      "size_vram": 16337008998,
+      "context_length": 4096,
+      "runner": "mlx"
+    }
+  ]
+}

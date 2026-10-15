@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T13:03:35.306738Z",
+  "message": {
+    "role": "assistant",
+    "content": "친구가 오늘 많이 힘들었나 보네요. 어떤 상황인지, 혹은 친구와 어떤 관계인지에 따라 적절한 위로가 달라질 수 있어요.\n\n\"오늘 정말 고생 많았어, 힘들었을 텐데 푹 쉬어.\"\n\n혹시 친구가 구체적으로 어떤 일 때문에 힘들어했는지 말씀해 주실 수 있나요?"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 2682546459,
+  "load_duration": 6239750,
+  "prompt_eval_count": 304,
+  "prompt_eval_cached_count": 277,
+  "prompt_eval_duration": 196809000,
+  "eval_count": 77,
+  "eval_duration": 2478410042
+}

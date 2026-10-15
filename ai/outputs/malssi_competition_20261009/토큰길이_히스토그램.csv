@@ -1,0 +1,8 @@
+﻿구간,Train_행,Validation_행,합계_행,근거
+0~512,2014,243,2257,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+"513~1,024",2230,292,2522,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+"1,025~2,048",4085,522,4607,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+"2,049~4,096",7315,1042,8357,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+"4,097~8,192",13260,1799,15059,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+"8,193~16,384",11540,1424,12964,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz
+"16,385~32,768",208,0,208,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz

@@ -1,0 +1,94 @@
+{
+  "observed_utc": "2026-10-09T08:20:12.820405+00:00",
+  "kit": "/home/slim/choieram/model_Training/malssi_stage1_training_20261009",
+  "canary/TRAINING_RESULT.json": {
+    "checkpoint": "/home/slim/choieram/model_Training/malssi_stage1_training_20261009/work/canary/checkpoints/step-000000003",
+    "completed_optimizer_steps": 3,
+    "epoch_completed": true,
+    "next_row_cursor": 24,
+    "status": "completed"
+  },
+  "canary_execution.json": {
+    "peak_allocated_gib": 21.156771659851074,
+    "peak_reserved_gib": 21.44921875
+  },
+  "canary-resume_execution.json": {
+    "peak_allocated_gib": 21.15430736541748,
+    "peak_reserved_gib": 21.44921875
+  },
+  "canary_gate.json": {
+    "status": "passed",
+    "optimizer_steps": 3
+  },
+  "canary_log": {
+    "lines": 3,
+    "last": {
+      "elapsed_seconds": 76.56258279201575,
+      "gradient_norm_before_clip": 25.19468116760254,
+      "learning_rates": [
+        2e-05
+      ],
+      "microbatches": 8,
+      "mode": "canary",
+      "next_row_cursor": 24,
+      "step": 3,
+      "supervised_tokens": 991,
+      "target_mean_loss": 4.5773078849168884
+    }
+  },
+  "segments": [
+    {
+      "directory": "/home/slim/choieram/model_Training/malssi_stage1_training_20261009/work/collection/20261009T080503Z-prepare-1039712",
+      "events": [
+        {
+          "event": "start",
+          "exit_code": null,
+          "action": "prepare",
+          "segment_id": "20261009T080503Z-prepare-1039712",
+          "log_exit_code": null,
+          "utc": "2026-10-09T08:05:03.736522+00:00",
+          "monotonic_seconds": 864202.685813767
+        },
+        {
+          "event": "end",
+          "exit_code": 0,
+          "action": "prepare",
+          "segment_id": "20261009T080503Z-prepare-1039712",
+          "log_exit_code": 0,
+          "utc": "2026-10-09T08:05:55.946587+00:00",
+          "monotonic_seconds": 864254.895862502
+        }
+      ],
+      "gpu_bytes": 1242,
+      "gpu_last": "2026/10/09 17:05:53.786, GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c, 11 MiB, 24564 MiB, 0 %, 30, 20.59 W",
+      "gpu_monitor_stderr": "",
+      "console_bytes": 154
+    },
+    {
+      "directory": "/home/slim/choieram/model_Training/malssi_stage1_training_20261009/work/collection/20261009T080621Z-start-1039749",
+      "events": [
+        {
+          "event": "start",
+          "exit_code": null,
+          "action": "start",
+          "segment_id": "20261009T080621Z-start-1039749",
+          "log_exit_code": null,
+          "utc": "2026-10-09T08:06:21.270133+00:00",
+          "monotonic_seconds": 864280.21942136
+        }
+      ],
+      "gpu_bytes": 17979,
+      "gpu_last": "2026/10/09 17:20:11.555, GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c, 20263 MiB, 24564 MiB, 100 %, 73, 446.08 W",
+      "gpu_monitor_stderr": "",
+      "console_bytes": 14337
+    }
+  ],
+  "gpu": [
+    "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c, 20263 MiB, 98 %",
+    "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642, 30 MiB, 0 %"
+  ],
+  "processes": [
+    "1039749       1       13:51 bash work/run_with_metrics.sh start",
+    "1040175 1039755       06:07 /home/slim/choieram/malssi-validation-20261009/.venv/bin/python scripts/malssi_stage1.py train --kit /home/slim/choieram/model_Training/malssi_stage1_training_20261009"
+  ]
+}

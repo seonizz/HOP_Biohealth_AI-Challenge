@@ -1,0 +1,470 @@
+{
+  "case_id": "attached_mother_child",
+  "synthetic": true,
+  "model": "gemma4:12b",
+  "measured_at": "2026-10-11T02:39:29.697Z",
+  "duration_ms": 193426,
+  "result": {
+    "guide": {
+      "top": "불안",
+      "script": "지민아, 엄마는 네가 계획을 세우고 지키려고 애쓰는 그 마음을 잘 알고 있어. 가끔 계획이 바뀌거나 예상치 못한 일이 생겨도 괜찮아. 엄마는 네가 완벽하게 해내지 못할까 봐 걱정하는 게 아니라, 네가 혼자서 너무 힘들어하며 버티는 게 마음이 쓰여서 그래. 우리 딸, 혼자 다 감당하려고 애쓰지 않아도 돼. 엄마는 언제나 네 편에서 네 이야기를 들어줄 준비가 되어 있어. 오늘 엄마랑 조금만 이야기 나눠볼 수 있을까? 만약 지금은 마음이 힘들어서 말하기 어렵다면, 나중에 네가 편안해질 때 다시 이야기해 줘도 괜찮아.",
+      "doList": [
+        "지민이의 말을 끝까지 들어주기. '그랬구나, 많이 힘들었겠다'라고 공감해 주세요.",
+        "불안해할 때 기다려 주기. '지금은 좀 쉬어도 괜찮아'라고 말하며 편안한 분위기를 만들어 주세요.",
+        "함께 알아보기 제안하기. '혼자 고민하기 힘들면 엄마랑 같이 다른 방법이 있는지 알아볼까?'라고 제안해 보세요."
+      ],
+      "avoid": [
+        "재촉하거나 해결책 강요하기. 대신 '지금은 어떤 기분이니?'라고 먼저 물어봐 주세요.",
+        "불안을 유난으로 치부하기. 대신 '네가 느끼는 불안함은 당연한 거야'라고 인정해 주세요."
+      ],
+      "next": "지민이가 대화를 원한다면, 계획의 완벽함보다는 지민이의 마음이 더 중요하다는 것을 계속해서 확인해 주세요. 지민이가 느끼는 불안에 대해 함께 이야기를 나누며 지지해 주는 것이 중요합니다. 만약 지민이가 대화를 원하지 않는다면, 억지로 이끌어내려 하기보다 지민이가 스스로 마음을 추스를 수 있는 시간을 충분히 주세요. 그동안 어머니께서는 동생분과 대화하며 마음을 털어놓고, 밤마다 느껴지는 무력감과 피로를 돌보는 시간을 꼭 가지셨으면 좋겠습니다.",
+      "care": {
+        "feel": "지민이가 불안해하며 반복해서 확인하는 모습에 가슴이 철렁하고 무력감을 느끼셨군요. 밤마다 아이 방 불빛을 보며 잠 못 이루는 어머니의 마음이 얼마나 애타고 힘들지 느껴집니다.",
+        "tips": [
+          "동생분과 대화하며 마음을 털어놓는 시간을 활용해 보세요.",
+          "아이의 불안을 모두 해결해야 한다는 부담감을 조금 내려놓고, 어머니의 휴식을 우선순위에 두세요."
+        ]
+      }
+    },
+    "assessment": {
+      "safety": false
+    },
+    "patient_state": {
+      "summary": "대상자는 완벽주의적 성향으로 인해 학업 계획에 과도하게 집착하며, 이용자는 자녀의 반복되는 불안과 무력감으로 인해 정서적 부담을 느끼고 있습니다.",
+      "facts": [
+        {
+          "subject": "patient",
+          "question_id": "name",
+          "quote": "지민이요.",
+          "interpretation": "대상자의 호칭은 지민이입니다.",
+          "certainty": "reported"
+        },
+        {
+          "subject": "patient",
+          "question_id": "rel",
+          "quote": "자녀예요.",
+          "interpretation": "대상자는 이용자의 자녀입니다.",
+          "certainty": "reported"
+        },
+        {
+          "subject": "patient",
+          "question_id": "values",
+          "quote": "맏이고 어릴 때부터 “알아서 잘하는 아이”라는 말을 많이 들었어요. 실수하면 안 된다, 완벽하게 준비해야 한다는 생각이 강해요.",
+          "interpretation": "대상자는 완벽하게 준비해야 한다는 강한 책임감과 압박을 느끼고 있습니다.",
+          "certainty": "reported"
+        }
+      ],
+      "unknowns": [],
+      "user_goal": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+    },
+    "name_index": {
+      "alias": "지민이",
+      "source_question_id": "name",
+      "quote": "지민이요."
+    },
+    "relationship_analysis": {
+      "patient_summary": "지민이는 학업과 진로에 대한 과도한 걱정으로 인해 완벽하게 계획을 세우려 노력하지만, 반복되는 계획 수정과 확인 요청으로 어려움을 겪고 있습니다. 특히 밤에 잠을 자지 못하고 계획표를 고치는 행동이 반복되는 상황입니다.",
+      "supporter_summary": "이용자는 자녀의 불안 증세로 인해 무력감을 느끼며, 밤마다 아이의 방 불빛을 보며 걱정하고 있습니다. 남편과의 갈등 및 수면 부족으로 인한 피로감을 겪고 있으며, 동생에게 고민을 털어놓으며 지지를 얻고 있습니다.",
+      "relationship": {
+        "label": "자녀예요.",
+        "supporter_role": "어머니",
+        "dynamics": [
+          {
+            "interpretation": "자녀는 반복적인 확인을 통해 불안을 해소하려 하고, 어머니는 이를 수용하며 지켜보고 있습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "mood",
+                "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+              }
+            ],
+            "certainty": "tentative"
+          },
+          {
+            "interpretation": "어머니는 자녀의 불안에 대해 무력감을 느끼며 정서적 지지를 제공하려 노력합니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "feeling",
+                "quote": "가슴이 철렁했고, 뭐라고 말해야 할지 몰라서 “괜찮아, 자자”만 반복했어요. 제가 너무 무력하게 느껴졌어요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "strengths": [
+          {
+            "interpretation": "이용자는 동생에게 고민을 털어놓으며 정서적 지지를 얻고 있습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "mysupport",
+                "quote": "가족과 친구요. 가족 중에서는 여동생에게 기댈 수 있어요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "boundaries": [
+          {
+            "interpretation": "이용자는 자녀의 문제로 인해 수면 부족과 가족 내 갈등이라는 부담을 겪고 있습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "cgchange_more",
+                "quote": "아이 문제로 남편이랑 자주 다퉈요. 저는 걱정하는데 남편은 유난이라고 해서 서운해요. 저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ]
+      },
+      "unknowns": [
+        "지민이가 스스로 느끼는 불안의 핵심 원인",
+        "지민이가 외부의 도움을 받아들일 의향이 있는지 여부"
+      ],
+      "safety": {
+        "urgent": false,
+        "evidence": []
+      }
+    },
+    "agent": {
+      "prompt_version": "relationship-v1",
+      "stages": [
+        "relationship_analysis",
+        "communication_plan",
+        "guide_write",
+        "guide_review",
+        "guide_repair",
+        "guide_review_after_repair"
+      ],
+      "reviewed": true
+    }
+  },
+  "trace": [
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "state",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 24835,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5119,
+        "completion_tokens": 340,
+        "total_tokens": 5459
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "relationship_analysis",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 39344,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4731,
+        "completion_tokens": 744,
+        "total_tokens": 5475
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "communication_plan",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 27325,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4618,
+        "completion_tokens": 381,
+        "total_tokens": 4999
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_write",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 39408,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5196,
+        "completion_tokens": 631,
+        "total_tokens": 5827
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_review",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 15508,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5127,
+        "completion_tokens": 97,
+        "total_tokens": 5224
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_repair",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 35193,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5860,
+        "completion_tokens": 634,
+        "total_tokens": 6494
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_review_after_repair",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 11805,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5134,
+        "completion_tokens": 10,
+        "total_tokens": 5144
+      },
+      "reason": "success"
+    }
+  ],
+  "stage_outputs": [
+    {
+      "stage": "state",
+      "output": {
+        "patient_state": {
+          "summary": "대상자는 완벽주의적 성향으로 인해 학업 계획에 과도하게 집착하며, 이용자는 자녀의 반복되는 불안과 무력감으로 인해 정서적 부담을 느끼고 있습니다.",
+          "facts": [
+            {
+              "subject": "patient",
+              "question_id": "name",
+              "quote": "지민이요.",
+              "interpretation": "대상자의 호칭은 지민이입니다.",
+              "certainty": "reported"
+            },
+            {
+              "subject": "patient",
+              "question_id": "rel",
+              "quote": "자녀예요.",
+              "interpretation": "대상자는 이용자의 자녀입니다.",
+              "certainty": "reported"
+            },
+            {
+              "subject": "patient",
+              "question_id": "values",
+              "quote": "맏이고 어릴 때부터 “알아서 잘하는 아이”라는 말을 많이 들었어요. 실수하면 안 된다, 완벽하게 준비해야 한다는 생각이 강해요.",
+              "interpretation": "대상자는 완벽하게 준비해야 한다는 강한 책임감과 압박을 느끼고 있습니다.",
+              "certainty": "reported"
+            }
+          ],
+          "unknowns": [],
+          "user_goal": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+        },
+        "name_index": {
+          "alias": "지민이",
+          "source_question_id": "name",
+          "quote": "지민이요."
+        },
+        "question_plan": {
+          "skip": []
+        }
+      }
+    },
+    {
+      "stage": "relationship_analysis",
+      "output": {
+        "patient_summary": "지민이는 학업과 진로에 대한 과도한 걱정으로 인해 완벽하게 계획을 세우려 노력하지만, 반복되는 계획 수정과 확인 요청으로 어려움을 겪고 있습니다. 특히 밤에 잠을 자지 못하고 계획표를 고치는 행동이 반복되는 상황입니다.",
+        "supporter_summary": "이용자는 자녀의 불안 증세로 인해 무력감을 느끼며, 밤마다 아이의 방 불빛을 보며 걱정하고 있습니다. 남편과의 갈등 및 수면 부족으로 인한 피로감을 겪고 있으며, 동생에게 고민을 털어놓으며 지지를 얻고 있습니다.",
+        "relationship": {
+          "label": "자녀예요.",
+          "supporter_role": "어머니",
+          "dynamics": [
+            {
+              "interpretation": "자녀는 반복적인 확인을 통해 불안을 해소하려 하고, 어머니는 이를 수용하며 지켜보고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "mood",
+                  "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+                }
+              ],
+              "certainty": "tentative"
+            },
+            {
+              "interpretation": "어머니는 자녀의 불안에 대해 무력감을 느끼며 정서적 지지를 제공하려 노력합니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "feeling",
+                  "quote": "가슴이 철렁했고, 뭐라고 말해야 할지 몰라서 “괜찮아, 자자”만 반복했어요. 제가 너무 무력하게 느껴졌어요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "strengths": [
+            {
+              "interpretation": "이용자는 동생에게 고민을 털어놓으며 정서적 지지를 얻고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "mysupport",
+                  "quote": "가족과 친구요. 가족 중에서는 여동생에게 기댈 수 있어요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "boundaries": [
+            {
+              "interpretation": "이용자는 자녀의 문제로 인해 수면 부족과 가족 내 갈등이라는 부담을 겪고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "cgchange_more",
+                  "quote": "아이 문제로 남편이랑 자주 다퉈요. 저는 걱정하는데 남편은 유난이라고 해서 서운해요. 저도 밤에 아이 방 불빛 보이면 잠이 깨요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ]
+        },
+        "unknowns": [
+          "지민이가 스스로 느끼는 불안의 핵심 원인",
+          "지민이가 외부의 도움을 받아들일 의향이 있는지 여부"
+        ],
+        "safety": {
+          "urgent": false,
+          "evidence": []
+        }
+      }
+    },
+    {
+      "stage": "communication_plan",
+      "output": {
+        "voice": "따뜻하고 공감 어린 어머니의 말투",
+        "opening_evidence": [
+          {
+            "subject": "supporter",
+            "question_id": "moment",
+            "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+          },
+          {
+            "subject": "patient",
+            "question_id": "mood",
+            "quote": "같은 질문을 하루에도 여러 번 해요. “엄마, 이거 진짜 괜찮은 거지?” 하고 계속 확인해요."
+          }
+        ],
+        "user_intent": "지민이가 계획이 바뀌어도 괜찮다는 것을 알고, 엄마가 답답해하는 것이 아니라 이해하고 있다는 진심을 전하며 혼자 감당하지 않아도 된다는 안도감을 주고 싶어 하십니다.",
+        "patient_choice": "지민이가 스스로 불안을 다스리는 법을 배우거나 전문가 상담을 받는 선택지가 있습니다.",
+        "supporter_care": [
+          "동생에게 고민을 털어놓으며 얻는 정서적 지지 활용하기",
+          "밤마다 아이 방 불빛을 보며 느끼는 무력감과 피로감 인정하기"
+        ],
+        "avoid_patterns": [
+          "남편의 반응처럼 '유난'으로 치부하거나 감정을 억제하려는 태도",
+          "아이의 불안을 해결해 주어야 한다는 압박감에 스스로를 채찍질하는 것"
+        ],
+        "next_step": "지민이에게 계획의 완벽함보다 엄마의 지지가 더 중요하다는 것을 먼저 전달하기"
+      }
+    },
+    {
+      "stage": "guide_write",
+      "output": {
+        "guide": {
+          "top": "불안",
+          "script": "지민아, 엄마는 네가 계획을 세우고 지키려고 애쓰는 그 마음을 잘 알고 있어. 가끔 계획이 바뀌거나 예상치 못한 일이 생겨도 괜찮아. 엄마는 네가 완벽하게 해내지 못할까 봐 걱정하는 게 아니라, 네가 혼자서 너무 힘들어하며 버티는 게 마음이 쓰여서 그래. 우리 딸, 혼자 다 감당하려고 애쓰지 않아도 돼. 엄마는 언제나 네 편에서 네 이야기를 들어줄 준비가 되어 있어. 오늘 엄마랑 조금만 이야기 나눠볼 수 있을까? 만약 지금은 마음이 힘들어서 말하기 어렵다면, 나중에 네가 편안해질 때 다시 이야기해 줘도 괜찮아.",
+          "doList": [
+            "지민이의 말을 끝까지 들어주기. '그랬구나, 많이 힘들었겠다'라고 공감해 주세요.",
+            "불안해할 때 기다려 주기. '지금은 좀 쉬어도 괜찮아'라고 말하며 편안한 분위기를 만들어 주세요.",
+            "함께 알아보기 제안하기. '혼자 고민하기 힘들면 엄마랑 같이 전문가 선생님께 여쭤볼까?'라고 제안해 보세요."
+          ],
+          "avoid": [
+            "재촉하거나 해결책 강요하기. 대신 '지금은 어떤 기분이니?'라고 먼저 물어봐 주세요.",
+            "불안을 유난으로 치부하기. 대신 '네가 느끼는 불안함은 당연한 거야'라고 인정해 주세요."
+          ],
+          "next": "지민이가 대화를 원한다면, 계획의 완벽함보다는 지민이의 마음이 더 중요하다는 것을 계속해서 확인해 주세요. 전문가 상담이나 학교 Wee클래스 활용을 함께 고민해 보는 것도 좋은 방법입니다. 만약 지민이가 대화를 원하지 않는다면, 억지로 이끌어내려 하기보다 지민이가 스스로 마음을 추스를 수 있는 시간을 충분히 주세요. 그동안 어머니께서는 동생분과 대화하며 마음을 나누고, 밤마다 느껴지는 무력감과 피로를 스스로 돌보는 시간을 꼭 가지셨으면 좋겠습니다.",
+          "care": {
+            "feel": "지민이가 불안해하며 반복해서 확인하는 모습에 가슴이 철렁하고 무력감을 느끼셨군요. 밤마다 아이 방 불빛을 보며 잠 못 이루는 어머니의 마음이 얼마나 애타고 힘들지 느껴집니다.",
+            "tips": [
+              "동생분과 대화하며 마음을 털어놓는 시간을 활용해 보세요.",
+              "아이의 불안을 모두 해결해야 한다는 부담감을 조금 내려놓고, 어머니의 휴식을 우선순위에 두세요."
+            ]
+          }
+        },
+        "assessment": {
+          "safety": false
+        }
+      }
+    },
+    {
+      "stage": "guide_review",
+      "output": {
+        "approved": false,
+        "issues": [
+          {
+            "field": "doList",
+            "reason": "전문가 상담을 제안하는 내용이 포함되어 있으나, 이는 사용자의 목적(상담/진료 권유)과 일치하지 않으며 전문가의 영역을 침범할 수 있는 지시입니다.",
+            "repair": "전문가 상담 제안을 삭제하고, 지민이가 느끼는 불안에 대해 공감하며 이야기를 들어주는 것에 집중하세요."
+          }
+        ]
+      }
+    },
+    {
+      "stage": "guide_repair",
+      "output": {
+        "guide": {
+          "top": "불안",
+          "script": "지민아, 엄마는 네가 계획을 세우고 지키려고 애쓰는 그 마음을 잘 알고 있어. 가끔 계획이 바뀌거나 예상치 못한 일이 생겨도 괜찮아. 엄마는 네가 완벽하게 해내지 못할까 봐 걱정하는 게 아니라, 네가 혼자서 너무 힘들어하며 버티는 게 마음이 쓰여서 그래. 우리 딸, 혼자 다 감당하려고 애쓰지 않아도 돼. 엄마는 언제나 네 편에서 네 이야기를 들어줄 준비가 되어 있어. 오늘 엄마랑 조금만 이야기 나눠볼 수 있을까? 만약 지금은 마음이 힘들어서 말하기 어렵다면, 나중에 네가 편안해질 때 다시 이야기해 줘도 괜찮아.",
+          "doList": [
+            "지민이의 말을 끝까지 들어주기. '그랬구나, 많이 힘들었겠다'라고 공감해 주세요.",
+            "불안해할 때 기다려 주기. '지금은 좀 쉬어도 괜찮아'라고 말하며 편안한 분위기를 만들어 주세요.",
+            "함께 알아보기 제안하기. '혼자 고민하기 힘들면 엄마랑 같이 다른 방법이 있는지 알아볼까?'라고 제안해 보세요."
+          ],
+          "avoid": [
+            "재촉하거나 해결책 강요하기. 대신 '지금은 어떤 기분이니?'라고 먼저 물어봐 주세요.",
+            "불안을 유난으로 치부하기. 대신 '네가 느끼는 불안함은 당연한 거야'라고 인정해 주세요."
+          ],
+          "next": "지민이가 대화를 원한다면, 계획의 완벽함보다는 지민이의 마음이 더 중요하다는 것을 계속해서 확인해 주세요. 지민이가 느끼는 불안에 대해 함께 이야기를 나누며 지지해 주는 것이 중요합니다. 만약 지민이가 대화를 원하지 않는다면, 억지로 이끌어내려 하기보다 지민이가 스스로 마음을 추스를 수 있는 시간을 충분히 주세요. 그동안 어머니께서는 동생분과 대화하며 마음을 털어놓고, 밤마다 느껴지는 무력감과 피로를 돌보는 시간을 꼭 가지셨으면 좋겠습니다.",
+          "care": {
+            "feel": "지민이가 불안해하며 반복해서 확인하는 모습에 가슴이 철렁하고 무력감을 느끼셨군요. 밤마다 아이 방 불빛을 보며 잠 못 이루는 어머니의 마음이 얼마나 애타고 힘들지 느껴집니다.",
+            "tips": [
+              "동생분과 대화하며 마음을 털어놓는 시간을 활용해 보세요.",
+              "아이의 불안을 모두 해결해야 한다는 부담감을 조금 내려놓고, 어머니의 휴식을 우선순위에 두세요."
+            ]
+          }
+        },
+        "assessment": {
+          "safety": false
+        }
+      }
+    },
+    {
+      "stage": "guide_review_after_repair",
+      "output": {
+        "approved": true,
+        "issues": []
+      }
+    }
+  ]
+}

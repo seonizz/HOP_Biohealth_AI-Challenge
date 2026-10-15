@@ -1,0 +1,101 @@
+{
+  "objective": "두 RTX4090을 함께 써서 31B 학습과 서비스 추론 최대 입출력 토큰을 검증하고 최대 검증 설정의 SFT를 완료",
+  "remote_root": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009",
+  "hardware": [
+    {
+      "uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+      "memory_mib": 24564
+    },
+    {
+      "uuid": "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642",
+      "memory_mib": 24564
+    }
+  ],
+  "interconnect": "SYS; no NVLink",
+  "model_context_cap": 262144,
+  "candidate_distribution": "single-process explicit26/34language layer split with Unsloth tiledMLP on bothGPUs",
+  "training_and_inference_limits_separate": true,
+  "original_single_gpu_run": "preserved; stopped by latest user request, exit143; canary3 passed, B0 unfinished, no main training steps",
+  "new_dataset_policy": "preserve source split/group and 1261 held rows; longer accepted source rows only; no synthetic capacity data in training",
+  "next_steps": [
+    "paired-GPU compatibility probe",
+    "training capacity search with actual backward/optimizer",
+    "inference prefill+decode capacity/budget tests",
+    "longer dataset export and new bindings",
+    "fresh numerical qualification",
+    "new2+1 canary save/resume",
+    "B0 full epoch B1 final collection"
+  ],
+  "explicit_user_long_conversation_inclusion": true,
+  "required_untruncated_training_context_at_least": 25316,
+  "target_train_rows": 40415,
+  "target_validation_rows": 4298,
+  "target_optimizer_steps": 5052,
+  "original_hold_rows": 1261,
+  "target_train_input_tokens": 237049716,
+  "target_validation_input_tokens": 23736126,
+  "target_train_supervised_tokens": 3291230,
+  "target_validation_supervised_tokens": 362003,
+  "full_long_source_export_verified": true,
+  "legacy_4096_subset_exact_raw_lines_match": true,
+  "training_capacity_observations": {
+    "4096": "passed actual both-GPU gradients + optimizer update",
+    "16384": "passed actual both-GPU gradients + optimizer update",
+    "32768": "OOM GPU1; GPU0 peak16.68GiB, GPU1 peak22.57GiB then1.31GiB allocation failed",
+    "25316": "PASSED split28 + tiledMLP; 1 backward/update; phase107.04sec; allocated21.57/19.18GiB; repeated accumulation/state tests pending",
+    "32768_tiled_split26": "OOM GPU1 on2.05GiB allocation; no optimizer",
+    "28672_tiled_split26": "single update PASS but accum8 OOM on second microstep; NOT STABLE, cannot finalize",
+    "29440_tiled_split26": "OOM GPU0 before1stbackwardcompleted",
+    "30720_tiled_split24": "OOM GPU0 before1stbackwardcompleted",
+    "28672_tiled_split25": "accum8/optimizer2 stress running"
+  },
+  "next_action": "Final config pending stable maximum. Preserve fullsource tokenization; any device-only cache rebinding must preserve original bindings and independently revalidate source/ledger/hash.",
+  "server_cpu_unit_tests": {
+    "passed": 99,
+    "skipped": 0,
+    "log": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/code-tests-v3.log"
+  },
+  "long_source_kit_data": {
+    "rows": 44713,
+    "ledger_sha256": "76b807320edff5394095ccd85073ea2d7fa82918c3b6ed311de39012b823ebb7",
+    "remote_directory": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/data"
+  },
+  "canary_plan": "longest eight source rows repeated only within canary for 2 initial updates plus 1 fresh-process resumed update",
+  "memory_optimization": "Installed Unsloth unsloth_tiled_mlp=True confirmed all60 language MLPs; no CPU save_on_cpu change applied",
+  "candidate_training_config": {
+    "max_length": 28672,
+    "layer_split": 26,
+    "unsloth_tiled_mlp": true,
+    "stability_confirmed": false
+  },
+  "long_token_preparation": {
+    "pid": 1043658,
+    "status": "running",
+    "log": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/prepare-long-tokens-28672.log"
+  },
+  "inference_pipeline": {
+    "pid": 1044080,
+    "status": "waiting_for_training_probe",
+    "script": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/scripts/run_inference_capacity.py",
+    "report": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/inference_capacity_pipeline.json",
+    "probe_version": 6,
+    "layer_split": 32,
+    "first_gate": "8192input+64output full/chunk prefill parity",
+    "native_limit_candidates": {
+      "max_input": 262143,
+      "input_profile_output": 1,
+      "output_profile_input": 2,
+      "max_output": 262142
+    },
+    "candidates_are_not_measured_limits": true,
+    "fallback_prefill_chunks": [
+      4096,
+      2048,
+      1024,
+      512,
+      256,
+      128
+    ],
+    "do_not_launch_conflicting_gpu_jobs": true
+  }
+}

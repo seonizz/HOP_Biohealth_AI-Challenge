@@ -1,0 +1,268 @@
+{
+  "date": "2026-10-15",
+  "project_root": "/Volumes/Dev/HOP_Projet/말씨",
+  "original_files_checked": 7273,
+  "original_bytes": 29086885048,
+  "originals_preserved": true,
+  "original_metadata_differences": [
+    {
+      "kind": "original_hash_mismatch",
+      "path": ".DS_Store"
+    },
+    {
+      "kind": "original_hash_mismatch",
+      "path": "ai/.DS_Store"
+    }
+  ],
+  "edited_original_files": 90,
+  "symlinks_checked": 11,
+  "markdown_links_checked": 1080,
+  "preexisting_broken_links_in_edited_files": [
+    {
+      "file": "archive/02_배포와_인수인계/HOP_agent/outputs/handoff/HOP_model_free_20261011_133619/HOP_agent/README.md",
+      "target": "docs/archive/2026-10-10-before-api-doc-cleanup/INDEX.md"
+    },
+    {
+      "file": "archive/02_배포와_인수인계/HOP_agent/outputs/handoff/HOP_model_free_20261011_133619/HOP_agent/README.md",
+      "target": "outputs/dualgpu_maxctx_20261009/STOP_AND_API_HANDOFF.md"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/발표용_데이터_추출_활용안.md",
+      "target": "발표데이터_최신확인_20261009.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/metrics.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/local_measurements.csv"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/ai_review_metrics.csv"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/ai_review_report.md"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/public_answers.md"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/evidence_manifest.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/에이전트용_발표수치_수집지침.md",
+      "target": "발표데이터_최신확인_20261009.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/에이전트용_발표수치_수집지침.md",
+      "target": "평가양식/발표수치_결과양식.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/에이전트용_발표수치_수집지침.md",
+      "target": "발표데이터_최신확인_20261009.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/LLM_학습전후_분류평가.md",
+      "target": "평가양식/기록양식.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/LLM_학습전후_분류평가.md",
+      "target": "평가양식/행동분류_프롬프트.txt"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/before/LLM_학습전후_분류평가.md",
+      "target": "평가양식/주제분류_프롬프트.txt"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/발표용_데이터_추출_활용안.md",
+      "target": "발표데이터_최신확인_20261009.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/metrics.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/local_measurements.csv"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/ai_review_metrics.csv"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/ai_review_report.md"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/public_answers.md"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/evidence_manifest.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/public_answers.md"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/에이전트용_발표수치_수집지침.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/comparison.md"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/에이전트용_발표수치_수집지침.md",
+      "target": "발표데이터_최신확인_20261009.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/에이전트용_발표수치_수집지침.md",
+      "target": "평가양식/발표수치_결과양식.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/에이전트용_발표수치_수집지침.md",
+      "target": "발표데이터_최신확인_20261009.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/LLM_학습전후_분류평가.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/comparison.md"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/LLM_학습전후_분류평가.md",
+      "target": "평가양식/기록양식.json"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/LLM_학습전후_분류평가.md",
+      "target": "평가양식/행동분류_프롬프트.txt"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/LLM_학습전후_분류평가.md",
+      "target": "평가양식/주제분류_프롬프트.txt"
+    },
+    {
+      "file": "ai/outputs/base12_docs_reconciliation_20261009T131808Z/after/LLM_학습전후_분류평가.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/generations.jsonl"
+    },
+    {
+      "file": "ai/outputs/base12_local_20261009/publication/발표용_데이터_추출_활용안.md",
+      "target": "에이전트용_발표수치_수집지침.md"
+    },
+    {
+      "file": "ai/outputs/base12_local_20261009/publication/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/metrics.json"
+    },
+    {
+      "file": "ai/outputs/base12_local_20261009/publication/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/local_measurements.csv"
+    },
+    {
+      "file": "ai/outputs/base12_local_20261009/publication/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/ai_review_metrics.csv"
+    },
+    {
+      "file": "ai/outputs/base12_local_20261009/publication/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/ai_review_report.md"
+    },
+    {
+      "file": "ai/outputs/base12_local_20261009/publication/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/public_answers.md"
+    },
+    {
+      "file": "ai/outputs/base12_local_20261009/publication/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/evidence_manifest.json"
+    },
+    {
+      "file": "ai/outputs/base12_local_20261009/publication/발표용_데이터_추출_활용안.md",
+      "target": "LLM_학습전후_분류평가.md"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/metrics.json"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/local_measurements.csv"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/ai_review_metrics.csv"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/ai_review_report.md"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/public_answers.md"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/evidence_manifest.json"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/발표용_데이터_추출_활용안.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/public_answers.md"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/에이전트용_발표수치_수집지침.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/comparison.md"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/LLM_학습전후_분류평가.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/comparison.md"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/LLM_학습전후_분류평가.md",
+      "target": "평가양식/행동분류_프롬프트.txt"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/LLM_학습전후_분류평가.md",
+      "target": "평가양식/주제분류_프롬프트.txt"
+    },
+    {
+      "file": "ai/outputs/presentation_automatic_20261009T132307Z/before/LLM_학습전후_분류평가.md",
+      "target": "outputs/presentation_collection_BASE12_MAC_20261009T125814Z_20261009T130801Z/generations.jsonl"
+    }
+  ],
+  "python_syntax_checked": 11,
+  "old_top_level_folders_present": false,
+  "git_repositories_preserved": [
+    "app",
+    "ai",
+    "data",
+    "presentation"
+  ],
+  "tests": {
+    "app_static_checks": "passed",
+    "app_tests": {
+      "passed": 196,
+      "skipped": 33,
+      "failed": 0
+    },
+    "ai_gateway": {
+      "passed": 39,
+      "failed": 0
+    },
+    "data": {
+      "passed": 327,
+      "skipped": 8,
+      "failed": 0,
+      "python": "existing Codex Python 3.12 with NumPy 2.3.5"
+    },
+    "migration_and_collection": {
+      "passed": 9,
+      "failed": 0
+    }
+  },
+  "not_executed": [
+    "live database integration",
+    "remote model inference",
+    "deploy/configure on real services"
+  ],
+  "errors": [],
+  "independent_review": "Active path references, handoff package paths, root commands and documentation navigation reviewed; no remaining actionable issue found",
+  "test_logs": "통합_검증로그/"
+}

@@ -1,0 +1,5 @@
+﻿단계,행수,총토큰,p50_토큰,p95_토큰,p99_토큰,최대_토큰,근거
+원본,45974,267948982,5455,12292,14868,25316,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz + outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz
+내용 보류 후,44713,260785842,5463,12318,14927,25316,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz + outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz
+"4,096 후보",17236,34152923,1922,3872,4049,4096,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz + outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz
+생성 128 예약 후보,17001,33200577,1892,3812,3991,4092,outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz + outputs/private/malssi_round3_20261009/admission_rows.jsonl.gz

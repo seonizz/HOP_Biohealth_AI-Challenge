@@ -1,0 +1,16 @@
+{
+  "generated_at_utc": "2026-10-09T19:22:19.686Z",
+  "output": "/Users/chihun/Documents/ChatGPT/HOP_pptdata/outputs/ft31_datasheet_setup_20261010/31B_데이터시트_수집양식.xlsx",
+  "ft31_run_id": null,
+  "cases": 94,
+  "ft31_records": 0,
+  "base12_tokens": {
+    "input": 73540,
+    "output": 9496
+  },
+  "base12_normal_or_format_valid": 93,
+  "ft31_missing_rates_remain_blank": true,
+  "blank_zero_and_partial_collection_formula_checks": true,
+  "case_manifest_sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373",
+  "writer_sha256": "75e53ccffeeeb1f27a95ebda7998624aba1a9e55eb552b2718c0ac85de38510b"
+}

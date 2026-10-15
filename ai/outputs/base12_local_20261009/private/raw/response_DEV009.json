@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T12:59:36.687693Z",
+  "message": {
+    "role": "assistant",
+    "content": "네, 그럼요. 이 질문지에는 선생님의 현재 마음 상태를 확인하기 위한 몇 가지 문항들이 포함되어 있어요. 너무 깊게 고민하지 않으셔도 되고, 지금 느껴지는 그대로 편하게 체크해 주시면 됩니다.\n\n먼저 첫 번째 문항부터 보실까요? \"최근 일주일 동안 얼마나 자주 우울한 기분을 느끼셨나요?\" 이 부분에 대해서는 어떻게 체크해 주실 수 있을까요?"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 5442104750,
+  "load_duration": 6612208,
+  "prompt_eval_count": 464,
+  "prompt_eval_cached_count": 45,
+  "prompt_eval_duration": 895034084,
+  "eval_count": 93,
+  "eval_duration": 4539739834
+}

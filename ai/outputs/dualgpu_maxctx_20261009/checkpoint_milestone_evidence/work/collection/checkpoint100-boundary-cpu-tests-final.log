@@ -1,0 +1,13 @@
+test_exit_cmdline_race_is_not_pid_reuse_but_new_start_time_is (test_checkpoint100_boundary.BoundaryTests.test_exit_cmdline_race_is_not_pid_reuse_but_new_start_time_is) ... ok
+test_installation_failure_restores_pointer_without_leaving_guard (test_checkpoint100_boundary.BoundaryTests.test_installation_failure_restores_pointer_without_leaving_guard) ... ok
+test_late_installation_and_wrong_prior_are_rejected_without_mutation (test_checkpoint100_boundary.BoundaryTests.test_late_installation_and_wrong_prior_are_rejected_without_mutation) ... ok
+test_only_the_exact_planned_error_and_metrics_exit_are_accepted (test_checkpoint100_boundary.BoundaryTests.test_only_the_exact_planned_error_and_metrics_exit_are_accepted) ... ok
+test_owned_guard_is_reversible_and_preserves_original_bytes (test_checkpoint100_boundary.BoundaryTests.test_owned_guard_is_reversible_and_preserves_original_bytes) ... ok
+test_release_can_recover_after_archiving_guard_before_pointer_write (test_checkpoint100_boundary.BoundaryTests.test_release_can_recover_after_archiving_guard_before_pointer_write) ... ok
+test_unknown_guard_contents_and_changed_inode_prevent_release (test_checkpoint100_boundary.BoundaryTests.test_unknown_guard_contents_and_changed_inode_prevent_release) ... ok
+test_commit100_then_pointer_failure_prevents101_and_resume_is_exact (test_checkpoint100_boundary.RealCheckpointTests.test_commit100_then_pointer_failure_prevents101_and_resume_is_exact) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 16.132s
+
+OK

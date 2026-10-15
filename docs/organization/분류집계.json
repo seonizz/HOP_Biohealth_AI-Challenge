@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-15",
+  "method": "path-based triage; not semantic review of all 7204 files",
+  "files": 7204,
+  "bytes": 29078863430,
+  "categories": {
+    "01_대회데이터_분류기반": {
+      "files": 1474,
+      "bytes": 18037197926
+    },
+    "02_현재서비스_구현": {
+      "files": 134,
+      "bytes": 15275855
+    },
+    "03_학습_평가근거": {
+      "files": 2211,
+      "bytes": 285066091
+    },
+    "04_발표후보_문안": {
+      "files": 33,
+      "bytes": 8178303
+    },
+    "05_과거이력_중복묶음": {
+      "files": 539,
+      "bytes": 2132768409
+    },
+    "06_운영설정_내부보관": {
+      "files": 309,
+      "bytes": 5278696
+    },
+    "07_개발도구_캐시": {
+      "files": 2504,
+      "bytes": 8595098150
+    }
+  },
+  "presentation_review": {
+    "decks": 32,
+    "slides": 60,
+    "mode": "slide text extraction; selected speaker notes; no layout changes"
+  },
+  "links_preserved": 7,
+  "source_manifest": "../파일목록.json"
+}

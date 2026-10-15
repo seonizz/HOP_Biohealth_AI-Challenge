@@ -1,0 +1,256 @@
+{
+  "utc": "2026-10-09T12:46:14.273818+00:00",
+  "priority": "fixed32_early_comparison_then_complete_source_epoch_and_full_B0_B1",
+  "training_maximum_search": "deferred",
+  "inference_maximum_measurements": "after_full_training_full_B0_B1_strict_results",
+  "main_training": {
+    "started": true,
+    "completed_optimizer_steps": 45,
+    "total_optimizer_steps": 5052,
+    "latest_loss": 3.978425114293078,
+    "last_step": {
+      "next_row_cursor": 360,
+      "microbatches": 8,
+      "elapsed_seconds": 119.59113900305238
+    }
+  },
+  "pipeline": {
+    "status": "running",
+    "phase": "waiting_for_committed100_boundary",
+    "updated_utc": "2026-10-09T12:44:39.753866+00:00",
+    "intentional_handoff": true,
+    "pid": 1048788,
+    "target_optimizer_step": 100,
+    "source": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/checkpoint100_pipeline_v1.json"
+  },
+  "early_driver": {
+    "stage": "continue",
+    "phase": "full_training_resume",
+    "status": "running",
+    "utc": "2026-10-09T11:40:03.121100+00:00",
+    "pid": 1046734
+  },
+  "early_comparison": {
+    "completed": true,
+    "validation_rows": 32,
+    "optimizer_step_boundary": 16,
+    "report": {
+      "behavioral_quality_verified": false,
+      "checkpoint": {
+        "checkpoint_file_sha256": {
+          "README.md": "c8328e37adb99e77c79b0ebc94bf64aebd09023e3c75040ffc0d6f6f6aab25a7",
+          "adapter_config.json": "caa301a0dcfb5d1f3a8813b87d8e46a72420238146a42f3dbfd8795f28c9bebd",
+          "adapter_model.safetensors": "03831d297f5e1c0002dbc452e2863b6a858eab639fee98f57d292a4e37fd65d7",
+          "training_state.pt": "455e6a8515c0448b60e2fa831c7869c503fe64d5daab869f7c583af98ee09b92"
+        },
+        "checkpoint_manifest_sha256": "a5f67e8fe7829bc5e605ced9759fcc5d20ca3134ac19e917f97f34f1cc80ec70",
+        "cursor": 128,
+        "step": 16
+      },
+      "delta_nll_B1_minus_B0": -0.00015123272106354335,
+      "epoch_completed": false,
+      "full_epoch_optimizer_steps": 5052,
+      "full_epoch_training_rows": 40415,
+      "hop_deployment_ready": false,
+      "independent_test": false,
+      "limitations": [
+        "Only 32 held-out rows and the first 16 updates of the original full-epoch schedule",
+        "No independent test or behavioral/clinical quality claim",
+        "Full validation B0/B1 and the remaining original training epoch are still pending"
+      ],
+      "mini_B0_nll": 4.685541869071593,
+      "mini_B1_nll": 4.6853906363505295,
+      "optimizer_steps_completed": 16,
+      "relative_change_denominator": "mini_B0_nll",
+      "relative_change_percent": -0.003227646348905832,
+      "sample_sha256": "38b324dda59ce4abbf6b05640fb4a760087904ce18f4be0a20ff2d39360fbf36",
+      "sample_source_sha256": "cbae6e7b9ca6ab46ed15ee687d31d6e7732082a06390dd8324f58683d6a1e908",
+      "sampling": "Eight rows from each sequence-length rank quartile, fixed before predictions",
+      "schema_version": "malssi.early-result.v1",
+      "seed": 3407,
+      "status": "early_comparison_completed",
+      "timing_scope": "Evaluation includes adapter-immutability checks; step timings exclude checkpoint saves",
+      "timing_seconds": {
+        "mini_B0": 131.42482704797294,
+        "mini_B1": 118.61777694697957,
+        "training_logged_steps": 2172.9169265336823
+      },
+      "token_count_convention": "Input tokens count the complete tokenized sequence, including supervised response tokens",
+      "training_input_tokens": 792754,
+      "training_prompt_tokens": 782589,
+      "training_rows_completed": 128,
+      "training_target_tokens": 10165,
+      "validation_population_rows": 4298,
+      "validation_rows": 32,
+      "validation_target_tokens": 2905,
+      "warmup_steps": 152,
+      "weighting": "shifted_nonignored_target_tokens"
+    }
+  },
+  "checkpoint100_comparison": {
+    "result_exists": false,
+    "manifest_exists": false,
+    "checkpoint_committed": false,
+    "report": {}
+  },
+  "step40_log_review": {
+    "observed_utc": "2026-10-09T12:37:57.160102+00:00",
+    "kind": "training_log_review_only_not_model_evaluation",
+    "step40_record": {
+      "elapsed_seconds": 134.74378006590996,
+      "gradient_norm_before_clip": 1357.3831787109375,
+      "learning_rates": [
+        5.263157894736842e-06
+      ],
+      "microbatches": 8,
+      "mode": "train",
+      "next_row_cursor": 320,
+      "step": 40,
+      "supervised_tokens": 699,
+      "target_mean_loss": 4.633778586408099
+    },
+    "current_main_step": 40,
+    "log_prefix_sha256": "ea0bb0e310a880fd309e1cd5eef2625fd235d2ba239816e55b61afd86d6ebeba",
+    "training_rows_at40": 320,
+    "training_target_tokens_at40": 25751,
+    "logged_seconds_through40": 5502.468612775556,
+    "recent20_mean_step_seconds_at40": 136.71594242179418,
+    "live40_checkpoint_exists": false,
+    "main_process_alive": true,
+    "fatal_markers_since_boundary_arm": {
+      "Traceback (most recent call last):": 0,
+      "OutOfMemoryError:": 0,
+      "RuntimeError:": 0
+    },
+    "model_evaluation_plan": "separate replay from preserved checkpoint16 to40 after original checkpoint100 evaluation; never label as original live40 checkpoint"
+  },
+  "checkpoint40_replay": {
+    "separate_from_main_training": true,
+    "plan": {
+      "status": "cancelled_by_user_correction",
+      "authorization_thread": "01a12000-fb4f-7fc3-b76d-6435d39db351",
+      "human_request": "추가 시간이 들어도 40 step 모델 재평가",
+      "source_step": 16,
+      "target_step": 40,
+      "additional_optimizer_updates": 24,
+      "source_rows_through40": 320,
+      "original_live_checkpoint40_exists": false,
+      "preserve_main_progress": true,
+      "run_after": "original100evaluation",
+      "resume_main_from": 100,
+      "reported_model_origin": "replayed from checkpoint16, not saved live step40",
+      "limitation": "GPU nondeterminism may prevent exact equality with unsaved original live40",
+      "original_human_correction": "아니 지금 학습중인게 40이 됬을때 한번더 데이터를 만들라는 말이야",
+      "server_started": false,
+      "server_directory_exists": false,
+      "additional_training_authorized": false,
+      "original_live40_checkpoint_recoverable": false,
+      "actual_original40_validation_result": null,
+      "cancelled_utc": "2026-10-09T12:44:52.487930+00:00"
+    },
+    "driver": {},
+    "result_exists": false,
+    "manifest_exists": false,
+    "checkpoint_committed": false,
+    "last_branch_step": {},
+    "report": {}
+  },
+  "tokenization": {
+    "status": "passed",
+    "splits": {
+      "train.jsonl.gz": {
+        "rows": 40415,
+        "input_tokens": 237049716,
+        "supervised_tokens": 3291230
+      },
+      "validation.jsonl.gz": {
+        "rows": 4298,
+        "input_tokens": 23736126,
+        "supervised_tokens": 362003
+      }
+    },
+    "rebind_provenance": {
+      "audit_directory": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/token-cache-rebind/20261009T095737Z-e6ec3d4bed814dff8c8b7efc34697720",
+      "changed_code": [
+        "counseling_pipeline/stage1_runtime_probe.py"
+      ],
+      "changed_keys": [
+        "layer_split",
+        "max_length"
+      ],
+      "fresh_tokenization": false,
+      "kind": "verified_tokenizer_unchanged_cache_rebind",
+      "new_code_sha256": "442357f3139e531b9a6726209ae245b0a90fbeeda0dce35fa52bac34ed92f519",
+      "new_config_sha256": "763ff13f6de1b91cf9f7ee0e02ba8aa4a19ce9dcccf3fdca8b822e4723e608bc",
+      "previous_code_sha256": "aa85c3b86d7b0a42d3c8f256aa8e82ed2ec61b1c83d5bf715d2ea37f0b3097b8",
+      "previous_config_sha256": "b375000486a23b72172b23bba5ef6b30c246a5c22aa334a64c33cf43a8a611dd",
+      "previous_manifest_sha256": "44235235a1bdce993205eb21f320d1a27c379ec05018055696b00d79da185741",
+      "verified_utc": "2026-10-09T09:57:37.064505+00:00"
+    }
+  },
+  "qualification": {
+    "source": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/qualification.json",
+    "status": "passed",
+    "checks": [
+      {
+        "name": "gpu_pin",
+        "passed": true
+      },
+      {
+        "name": "token_contract",
+        "passed": true
+      },
+      {
+        "name": "fused_loss",
+        "passed": true
+      },
+      {
+        "name": "fused_gradient",
+        "passed": true
+      },
+      {
+        "name": "tiled_mlp_equivalence",
+        "passed": true
+      },
+      {
+        "name": "generation_profile",
+        "passed": true
+      },
+      {
+        "name": "weights_unchanged",
+        "passed": true
+      }
+    ],
+    "error": null
+  },
+  "canary": {
+    "passed": true,
+    "latest_step": {
+      "step": 3,
+      "target_mean_loss": 4.295423256817148,
+      "microbatches": 8,
+      "next_row_cursor": 24
+    },
+    "separate_from_main_training": true
+  },
+  "B0": {
+    "completed": false,
+    "evaluation": null
+  },
+  "B1": {
+    "completed": false,
+    "evaluation": null
+  },
+  "full_B1_pending_fresh_baseline": {
+    "evaluation_completed": false,
+    "evaluation": null
+  },
+  "latest_evaluation_progress": {
+    "event": "evaluation_progress",
+    "rows_completed": 32,
+    "total_rows": 32,
+    "supervised_tokens": 2905,
+    "elapsed_seconds": 117.43403040908743
+  },
+  "completion_marker_exists": false
+}

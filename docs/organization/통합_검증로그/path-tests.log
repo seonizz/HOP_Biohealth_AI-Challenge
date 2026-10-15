@@ -1,0 +1,9 @@
+
+> malssi-project@0.1.0 test:paths
+> cd ai && python3 -B -m unittest discover -s scripts -p test_project_paths.py
+
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.012s
+
+OK

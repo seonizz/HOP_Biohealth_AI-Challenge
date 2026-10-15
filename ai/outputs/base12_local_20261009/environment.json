@@ -1,0 +1,25 @@
+{
+  "observed_at": "2026-10-09T13:08:29.953421+00:00",
+  "python": "3.14.3 (main, Feb  3 2026, 15:32:20) [Clang 17.0.0 (clang-1700.6.3.2)]",
+  "python_executable": "/opt/homebrew/opt/python@3.14/bin/python3.14",
+  "machine": "arm64",
+  "macos": "26.7.1",
+  "tokenizers": "0.22.2",
+  "ollama": {
+    "version": "0.40.0"
+  },
+  "mlx_runtime_component_version": null,
+  "hardware": {
+    "chip": "Apple M5",
+    "unified_memory_gib": 32,
+    "gpu_cores": 10
+  },
+  "hashes": {
+    "/Users/chihun/.cache/uv/archive-v0/AOyC8EmbbpgJtm79bfAvG/tokenizers/__init__.py": "148ecb122f3fee03be9abb1fe213dd85fbc691bf2ad2b437ff531533781a6a3a",
+    "/Applications/Ollama.app/Contents/Resources/ollama": "9d8ee8964971c91b4faaa84cf61aac9a9d5a568af6629d8fc1d2cb939f9ce07f",
+    "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/ollama_gemma4_renderer.go": "17d9bd5e43a641c0383504474520f92beef0fde25030467215c60425647bb7ed",
+    "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/collector.executed.py": "39ccd1911e6d6f06a959b3069e6fcb12b4e3a51800a0271a17e4fb9fc9c01ba9"
+  },
+  "source_renderer_url": "https://raw.githubusercontent.com/ollama/ollama/v0.40.0/model/renderers/gemma4.go",
+  "note": "Only text renderer subset used for preflight; API token-count parity checked, exact runtime token-ID sequence unavailable."
+}

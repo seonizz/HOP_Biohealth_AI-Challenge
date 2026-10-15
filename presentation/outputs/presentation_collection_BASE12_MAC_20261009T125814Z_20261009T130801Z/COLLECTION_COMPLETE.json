@@ -1,0 +1,8 @@
+{
+  "run_id": "BASE12_MAC_20261009T125814Z",
+  "completed_at": "2026-10-09T13:08:01.342049+00:00",
+  "attempted": 94,
+  "assigned": 94,
+  "generations_sha256": "3705721039ab0518b2a7aa1eb224e8f90d0892d3f87e545faa71c76a80e0e6f2",
+  "semantic_scores_verified": false
+}

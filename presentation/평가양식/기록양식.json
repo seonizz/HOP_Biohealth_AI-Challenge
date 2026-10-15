@@ -1,0 +1,139 @@
+{
+  "schema_version": "malssi-mechanical-records-v3",
+  "template_only": true,
+  "instruction": "Copy only the relevant object per actual record. Keep evaluation metadata out of model inputs. null means unknown, not zero. Do not run template records.",
+  "condition_ids": [
+    "BASE31",
+    "BASE12",
+    "FT31"
+  ],
+  "model_input_record": {
+    "case_id": null,
+    "task": "action",
+    "messages": []
+  },
+  "case_manifest_record": {
+    "case_id": null,
+    "task": "action",
+    "source_conversation_id": null,
+    "source_group_id": null,
+    "provenance_reference": null,
+    "scope": null,
+    "source_or_synthetic": null,
+    "input_sha256": null,
+    "assigned_before_generation": true,
+    "pre_model_exclusion_reason": null,
+    "overlap_audit_reference": null
+  },
+  "prediction_record": {
+    "run_id": null,
+    "condition": null,
+    "case_id": null,
+    "task": "action",
+    "generation_id": null,
+    "protocol_sha256": null,
+    "input_sha256": null,
+    "model_files_sha256": null,
+    "adapter_sha256": null,
+    "prompt_sha256": null,
+    "generation_config_sha256": null,
+    "status": "not_started",
+    "status_allowed_values": [
+      "not_started",
+      "valid",
+      "format_error",
+      "generation_error",
+      "timeout",
+      "length_limit"
+    ],
+    "raw_output": null,
+    "response_sha256": null,
+    "predicted_label": null,
+    "error_detail": null,
+    "termination_reason": null,
+    "actual_input_tokens": null,
+    "actual_output_tokens": null,
+    "started_at": null,
+    "tokenizer_sha256": null,
+    "chat_template_sha256": null
+  },
+  "summary_record": {
+    "task": "action",
+    "scope": null,
+    "status": "not_executed",
+    "predeclared_case_count": null,
+    "conversation_count": null,
+    "source_group_count": null,
+    "pre_model_exclusion_counts": null,
+    "cases_sha256": null,
+    "generations_sha256": null,
+    "conditions": {
+      "BASE31": {
+        "status": "not_measured",
+        "assigned_cases": null,
+        "attempted_cases": null,
+        "valid_output_percent": null,
+        "status_counts": null,
+        "observed_output_label_counts": null,
+        "actual_input_tokens": null,
+        "actual_output_tokens": null,
+        "normal_termination_cases": null
+      },
+      "BASE12": {
+        "status": "not_measured",
+        "assigned_cases": null,
+        "attempted_cases": null,
+        "valid_output_percent": null,
+        "status_counts": null,
+        "observed_output_label_counts": null,
+        "actual_input_tokens": null,
+        "actual_output_tokens": null,
+        "normal_termination_cases": null
+      },
+      "FT31": {
+        "status": "not_measured",
+        "assigned_cases": null,
+        "attempted_cases": null,
+        "valid_output_percent": null,
+        "status_counts": null,
+        "observed_output_label_counts": null,
+        "actual_input_tokens": null,
+        "actual_output_tokens": null,
+        "normal_termination_cases": null
+      }
+    },
+    "comparisons": {
+      "FT31_vs_BASE31": {
+        "reference_condition_id": "BASE31",
+        "target_condition_id": "FT31",
+        "interpretation": "same_base_fine_tuning_effect",
+        "status": "not_measured",
+        "valid_output_delta_pp": null,
+        "same_cases_prompt_and_budget_verified": false,
+        "normal_termination_delta_pp": null
+      },
+      "FT31_vs_BASE12": {
+        "reference_condition_id": "BASE12",
+        "target_condition_id": "FT31",
+        "interpretation": "model_size_and_fine_tuning_combined_difference",
+        "status": "not_measured",
+        "valid_output_delta_pp": null,
+        "same_cases_prompt_and_budget_verified": false,
+        "normal_termination_delta_pp": null
+      }
+    },
+    "verification_file": null
+  },
+  "verification_record": {
+    "source_files_sha256": {},
+    "case_join_verified": false,
+    "duplicate_records": null,
+    "missing_records": null,
+    "hash_checks_passed": false,
+    "count_checks_passed": false,
+    "token_aggregation_checks_passed": false,
+    "output_format_checks_passed": false,
+    "verified_at": null,
+    "reproducibility_scope": "Fixed-record recomputation only; no guarantee that a future generation repeats"
+  }
+}

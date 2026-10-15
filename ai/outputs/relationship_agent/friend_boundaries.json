@@ -1,0 +1,855 @@
+{
+  "case_id": "friend_boundaries",
+  "mode": "final",
+  "synthetic": true,
+  "model": "gemma4:12b",
+  "measured_at": "2026-10-11T03:56:25.718Z",
+  "duration_ms": 211080,
+  "result": {
+    "guide": {
+      "top": "우울",
+      "script": "민수야, 지금 잠깐 이야기 괜찮을까? 요즘 네가 새 업무 맡으면서 많이 바빠진 것 같아서 걱정되는 마음에 연락해. 지난번 약속도 취소하고 잠도 잘 못 잔다는 이야기를 들으니 네가 많이 지쳐 있는 건 아닌지 마음이 쓰이네. 나는 언제든 네 곁에 있고 네 이야기를 들어줄 준비가 되어 있어. 다만 나도 밤에는 휴식이 필요해서, 우리 서로의 시간을 지키면서 대화하면 좋겠다. 혹시 지금 네가 가장 필요로 하는 도움이나, 우리가 같이 알아봤으면 하는 상담 정보가 있을까?",
+      "doList": [
+        "민수의 최근 상황을 구체적으로 들어보기. '요즘 어떤 점이 가장 힘든지 말해줄 수 있어?'",
+        "민수가 원하는 도움 확인하기. '내가 어떤 부분에서 도움을 주면 네가 조금이라도 편해질까?'",
+        "상담 정보 함께 찾아보기. '네가 원한다면 우리가 같이 상담이나 진료 정보를 찾아볼 수도 있어.'"
+      ],
+      "avoid": [
+        "무조건적인 수용. 대신 '나도 밤에는 쉬어야 한다는 마음을 전하고 싶어'라고 솔직하게 말하기.",
+        "상담 강요하기. 대신 '함께 알아볼지' 물어보며 선택권 주기."
+      ],
+      "next": "민수가 자신의 상태를 이야기하거나 도움을 원한다고 하면, 그가 말하는 내용에 집중하며 구체적으로 어떤 도움이 필요한지 들어보세요. 그 과정에서 민수가 상담이나 진료에 대해 긍정적인 반응을 보인다면, 함께 믿을만한 기관이나 정보를 찾아보는 단계를 진행하면 됩니다. 만약 민수가 지금은 대화하기 어렵다고 하거나 혼자 있고 싶어 한다면, 그 의사를 존중해 주세요. '그럼 나중에 네가 편해질 때 다시 이야기하자'라고 말하며 대화를 마무리하고, 이용자님도 오빠와 대화하며 마음을 돌보는 시간을 가지며 휴식을 취하세요.",
+      "care": {
+        "feel": "민수를 걱정하는 마음과 동시에, 새벽 연락으로 인해 본인의 수면이 방해받아 피로를 느끼는 상황이 잘 느껴집니다.",
+        "tips": [
+          "본인의 휴식 시간을 지키기 위해 연락 가능한 시간대를 미리 정해두기",
+          "힘든 마음이 들 때는 믿고 의지할 수 있는 오빠와 대화하며 감정 나누기"
+        ]
+      }
+    },
+    "assessment": {
+      "safety": false
+    },
+    "patient_state": {
+      "summary": "민수는 최근 새 업무를 맡은 뒤 저녁 약속을 취소하고 잠을 잘 못 자는 모습을 보이고 있습니다. 이용자는 민수의 의사를 먼저 확인하고 상담 정보를 함께 찾아보고 싶어 합니다.",
+      "facts": [
+        {
+          "subject": "patient",
+          "question_id": "mood",
+          "quote": "지난 두 번의 저녁 약속을 취소했고, 문자로 요즘 잠을 잘 못 잔다고 했어요.",
+          "interpretation": "민수는 최근 업무 변화 이후 약속을 취소하고 수면에 어려움을 겪고 있습니다.",
+          "certainty": "reported"
+        },
+        {
+          "subject": "patient",
+          "question_id": "describe",
+          "quote": "지난달부터 새 업무를 맡은 뒤 저녁 약속을 취소했어요. 직접 이유를 물어보지는 않았어요.",
+          "interpretation": "이용자는 민수의 약속 취소 사실을 알고 있으나 직접적인 이유를 묻지는 않은 상태입니다.",
+          "certainty": "reported"
+        }
+      ],
+      "unknowns": [
+        "민수가 잠을 못 자는 구체적인 원인",
+        "민수가 원하는 도움의 구체적인 종류"
+      ],
+      "user_goal": "요즘 지쳐 보이는 네 이야기를 듣고 싶지만, 나도 밤에는 쉬어야 한다는 마음을 전하고 싶어요."
+    },
+    "name_index": {
+      "alias": "민수",
+      "source_question_id": "name",
+      "quote": "민수"
+    },
+    "relationship_analysis": {
+      "patient_summary": "민수는 최근 새 업무를 맡은 이후 저녁 약속을 취소하고 있으며, 문자로 잠을 잘 못 잔다고 말했습니다.",
+      "supporter_summary": "이용자는 민수의 새벽 연락으로 인해 걱정을 느끼면서도 본인의 수면이 방해받아 피로를 느끼고 있습니다.",
+      "relationship": {
+        "label": "친구",
+        "supporter_role": "친구",
+        "dynamics": [
+          {
+            "interpretation": "이용자는 민수의 상태를 걱정하면서도 자신의 휴식과 한계를 고려하며 곁에 있음을 알리고 싶어 합니다.",
+            "evidence": [
+              {
+                "subject": "user_goal",
+                "question_id": "want",
+                "quote": "요즘 지쳐 보이는 네 이야기를 듣고 싶지만, 나도 밤에는 쉬어야 한다는 마음을 전하고 싶어요."
+              }
+            ],
+            "certainty": "tentative"
+          }
+        ],
+        "strengths": [
+          {
+            "interpretation": "민수는 친한 직장 동료와 점심을 먹으면 좀 편하다고 말했습니다.",
+            "evidence": [
+              {
+                "subject": "patient",
+                "question_id": "support",
+                "quote": "민수는 친한 직장 동료와 점심을 먹으면 좀 편하다고 말했어요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ],
+        "boundaries": [
+          {
+            "interpretation": "이용자는 새벽 메시지를 기다리느라 잠드는 시간이 늦어지는 상황에서 본인의 휴식에 대한 한계를 느끼고 있습니다.",
+            "evidence": [
+              {
+                "subject": "supporter",
+                "question_id": "cgchange",
+                "quote": "새벽 메시지를 기다리느라 잠드는 시간이 늦어졌어요."
+              }
+            ],
+            "certainty": "reported"
+          }
+        ]
+      },
+      "unknowns": [
+        "민수가 잠을 못 자는 구체적인 원인",
+        "민수가 원하는 도움의 구체적인 종류"
+      ],
+      "safety": {
+        "urgent": false,
+        "evidence": []
+      }
+    },
+    "relationship_memory": {
+      "patient": [
+        {
+          "interpretation": "민수는 친한 직장 동료와 점심을 먹으면 좀 편하다고 말했습니다.",
+          "evidence": [
+            {
+              "subject": "patient",
+              "question_id": "support",
+              "quote": "민수는 친한 직장 동료와 점심을 먹으면 좀 편하다고 말했어요."
+            }
+          ],
+          "certainty": "reported"
+        }
+      ],
+      "supporter": [
+        {
+          "interpretation": "이용자는 새벽 메시지를 기다리느라 잠드는 시간이 늦어지는 상황에서 본인의 휴식에 대한 한계를 느끼고 있습니다.",
+          "evidence": [
+            {
+              "subject": "supporter",
+              "question_id": "cgchange",
+              "quote": "새벽 메시지를 기다리느라 잠드는 시간이 늦어졌어요."
+            }
+          ],
+          "certainty": "reported"
+        }
+      ],
+      "relationship": [
+        {
+          "interpretation": "이용자는 민수의 상태를 걱정하면서도 자신의 휴식과 한계를 고려하며 곁에 있음을 알리고 싶어 합니다.",
+          "evidence": [
+            {
+              "subject": "user_goal",
+              "question_id": "want",
+              "quote": "요즘 지쳐 보이는 네 이야기를 듣고 싶지만, 나도 밤에는 쉬어야 한다는 마음을 전하고 싶어요."
+            }
+          ],
+          "certainty": "tentative"
+        }
+      ],
+      "unknowns": [
+        "민수가 잠을 못 자는 구체적인 원인",
+        "민수가 원하는 도움의 구체적인 종류"
+      ]
+    },
+    "agent": {
+      "prompt_version": "relationship-v3.4-rag",
+      "stages": [
+        "relationship_analysis",
+        "analysis_review",
+        "communication_plan",
+        "guide_write",
+        "guide_quality",
+        "guide_refine",
+        "guide_review"
+      ],
+      "reviewed": true,
+      "quality_reviewed": true,
+      "retrieval": {
+        "method": "conversation_lexical_v1",
+        "stages": [
+          {
+            "stage": "relationship_analysis",
+            "indexed_sources": 12,
+            "source_ids": [
+              "f411a6e01d1f664bc7198092",
+              "fec55aa2e6a254b94b92213f",
+              "04a4010ea58239fed9fccdd0",
+              "8302fc75d0e2c885e3cffb19",
+              "9fceda32d849c1afc1ba54c3",
+              "c820dfe7c3a56798a90a2909",
+              "bd8c3764c053be0ecb0720dc",
+              "5a22e991c8a59640dcee7601",
+              "3f402b9c79e44e62fc4c7362",
+              "84f098e855359c9e051ba036",
+              "d819caef5537e906ed7da86d",
+              "d15cef2b124c256bcef5c5fd"
+            ]
+          },
+          {
+            "stage": "analysis_review",
+            "indexed_sources": 12,
+            "source_ids": [
+              "f411a6e01d1f664bc7198092",
+              "fec55aa2e6a254b94b92213f",
+              "04a4010ea58239fed9fccdd0",
+              "8302fc75d0e2c885e3cffb19",
+              "9fceda32d849c1afc1ba54c3",
+              "c820dfe7c3a56798a90a2909",
+              "bd8c3764c053be0ecb0720dc",
+              "5a22e991c8a59640dcee7601",
+              "3f402b9c79e44e62fc4c7362",
+              "84f098e855359c9e051ba036",
+              "d819caef5537e906ed7da86d",
+              "d15cef2b124c256bcef5c5fd"
+            ]
+          },
+          {
+            "stage": "communication_plan",
+            "indexed_sources": 12,
+            "source_ids": [
+              "f411a6e01d1f664bc7198092",
+              "fec55aa2e6a254b94b92213f",
+              "04a4010ea58239fed9fccdd0",
+              "8302fc75d0e2c885e3cffb19",
+              "9fceda32d849c1afc1ba54c3",
+              "c820dfe7c3a56798a90a2909",
+              "bd8c3764c053be0ecb0720dc",
+              "5a22e991c8a59640dcee7601",
+              "3f402b9c79e44e62fc4c7362",
+              "84f098e855359c9e051ba036",
+              "d819caef5537e906ed7da86d",
+              "d15cef2b124c256bcef5c5fd"
+            ]
+          },
+          {
+            "stage": "guide_write",
+            "indexed_sources": 12,
+            "source_ids": [
+              "f411a6e01d1f664bc7198092",
+              "fec55aa2e6a254b94b92213f",
+              "04a4010ea58239fed9fccdd0",
+              "8302fc75d0e2c885e3cffb19",
+              "9fceda32d849c1afc1ba54c3",
+              "c820dfe7c3a56798a90a2909",
+              "bd8c3764c053be0ecb0720dc",
+              "5a22e991c8a59640dcee7601",
+              "3f402b9c79e44e62fc4c7362",
+              "84f098e855359c9e051ba036",
+              "d819caef5537e906ed7da86d",
+              "d15cef2b124c256bcef5c5fd"
+            ]
+          },
+          {
+            "stage": "guide_quality",
+            "indexed_sources": 12,
+            "source_ids": [
+              "f411a6e01d1f664bc7198092",
+              "fec55aa2e6a254b94b92213f",
+              "04a4010ea58239fed9fccdd0",
+              "8302fc75d0e2c885e3cffb19",
+              "9fceda32d849c1afc1ba54c3",
+              "c820dfe7c3a56798a90a2909",
+              "bd8c3764c053be0ecb0720dc",
+              "5a22e991c8a59640dcee7601",
+              "3f402b9c79e44e62fc4c7362",
+              "84f098e855359c9e051ba036",
+              "d819caef5537e906ed7da86d",
+              "d15cef2b124c256bcef5c5fd"
+            ]
+          },
+          {
+            "stage": "guide_refine",
+            "indexed_sources": 12,
+            "source_ids": [
+              "f411a6e01d1f664bc7198092",
+              "fec55aa2e6a254b94b92213f",
+              "04a4010ea58239fed9fccdd0",
+              "8302fc75d0e2c885e3cffb19",
+              "9fceda32d849c1afc1ba54c3",
+              "c820dfe7c3a56798a90a2909",
+              "bd8c3764c053be0ecb0720dc",
+              "5a22e991c8a59640dcee7601",
+              "3f402b9c79e44e62fc4c7362",
+              "84f098e855359c9e051ba036",
+              "d819caef5537e906ed7da86d",
+              "d15cef2b124c256bcef5c5fd"
+            ]
+          },
+          {
+            "stage": "guide_review",
+            "indexed_sources": 12,
+            "source_ids": [
+              "f411a6e01d1f664bc7198092",
+              "fec55aa2e6a254b94b92213f",
+              "04a4010ea58239fed9fccdd0",
+              "8302fc75d0e2c885e3cffb19",
+              "9fceda32d849c1afc1ba54c3",
+              "c820dfe7c3a56798a90a2909",
+              "bd8c3764c053be0ecb0720dc",
+              "5a22e991c8a59640dcee7601",
+              "3f402b9c79e44e62fc4c7362",
+              "84f098e855359c9e051ba036",
+              "d819caef5537e906ed7da86d",
+              "d15cef2b124c256bcef5c5fd"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "trace": [
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "state",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 35056,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 6643,
+        "completion_tokens": 788,
+        "total_tokens": 7431
+      },
+      "reason": "agent_unreported_label"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "state",
+      "attempt": 2,
+      "status": 200,
+      "duration_ms": 36436,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 6703,
+        "completion_tokens": 821,
+        "total_tokens": 7524
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "relationship_analysis",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 27825,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 6450,
+        "completion_tokens": 492,
+        "total_tokens": 6942
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "analysis_review",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 6530,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 3986,
+        "completion_tokens": 10,
+        "total_tokens": 3996
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "communication_plan",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 18857,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4465,
+        "completion_tokens": 264,
+        "total_tokens": 4729
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_write",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 32102,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4452,
+        "completion_tokens": 591,
+        "total_tokens": 5043
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_quality",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 17558,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4471,
+        "completion_tokens": 230,
+        "total_tokens": 4701
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_refine",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 28746,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 5212,
+        "completion_tokens": 591,
+        "total_tokens": 5803
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "guide_review",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 7938,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4475,
+        "completion_tokens": 10,
+        "total_tokens": 4485
+      },
+      "reason": "success"
+    }
+  ],
+  "stage_outputs": [
+    {
+      "stage": "state",
+      "retrieval": {
+        "indexed_sources": 12,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:contact",
+          "patient:mood",
+          "patient:describe",
+          "patient:support",
+          "patient:need",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal"
+        ]
+      },
+      "output": {
+        "patient_state": {
+          "summary": "민수는 최근 새 업무를 맡은 뒤 저녁 약속을 취소하고 잠을 잘 못 자는 모습을 보이고 있습니다. 이용자는 민수의 의사를 먼저 확인하고 상담 정보를 함께 찾아보고 싶어 합니다.",
+          "facts": [
+            {
+              "subject": "patient",
+              "question_id": "mood",
+              "quote": "지난 두 번의 저녁 약속을 취소했고, 문자로 요즘 잠을 잘 못 잔다고 했어요.",
+              "interpretation": "민수는 최근 업무 변화 이후 약속을 취소하고 수면에 어려움을 겪고 있습니다.",
+              "certainty": "reported"
+            },
+            {
+              "subject": "patient",
+              "question_id": "describe",
+              "quote": "지난달부터 새 업무를 맡은 뒤 저녁 약속을 취소했어요. 직접 이유를 물어보지는 않았어요.",
+              "interpretation": "이용자는 민수의 약속 취소 사실을 알고 있으나 직접적인 이유를 묻지는 않은 상태입니다.",
+              "certainty": "reported"
+            }
+          ],
+          "unknowns": [
+            "민수가 잠을 못 자는 구체적인 원인",
+            "민수가 원하는 도움의 구체적인 종류"
+          ],
+          "user_goal": "요즘 지쳐 보이는 네 이야기를 듣고 싶지만, 나도 밤에는 쉬어야 한다는 마음을 전하고 싶어요."
+        },
+        "name_index": {
+          "alias": "민수",
+          "source_question_id": "name",
+          "quote": "민수"
+        },
+        "question_plan": {
+          "skip": []
+        },
+        "relationship_memory": {
+          "patient": [
+            {
+              "interpretation": "민수는 업무 변화 이후 약속을 취소하고 수면 문제를 겪고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "mood",
+                  "quote": "지난 두 번의 저녁 약속을 취소했고, 문자로 요즘 잠을 잘 못 잔다고 했어요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "supporter": [
+            {
+              "interpretation": "이용자는 민수의 새벽 연락으로 인해 수면이 방해받고 피로를 느끼고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "feeling",
+                  "quote": "새벽에 연락이 오면 걱정되지만 제 잠도 깨서 다음 날 피곤해요."
+                }
+              ],
+              "certainty": "reported"
+            },
+            {
+              "interpretation": "이용자는 자신의 감정을 나누기 위해 오빠와 대화하며 도움을 받고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "mysupport",
+                  "quote": "저는 제 오빠와 이야기하면 마음이 편해져요. 민수와 제 오빠는 서로 모르는 사이예요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "relationship": [
+            {
+              "interpretation": "이용자는 민수의 상태를 걱정하면서도 자신의 휴식과 한계를 고려하며 곁에 있음을 알리고 싶어 합니다.",
+              "evidence": [
+                {
+                  "subject": "user_goal",
+                  "question_id": "want",
+                  "quote": "요즘 지쳐 보이는 네 이야기를 듣고 싶지만, 나도 밤에는 쉬어야 한다는 마음을 전하고 싶어요."
+                }
+              ],
+              "certainty": "tentative"
+            }
+          ],
+          "unknowns": [
+            "민수가 잠을 못 자는 구체적인 원인",
+            "민수가 원하는 도움의 구체적인 종류"
+          ]
+        }
+      }
+    },
+    {
+      "stage": "relationship_analysis",
+      "retrieval": {
+        "indexed_sources": 12,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:contact",
+          "patient:mood",
+          "patient:describe",
+          "patient:support",
+          "patient:need",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal"
+        ]
+      },
+      "output": {
+        "patient_summary": "민수는 최근 새 업무를 맡은 이후 저녁 약속을 취소하고 있으며, 문자로 잠을 잘 못 잔다고 말했습니다.",
+        "supporter_summary": "이용자는 민수의 새벽 연락으로 인해 걱정을 느끼면서도 본인의 수면이 방해받아 피로를 느끼고 있습니다.",
+        "relationship": {
+          "label": "친구",
+          "supporter_role": "친구",
+          "dynamics": [
+            {
+              "interpretation": "이용자는 민수의 상태를 걱정하면서도 자신의 휴식과 한계를 고려하며 곁에 있음을 알리고 싶어 합니다.",
+              "evidence": [
+                {
+                  "subject": "user_goal",
+                  "question_id": "want",
+                  "quote": "요즘 지쳐 보이는 네 이야기를 듣고 싶지만, 나도 밤에는 쉬어야 한다는 마음을 전하고 싶어요."
+                }
+              ],
+              "certainty": "tentative"
+            }
+          ],
+          "strengths": [
+            {
+              "interpretation": "민수는 친한 직장 동료와 점심을 먹으면 좀 편하다고 말했습니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "support",
+                  "quote": "민수는 친한 직장 동료와 점심을 먹으면 좀 편하다고 말했어요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "boundaries": [
+            {
+              "interpretation": "이용자는 새벽 메시지를 기다리느라 잠드는 시간이 늦어지는 상황에서 본인의 휴식에 대한 한계를 느끼고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "cgchange",
+                  "quote": "새벽 메시지를 기다리느라 잠드는 시간이 늦어졌어요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ]
+        },
+        "unknowns": [
+          "민수가 잠을 못 자는 구체적인 원인",
+          "민수가 원하는 도움의 구체적인 종류"
+        ],
+        "safety": {
+          "urgent": false,
+          "evidence": []
+        }
+      }
+    },
+    {
+      "stage": "analysis_review",
+      "retrieval": {
+        "indexed_sources": 12,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:contact",
+          "patient:mood",
+          "patient:describe",
+          "patient:support",
+          "patient:need",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal"
+        ]
+      },
+      "output": {
+        "approved": true,
+        "issues": []
+      }
+    },
+    {
+      "stage": "communication_plan",
+      "retrieval": {
+        "indexed_sources": 12,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:contact",
+          "patient:mood",
+          "patient:describe",
+          "patient:support",
+          "patient:need",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal"
+        ]
+      },
+      "output": {
+        "voice": "친구 사이의 편안하고 진솔한 말투",
+        "opening_evidence": [
+          {
+            "subject": "patient",
+            "question_id": "mood",
+            "quote": "지난 두 번의 저녁 약속을 취소했고, 문자로 요즘 잠을 잘 못 잔다고 했어요."
+          }
+        ],
+        "user_intent": "대화 시작 허락 → 지쳐 보이는 민수의 상태 관찰 → 곁에 있다는 진심 전달 → 밤 시간대 휴식의 필요성 설명 → 함께 상담 정보 알아보기 제안",
+        "patient_choice": "민수가 원하는 도움부터 확인하고 필요하면 함께 상담 정보를 찾아보는 것",
+        "supporter_care": [
+          "새벽 연락으로 인한 수면 방해와 피로감 인정",
+          "오빠와의 대화를 통한 정서적 지지 활용"
+        ],
+        "avoid_patterns": [
+          "민수의 연락을 무조건 받아주며 본인의 수면을 포기하는 행동",
+          "상담이나 진료를 강요하는 듯한 말투"
+        ],
+        "next_step": "민수의 현재 상태와 원하는 도움에 대해 먼저 들어보기"
+      }
+    },
+    {
+      "stage": "guide_write",
+      "retrieval": {
+        "indexed_sources": 12,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:contact",
+          "patient:mood",
+          "patient:describe",
+          "patient:support",
+          "patient:need",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal"
+        ]
+      },
+      "output": {
+        "guide": {
+          "top": "우울",
+          "script": "민수야, 지금 잠깐 이야기 괜찮을까? 요즘 네가 새 업무 맡으면서 많이 바빠진 것 같아서 걱정되는 마음에 연락해. 지난번 약속도 취소하고 잠도 잘 못 잔다는 이야기를 들으니 네가 많이 지쳐 있는 건 아닌지 마음이 쓰이네. 나는 언제든 네 곁에 있고 네 이야기를 들어줄 준비가 되어 있어. 다만 나도 밤에는 휴식이 필요해서, 우리 서로의 시간을 지키면서 대화하면 좋겠다. 혹시 지금 네가 가장 필요로 하는 도움이나, 우리가 같이 알아봤으면 하는 상담 정보가 있을까?",
+          "doList": [
+            "민수의 최근 상황을 구체적으로 들어보기. '요즘 어떤 점이 가장 힘든지 말해줄 수 있어?'",
+            "민수가 원하는 도움 확인하기. '내가 어떤 부분에서 도움을 주면 네가 조금이라도 편해질까?'",
+            "상담 정보 함께 찾아보기. '네가 원한다면 우리가 같이 상담이나 진료 정보를 찾아볼 수도 있어.'"
+          ],
+          "avoid": [
+            "무조건적인 수용. 대신 '나도 밤에는 쉬어야 한다는 마음을 전하고 싶어'라고 솔직하게 말하기.",
+            "상담 강요하기. 대신 '함께 알아볼지' 물어보며 선택권 주기."
+          ],
+          "next": "민수가 자신의 상태를 이야기하거나 도움을 원한다고 하면, 그가 말하는 내용에 집중하며 구체적으로 어떤 도움이 필요한지 들어보세요. 그 과정에서 민수가 상담이나 진료에 대해 긍정적인 반응을 보인다면, 함께 믿을만한 기관이나 정보를 찾아보는 단계를 진행하면 됩니다. 만약 민수가 지금은 대화하기 어렵다고 하거나 혼자 있고 싶어 한다면, 그 의사를 존중해 주세요. '그럼 나중에 네가 편해질 때 다시 이야기하자'라고 말하며 대화를 마무리하고, 이용자님도 오빠와 대화하며 마음을 돌보는 시간을 가지며 휴식을 취하세요.",
+          "care": {
+            "feel": "민수를 걱정하는 마음과 동시에, 새벽 연락으로 인해 본인의 수면이 방해받아 피로를 느끼는 상황이 잘 느껴집니다.",
+            "tips": [
+              "본인의 휴식 시간을 지키기 위해 연락 가능한 시간대를 미리 정해두기",
+              "힘든 마음이 들 때는 믿고 의지할 수 있는 오빠와 대화하며 감정 나누기"
+            ]
+          }
+        },
+        "assessment": {
+          "safety": false
+        }
+      }
+    },
+    {
+      "stage": "guide_quality",
+      "retrieval": {
+        "indexed_sources": 12,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:contact",
+          "patient:mood",
+          "patient:describe",
+          "patient:support",
+          "patient:need",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal"
+        ]
+      },
+      "output": {
+        "improvements": [
+          {
+            "field": "script",
+            "reason": "현재 script가 한 문단으로 길게 나열되어 있어 가독성이 떨어지며, 대화의 흐름이 한꺼번에 전달될 수 있습니다.",
+            "repair": "민수야, 지금 잠깐 이야기 괜찮을까? 요즘 네가 새 업무 맡으면서 많이 바빠진 것 같아서 걱정되는 마음에 연락해. 지난번 약속도 취소하고 잠도 잘 못 잔다는 이야기를 들으니 네가 많이 지쳐 있는 건 아닌지 마음이 쓰이네. 나는 언제든 네 곁에 있고 네 이야기를 들어줄 준비가 되어 있어. 다만 나도 밤에는 휴식이 필요해서,"
+          },
+          {
+            "field": "script",
+            "reason": "대화의 목적이 한꺼번에 전달되므로, 상대방의 반응을 살피며 대화를 이어갈 수 있도록 문단을 나누어야 합니다.",
+            "repair": "우리 서로의 시간을 지키면서 대화하면 좋겠다. 혹시 지금 네가 가장 필요로 하는 도움이나, 우리가 같이 알아봤으면 하는 상담 정보가 있을까?"
+          }
+        ]
+      }
+    },
+    {
+      "stage": "guide_refine",
+      "retrieval": {
+        "indexed_sources": 12,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:contact",
+          "patient:mood",
+          "patient:describe",
+          "patient:support",
+          "patient:need",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal"
+        ]
+      },
+      "output": {
+        "guide": {
+          "top": "우울",
+          "script": "민수야, 지금 잠깐 이야기 괜찮을까? 요즘 네가 새 업무 맡으면서 많이 바빠진 것 같아서 걱정되는 마음에 연락해. 지난번 약속도 취소하고 잠도 잘 못 잔다는 이야기를 들으니 네가 많이 지쳐 있는 건 아닌지 마음이 쓰이네. 나는 언제든 네 곁에 있고 네 이야기를 들어줄 준비가 되어 있어. 다만 나도 밤에는 휴식이 필요해서, 우리 서로의 시간을 지키면서 대화하면 좋겠다. 혹시 지금 네가 가장 필요로 하는 도움이나, 우리가 같이 알아봤으면 하는 상담 정보가 있을까?",
+          "doList": [
+            "민수의 최근 상황을 구체적으로 들어보기. '요즘 어떤 점이 가장 힘든지 말해줄 수 있어?'",
+            "민수가 원하는 도움 확인하기. '내가 어떤 부분에서 도움을 주면 네가 조금이라도 편해질까?'",
+            "상담 정보 함께 찾아보기. '네가 원한다면 우리가 같이 상담이나 진료 정보를 찾아볼 수도 있어.'"
+          ],
+          "avoid": [
+            "무조건적인 수용. 대신 '나도 밤에는 쉬어야 한다는 마음을 전하고 싶어'라고 솔직하게 말하기.",
+            "상담 강요하기. 대신 '함께 알아볼지' 물어보며 선택권 주기."
+          ],
+          "next": "민수가 자신의 상태를 이야기하거나 도움을 원한다고 하면, 그가 말하는 내용에 집중하며 구체적으로 어떤 도움이 필요한지 들어보세요. 그 과정에서 민수가 상담이나 진료에 대해 긍정적인 반응을 보인다면, 함께 믿을만한 기관이나 정보를 찾아보는 단계를 진행하면 됩니다. 만약 민수가 지금은 대화하기 어렵다고 하거나 혼자 있고 싶어 한다면, 그 의사를 존중해 주세요. '그럼 나중에 네가 편해질 때 다시 이야기하자'라고 말하며 대화를 마무리하고, 이용자님도 오빠와 대화하며 마음을 돌보는 시간을 가지며 휴식을 취하세요.",
+          "care": {
+            "feel": "민수를 걱정하는 마음과 동시에, 새벽 연락으로 인해 본인의 수면이 방해받아 피로를 느끼는 상황이 잘 느껴집니다.",
+            "tips": [
+              "본인의 휴식 시간을 지키기 위해 연락 가능한 시간대를 미리 정해두기",
+              "힘든 마음이 들 때는 믿고 의지할 수 있는 오빠와 대화하며 감정 나누기"
+            ]
+          }
+        },
+        "assessment": {
+          "safety": false
+        }
+      }
+    },
+    {
+      "stage": "guide_review",
+      "retrieval": {
+        "indexed_sources": 12,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:contact",
+          "patient:mood",
+          "patient:describe",
+          "patient:support",
+          "patient:need",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal"
+        ]
+      },
+      "output": {
+        "approved": true,
+        "issues": []
+      }
+    }
+  ]
+}

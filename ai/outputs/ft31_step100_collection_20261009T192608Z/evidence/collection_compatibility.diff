@@ -1,0 +1,41 @@
+--- server.py
++++ server.py
+@@ -65,7 +65,7 @@
+     return config
+ 
+ 
+-def validate_request(payload, config):
++def validate_request(payload, config, *, preserve_history=False):
+     if not isinstance(payload, dict):
+         raise RequestError("Request body must be a JSON object")
+     allowed = {"model", "messages", "max_tokens", "temperature", "top_p", "stream", "n"}
+@@ -88,7 +88,10 @@
+             raise RequestError("Message content must be a non-empty string")
+         if i == 0 and message["role"] == "system":
+             continue
+-        if message["role"] != expected:
++        if preserve_history:
++            if message["role"] not in ("user", "assistant"):
++                raise RequestError("History roles must be user or assistant; system is allowed only first")
++        elif message["role"] != expected:
+             raise RequestError("After an optional system message, alternate user and assistant messages")
+         expected = "assistant" if expected == "user" else "user"
+     if messages[-1]["role"] != "user":
+--- active_cache_server.py
++++ active_cache_server.py
+@@ -150,10 +150,13 @@
+                     return self._send(200, health())
+                 if method == 'GET' and parts == ['v1', 'models']:
+                     return self._send(200, {'object': 'list', 'data': [{'id': config['model_id'], 'object': 'model', 'owned_by': 'local'}]})
+-                if method == 'POST' and parts == ['v1', 'chat', 'completions']:
++                if method == 'POST' and parts in (['v1', 'chat', 'completions'], ['v1', 'collection', 'chat', 'completions']):
+                     payload = self._body()
+                     try:
+-                        messages, maximum, temperature, top_p = validate_stateless(payload, config)
++                        if parts == ['v1', 'collection', 'chat', 'completions']:
++                            messages, maximum, temperature, top_p = validate_stateless(payload, config, preserve_history=True)
++                        else:
++                            messages, maximum, temperature, top_p = validate_stateless(payload, config)
+                     except ValueError:
+                         raise ActiveCacheError(400, 'invalid_request', 'Invalid chat completion request.') from None
+                     return self._send(200, controller.stateless(owner, messages, maximum, temperature, top_p))

@@ -1,0 +1,23 @@
+{
+  "schema_version": "malssi-collection-v1",
+  "run_id": null,
+  "status": "not_run",
+  "checks": [],
+  "strict_loss_reference": {
+    "status": "not_run",
+    "reference_definition": null,
+    "atol": null,
+    "rtol": null,
+    "evidence_file": null
+  },
+  "first_optimizer_update": {
+    "status": "not_run",
+    "evidence_file": null
+  },
+  "save_resume": {
+    "status": "not_run",
+    "evidence_file": null
+  },
+  "unresolved_findings": [],
+  "missing_reasons": {}
+}

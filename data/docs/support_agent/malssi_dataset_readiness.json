@@ -1,0 +1,50 @@
+{
+  "service": "말씨",
+  "contract": "docs/support_agent/malssi_service_contract.json",
+  "auxiliary_release": "데이터셋/학습용_3종_v1_20261009",
+  "auxiliary_release_role": "four_class_classification_and_semantic_annotation_support",
+  "malssi_agent_training_ready": false,
+  "llm_training_performed": false,
+  "identified_design_examples": {
+    "path": "docs/support_agent/design_examples.jsonl",
+    "total": 9,
+    "training_eligible": 0,
+    "sha256": "3212be93744f4ffeb38ae7884fa1bc6cc7d9a75a425b4f063bd14fe596961410"
+  },
+  "readiness_gaps": [
+    "보호자/주변인 사례의 실제 목표 응답과 내용에 묶인 독립 검토 기록",
+    "원천/질문은행의 사용 허용 범위와 증거에 대한 실제 검토",
+    "단어 보조학습을 포함할 경우 모든 경로의 원천 연결 및 분할 독립성",
+    "검토된 안전 정책·지역 자원과 운영 상태/개인정보 처리 절차",
+    "실제 기반 모델 토크나이저/손실 마스크 및 모델 응답 비교 평가"
+  ],
+  "classification_release_not_relabelled_as_sft": true,
+  "source_data_and_frozen_release_unchanged": true,
+  "inventory_scope": "이번 대화에서 생성/확인한 3종 분류 패키지와 기존 9개 설계 예시; 모든 외부 학습 데이터의 존재 여부를 단정하지 않음",
+  "last_audit_date": "2026-10-09",
+  "local_implementation": {
+    "schema_and_loader": "implemented_and_regression_tested",
+    "classification_release_integrity": "verified_against_raw_database_and_recomputed_features",
+    "classification_fit_predict": "reproduced_three_units",
+    "migrated_design_cases": 9,
+    "migrated_training_eligible": 0,
+    "word_source_lineage": "not_available_in_active_lexical_release",
+    "joint_three_unit_generation_evaluation_ready": false,
+    "adversarial_case_groups": 30,
+    "actual_model_response_evaluations": 0,
+    "evidence_directory": "outputs/private/malssi_round2_20261009",
+    "case_schema": "malssi-agent-case-v2",
+    "migrated_design_path": "docs/support_agent/agent_cases.design.v2.jsonl",
+    "latest_report": "docs/support_agent/말씨_2차_검증_수정_결과.md",
+    "round2_findings_fixed": [
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "H01",
+      "H02",
+      "H03"
+    ]
+  }
+}

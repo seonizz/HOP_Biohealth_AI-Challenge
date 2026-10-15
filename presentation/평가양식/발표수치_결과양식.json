@@ -1,0 +1,156 @@
+{
+  "schema_version": "malssi-presentation-mechanical-v3",
+  "template_only": true,
+  "run_id": null,
+  "measurement_kind": "mechanical_record_verification",
+  "allowed_statuses": [
+    "observed",
+    "not_collected",
+    "not_applicable"
+  ],
+  "metrics": [
+    {
+      "metric_id": "assigned_cases",
+      "unit": "count",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "attempted_cases",
+      "unit": "count",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "valid_completion_rate",
+      "unit": "percent",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "length_limit_rate",
+      "unit": "percent",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "format_error_rate",
+      "unit": "percent",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "input_token_count_match_rate",
+      "unit": "percent",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "model_file_hash_match_rate",
+      "unit": "percent",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "input_tokens_total",
+      "unit": "tokens",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "output_tokens_total",
+      "unit": "tokens",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "output_tokens_min",
+      "unit": "tokens",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "output_tokens_max",
+      "unit": "tokens",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "validation_nll_base31",
+      "unit": "loss",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    },
+    {
+      "metric_id": "validation_nll_ft31",
+      "unit": "loss",
+      "scope": null,
+      "value": null,
+      "numerator": null,
+      "denominator": null,
+      "status": "not_collected",
+      "evidence_ids": []
+    }
+  ],
+  "rules": [
+    "Use frozen assigned cases as denominator and retain every failure.",
+    "Exact output format is not semantic correctness.",
+    "Group real development and public regression records separately.",
+    "NLL requires matching 31B tokenizer, target mask, case IDs and hashes.",
+    "No timing or memory metrics in the current presentation."
+  ],
+  "evidence_record_template": {
+    "evidence_id": null,
+    "source_path": null,
+    "sha256": null,
+    "field": null
+  }
+}

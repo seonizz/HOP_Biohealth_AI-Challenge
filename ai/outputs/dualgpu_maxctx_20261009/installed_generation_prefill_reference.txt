@@ -1,0 +1,218 @@
+FILE malssi-validation-20261009/.venv/lib/python3.12/site-packages/transformers/generation/utils.py
+4071:    ):
+4072:        """
+4073:        Perform the prefill stage of generation.
+4074:
+4075:        Note that usually, the prefill stage is always the first iteration of a new input batch, and thus multimodal inputs etc
+4076:        should be treated as if it's the first iteration. However, for assisted decoding, assistants call `generate`
+4077:        several time in a row for a same batch of inputs, so we need to pass `is_first_iteration` here for such cases.
+4078:        """
+4079:        # When restarting from previous cache, the `input_ids` are either the FULL sequence, including previous inputs,
+4080:        # or only the new tokens but in this case the attention_mask still contains the FULL sequence (because otherwise we may
+4081:        # lose some early padding tokens information). So slice inputs according to that if needed
+4082:        # When restarting from `inputs_embeds`, it's always the FULL sequence, and we always need to slice
+4083:        next_sequence_length = None
+4084:        inputs_embeds = model_kwargs.get("inputs_embeds")
+4085:        use_inputs_embeds = False
+4086:        if not self.config.is_encoder_decoder and inputs_embeds is not None and is_first_iteration:
+4087:            use_inputs_embeds = True
+4088:        if (cache := model_kwargs.get("past_key_values")) is not None:
+4089:            past_length = cache.get_seq_length()
+4090:            # It will be sliced as inputs_embeds = inputs_embeds[:, -next_sequence_length:, :] in `prepare_inputs_for_generation`
+4091:            if use_inputs_embeds:
+4092:                next_sequence_length = model_kwargs["inputs_embeds"].shape[1] - past_length
+4093:            else:
+4094:                attention_mask_key = "decoder_attention_mask" if self.config.is_encoder_decoder else "attention_mask"
+4095:                attention_mask = model_kwargs.get(attention_mask_key)
+4096:                # In this case we need to slice - if it's smaller than the mask, only the new inputs were passed -> no need to do anything
+4097:                if attention_mask is not None and input_ids.shape[1] == attention_mask.shape[1]:
+4098:                    # inputs will be sliced as `input_ids[:, -next_sequence_length :]` in `prepare_inputs_for_generation`
+4099:                    next_sequence_length = input_ids.shape[1] - past_length
+4100:
+4101:        # Usual prefill
+4102:        if generation_config.prefill_chunk_size is None:
+4103:            model_inputs = self.prepare_inputs_for_generation(
+4104:                input_ids,
+4105:                next_sequence_length=next_sequence_length,
+4106:                is_first_iteration=is_first_iteration,
+4107:                **model_kwargs,
+4108:            )
+4109:            return self(**model_inputs, return_dict=True)
+4110:
+4111:        # Chunked prefill (for very large contexts)
+4112:        else:
+4113:            # Even if we are not compiling the forward, flex is always compiled when used. With chunked prefill, we may
+4114:            # end up needing just a bit more graphs than the default (which is 8). Doing this avoids very cryptic warnings
+4115:            getattr(torch, "_dynamo").config.cache_size_limit = 64
+4116:
+4117:            chunk_size = generation_config.prefill_chunk_size
+4118:            input_chunks = torch.split(input_ids, chunk_size, dim=-1)
+4119:
+4120:            if "past_key_values" not in model_kwargs:
+4121:                raise ValueError("Cannot use prefill chunking without a cache")
+4122:
+4123:            model_forward = (
+4124:                self.get_compiled_call(generation_config.compile_config)
+4125:                if self._valid_auto_compile_criteria(model_kwargs, generation_config)
+4126:                else self.__call__
+4127:            )
+4128:
+4129:            attention_mask = model_kwargs.pop("attention_mask", None)
+4130:            position_ids = model_kwargs.pop("position_ids", None)
+4131:            past_length = 0
+4132:            for input_chunk in input_chunks:
+4133:                current_length = past_length + input_chunk.shape[-1]
+4134:                if attention_mask is not None:
+4135:                    model_kwargs["attention_mask"] = attention_mask[:, :current_length]
+4136:                if position_ids is not None:
+4137:                    model_kwargs["position_ids"] = position_ids[:, past_length:current_length]
+4138:                model_inputs = self.prepare_inputs_for_generation(input_chunk, **model_kwargs)
+4139:
+4140:                outputs = model_forward(**model_inputs, return_dict=True)
+4141:
+4142:                model_kwargs["past_key_values"] = outputs.past_key_values
+4143:                past_length = current_length
+4144:
+4145:            # Recreate the kwargs based on the full length
+4146:            model_kwargs["attention_mask"] = attention_mask
+4147:            model_kwargs["position_ids"] = position_ids
+4148:
+4149:            # Latest outputs contain next token logits
+4150:            return outputs
+4151:
+FILE malssi-validation-20261009/.venv/lib/python3.12/site-packages/transformers/cache_utils.py
+65:    def get_seq_length(self) -> int: ...
+66:
+67:    @abstractmethod
+68:    def get_max_length(self) -> int:
+69:        """
+70:        Returns the maximum sequence length the layer can hold. A value of `-1` means no maximum, or an undefined
+71:        maximum, for example a dynamic attention layer that grows indefinitely or a linear attention layer that has no
+72:        sequence length dimension.
+73:        """
+74:        ...
+75:
+76:    def offload(self):
+77:        """Offload this layer's data to CPU device."""
+78:        if self.is_initialized:
+79:            self.keys = self.keys.to("cpu", non_blocking=True)
+156:    def get_seq_length(self) -> int:
+157:        """Returns the sequence length of the cached states."""
+158:        if not self.is_initialized or self.keys.numel() == 0:
+159:            return 0
+160:        return self.keys.shape[-2]
+161:
+162:    def get_max_length(self) -> int:
+163:        """Returns the maximum sequence length of the cache object. DynamicLayer does not have a maximum length."""
+164:        return -1
+165:
+166:    @deprecate_kwarg("max_length", new_name="tokens_to_remove", version="5.18")
+167:    def crop(self, tokens_to_remove: int) -> None:
+168:        """
+169:        Remove `tokens_to_remove` tokens from the current cache layer.
+170:        """
+205:class DynamicSlidingWindowLayer(DynamicLayer):
+206:    """
+207:    A cache layer that grows dynamically as more tokens are generated, up until the sliding window size.
+208:    It stores the key and value states as tensors of shape `[batch_size, num_heads, min(seq_len, sliding_window), head_dim]`.
+209:    """
+210:
+211:    is_sliding = True
+212:
+213:    def __init__(self, sliding_window: int, **kwargs):
+214:        super().__init__()
+215:        self.sliding_window = sliding_window
+216:        self.cumulative_length = 0
+217:        self._sliding_window_tensor = torch.tensor(self.sliding_window, dtype=torch.long)
+218:        self.record_past = False
+219:
+277:    def get_seq_length(self) -> int:
+278:        """Returns the sequence length of the cached states."""
+279:        return self.cumulative_length
+280:
+281:    def get_max_length(self) -> int:
+282:        """Return the maximum cache shape of the cache"""
+283:        return self.sliding_window
+284:
+285:    @deprecate_kwarg("max_length", new_name="tokens_to_remove", version="5.18")
+286:    def crop(self, tokens_to_remove: int) -> None:
+287:        """
+288:        Remove `tokens_to_remove` tokens from the current cache layer. This will also restrict the size of the cached states back to their
+289:        minimal working size, i.e. `sliding_window - 1` if they reached the sliding window length. This means that `crop(0)` will not
+290:        necessarily always be a no-op, as it may still remove useless states (i.e. states that are not needed for the next `forward`).
+291:        """
+497:    def get_seq_length(self) -> int:
+498:        """Returns the sequence length of the cached states."""
+499:        return self.cumulative_length if self.is_initialized else 0
+500:
+501:    def get_max_length(self) -> int:
+502:        """Return the maximum cache shape of the cache"""
+503:        return self.max_cache_len
+504:
+505:
+506:class StaticSlidingWindowLayer(StaticLayer):
+507:    """
+508:    A static cache layer that stores the key and value states as static tensors of shape
+509:    `[batch_size, num_heads, min(max_cache_len, sliding_window), head_dim]`. It lazily allocates its full backing
+510:    tensors, and then mutates them in-place. Built for `torch.compile` support.
+511:
+624:    def get_seq_length(self) -> int:
+625:        """Returns the sequence length of the cached states."""
+626:        return self.cumulative_length_int
+627:
+628:    def reset(self):
+629:        super().reset()
+630:        self.cumulative_length_int = 0
+631:
+632:
+633:class StaticIndexedLayer(StaticLayer):
+634:    """
+635:    A `StaticLayer` with an additional statically-allocated indexer key cache for Dynamic Sparse
+636:    Attention (DSA) models (e.g. GLM MoE DSA, DeepSeek V32). This is the static, `torch.compile`-friendly
+637:    counterpart of `DynamicIndexedLayer`: the indexer key buffer is preallocated once and mutated in-place.
+638:
+776:    def get_seq_length(self) -> int:
+777:        """Returns the sequence length of the cached states."""
+778:        return self.cumulative_length
+779:
+780:
+781:class QuantoQuantizedLayer(QuantizedLayer):
+782:    def __init__(
+783:        self,
+784:        nbits: int = 4,
+785:        axis_key: int = 0,
+786:        axis_value: int = 0,
+787:        q_group_size: int = 64,
+788:        residual_length: int = 128,
+789:    ):
+790:        super().__init__(
+1506:    def get_seq_length(self, layer_idx: int = 0) -> int:
+1507:        """Returns the sequence length of the cache for the given layer."""
+1508:        if layer_idx >= len(self.layers):
+1509:            return 0
+1510:
+1511:        # For alternating attention/linear attention  caches, `get_seq_length` needs to use attention layer idx when called with default layer_idx
+1512:        if not isinstance(self.layers[layer_idx], CacheLayerMixin):
+1513:            # If this is called with non-default arg, raise
+1514:            if layer_idx != 0:
+1515:                raise ValueError(
+1516:                    f"You called `get_seq_length` on layer index {layer_idx}, but this layer is a LinearAttention layer, which "
+1517:                    "does not track sequence length."
+1518:                )
+1519:            try:
+1520:                # Use the first attention layer
+2047:    def get_seq_length(self, layer_idx: int = 0) -> int:
+2048:        """Returns the sequence length of the cached states. A layer index can be optionally passed."""
+2049:        return self.self_attention_cache.get_seq_length(layer_idx)
+2050:
+2051:    def get_max_length(self, layer_idx: int | None = None) -> int:
+2052:        """Returns the maximum sequence length (i.e. max capacity) of the cache object"""
+2053:        return self.self_attention_cache.get_max_length(layer_idx)
+2054:
+2055:    def reset(self):
+2056:        self.self_attention_cache.reset()
+2057:        self.cross_attention_cache.reset()
+2058:        for layer_idx in self.is_updated:
+2059:            self.is_updated[layer_idx] = False
+2060:
+2061:    def reorder_cache(self, beam_idx: torch.LongTensor):

@@ -1,0 +1,54 @@
+{
+  "synthetic": true,
+  "run_id": "v35",
+  "review_type": "assistant_semantic_inspection",
+  "complete": false,
+  "findings": [
+    {
+      "question_id": "mood",
+      "severity": "grounding_quality",
+      "observation": "새 상태 답변 뒤 patient 메모리는 반복 확인 행동으로 갱신됨. interpretation의 불안 증세는 인용된 직접 입력의 반복 확인 행동보다 넓은 주장임. 선택 답변의 불안 관련 내용을 뒷받침하려면 그 원문도 인용하거나 문장을 해당 인용 범위로 좁혀야 함.",
+      "next_check": "이후 턴에서 한 근거에 여러 주장 결합이 반복되는지와 이용자 부담·지원 자원 최신 반영을 확인"
+    }
+  ],
+  "completed_turns_at_review": 29,
+  "web_run_complete": true,
+  "state_refresh_observation": {
+    "first_stable_question": "describe",
+    "last_checked_question": "others_help",
+    "unchanged_after_describe": [
+      "concern",
+      "cause",
+      "events",
+      "others_why",
+      "support",
+      "burden"
+    ],
+    "interpretation": "New substantive patient answers were accepted but relationship_memory retained the same initial facts and goal interpretation. This is an observed refresh limitation, not proof of its cause; a single paired prior-payload comparison is planned."
+  },
+  "supporter_reported_example": {
+    "question_id": "moment",
+    "claim": "큰 마음의 부담을 느꼈습니다",
+    "source": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요.",
+    "finding": "The quote reports a witnessed scene; the reported interpretation adds the app user’s emotional burden before its corresponding answer. The new reported draft contract removes this free paraphrase."
+  },
+  "state_retry_observation": {
+    "question_id": "cgchange_more",
+    "first_two_attempts": "agent_unreported_label",
+    "outcome": "third attempt accepted",
+    "duration_ms": 135608,
+    "interpretation": "Current validation rejected unreported labels and preserved the pending original answer. This is a observed retry cost to compare with the new reported source contract."
+  },
+  "final_status": {
+    "server_generation_and_record_roundtrip": "passed",
+    "stages": 7,
+    "harness_result": "missing_required_script_intent",
+    "failed_keyword_alternatives": [
+      "새벽",
+      "밤",
+      "확인"
+    ],
+    "consultation_intent_present": true,
+    "limitation": "This exact keyword expectation failed even though the script referenced another source-grounded planning scene. Semantic review is still needed, including attributed versus certain claims about the target’s motivations."
+  }
+}

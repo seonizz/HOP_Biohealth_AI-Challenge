@@ -1,0 +1,94 @@
+{
+  "verified": true,
+  "verifier_sha256": "03e638d1d23980ef1d3b78cfca27568430811abd418b870ab50feb52d394549f",
+  "metrics_file_sha256": "e2d5697d6092ea60bd6cb9546ea900ad0a643d894f67725f01665646a3115744",
+  "metrics_canonical_sha256": "085eda3ca5a7cc89bcd00bcbd8398a5eb40f8ea2384a53cee9fc4c4557066b11",
+  "checks": [
+    {
+      "check": "python_syntax_compile",
+      "passed": true
+    },
+    {
+      "check": "canonical_repeat_matches",
+      "passed": true,
+      "exit_code": 0,
+      "result": {
+        "expected_matches": true,
+        "metrics_canonical_sha256": "085eda3ca5a7cc89bcd00bcbd8398a5eb40f8ea2384a53cee9fc4c4557066b11",
+        "model_blobs_rehashed": 740,
+        "requests_verified": 94,
+        "source_target_removal_verified": 32,
+        "verified": true
+      }
+    },
+    {
+      "check": "changed_expected_rejected",
+      "passed": true,
+      "exit_code": 1,
+      "result": {
+        "verified": false,
+        "error": "Computed metrics differ from expected JSON"
+      }
+    },
+    {
+      "check": "input_tamper_rejected",
+      "passed": true,
+      "exit_code": 1,
+      "result": {
+        "verified": false,
+        "error": "Input canonical hash mismatch: response/DEV001"
+      }
+    },
+    {
+      "check": "request_tamper_rejected",
+      "passed": true,
+      "exit_code": 1,
+      "result": {
+        "verified": false,
+        "error": "Request hash mismatch: response/DEV001"
+      }
+    },
+    {
+      "check": "raw_tamper_rejected",
+      "passed": true,
+      "exit_code": 1,
+      "result": {
+        "verified": false,
+        "error": "Raw response hash mismatch: response/DEV001"
+      }
+    },
+    {
+      "check": "decoded_tamper_rejected",
+      "passed": true,
+      "exit_code": 1,
+      "result": {
+        "verified": false,
+        "error": "Decoded response hash mismatch: response/DEV001"
+      }
+    },
+    {
+      "check": "unassigned_evidence_rejected",
+      "passed": true,
+      "exit_code": 1,
+      "result": {
+        "verified": false,
+        "error": "Unaccounted or missing private evidence file in inputs"
+      }
+    },
+    {
+      "check": "source_output_write_rejected",
+      "passed": true,
+      "exit_code": 1,
+      "result": {
+        "verified": false,
+        "error": "Output must not modify source evidence"
+      }
+    },
+    {
+      "check": "nine_status_branches",
+      "passed": true,
+      "cases": 9
+    }
+  ],
+  "scope": "Offline captured-evidence arithmetic and integrity verification only; no model inference, semantic judgment, or future-run guarantee."
+}

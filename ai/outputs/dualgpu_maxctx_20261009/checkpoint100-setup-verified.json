@@ -1,0 +1,38 @@
+{
+  "observed_utc": "2026-10-09T12:45:36.480049+00:00",
+  "latest_main_step": {
+    "elapsed_seconds": 119.59113900305238,
+    "gradient_norm_before_clip": 7.875308513641357,
+    "learning_rates": [
+      5.921052631578948e-06
+    ],
+    "microbatches": 8,
+    "mode": "train",
+    "next_row_cursor": 360,
+    "step": 45,
+    "supervised_tokens": 707,
+    "target_mean_loss": 3.978425114293078
+  },
+  "checkpoint100_coordinator": {
+    "authorization_thread": "01a12000-fb4f-7fc3-b76d-6435d39db351",
+    "completed_optimizer_steps": 45,
+    "intentional_handoff": true,
+    "latest_main_training_loss": 3.978425114293078,
+    "original_driver_pid": 1046734,
+    "phase": "waiting_for_committed100_boundary",
+    "pid": 1048788,
+    "status": "running",
+    "supersedes": "early_training_pipeline_v1.json",
+    "target_optimizer_step": 100,
+    "total_optimizer_steps": 5052,
+    "updated_utc": "2026-10-09T12:44:39.753866+00:00"
+  },
+  "deployment_all_hashes_valid": true,
+  "checkpoint40_replay_cancelled_not_started": true,
+  "recent20_mean_seconds": 126.72054831584683,
+  "estimated_minutes_to100": 116.1605026228596,
+  "estimated100_utc": "2026-10-09T14:41:46.110206+00:00",
+  "committed_checkpoints": [
+    "step-000000016"
+  ]
+}

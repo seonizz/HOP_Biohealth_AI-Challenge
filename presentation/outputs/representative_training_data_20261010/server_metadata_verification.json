@@ -1,0 +1,57 @@
+{
+  "observed_at_utc": "2026-10-10T02:17:58.659062+00:00",
+  "remote_read_only": true,
+  "sensitive_text_exported": false,
+  "checkpoint_step": 100,
+  "checkpoint_cursor": 800,
+  "checkpoint_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+  "train_rows": 40415,
+  "source_counts": {
+    "validation": 117,
+    "utterances": 303522,
+    "reviewed_disclosure_turns": 216,
+    "train": 990
+  },
+  "server_original_source_file_hashes": {
+    "conversation/train.jsonl.gz": "a9e8b2a0c8bb4b2fa6f863dcd2897f3f0a7bb7a3797ea4b437aace7bf5ca56a7",
+    "conversation/validation.jsonl.gz": "078ab0bf8f45c6bf327d73565233d3040b28807f2cc93739c39eaf96e507ad8d",
+    "conversation/source_dialogues.train.jsonl.gz": "af0eb9384dc39fb6eca59c40781b6ba5c41c7343a821eeae2900a6cdff139c36",
+    "conversation/source_dialogues.validation.jsonl.gz": "a858d48423139269569e78f9a99385ab9ab0a5f2bb4c8ea2bdf58df006f57e4f"
+  },
+  "example_checks": [
+    {
+      "train_index": 5828,
+      "id_matches": true,
+      "raw_line_hash_matches": true,
+      "target_hash_matches": true,
+      "included_in_checkpoint": true,
+      "processed_position": 115,
+      "last_answer_only_mask": true
+    },
+    {
+      "train_index": 6418,
+      "id_matches": true,
+      "raw_line_hash_matches": true,
+      "target_hash_matches": true,
+      "included_in_checkpoint": true,
+      "processed_position": 289,
+      "last_answer_only_mask": true
+    },
+    {
+      "train_index": 10436,
+      "id_matches": true,
+      "raw_line_hash_matches": true,
+      "target_hash_matches": true,
+      "included_in_checkpoint": true,
+      "processed_position": 320,
+      "last_answer_only_mask": true
+    }
+  ],
+  "service_code_sha256": {
+    "src/llm.ts": "6d7fc364e45794aaa515666f4f7ef4ea243300c9106cd7f7783f2bc9107576d0",
+    "src/flow.ts": "fdf0555fe910a3576be9850ab23dbd2567fc57fb5c753e38093a8ee3006f6a82",
+    "src/server.ts": "bb18ffd63efbbba7a41493a6ba793c88186d35ed4c0779a67e63a66597b88b0e",
+    "docs/MODEL_PIPELINE.md": "bd1d242b7ab80d00a8a9ae192290640b2fb4ad911a9c8f9c6093deee468c9db0"
+  },
+  "classification_dataset_found_on_server": false
+}

@@ -1,0 +1,508 @@
+{
+  "schema_version": "malssi-presentation-mechanical-v3",
+  "run_id": "BASE12_MAC_20261009T125814Z",
+  "measurement_kind": "mechanical_record_verification",
+  "observed_at": "2026-10-09T13:08:01.342049+00:00",
+  "condition": "BASE12",
+  "model": {
+    "tag": "gemma4:12b",
+    "distribution_digest": "c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+    "upstream_model_id": "google/gemma-4-12B-it",
+    "upstream_revision": null,
+    "quantization": "nvfp4",
+    "runner": "mlx",
+    "trained_adapter": false,
+    "scope": "Ollama MLX NVFP4 distribution; no project fine tuning; not BF16 original weights"
+  },
+  "hardware": {
+    "chip": "Apple M5",
+    "unified_memory_gib": 32
+  },
+  "runtime": "Ollama 0.40.0 / MLX",
+  "configuration": {
+    "attempts_per_case": 1,
+    "concurrency": 1,
+    "response_max_new_tokens": 512,
+    "classification_max_new_tokens": 32,
+    "context_tokens": 4096,
+    "thinking": false,
+    "seed": 3407,
+    "temperature": 0
+  },
+  "scopes": {
+    "all_requests": {
+      "scope_id": "all_requests",
+      "label": "전체 요청 (상담+분류)",
+      "task": null,
+      "split": null,
+      "assigned": 94,
+      "attempted": 94,
+      "valid": 93,
+      "length_limit": 1,
+      "format_error": 0,
+      "error": 0,
+      "missing": 0,
+      "status_counts": {
+        "length_limit": 1,
+        "missing_generation": 0,
+        "valid": 93
+      },
+      "rates_assigned": {
+        "attempted": {
+          "numerator": 94,
+          "denominator": 94,
+          "percent": 100.0
+        },
+        "valid": {
+          "numerator": 93,
+          "denominator": 94,
+          "percent": 98.93617021276596
+        },
+        "length_limit": {
+          "numerator": 1,
+          "denominator": 94,
+          "percent": 1.0638297872340425
+        },
+        "format_error": {
+          "numerator": 0,
+          "denominator": 94,
+          "percent": 0.0
+        },
+        "error": {
+          "numerator": 0,
+          "denominator": 94,
+          "percent": 0.0
+        },
+        "missing": {
+          "numerator": 0,
+          "denominator": 94,
+          "percent": 0.0
+        }
+      },
+      "input_tokens": {
+        "n": 94,
+        "total": 73540,
+        "min": 76,
+        "max": 3019,
+        "mean": 782.3404255319149
+      },
+      "output_tokens": {
+        "n": 94,
+        "total": 9496,
+        "min": 1,
+        "max": 512,
+        "mean": 101.02127659574468
+      },
+      "input_tokens_preflight": {
+        "n": 94,
+        "total": 73540,
+        "min": 76,
+        "max": 3019,
+        "mean": 782.3404255319149
+      },
+      "actual_input_plus_output_tokens": {
+        "n": 94,
+        "total": 83036,
+        "min": 110,
+        "max": 3148,
+        "mean": 883.3617021276596
+      }
+    },
+    "response_all": {
+      "scope_id": "response_all",
+      "label": "상담 전체",
+      "task": "response",
+      "split": null,
+      "assigned": 63,
+      "attempted": 63,
+      "valid": 62,
+      "length_limit": 1,
+      "format_error": 0,
+      "error": 0,
+      "missing": 0,
+      "status_counts": {
+        "length_limit": 1,
+        "missing_generation": 0,
+        "valid": 62
+      },
+      "rates_assigned": {
+        "attempted": {
+          "numerator": 63,
+          "denominator": 63,
+          "percent": 100.0
+        },
+        "valid": {
+          "numerator": 62,
+          "denominator": 63,
+          "percent": 98.41269841269842
+        },
+        "length_limit": {
+          "numerator": 1,
+          "denominator": 63,
+          "percent": 1.5873015873015872
+        },
+        "format_error": {
+          "numerator": 0,
+          "denominator": 63,
+          "percent": 0.0
+        },
+        "error": {
+          "numerator": 0,
+          "denominator": 63,
+          "percent": 0.0
+        },
+        "missing": {
+          "numerator": 0,
+          "denominator": 63,
+          "percent": 0.0
+        }
+      },
+      "input_tokens": {
+        "n": 63,
+        "total": 56152,
+        "min": 76,
+        "max": 3019,
+        "mean": 891.3015873015873
+      },
+      "output_tokens": {
+        "n": 63,
+        "total": 9417,
+        "min": 16,
+        "max": 512,
+        "mean": 149.47619047619048
+      },
+      "input_tokens_preflight": {
+        "n": 63,
+        "total": 56152,
+        "min": 76,
+        "max": 3019,
+        "mean": 891.3015873015873
+      },
+      "actual_input_plus_output_tokens": {
+        "n": 63,
+        "total": 65569,
+        "min": 110,
+        "max": 3148,
+        "mean": 1040.7777777777778
+      }
+    },
+    "response_legacy_dev": {
+      "scope_id": "response_legacy_dev",
+      "label": "실제 상담 개발용",
+      "task": "response",
+      "split": "legacy_validation_development",
+      "assigned": 32,
+      "attempted": 32,
+      "valid": 32,
+      "length_limit": 0,
+      "format_error": 0,
+      "error": 0,
+      "missing": 0,
+      "status_counts": {
+        "missing_generation": 0,
+        "valid": 32
+      },
+      "rates_assigned": {
+        "attempted": {
+          "numerator": 32,
+          "denominator": 32,
+          "percent": 100.0
+        },
+        "valid": {
+          "numerator": 32,
+          "denominator": 32,
+          "percent": 100.0
+        },
+        "length_limit": {
+          "numerator": 0,
+          "denominator": 32,
+          "percent": 0.0
+        },
+        "format_error": {
+          "numerator": 0,
+          "denominator": 32,
+          "percent": 0.0
+        },
+        "error": {
+          "numerator": 0,
+          "denominator": 32,
+          "percent": 0.0
+        },
+        "missing": {
+          "numerator": 0,
+          "denominator": 32,
+          "percent": 0.0
+        }
+      },
+      "input_tokens": {
+        "n": 32,
+        "total": 46400,
+        "min": 76,
+        "max": 3019,
+        "mean": 1450
+      },
+      "output_tokens": {
+        "n": 32,
+        "total": 1947,
+        "min": 16,
+        "max": 208,
+        "mean": 60.84375
+      },
+      "input_tokens_preflight": {
+        "n": 32,
+        "total": 46400,
+        "min": 76,
+        "max": 3019,
+        "mean": 1450
+      },
+      "actual_input_plus_output_tokens": {
+        "n": 32,
+        "total": 48347,
+        "min": 110,
+        "max": 3148,
+        "mean": 1510.84375
+      }
+    },
+    "response_public_regression": {
+      "scope_id": "response_public_regression",
+      "label": "공개 합성 상담 회귀",
+      "task": "response",
+      "split": "synthetic_public_regression",
+      "assigned": 31,
+      "attempted": 31,
+      "valid": 30,
+      "length_limit": 1,
+      "format_error": 0,
+      "error": 0,
+      "missing": 0,
+      "status_counts": {
+        "length_limit": 1,
+        "missing_generation": 0,
+        "valid": 30
+      },
+      "rates_assigned": {
+        "attempted": {
+          "numerator": 31,
+          "denominator": 31,
+          "percent": 100.0
+        },
+        "valid": {
+          "numerator": 30,
+          "denominator": 31,
+          "percent": 96.7741935483871
+        },
+        "length_limit": {
+          "numerator": 1,
+          "denominator": 31,
+          "percent": 3.225806451612903
+        },
+        "format_error": {
+          "numerator": 0,
+          "denominator": 31,
+          "percent": 0.0
+        },
+        "error": {
+          "numerator": 0,
+          "denominator": 31,
+          "percent": 0.0
+        },
+        "missing": {
+          "numerator": 0,
+          "denominator": 31,
+          "percent": 0.0
+        }
+      },
+      "input_tokens": {
+        "n": 31,
+        "total": 9752,
+        "min": 301,
+        "max": 350,
+        "mean": 314.5806451612903
+      },
+      "output_tokens": {
+        "n": 31,
+        "total": 7470,
+        "min": 43,
+        "max": 512,
+        "mean": 240.96774193548387
+      },
+      "input_tokens_preflight": {
+        "n": 31,
+        "total": 9752,
+        "min": 301,
+        "max": 350,
+        "mean": 314.5806451612903
+      },
+      "actual_input_plus_output_tokens": {
+        "n": 31,
+        "total": 17222,
+        "min": 357,
+        "max": 862,
+        "mean": 555.5483870967741
+      }
+    },
+    "action_public_regression": {
+      "scope_id": "action_public_regression",
+      "label": "공개 합성 행동 분류",
+      "task": "action",
+      "split": "synthetic_public_regression",
+      "assigned": 31,
+      "attempted": 31,
+      "valid": 31,
+      "length_limit": 0,
+      "format_error": 0,
+      "error": 0,
+      "missing": 0,
+      "status_counts": {
+        "missing_generation": 0,
+        "valid": 31
+      },
+      "rates_assigned": {
+        "attempted": {
+          "numerator": 31,
+          "denominator": 31,
+          "percent": 100.0
+        },
+        "valid": {
+          "numerator": 31,
+          "denominator": 31,
+          "percent": 100.0
+        },
+        "length_limit": {
+          "numerator": 0,
+          "denominator": 31,
+          "percent": 0.0
+        },
+        "format_error": {
+          "numerator": 0,
+          "denominator": 31,
+          "percent": 0.0
+        },
+        "error": {
+          "numerator": 0,
+          "denominator": 31,
+          "percent": 0.0
+        },
+        "missing": {
+          "numerator": 0,
+          "denominator": 31,
+          "percent": 0.0
+        }
+      },
+      "input_tokens": {
+        "n": 31,
+        "total": 17388,
+        "min": 547,
+        "max": 596,
+        "mean": 560.9032258064516
+      },
+      "output_tokens": {
+        "n": 31,
+        "total": 79,
+        "min": 1,
+        "max": 3,
+        "mean": 2.5483870967741935
+      },
+      "input_tokens_preflight": {
+        "n": 31,
+        "total": 17388,
+        "min": 547,
+        "max": 596,
+        "mean": 560.9032258064516
+      },
+      "actual_input_plus_output_tokens": {
+        "n": 31,
+        "total": 17467,
+        "min": 550,
+        "max": 597,
+        "mean": 563.4516129032259
+      }
+    }
+  },
+  "action_label_counts": {
+    "ASK_CFI": 0,
+    "CLARIFY": 17,
+    "SUPPORT": 5,
+    "SUPPORT_LIMITED": 0,
+    "SAFETY_SUPPORT": 7,
+    "END": 2
+  },
+  "source_ledger_sha256": "3705721039ab0518b2a7aa1eb224e8f90d0892d3f87e545faa71c76a80e0e6f2",
+  "source_case_manifest_sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373",
+  "pre_generation_exclusions": [
+    {
+      "case_id": "T29-64",
+      "reason": "pre_generation_context_limit",
+      "tokens": {
+        "response": 4287,
+        "action": 4663
+      }
+    },
+    {
+      "case_id": "T29-256",
+      "reason": "pre_generation_context_limit",
+      "tokens": {
+        "response": 16191,
+        "action": 16951
+      }
+    },
+    {
+      "case_id": "T30",
+      "reason": "data_production_pipeline_not_model_response"
+    }
+  ],
+  "source_evidence_root": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009",
+  "verification_file": "verification.json",
+  "recalculation_script": "verify_measurements.py",
+  "interpretation": "Counts, exact-format validity and tokens computed from fixed local records. These do not measure counseling usefulness, factual correctness, safety, or future-run invariance.",
+  "mechanical_verification": {
+    "verified": true,
+    "metrics_file": "mechanical_measurements.json",
+    "metrics_file_sha256": "e2d5697d6092ea60bd6cb9546ea900ad0a643d894f67725f01665646a3115744",
+    "metrics_canonical_sha256": "085eda3ca5a7cc89bcd00bcbd8398a5eb40f8ea2384a53cee9fc4c4557066b11",
+    "verifier_sha256": "03e638d1d23980ef1d3b78cfca27568430811abd418b870ab50feb52d394549f",
+    "model_integrity": {
+      "selected_required_blobs": 740,
+      "actual_hash_and_size_matches": 740,
+      "expected_total_bytes": 7714247731,
+      "actual_total_bytes": 7714247731,
+      "selected_distribution_digest": "sha256:c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+      "distribution_index_digest": "sha256:312246b09fab47c3b66cdbeaa50643d5ad5610f71a8f0560d947e17b55f616cf",
+      "manifest_sha256": {
+        "/Users/chihun/.ollama/models/manifests/registry.ollama.ai/library/gemma4/12b": "c6c61e74c905ac3a15f209c421dddf59444e2b28a10f25e8012a3d222e67c6e1",
+        "/Users/chihun/.ollama/models/manifests-v2/ollama.com/library/gemma4/12b": "312246b09fab47c3b66cdbeaa50643d5ad5610f71a8f0560d947e17b55f616cf"
+      },
+      "scope": "Local selected MLX content-addressed distribution only; not upstream authenticity."
+    },
+    "source_validation": {
+      "selected_rows": 32,
+      "selected_groups": 21,
+      "selected_conversations": 32,
+      "source_prefix_and_target_removal_matches": 32,
+      "source_target_sha256_matches": 32,
+      "archive_sha256": "18e5cffe5efa77e79c7aa56e739c52dfdf334af8aa9623f0b24743ead44f35ed",
+      "validation_member_sha256": "1860009f34c586631187461e489f62529905ec0f3c96131376bfba211e3f68d4",
+      "validation_population": 1724,
+      "target_hash_producer_member": "malssi_stage1_training_20261009/verification_source/counseling_pipeline/source_sft.py"
+    },
+    "assigned_request_uniqueness": {
+      "assigned": 94,
+      "unique_task_case_pairs": 94,
+      "unique_generation_ids": 94,
+      "all_assigned_attempted_once": true
+    },
+    "input_token_count_matches": {
+      "numerator": 94,
+      "denominator": 94,
+      "percent": 100.0
+    },
+    "abnormal_cases": [
+      {
+        "task": "response",
+        "case_id": "T26",
+        "status": "length_limit"
+      }
+    ],
+    "validation_checks_passed": 10
+  }
+}

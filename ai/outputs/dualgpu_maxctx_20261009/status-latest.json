@@ -1,0 +1,172 @@
+{
+  "utc": "2026-10-09T09:25:54.704202+00:00",
+  "probes": [
+    {
+      "id": "20261009T090117Z-f8464da17f34",
+      "status": "passed",
+      "arguments": {
+        "mode": "train",
+        "length": 28672,
+        "target_tokens": 3922,
+        "microsteps": 1,
+        "optimizer_steps": 1,
+        "new_tokens": 0,
+        "force_budget": false,
+        "seed": 3407,
+        "tiled_mlp": true,
+        "layer_split": 26
+      },
+      "microsteps_completed": 1,
+      "optimizer_steps_completed": 1,
+      "measured_phase_seconds": 121.29313300794456,
+      "gpu_memory": [
+        {
+          "uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+          "logical_device": 0,
+          "peak_allocated_bytes": 24323381248,
+          "peak_reserved_bytes": 24475860992
+        },
+        {
+          "uuid": "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642",
+          "logical_device": 1,
+          "peak_allocated_bytes": 22704929792,
+          "peak_reserved_bytes": 24771559424
+        }
+      ]
+    },
+    {
+      "id": "20261009T090512Z-e5ebb0b59da5",
+      "status": "failed",
+      "arguments": {
+        "mode": "train",
+        "length": 30720,
+        "target_tokens": 3922,
+        "microsteps": 2,
+        "optimizer_steps": 2,
+        "new_tokens": 0,
+        "force_budget": false,
+        "seed": 3407,
+        "tiled_mlp": true,
+        "layer_split": 24
+      },
+      "microsteps_completed": 0,
+      "optimizer_steps_completed": 0,
+      "error_type": "OutOfMemoryError",
+      "oom": true,
+      "gpu_memory": [
+        {
+          "uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+          "logical_device": 0,
+          "peak_allocated_bytes": 22896354304,
+          "peak_reserved_bytes": 23938990080
+        },
+        {
+          "uuid": "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642",
+          "logical_device": 1,
+          "peak_allocated_bytes": 24191942656,
+          "peak_reserved_bytes": 24429723648
+        }
+      ]
+    },
+    {
+      "id": "20261009T090823Z-c50cce765c2f",
+      "status": "failed",
+      "arguments": {
+        "mode": "train",
+        "length": 29440,
+        "target_tokens": 3922,
+        "microsteps": 2,
+        "optimizer_steps": 2,
+        "new_tokens": 0,
+        "force_budget": false,
+        "seed": 3407,
+        "tiled_mlp": true,
+        "layer_split": 26
+      },
+      "microsteps_completed": 0,
+      "optimizer_steps_completed": 0,
+      "error_type": "OutOfMemoryError",
+      "oom": true,
+      "gpu_memory": [
+        {
+          "uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+          "logical_device": 0,
+          "peak_allocated_bytes": 24636392448,
+          "peak_reserved_bytes": 24761073664
+        },
+        {
+          "uuid": "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642",
+          "logical_device": 1,
+          "peak_allocated_bytes": 23074662400,
+          "peak_reserved_bytes": 24750587904
+        }
+      ]
+    },
+    {
+      "id": "20261009T091147Z-477f2a259425",
+      "status": "failed",
+      "arguments": {
+        "mode": "train",
+        "length": 28672,
+        "target_tokens": 3922,
+        "microsteps": 8,
+        "optimizer_steps": 2,
+        "new_tokens": 0,
+        "force_budget": false,
+        "seed": 3407,
+        "tiled_mlp": true,
+        "layer_split": 26
+      },
+      "microsteps_completed": 1,
+      "optimizer_steps_completed": 0,
+      "error_type": "OutOfMemoryError",
+      "oom": true,
+      "gpu_memory": [
+        {
+          "uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+          "logical_device": 0,
+          "peak_allocated_bytes": 24323381248,
+          "peak_reserved_bytes": 24475860992
+        },
+        {
+          "uuid": "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642",
+          "logical_device": 1,
+          "peak_allocated_bytes": 23332494336,
+          "peak_reserved_bytes": 24769462272
+        }
+      ]
+    },
+    {
+      "id": "20261009T091847Z-d3f03097f3a9",
+      "status": "running",
+      "arguments": {
+        "mode": "train",
+        "length": 28672,
+        "target_tokens": 3922,
+        "microsteps": 8,
+        "optimizer_steps": 2,
+        "new_tokens": 0,
+        "force_budget": false,
+        "seed": 3407,
+        "tiled_mlp": true,
+        "layer_split": 25
+      },
+      "microsteps_completed": 3,
+      "optimizer_steps_completed": 0
+    }
+  ],
+  "token_preparation": {
+    "event": "tokenized",
+    "split": "train",
+    "rows": 15000
+  },
+  "token_cache": {},
+  "qualification": {
+    "checks": []
+  },
+  "canary": {},
+  "training": {},
+  "baseline_exists": false,
+  "final_evaluation_exists": false,
+  "completion_marker_exists": false
+}

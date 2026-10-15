@@ -1,0 +1,7 @@
+﻿입력길이_토큰,batch,반복,상태,소요_초,입력토큰_초,최대할당_GiB,최대예약_GiB,optimizer상태_할당,가중치_업데이트,범위,근거
+464,1,1,passed,0.957609998062253,484.5396361137783,18.999664306640625,19.345703125,False,False,RTX4090 1장; forward/backward warm run; 학습 step 아님,outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json
+790,1,1,passed,1.47834899101872,534.3799094797072,18.85504150390625,18.9765625,False,False,RTX4090 1장; forward/backward warm run; 학습 step 아님,outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json
+1966,1,1,passed,3.9538890330586582,497.23196163629746,19.477572917938232,19.681640625,False,False,RTX4090 1장; forward/backward warm run; 학습 step 아님,outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json
+3261,1,1,passed,6.894000030937605,473.0200152837096,20.18283224105835,20.478515625,False,False,RTX4090 1장; forward/backward warm run; 학습 step 아님,outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json
+4096,1,1,passed,8.17205505608581,501.22031384867734,20.680275440216064,20.96875,False,False,RTX4090 1장; forward/backward warm run; 학습 step 아님,outputs/private/malssi_round3_20261009/remote/gpu_validation.json
+7670,1,0,oom,,,,,False,False,RTX4090 1장; 첫 probe OOM; 학습 step 아님,outputs/private/malssi_round3_20261009/remote/gpu_validation_initial.json

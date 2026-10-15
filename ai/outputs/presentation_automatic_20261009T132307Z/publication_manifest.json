@@ -1,0 +1,86 @@
+{
+  "destination": "/Users/chihun/Documents/ChatGPT/HOP_pptdata",
+  "output_name": "presentation_automatic_20261009T132307Z",
+  "files": [
+    {
+      "file": "README.md",
+      "before_sha256": "ec000f09776bea8fdadf6dea9634a9429806e00271676153c0a435dda316b41e",
+      "after_sha256": "be17ebe4cb8ac44e104de7041940dd076ca68bb1b58982cb346d747753fdfb67"
+    },
+    {
+      "file": "발표용_데이터_추출_활용안.md",
+      "before_sha256": "e6597e7c2f71d70aba411b3d50ee753e2dc46e1e3a9dceb1d51d856a0693ec98",
+      "after_sha256": "80e078e7a0a09649a0e3ce2367956e6fb67ad7a35085e6c340e760cee2c070c2"
+    },
+    {
+      "file": "에이전트용_발표수치_수집지침.md",
+      "before_sha256": "8c20130747204ae1e76f9ff084dbcb8a89542938cf46a5cb403fe56bf382585b",
+      "after_sha256": "0775c16349f063f64bda0d76a32029100618710434d35eca70d96c2e4893b655"
+    },
+    {
+      "file": "LLM_학습전후_분류평가.md",
+      "before_sha256": "1200fb6615a08b51400c1caa30861deec7657b441ad99f20e963df2672f33cb3",
+      "after_sha256": "ee88550759f46e4f68789f25009269303d73184df2cd6776a1fb4a1980d7720f"
+    },
+    {
+      "file": "발표데이터_최신확인_20261009.json",
+      "before_sha256": "ae8fe5c622d31ecc25c06152efdf31424230adb51d8fc52b62e3de0bc7633659",
+      "after_sha256": "fd50f38c6f2615e18d66a9ca64cd8a640e334e3dd63bdb65771e342dd6ac98ce"
+    },
+    {
+      "file": "평가양식/평가설정.json",
+      "before_sha256": "5510bc3c39df3e7718dccb038d78d1f36ab00c56c77c6b109fce77e8a2d84687",
+      "after_sha256": "b7b1193ebd6ea39a73f2bf045f1aec8ef795f91ef930f0fef33cb3a73f72053c"
+    },
+    {
+      "file": "평가양식/기록양식.json",
+      "before_sha256": "178017488206a08925dac460bbcc502577bc3d7a7edfbd97d5d7add6dc2272d4",
+      "after_sha256": "28d894d182dbeb85a3d54f3540de380d85f69a76c125409ab45f08824c9ed914"
+    },
+    {
+      "file": "평가양식/발표수치_결과양식.json",
+      "before_sha256": "d8e75e155fc55d9658e1c81d581b8d8a79377fa617441957cee0ca4d28b49cb5",
+      "after_sha256": "91982b48a44ab646ac29c701705712722965f7c381f71ce241f67a46c9c9afc3"
+    }
+  ],
+  "artifacts": [
+    {
+      "file": "comparison.md",
+      "sha256": "aee6b62473ecd31a19b52d20cf2ae8a754a18d42b518263cb64d9a92fd01ee9e"
+    },
+    {
+      "file": "evidence_manifest.json",
+      "sha256": "e866478cb5fcc9a06879ecfbb9b77773761ff59bec67b7ead6e36eec8d0ae60f"
+    },
+    {
+      "file": "local_measurements.csv",
+      "sha256": "3631f26eb8cc2408b97611ae0ec0c18bad92c29f62e7c6f942e009a9cad01604"
+    },
+    {
+      "file": "mechanical_measurements.json",
+      "sha256": "e2d5697d6092ea60bd6cb9546ea900ad0a643d894f67725f01665646a3115744"
+    },
+    {
+      "file": "metrics.json",
+      "sha256": "0831fcf25a959fdec2e8feb84179e30ac3cd2dd90f0a7767b3c9c346f9e5fe2d"
+    },
+    {
+      "file": "public_answers.md",
+      "sha256": "a493e87856e9818625e0e104048e97206386d2cee9b43e375af50534cbf658a7"
+    },
+    {
+      "file": "verification.json",
+      "sha256": "9fd7e71ede09c5aa1c93044561bae4e657f602a95b59815a0ee3641dddc64ff5"
+    },
+    {
+      "file": "verify_measurements.py",
+      "sha256": "03e638d1d23980ef1d3b78cfca27568430811abd418b870ab50feb52d394549f"
+    }
+  ],
+  "verification": {
+    "scope_cross_checks": 5,
+    "mechanical_checks_passed": 10,
+    "protocol_and_prompt_hashes_match": true,
+    "active_documents_subjective_metric_scan_passed": true
+  }
+}

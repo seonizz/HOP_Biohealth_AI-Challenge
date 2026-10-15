@@ -1,0 +1,8 @@
+﻿토큰상한,Train_행,Validation_행,합계_행,원본대비_수용률,GPU_실행가능_판정,근거
+512,2000,203,2203,0.04791838865445687,미확정; 길이 수용량만 계산,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+1024,4213,456,4669,0.10155740200983164,미확정; 길이 수용량만 계산,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+2048,8252,892,9144,0.19889502762430938,미확정; 길이 수용량만 계산,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+4096,15512,1724,17236,0.37490755644494717,미확정; 길이 수용량만 계산,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+8192,28712,3189,31901,0.693892199939096,미확정; 길이 수용량만 계산,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+16384,40207,4298,44505,0.9680471570887893,미확정; 길이 수용량만 계산,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json
+32768,40415,4298,44713,0.9725714534301997,미확정; 길이 수용량만 계산,outputs/private/malssi_round3_20261009/candidate_4096/token_admission_policy.json

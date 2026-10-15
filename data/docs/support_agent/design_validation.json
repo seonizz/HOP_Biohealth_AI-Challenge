@@ -1,0 +1,546 @@
+{
+  "validated_at": "2026-10-08T22:50:41.870796+09:00",
+  "scope": "design_artifact_structure_only",
+  "passed": true,
+  "check_count": 132,
+  "question_count": 17,
+  "example_count": 9,
+  "model_training_performed": false,
+  "clinical_performance_validated": false,
+  "source_files_modified": false,
+  "artifacts": {
+    ".omx/plans/cfi-support-agent-llm-plan.md": "fa177cb47a99d088b64652c57fda16d35dc28134a9fbf8cd3b6b5769b9ecdcce",
+    "docs/support_agent/question_bank.json": "5c355a560944e2e7defead5a8462b36b8a311c11211d1a470046506c767ab7ba",
+    "docs/support_agent/design_examples.jsonl": "3212be93744f4ffeb38ae7884fa1bc6cc7d9a75a425b4f063bd14fe596961410"
+  },
+  "checks": [
+    {
+      "name": "source_questionnaire_hash_unchanged",
+      "passed": true
+    },
+    {
+      "name": "source_research_memo_hash_unchanged",
+      "passed": true
+    },
+    {
+      "name": "exactly_17_unique_question_ids",
+      "passed": true
+    },
+    {
+      "name": "Q01_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q01_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q01_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q02_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q02_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q02_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q03_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q03_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q03_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q04_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q04_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q04_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q05_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q05_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q05_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q06_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q06_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q06_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q07_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q07_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q07_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q08_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q08_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q08_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q09_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q09_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q09_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q10_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q10_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q10_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q11_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q11_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q11_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q12_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q12_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q12_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q13_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q13_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q13_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q14_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q14_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q14_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q15_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q15_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q15_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q16_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q16_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q16_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q17_canonical_question_exact",
+      "passed": true
+    },
+    {
+      "name": "Q17_supporting_text_exact",
+      "passed": true
+    },
+    {
+      "name": "Q17_source_line_exact",
+      "passed": true
+    },
+    {
+      "name": "Q07_support_Q08_subject_burden",
+      "passed": true
+    },
+    {
+      "name": "Q10_both_directions",
+      "passed": true
+    },
+    {
+      "name": "Q11_additional_not_negative_half",
+      "passed": true
+    },
+    {
+      "name": "Q16_others_proposals_not_subject_preference",
+      "passed": true
+    },
+    {
+      "name": "nine_unique_design_examples",
+      "passed": true
+    },
+    {
+      "name": "demo_01_observation_needed_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_01_observation_needed_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_01_observation_needed_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_01_observation_needed_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_01_observation_needed_ask_canonical_and_not_repeated",
+      "passed": true
+    },
+    {
+      "name": "demo_01_observation_needed_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_01_observation_needed_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_01_observation_needed_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "demo_02_barrier_needed_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_02_barrier_needed_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_02_barrier_needed_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_02_barrier_needed_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_02_barrier_needed_ask_canonical_and_not_repeated",
+      "passed": true
+    },
+    {
+      "name": "demo_02_barrier_needed_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_02_barrier_needed_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_02_barrier_needed_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "demo_03_enough_after_answer_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_03_enough_after_answer_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_03_enough_after_answer_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_03_enough_after_answer_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_03_enough_after_answer_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_03_enough_after_answer_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_03_enough_after_answer_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "demo_04_previous_words_unclear_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_04_previous_words_unclear_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_04_previous_words_unclear_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_04_previous_words_unclear_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_04_previous_words_unclear_clarify_type",
+      "passed": true
+    },
+    {
+      "name": "demo_04_previous_words_unclear_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_04_previous_words_unclear_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_04_previous_words_unclear_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "demo_05_does_not_know_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_05_does_not_know_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_05_does_not_know_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_05_does_not_know_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_05_does_not_know_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_05_does_not_know_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_05_does_not_know_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "demo_06_declined_background_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_06_declined_background_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_06_declined_background_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_06_declined_background_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_06_declined_background_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_06_declined_background_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_06_declined_background_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "demo_07_support_and_burden_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_07_support_and_burden_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_07_support_and_burden_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_07_support_and_burden_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_07_support_and_burden_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_07_support_and_burden_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_07_support_and_burden_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "demo_08_safety_priority_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_08_safety_priority_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_08_safety_priority_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_08_safety_priority_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_08_safety_priority_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_08_safety_priority_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_08_safety_priority_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "demo_09_end_not_training_or_observed_outcome",
+      "passed": true
+    },
+    {
+      "name": "demo_09_end_output_contract",
+      "passed": true
+    },
+    {
+      "name": "demo_09_end_prefix_cutoff",
+      "passed": true
+    },
+    {
+      "name": "demo_09_end_question_references",
+      "passed": true
+    },
+    {
+      "name": "demo_09_end_evidence_spans",
+      "passed": true
+    },
+    {
+      "name": "demo_09_end_state_update_provenance",
+      "passed": true
+    },
+    {
+      "name": "demo_09_end_valid_action_targets",
+      "passed": true
+    },
+    {
+      "name": "all_six_action_types_illustrated",
+      "passed": true
+    },
+    {
+      "name": "twenty_acceptance_criteria",
+      "passed": true
+    },
+    {
+      "name": "raw_label_scope_and_word_boundaries_documented",
+      "passed": true
+    },
+    {
+      "name": "clarify_question_id_consistent",
+      "passed": true
+    },
+    {
+      "name": "nonessential_declined_information_does_not_block_support",
+      "passed": true
+    },
+    {
+      "name": "essential_unknown_preserves_limited_support",
+      "passed": true
+    },
+    {
+      "name": "all_local_document_links_exist",
+      "passed": true
+    }
+  ]
+}

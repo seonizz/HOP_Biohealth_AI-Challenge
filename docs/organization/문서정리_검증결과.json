@@ -1,0 +1,352 @@
+{
+  "checked_at": "2026-10-15T11:21:07.177240+09:00",
+  "status": "passed",
+  "scope": {
+    "markdown_files": 56,
+    "excluded_directories": [
+      "archive",
+      "**/archive",
+      "**/node_modules",
+      "**/outputs",
+      "**/downloads",
+      "**/deliverables",
+      "**/runtime",
+      "**/데이터셋",
+      "**/.git",
+      "**/.omx"
+    ],
+    "local_links": 404,
+    "heading_anchors": 7,
+    "balanced_code_fences": true,
+    "moved_original_hashes": 32,
+    "python_ast": [
+      "ai/scripts/apply_relationship_backend.py",
+      "ai/scripts/package_project_handoff.py",
+      "ai/scripts/build_competition_data.py",
+      "ai/scripts/test_project_paths.py"
+    ],
+    "canonical_duplicate_scan_files": [
+      "README.md",
+      "docs/README.md",
+      "app/README.md",
+      "app/docs/RELATIONSHIP_AGENT.md",
+      "app/docs/API.md",
+      "app/docs/QUESTIONS.md",
+      "ai/README.md",
+      "ai/local_api/RELATIONSHIP_AGENT.md",
+      "data/README.md",
+      "presentation/README.md",
+      "docs/current/데이터와_연구.md",
+      "docs/current/현황과_할일.md",
+      "docs/current/실행과_검증.md"
+    ],
+    "duplicate_paragraph_minimum_characters": 160,
+    "duplicate_paragraphs": 0
+  },
+  "tests": [
+    {
+      "command": "npm run test:paths",
+      "passed": 5,
+      "log": "문서정리_검증로그/project-paths.log"
+    },
+    {
+      "command": "cd ai && python3 -B -m unittest discover -s scripts -p 'test_collect_*.py'",
+      "passed": 11,
+      "log": "문서정리_검증로그/collection.log"
+    }
+  ],
+  "limitations": [
+    "실제 모델·서버·DB 연결 또는 배포는 이번 문서 정리에서 수행하지 않음",
+    "외부 URL 가동 상태는 검사하지 않음",
+    "보관 원문은 당시 문맥 보존을 위해 내부 링크를 재작성하지 않음",
+    "중복 검사는 주요 기준 문서의 동일 장문 문단에 한정; 의미 중복은 문서별 수동 검토"
+  ],
+  "errors": [],
+  "archived_files_current_manifest": [
+    {
+      "path": "archive/08_문서통합_원문/README.md",
+      "bytes": 3351,
+      "sha256": "045cf60d2e888ecdf014fbffafaffb995a21b9d7da7bd3ce112160df205b4859"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/00_에이전트_인수인계.md",
+      "bytes": 3867,
+      "sha256": "a40a08f5221a7e9ccc3f5b3c21bf89a82e46b21747e70ce74c0c150da6b0023c"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/01_다음에이전트에게_전달할요청.md",
+      "bytes": 1619,
+      "sha256": "07875bfb4d23d325975eb32af8ec0c90921ecaf05447fa5fb75ab8fcc4f0c187"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/Gemma_서버접속_작업규칙_레퍼런스.md",
+      "bytes": 10098,
+      "sha256": "3d120050cfdb800e8f625e8b8c8a2352ac2b64ca90bd2d390c209f5035ba739c"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/README.md",
+      "bytes": 4381,
+      "sha256": "82eccc3bcd1f852bd46059650816f23f700a83db753ab2e17e64c0ba7ad53f1a"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/local_api/RELATIONSHIP_AGENT.md",
+      "bytes": 5343,
+      "sha256": "d2d41c792cb43ea46cc16070cbf8424fa21dc356940787f0ec15f311d025b45f"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/local_api/backend_patch/README.md",
+      "bytes": 16611,
+      "sha256": "49a2861399d33f24d124e07041e5b5a04a1cfabe4f2249dcb33f1e7ccd8ff871"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/local_api/backend_patch/docs/RELATIONSHIP_AGENT.md",
+      "bytes": 34769,
+      "sha256": "c03e26a82a9981143ad1493d909d21e9dfb2b824dcee5156a935ebcca5f2b07b"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/scripts/apply_relationship_backend.py",
+      "bytes": 3402,
+      "sha256": "ef39275cc9893353d9d8da48aee9ba83bcc7940463d61b276eb4f5e986b6ecb6"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/scripts/build_competition_data.py",
+      "bytes": 16423,
+      "sha256": "65d428b78687018784ce0eecf03866d80b760b27102f3923efca530e3b41206b"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/scripts/package_project_handoff.py",
+      "bytes": 13129,
+      "sha256": "d7ab9d2166ca7cff763cbd90fd12ced1b4a7144c38251e6cdb5befd2eac008c9"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/scripts/test_project_paths.py",
+      "bytes": 4651,
+      "sha256": "72611a5cf958ff663415d993091df5876af1856a9f69b085f832872f7dbaa171"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/.DS_Store",
+      "bytes": 8196,
+      "sha256": "452ec1653563a2cf38c0469644d8fe52d75360a5eb75c3f10515587b663afb14"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/01_서비스/01_서비스_개요.md",
+      "bytes": 4070,
+      "sha256": "4940a5abfaf6e1865beb2111092144377f975b31754d1e61c1d042a66710dbb1"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/01_서비스/02_사용자_흐름과_응답_정책.md",
+      "bytes": 4562,
+      "sha256": "753649f44c299a7157c7d026169e625f3f28c9f1c03081cce896b1ea584e3e03"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/01_서비스/03_질문은행과_정보_구조.md",
+      "bytes": 3599,
+      "sha256": "06e9a64d722d960a48c3e28b40f858801c8307fb6f0416e5c21a17389b1986d5"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/02_기술/01_기술_구조.md",
+      "bytes": 5624,
+      "sha256": "eb6b0eb8ec53f50ceca4fc495a2f36bb8c88c9c7ac40f783914853b77fea6427"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/02_기술/02_데이터_계약.md",
+      "bytes": 5130,
+      "sha256": "c20c39b6a6aa9b541d4f0bf030778edb922ad85f0a30ddd4ee70f4bcf05de277"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/02_기술/03_데이터_처리_파이프라인.md",
+      "bytes": 4512,
+      "sha256": "a172cd09fbe0b6f5255e1632fb8e635f5bff5e83a3fab1c7e7184751584a5634"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/02_기술/04_학습과_모델_검증.md",
+      "bytes": 6886,
+      "sha256": "0d0b470aaa79f184c6311adc317fd6a9a5c9d58bd178ab968b68fccbc841b946"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/02_기술/05_평가와_품질_관리.md",
+      "bytes": 4823,
+      "sha256": "64a74eaf6044fc3d9fb8821aebebd82dc06399592130d3da11c88918773261b3"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/02_기술/06_실행과_운영_안내.md",
+      "bytes": 7251,
+      "sha256": "aa8cc4c1766bdffb83055c0b30e39b6e74da6416ba4818c58c2f725d8bdce3f5"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/03_현황/01_현재_상태.md",
+      "bytes": 6436,
+      "sha256": "a0086fc407565fda13a647b591962e3710d57613a848264924a0b7da4a314cde"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/03_현황/02_개발_로드맵.md",
+      "bytes": 4329,
+      "sha256": "865cd9222554ba5045db59e4a0bb58303c6740b6f67a764a3efe10e05044defd"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/README.md",
+      "bytes": 4257,
+      "sha256": "22be60feb0a870d58140a9a0b0f2a1b269ae5d75009a9947bd5727001291d306"
+    },
+    {
+      "path": "archive/08_문서통합_원문/ai/서비스_문서/참고_근거와_용어.md",
+      "bytes": 6505,
+      "sha256": "24ae9b9ddad557a432c59c9763be599f86d4839d7b78b0e4f7e85ee66e7f8aa9"
+    },
+    {
+      "path": "archive/08_문서통합_원문/app/README.md",
+      "bytes": 16611,
+      "sha256": "49a2861399d33f24d124e07041e5b5a04a1cfabe4f2249dcb33f1e7ccd8ff871"
+    },
+    {
+      "path": "archive/08_문서통합_원문/app/docs/API.md",
+      "bytes": 9006,
+      "sha256": "eefc3dc67a61af473927c7195a721fce323e5c859ac29471f0a3e316c53db437"
+    },
+    {
+      "path": "archive/08_문서통합_원문/app/docs/DOCKER_HANDOFF.md",
+      "bytes": 3115,
+      "sha256": "ccdee822a9527fdb9caa77595db1b3003ff6805fd220d49b0f95a4477dc308df"
+    },
+    {
+      "path": "archive/08_문서통합_원문/app/docs/QUESTIONS.md",
+      "bytes": 7992,
+      "sha256": "29ca514e3a7dcc9a1ec16ab748c6fb937b4291f0ca07e9e78ce81d968d410cb4"
+    },
+    {
+      "path": "archive/08_문서통합_원문/app/docs/RELATIONSHIP_AGENT.md",
+      "bytes": 33072,
+      "sha256": "c68e74a1996d3c851803d4b28408ec9115b6cb3e474168477c08430bf97a2daa"
+    },
+    {
+      "path": "archive/08_문서통합_원문/app/docs/VALIDATION.md",
+      "bytes": 23604,
+      "sha256": "7823dd04a47152b8976f25b7b6d599abc73a39e5d9b1a8e8d5420481781347ed"
+    },
+    {
+      "path": "archive/08_문서통합_원문/archive/README.md",
+      "bytes": 2394,
+      "sha256": "f72c51ac6b5d3f70a1c89546b7183395f8f838ba2f1105a42d853218a19ae69f"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/README.md",
+      "bytes": 16342,
+      "sha256": "b76e243005b0510406519d876d77131bdd15935506c3ce3562aee482cfdae991"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/.DS_Store",
+      "bytes": 6148,
+      "sha256": "d2a0f85d64c0a57de66dfb9ea7d5c6a08b114c01d80ac00d0a21af1573785528"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/01_서비스/01_서비스_개요.md",
+      "bytes": 3707,
+      "sha256": "18b44b0e5131fc9f411e4085a8df8c650b7e1d065d5e2dcde08aa79b7d60e96a"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/01_서비스/02_사용자_흐름과_응답_정책.md",
+      "bytes": 4546,
+      "sha256": "8ea676444a6558f611310ba18717e0293367657bd5b64c1aed71efeb022bf035"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/01_서비스/03_질문은행과_정보_구조.md",
+      "bytes": 3567,
+      "sha256": "44b9dfbd6d736128672eab2cb841746afd6ef7646907edce2d91301448c12109"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/02_기술/01_기술_구조.md",
+      "bytes": 4787,
+      "sha256": "0a158718a36c529cd99cdcd73dbf8f7ca0cced48b33f49d4d1e0de3f1040d603"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/02_기술/02_데이터_계약.md",
+      "bytes": 5032,
+      "sha256": "9239a5bd8b328d0982ae9b587f9a3de18ca71aadbf80d8576e82302469a3bc1c"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/02_기술/03_데이터_처리_파이프라인.md",
+      "bytes": 4472,
+      "sha256": "385e9d5a1d645cea98d3e9dee11f4622d1573a883cd44fbc570b6f9e31a61aae"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/02_기술/04_학습과_모델_검증.md",
+      "bytes": 5541,
+      "sha256": "f3bba34888a8c96be25e120ef7f726d8dd6c1deba5485928666629236e7ed500"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/02_기술/05_평가와_품질_관리.md",
+      "bytes": 4726,
+      "sha256": "a2d73a50ef0c126c8d6977e7921bd24c97c4a593795f04f3679c23409b1d2a14"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/02_기술/06_실행과_운영_안내.md",
+      "bytes": 6500,
+      "sha256": "795458d47f6900ac33f9da2dba95ba6762e628494dc27cd92a9913c5790caa5b"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/03_현황/01_현재_상태.md",
+      "bytes": 4865,
+      "sha256": "9de8bd42ba8697b9e7b3f5a51d550aad67862061fd2844c17ca2b08236346f1e"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/03_현황/02_개발_로드맵.md",
+      "bytes": 3907,
+      "sha256": "da86c0b4bdf9655f22e2d8a24bc233945c03a37d25131f7258fd3340c28e0514"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/README.md",
+      "bytes": 3210,
+      "sha256": "59ff63e7d43d8efc6992897bc89e9756c4123a9ff381aeefe861e955a7ed2b35"
+    },
+    {
+      "path": "archive/08_문서통합_원문/data/서비스_문서/참고_근거와_용어.md",
+      "bytes": 5315,
+      "sha256": "1c68d2d8957a4608681726bcc2efda23621c5a8aa16ca49b31ec1fd90b2a6edc"
+    },
+    {
+      "path": "archive/08_문서통합_원문/docs/README.md",
+      "bytes": 1041,
+      "sha256": "2632c2393ab00a01b9daa7aa3e95dc0ad408227dfb4958eb40b55a50126d6eec"
+    },
+    {
+      "path": "archive/08_문서통합_원문/docs/competition/01_대회요구와_적합성.md",
+      "bytes": 5254,
+      "sha256": "17e6ad58f004aa9d3e4c29b31abe1528801998468fb87239012902ddb2bdbbaf"
+    },
+    {
+      "path": "archive/08_문서통합_원문/docs/competition/02_핵심자료와_현재구성.md",
+      "bytes": 5768,
+      "sha256": "1fafc2cb5ee89dfb2c97b93992ea587e7471703e69a7139b0844a5f5d59a0986"
+    },
+    {
+      "path": "archive/08_문서통합_원문/docs/competition/03_발표주장과_PPT검토.md",
+      "bytes": 16757,
+      "sha256": "7273e3a8a32749e320f13a507822372a54a995b74ac4807b98900b2d8478d364"
+    },
+    {
+      "path": "archive/08_문서통합_원문/docs/competition/04_결선준비_우선순위.md",
+      "bytes": 2972,
+      "sha256": "6e450456ffbcfc50c71a7f96f47e3fdeb31d84924b9348358e65609ae47d2e5e"
+    },
+    {
+      "path": "archive/08_문서통합_원문/docs/competition/README.md",
+      "bytes": 4571,
+      "sha256": "1a808aac8da724c5f02ce63a201c43fef0ca88229bd5b5a99419359fefa1ec46"
+    },
+    {
+      "path": "archive/08_문서통합_원문/docs/competition/핵심요약.md",
+      "bytes": 5749,
+      "sha256": "7aa39b543840cc4818749a091f32e0f33cfea40a4409873f3c5bbd449afc80f7"
+    },
+    {
+      "path": "archive/08_문서통합_원문/docs/organization/README.md",
+      "bytes": 722,
+      "sha256": "179809393ba151dfa5fbdf54c1c5505fc0045476e37fdea4420e9910eccae325"
+    },
+    {
+      "path": "archive/08_문서통합_원문/presentation/README.md",
+      "bytes": 2350,
+      "sha256": "3bbca7c3f6908148b205ae46a6835d015741680957bdec8749b0231eea385720"
+    }
+  ]
+}

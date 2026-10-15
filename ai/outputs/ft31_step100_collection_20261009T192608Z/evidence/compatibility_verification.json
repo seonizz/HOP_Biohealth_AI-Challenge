@@ -1,0 +1,18 @@
+{
+  "collection_endpoint_accepted": 94,
+  "deployed": false,
+  "effects": [
+    "API temporarily unavailable during same-model reload.",
+    "Existing in-memory KV/session state will be cleared."
+  ],
+  "endpoint": "/v1/collection/chat/completions",
+  "invalid_request_cases_rejected": 9,
+  "messages_unchanged": true,
+  "patched_route_sha256": "9b79212ea439931c231b26c5605ea1ab6807b78e3bf133c12e0c1917f9ad7508",
+  "patched_server_sha256": "c208046872caaedabb24948da82896f1fdb47fd49131677e25457389bf67a4af",
+  "requires_restart": true,
+  "source_route_sha256": "b985485bd6f2bdc2ccc074adf2a522da2a52341347c0e56acb2a4bea25dfbe15",
+  "source_server_sha256": "7799bc1f1c8c1dc90891b603287c155ce9b02737bacf258dcbed2710d28ab424",
+  "standard_endpoint_accepted_after": 60,
+  "standard_endpoint_accepted_before": 60
+}

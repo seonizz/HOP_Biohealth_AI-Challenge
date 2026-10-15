@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "policy_id": "active-cache-64k-v1",
+  "status": "active_initial_validation",
+  "auth_owner_source": "sha256_of_single_shared_server_api_key",
+  "model_baseline": {
+    "id": "malssi-gemma4-31b-step100",
+    "checkpoint_step": 100,
+    "kv_dtype": "bfloat16",
+    "weights_quantization": "nf4",
+    "prefill_chunk_tokens": 4096,
+    "grouped_global_attention": true
+  },
+  "token_limits": {
+    "rendered_input_hard_cap": 65536,
+    "rendered_input_soft_watermark": 57344,
+    "output_default": 256,
+    "output_hard_cap": 4096,
+    "request_total_hard_cap": 69632,
+    "next_turn_headroom_at_soft_watermark": 8192,
+    "overflow_default": "reject_422",
+    "lossy_compaction_default_enabled": false
+  },
+  "kv_cache": {
+    "execution_slots": 1,
+    "resident_session_limit": 1,
+    "idle_ttl_seconds": 300,
+    "absolute_ttl_seconds": 1800,
+    "idle_clock_start": "successful_publication",
+    "whole_gpu_cache_copy_allowed": false,
+    "partial_prefix_crop_allowed": false,
+    "resident_entry_publish_cap_bytes_by_gpu": {
+      "0": 3221225472,
+      "1": 4294967296
+    },
+    "initial_physical_headroom_bytes_by_gpu": {
+      "0": 2147483648,
+      "1": 2147483648
+    },
+    "admission_requires_measured_phase_peak": true,
+    "busy_entry_eviction_allowed": false,
+    "oom_retry_default_enabled": false
+  },
+  "memory": {
+    "planner_input_total_cap": 2048,
+    "planner_output_cap": 384,
+    "selected_memory_count_cap": 5,
+    "selected_memory_formatted_token_cap": 768,
+    "same_weight_model": true,
+    "planner_schedule": "after_response_at_idle_model_boundary",
+    "planner_main_cache_coexistence_required": true,
+    "skip_planner_if_next_interactive_request_queued": true,
+    "snapshot_prefix_frozen": true,
+    "new_retrieval_placement": "append_turn_data_and_commit_in_history",
+    "long_document_extraction_default_enabled": false,
+    "source_chunk_token_cap": 1536,
+    "source_span_required": true,
+    "unrelated_memory_insert_invalidates_cache": false,
+    "expiry_policy": "dependency_invalidation_like_delete",
+    "expiry_checks": [
+      "request_assembly",
+      "main_commit",
+      "planner_commit"
+    ],
+    "response_before_planner_commit": "pending_or_deferred_not_saved",
+    "job_unique_fields": [
+      "owner_id",
+      "source_message_id",
+      "source_revision",
+      "policy_id",
+      "model_fingerprint"
+    ],
+    "job_and_fact_commit_atomic": true,
+    "retry_extends_fact_expiry": false
+  },
+  "queue": {
+    "waiting_request_limit": 8,
+    "queue_wait_deadline_seconds": 30,
+    "model_phase_deadline_seconds": 300,
+    "busy_status_code": 503,
+    "retry_after_seconds": 5,
+    "deadline_checks": "between_forward_calls_not_gpu_preemption"
+  },
+  "benchmarks": {
+    "pairs": 20,
+    "cached_prefix_tokens": 64512,
+    "append_suffix_tokens": 512,
+    "final_input_tokens": 65024,
+    "output_cap": 256,
+    "ttft_p50_improvement_target_fraction": 0.2,
+    "decode_tps_p50_min_ratio": 0.95,
+    "capacity_input_tokens": 65536,
+    "capacity_output_reserved": 4096
+  },
+  "hardware_measurements_stale_until_remeasured": false,
+  "validation_scope": {
+    "utc": "2026-10-09T18:09:27.103396+00:00",
+    "cpu_tests": 85,
+    "live_smoke_cases": 19,
+    "live_serial_turns": 50,
+    "near64k_pairs": 3,
+    "near64k_output_cap": 32,
+    "full_output_4096_generated": false,
+    "full_20_pair_gate_passed": false,
+    "full_64k_quality_gate_passed": false,
+    "evidence_dir": "/home/slim/choieram/model_Training/trained_model_api/runtime/active-cache"
+  }
+}

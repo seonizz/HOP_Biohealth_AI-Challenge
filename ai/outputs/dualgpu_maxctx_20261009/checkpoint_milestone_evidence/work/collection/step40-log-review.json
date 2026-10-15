@@ -1,0 +1,31 @@
+{
+  "observed_utc": "2026-10-09T12:37:57.160102+00:00",
+  "kind": "training_log_review_only_not_model_evaluation",
+  "step40_record": {
+    "elapsed_seconds": 134.74378006590996,
+    "gradient_norm_before_clip": 1357.3831787109375,
+    "learning_rates": [
+      5.263157894736842e-06
+    ],
+    "microbatches": 8,
+    "mode": "train",
+    "next_row_cursor": 320,
+    "step": 40,
+    "supervised_tokens": 699,
+    "target_mean_loss": 4.633778586408099
+  },
+  "current_main_step": 40,
+  "log_prefix_sha256": "ea0bb0e310a880fd309e1cd5eef2625fd235d2ba239816e55b61afd86d6ebeba",
+  "training_rows_at40": 320,
+  "training_target_tokens_at40": 25751,
+  "logged_seconds_through40": 5502.468612775556,
+  "recent20_mean_step_seconds_at40": 136.71594242179418,
+  "live40_checkpoint_exists": false,
+  "main_process_alive": true,
+  "fatal_markers_since_boundary_arm": {
+    "Traceback (most recent call last):": 0,
+    "OutOfMemoryError:": 0,
+    "RuntimeError:": 0
+  },
+  "model_evaluation_plan": "separate replay from preserved checkpoint16 to40 after original checkpoint100 evaluation; never label as original live40 checkpoint"
+}

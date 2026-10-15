@@ -1,0 +1,49 @@
+{
+  "schema_version": "malssi.stage1-dualgpu-config.v1",
+  "profile": "original_counselor_continuation",
+  "max_length": 25316,
+  "packing": false,
+  "truncation": false,
+  "enable_thinking": false,
+  "micro_batch_size": 1,
+  "gradient_accumulation_steps": 8,
+  "epochs": 1,
+  "learning_rate": 2e-05,
+  "weight_decay": 0.01,
+  "warmup_ratio": 0.03,
+  "max_grad_norm": 1.0,
+  "seed": 3407,
+  "checkpoint_every": 100,
+  "lora_r": 8,
+  "lora_alpha": 8,
+  "lora_dropout": 0.0,
+  "optimizer": "torch.optim.AdamW_foreach_false",
+  "model_path": "/home/slim/choieram/models/gemma-4-31B-it-unsloth-bnb-4bit",
+  "python_path": "/home/slim/choieram/malssi-validation-20261009/.venv/bin/python",
+  "model_revision": "8e256fc6d63003fc0ca8c91b976e6dcc38433385",
+  "versions": {
+    "torch": "2.13.0+cu126",
+    "transformers": "5.17.0",
+    "unsloth": "2026.10.3",
+    "unsloth_zoo": "2026.10.3",
+    "bitsandbytes": "0.50.2",
+    "peft": "0.21.2",
+    "triton": "3.7.1"
+  },
+  "fused_loss_source_sha256": "4ddfe6227d2a6a8886421be843c8b85cd4b407269d6e0925e36e8994baf154dd",
+  "intended_use": "stage1_research_only",
+  "hop_deployment_ready": false,
+  "fallback_12b": "requires separately pinned model and renewed validation; no silent fallback",
+  "gpu_uuids": [
+    "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+    "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642"
+  ],
+  "device_map": "layer_split",
+  "full_source_rows": {
+    "train": 40415,
+    "validation": 4298
+  },
+  "longest_source_sequence_length": 25316,
+  "layer_split": 28,
+  "unsloth_tiled_mlp": true
+}

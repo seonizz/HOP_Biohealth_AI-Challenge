@@ -1,0 +1,447 @@
+{
+  "schema_version": "malssi.stage1-collection.v1",
+  "created_utc": "2026-10-09T08:18:04.070939+00:00",
+  "kit_path": "/home/slim/choieram/model_Training/malssi_stage1_training_20261009",
+  "gpu_uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+  "stage1_sft_completed": false,
+  "hop_deployment_ready": false,
+  "behavioral_evaluation": "not_verified_by_this_collector",
+  "scope": "original_counselor_last_response_sft",
+  "identity": {
+    "verified": true,
+    "bindings": {
+      "dataset_sha256": "fa7f2c09be9b2c7ffa3f10c360f9abe533302b9002c25396d7f59c1bc8f842f2",
+      "config_sha256": "a3982a83de30f81a333fb70b5c2894cc264496b61b99d3ce4eef307efd866a35",
+      "model_sha256": "3834bee34ebfb601c03e1de0c19510aa969cb1087d9a1501434d1333fcfff1d5",
+      "template_sha256": "845f1ee48e39fc942fe190da9df6a1c5db229e17a96ea08966ad1c9274e73d1b",
+      "code_sha256": "75e813d39ba9c6acb04e7f79d0218778515093ae25c864856f693924abc7ef55",
+      "environment_sha256": "984128ac0d5cfcf38652259d3a463ec63c86d56e2189a9012e3d2427e583b689"
+    },
+    "manifest_files_verified": 24,
+    "manifest_sha256": "c67ea4cfba74b9365f7cb5fee1bff2bd67622d07b647256e06e88991c99bb8eb",
+    "configuration": {
+      "max_length": 4096,
+      "micro_batch_size": 1,
+      "gradient_accumulation_steps": 8,
+      "epochs": 1,
+      "learning_rate": 2e-05,
+      "weight_decay": 0.01,
+      "warmup_ratio": 0.03,
+      "max_grad_norm": 1.0,
+      "seed": 3407,
+      "checkpoint_every": 100,
+      "lora_r": 8,
+      "lora_alpha": 8,
+      "lora_dropout": 0.0,
+      "packing": false,
+      "truncation": false,
+      "enable_thinking": false,
+      "model": "gemma-4-31B-it-unsloth-bnb-4bit",
+      "model_revision": "8e256fc6d63003fc0ca8c91b976e6dcc38433385",
+      "training_method": "4-bit QLoRA; BF16 compute; AdamW foreach=False",
+      "lora_selection": {
+        "language_layers": true,
+        "attention_modules": true,
+        "mlp_modules": true,
+        "vision_layers": false,
+        "explicit_target_modules_argument": null
+      }
+    },
+    "live_model_environment_rechecked": false
+  },
+  "tokens": {
+    "verified": true,
+    "splits": {
+      "train": {
+        "rows": 15512,
+        "supervised_tokens": 1077219,
+        "input_tokens": 30666067,
+        "cache_sha256": "f3fb984ecd79a4c1d90e78dd8c72cafdc295171b692d2ec7842c42dd72fa34bf"
+      },
+      "validation": {
+        "rows": 1724,
+        "supervised_tokens": 123191,
+        "input_tokens": 3486856,
+        "cache_sha256": "27a2e692f27a89a12ef6e1ba1c20a58663f3c163ec878c1d0f119edbd0068488"
+      }
+    },
+    "mask": "last_response_and_native_end_only; shifted_nonignored_target_tokens",
+    "cache_contents_retokenized": false
+  },
+  "qualification": {
+    "verified": true,
+    "optimizer_steps": 0,
+    "bindings": {
+      "dataset_sha256": "fa7f2c09be9b2c7ffa3f10c360f9abe533302b9002c25396d7f59c1bc8f842f2",
+      "config_sha256": "a3982a83de30f81a333fb70b5c2894cc264496b61b99d3ce4eef307efd866a35",
+      "model_sha256": "3834bee34ebfb601c03e1de0c19510aa969cb1087d9a1501434d1333fcfff1d5",
+      "template_sha256": "845f1ee48e39fc942fe190da9df6a1c5db229e17a96ea08966ad1c9274e73d1b",
+      "code_sha256": "75e813d39ba9c6acb04e7f79d0218778515093ae25c864856f693924abc7ef55",
+      "environment_sha256": "984128ac0d5cfcf38652259d3a463ec63c86d56e2189a9012e3d2427e583b689"
+    },
+    "source_sha256": "d650681b6ffdee67ae270c5d8b628e1a8daaa0c357d0e8f331f5dd6c29e6c547",
+    "checks": [
+      {
+        "name": "token_contract",
+        "passed": true
+      },
+      {
+        "name": "fused_loss",
+        "passed": true
+      },
+      {
+        "name": "fused_gradient",
+        "passed": true
+      },
+      {
+        "name": "generation_profile",
+        "passed": true
+      },
+      {
+        "name": "gpu_pin",
+        "passed": true
+      },
+      {
+        "name": "weights_unchanged",
+        "passed": true
+      }
+    ],
+    "loss_criterion": "bf16_linear_fp32_softcap_v1",
+    "gradient_criterion": "hidden_gradient_bf16_v1",
+    "loss_comparisons": [
+      {
+        "actual": 5.286351203918457,
+        "reference": 5.286352157592773,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 5.286351680755615,
+        "reference": 5.286351404874657,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 14.728649139404297,
+        "reference": 14.728648662567139,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 0.05221662297844887,
+        "reference": 0.05221662297753937,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 5.235032081604004,
+        "reference": 5.235032350291787,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 5.286351203918457,
+        "reference": 5.286351404874657,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 14.728649139404297,
+        "reference": 14.728648662567139,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 0.05221662297844887,
+        "reference": 0.05221662297753937,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 5.235032081604004,
+        "reference": 5.235032350291787,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 5.283740997314453,
+        "reference": 5.286351404874657,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 14.703747749328613,
+        "reference": 14.728648662567139,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 0.050113189965486526,
+        "reference": 0.05221662297753937,
+        "atol": 0.002,
+        "rtol": 0.002
+      },
+      {
+        "actual": 5.232687473297119,
+        "reference": 5.235032350291787,
+        "atol": 0.002,
+        "rtol": 0.002
+      }
+    ],
+    "gradient_comparisons": [
+      {
+        "relative_l2_error": 0.0029136693535405404,
+        "maximum_relative_l2_error": 0.02,
+        "cosine": 0.9999958276748657,
+        "minimum_cosine": 0.999,
+        "reference_norm": 0.046053238213062286
+      },
+      {
+        "relative_l2_error": 2.3552266532564296e-08,
+        "maximum_relative_l2_error": 0.02,
+        "cosine": 1.0,
+        "minimum_cosine": 0.999,
+        "reference_norm": 0.046053238213062286
+      },
+      {
+        "relative_l2_error": 0.0029626355540245597,
+        "maximum_relative_l2_error": 0.02,
+        "cosine": 0.9999955892562866,
+        "minimum_cosine": 0.999,
+        "reference_norm": 0.046053238213062286
+      },
+      {
+        "relative_l2_error": 0.007198759489722076,
+        "maximum_relative_l2_error": 0.02,
+        "cosine": 0.9999740123748779,
+        "minimum_cosine": 0.999,
+        "reference_norm": 0.046053238213062286
+      }
+    ],
+    "generation_case_count": 2,
+    "fresh_gpu_reexecution": false,
+    "validation_scope": "saved status, bindings, contracts, numerical tolerances and unchanged-weight evidence; probes not rerun"
+  },
+  "canary": {
+    "verified": true,
+    "optimizer_steps": 3,
+    "separate_process_resume_attested": true,
+    "artifact_hashes_verified": true,
+    "allocator_peaks_gib": {
+      "canary": {
+        "peak_allocated_gib": 21.156771659851074,
+        "peak_reserved_gib": 21.44921875
+      },
+      "canary-resume": {
+        "peak_allocated_gib": 21.15430736541748,
+        "peak_reserved_gib": 21.44921875
+      }
+    },
+    "checks": [
+      {
+        "name": "weights_updated",
+        "passed": true
+      },
+      {
+        "name": "checkpoint_saved",
+        "passed": true
+      },
+      {
+        "name": "checkpoint_resumed",
+        "passed": true
+      },
+      {
+        "name": "length_4096",
+        "passed": true
+      }
+    ]
+  },
+  "training": {
+    "verified": false
+  },
+  "validation": {
+    "verified": false
+  },
+  "train_log": {
+    "verified": false
+  },
+  "measurements": {
+    "segments": [
+      {
+        "segment_id": "20261009T080503Z-prepare-1039712",
+        "elapsed_seconds": 52.21004873502534,
+        "action": "prepare",
+        "command_exit_code": 0,
+        "log_exit_code": 0,
+        "sample_count": 11,
+        "sampled_device_memory_max_mib": 11.0,
+        "monitor_stderr_bytes": 0,
+        "measurement_issues": [],
+        "start_utc": "2026-10-09T08:05:03.736522+00:00",
+        "end_utc": "2026-10-09T08:05:55.946587+00:00"
+      },
+      {
+        "segment_id": "20261009T080621Z-start-1039749",
+        "elapsed_seconds": null,
+        "action": "start",
+        "command_exit_code": null,
+        "log_exit_code": null,
+        "sample_count": 142,
+        "sampled_device_memory_max_mib": 22485.0,
+        "monitor_stderr_bytes": 0,
+        "measurement_issues": [
+          "missing_or_invalid_start_end_events"
+        ]
+      }
+    ],
+    "sampled_device_memory_max_mib": 22485.0,
+    "sampling_interval_requested_seconds": 5,
+    "memory_scope": "5-second sampled whole-device memory.used, not allocator or instantaneous peak",
+    "recorded_successful_command_elapsed_seconds": 52.21004873502534,
+    "recorded_failed_command_elapsed_seconds": null,
+    "time_scope": "per-command wrapper time includes preparation, loading, canary, evaluation and saves; sums may overlap",
+    "training_allocator_peak_gib": null,
+    "precise_gpu_step_seconds": null
+  },
+  "command_completion": {
+    "verified": false
+  },
+  "snapshot_stability": {
+    "verified": true,
+    "files_checked": 54
+  },
+  "status": "incomplete_or_unverified",
+  "verification_errors": [
+    {
+      "section": "training",
+      "error_type": "FileNotFoundError"
+    },
+    {
+      "section": "validation",
+      "error_type": "FileNotFoundError"
+    },
+    {
+      "section": "train_log",
+      "error_type": "FileNotFoundError"
+    },
+    {
+      "section": "command_completion",
+      "error_type": "ValueError"
+    }
+  ],
+  "warnings": [
+    "Some wrapper measurements are missing or invalid; see segment issues."
+  ],
+  "private_server_source_references": {
+    "work/tokens/manifest.json": {
+      "sha256": "2cad585389b0d48b4940fea1f970dd43d5cdbeb1cdae76f6903c4993c54c6e39",
+      "bytes": 1009
+    },
+    "work/qualification.json": {
+      "sha256": "d650681b6ffdee67ae270c5d8b628e1a8daaa0c357d0e8f331f5dd6c29e6c547",
+      "bytes": 47606
+    },
+    "work/canary_gate.json": {
+      "sha256": "98fddb9b85fbb41cb644984b8923e19ff0001bc7f2e844aee44dfad5ab0613ee",
+      "bytes": 2611
+    },
+    "work/canary/RUN.json": {
+      "sha256": "435748d36bbd5dceaef9ae78457be9f393fab2d872c8f205f1b907f8e0c5ad24",
+      "bytes": 166951
+    },
+    "work/canary/TRAINING_RESULT.json": {
+      "sha256": "53ada78b5f83416c19b64dfb8f47075fdf8aeba7c2eb9daad54b3f8b040e9dda",
+      "bytes": 371
+    },
+    "work/canary_execution.json": {
+      "sha256": "467f2d30f86e4b4e0d70c625c3c276b0d5938dacddcbdc2bde0a66c4a5d9d02e",
+      "bytes": 733
+    },
+    "work/canary-resume_execution.json": {
+      "sha256": "561e11f7f4db9160fbeaaa15b1bfaa6ce539165df93d4dc21a1f6cced1cbeb0b",
+      "bytes": 724
+    },
+    "work/canary/checkpoints/step-000000002/CHECKPOINT.json": {
+      "sha256": "cbf378a06073d9f3274ea23953a303d0bd531cfd648739a7941dd99d63b0dbd7",
+      "bytes": 577
+    },
+    "work/canary/checkpoints/step-000000003/CHECKPOINT.json": {
+      "sha256": "8751448891908fec150443b1ec1c5521a4e40fd50ee132be765244989f7b11be",
+      "bytes": 577
+    },
+    "work/canary/train.jsonl": {
+      "sha256": "4f1829591ae2a5e10d492823af6af693c4734df6859502dde52f26812e1b319f",
+      "bytes": 696
+    },
+    "work/canary/checkpoints/step-000000002/README.md": {
+      "sha256": "c8328e37adb99e77c79b0ebc94bf64aebd09023e3c75040ffc0d6f6f6aab25a7",
+      "bytes": 5280
+    },
+    "work/canary/checkpoints/step-000000002/adapter_config.json": {
+      "sha256": "caa301a0dcfb5d1f3a8813b87d8e46a72420238146a42f3dbfd8795f28c9bebd",
+      "bytes": 1626
+    },
+    "work/canary/checkpoints/step-000000002/adapter_model.safetensors": {
+      "sha256": "fd6181f287a7b1974e9ac5dccc7f732896bc5e4d68260a5b7eb414ca8d1f3607",
+      "bytes": 244980744
+    },
+    "work/canary/checkpoints/step-000000002/training_state.pt": {
+      "sha256": "0e8ec6016f35ef8d7bd2dc48b90ebcf4c5663f699b37cfe8a9c2ca1c47ad600a",
+      "bytes": 490432117
+    },
+    "work/canary/checkpoints/step-000000003/README.md": {
+      "sha256": "c8328e37adb99e77c79b0ebc94bf64aebd09023e3c75040ffc0d6f6f6aab25a7",
+      "bytes": 5280
+    },
+    "work/canary/checkpoints/step-000000003/adapter_config.json": {
+      "sha256": "caa301a0dcfb5d1f3a8813b87d8e46a72420238146a42f3dbfd8795f28c9bebd",
+      "bytes": 1626
+    },
+    "work/canary/checkpoints/step-000000003/adapter_model.safetensors": {
+      "sha256": "93b754a1d7d82775c67c8dd0b64c7527ec76ef8fdb9cbef89eca5fad85709a24",
+      "bytes": 244980744
+    },
+    "work/canary/checkpoints/step-000000003/training_state.pt": {
+      "sha256": "a060fb26466bb38e6934e0be7667a818f9c5cf7f4de0f61ad7d04ccd595ed260",
+      "bytes": 490432117
+    },
+    "work/collection/20261009T080503Z-prepare-1039712/events.jsonl": {
+      "sha256": "af94283071eb50eeafc452f8304b04e347f07617eec5c0fa57564b217537c7ad",
+      "bytes": 420
+    },
+    "work/collection/20261009T080503Z-prepare-1039712/gpu_monitor.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "work/collection/20261009T080503Z-prepare-1039712/gpu_samples.csv": {
+      "sha256": "2dd84cc9f400aff3a637787b8fdbf924c4c534c3577374b8433b1611c4710002",
+      "bytes": 1242
+    },
+    "work/collection/20261009T080503Z-prepare-1039712/console.log": {
+      "sha256": "466181a1e2a45ec96fee51004bcc29b14404dad0c9258cb36327da15cecd5a2d",
+      "bytes": 154
+    },
+    "work/collection/20261009T080621Z-start-1039749/events.jsonl": {
+      "sha256": "e0adca59c436e43a1df30c8c8d6df310bdd1c1ea29756d8eb70083cec07a8f1a",
+      "bytes": 209
+    },
+    "work/collection/20261009T080621Z-start-1039749/gpu_monitor.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "work/collection/20261009T080621Z-start-1039749/gpu_samples.csv": {
+      "sha256": "da2b6ebc72b1a02a4e87b0b770e37764bb4a46eed8e3ec82bee25af0670a0439",
+      "bytes": 15257
+    },
+    "work/collection/20261009T080621Z-start-1039749/console.log": {
+      "sha256": "801352810595b50bc986c4ea066b1db5e79032233aab6688228a8142b3ee05db",
+      "bytes": 14337
+    }
+  },
+  "privacy": {
+    "raw_qualification_excluded": true,
+    "run_order_and_row_ids_excluded": true,
+    "raw_text_token_ids_weights_optimizer_console_excluded": true,
+    "archive_policy": "generated explicit field projections only; no source-file copying"
+  }
+}

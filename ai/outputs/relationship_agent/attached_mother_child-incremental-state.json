@@ -1,0 +1,446 @@
+{
+  "case_id": "attached_mother_child",
+  "mode": "state",
+  "synthetic": true,
+  "model": "gemma4:12b",
+  "measured_at": "2026-10-11T03:41:24.553Z",
+  "duration_ms": 108666,
+  "initial_state": {
+    "patient_state": {
+      "summary": "지민이는 학업과 진로에 대한 과도한 걱정으로 인해 계획을 반복적으로 수정하고 반복적인 확인을 요청하는 모습을 보입니다. 특히 완벽하게 준비해야 한다는 강한 압박감으로 인해 밤잠을 설쳐가며 계획표를 고치는 등 일상에 큰 지장을 받고 있습니다.",
+      "facts": [
+        {
+          "subject": "patient",
+          "question_id": "mood",
+          "quote": "초조하거나 긴장한 모습이 자주 보여요.",
+          "interpretation": "지민이는 현재 매우 초조하고 긴장된 상태이며, 불안감을 자주 드러냅니다.",
+          "certainty": "reported"
+        },
+        {
+          "subject": "patient",
+          "question_id": "describe",
+          "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요.",
+          "interpretation": "학업 스트레스로 인해 계획을 반복적으로 수정하고, 반복적인 확인을 통해 안심을 얻으려 합니다.",
+          "certainty": "reported"
+        },
+        {
+          "subject": "patient",
+          "question_id": "concern",
+          "quote": "밤에 잠을 못 자고 새벽까지 계획표를 고치고 있는 거요. 괜찮다고 말해 줘도 몇 분 뒤에 또 같은 걸 물어서, 제 말이 아무 도움이 안 되는 것 같아 더 걱정돼요.",
+          "interpretation": "지민이는 수면 부족과 반복적인 확인 요청으로 인해 일상적인 생활과 소통에 어려움을 겪고 있습니다.",
+          "certainty": "reported"
+        }
+      ],
+      "unknowns": [
+        "지민이가 느끼는 구체적인 감정의 깊이나 내부적인 동기"
+      ],
+      "user_goal": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+    },
+    "name_index": {
+      "alias": "지민이",
+      "source_question_id": "name",
+      "quote": "지민이요."
+    },
+    "question_plan": {
+      "skip": []
+    },
+    "relationship_memory": {
+      "patient": [
+        {
+          "interpretation": "지민이는 완벽주의적 성향으로 인해 스스로를 압박하며, 이를 해결하기 위해 보호자에게 반복적으로 확인을 요청하는 행동을 보입니다.",
+          "evidence": [
+            {
+              "subject": "patient",
+              "question_id": "describe",
+              "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+            }
+          ],
+          "certainty": "tentative"
+        }
+      ],
+      "supporter": [
+        {
+          "interpretation": "보호자는 지민이가 새벽까지 울면서 힘들어하는 모습을 지켜보며 깊은 정서적 부담과 걱정을 느끼고 있습니다.",
+          "evidence": [
+            {
+              "subject": "supporter",
+              "question_id": "moment",
+              "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+            }
+          ],
+          "certainty": "reported"
+        }
+      ],
+      "relationship": [
+        {
+          "interpretation": "보호자는 지민이의 반복적인 확인 요청에 반복적으로 답해주고 있지만, 지민이의 불안이 해소되지 않아 보호자가 무력감을 느끼는 상호작용이 반복되고 있습니다.",
+          "evidence": [
+            {
+              "subject": "patient",
+              "question_id": "concern",
+              "quote": "괜찮다고 말해 줘도 몇 분 뒤에 또 같은 걸 물어서, 제 말이 아무 도움이 안 되는 것 같아 더 걱정돼요."
+            }
+          ],
+          "certainty": "tentative"
+        }
+      ],
+      "unknowns": [
+        "지민이가 스스로를 문제라고 생각하는지 여부"
+      ]
+    }
+  },
+  "result": {
+    "patient_state": {
+      "summary": "지민이는 완벽주의적 성향으로 인해 학업과 진로에 대한 과도한 걱정을 하며, 이를 해결하기 위해 밤잠을 설쳐가며 계획을 반복적으로 수정하고 보호자에게 계속 확인을 요청하는 모습을 보입니다.",
+      "facts": [
+        {
+          "subject": "patient",
+          "question_id": "mood",
+          "quote": "초조하거나 긴장한 모습이 자주 보여요.",
+          "interpretation": "지민이는 현재 매우 초조하고 긴장된 상태이며, 불안감을 자주 드러냅니다.",
+          "certainty": "reported"
+        },
+        {
+          "subject": "patient",
+          "question_id": "describe",
+          "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요.",
+          "interpretation": "학업 스트레스로 인해 계획을 반복적으로 수정하고, 반복적인 확인을 통해 안심을 얻으려 합니다.",
+          "certainty": "reported"
+        },
+        {
+          "subject": "patient",
+          "question_id": "concern",
+          "quote": "밤에 잠을 못 자고 새벽까지 계획표를 고치고 있는 거요. 괜찮다고 말해 줘도 몇 분 뒤에 또 같은 걸 물어서, 제 말이 아무 도움이 안 되는 것 같아 더 걱정돼요.",
+          "interpretation": "지민이는 수면 부족과 반복적인 확인 요청으로 인해 일상적인 생활과 소통에 어려움을 겪고 있습니다.",
+          "certainty": "reported"
+        }
+      ],
+      "unknowns": [
+        "지민이가 스스로를 문제라고 생각하는지 여부"
+      ],
+      "user_goal": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+    },
+    "name_index": {
+      "alias": "지민이",
+      "source_question_id": "name",
+      "quote": "지민이요."
+    },
+    "question_plan": {
+      "skip": []
+    },
+    "relationship_memory": {
+      "patient": [
+        {
+          "interpretation": "지민이는 완벽주의적 성향으로 인해 스스로를 압박하며, 이를 해결하기 위해 보호자에게 반복적으로 확인을 요청하는 행동을 보입니다.",
+          "evidence": [
+            {
+              "subject": "patient",
+              "question_id": "describe",
+              "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+            }
+          ],
+          "certainty": "tentative"
+        }
+      ],
+      "supporter": [
+        {
+          "interpretation": "보호자는 지민이가 새벽까지 울면서 힘들어하는 모습을 지켜보며 깊은 정서적 부담과 걱정을 느끼고 있습니다.",
+          "evidence": [
+            {
+              "subject": "supporter",
+              "question_id": "moment",
+              "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+            }
+          ],
+          "certainty": "reported"
+        },
+        {
+          "interpretation": "보호자는 아이 문제로 인한 가족 내 갈등과 수면 부족 등의 변화를 겪고 있으며, 동생에게 의지하며 버티고 있습니다.",
+          "evidence": [
+            {
+              "subject": "supporter",
+              "question_id": "cgchange",
+              "quote": "‘잠을 잘 못 자요’, ‘일이나 공부에 집중하기 어려워요’, ‘다른 가족과 갈등이 생겼어요’를 선택할게요."
+            }
+          ],
+          "certainty": "reported"
+        }
+      ],
+      "relationship": [
+        {
+          "interpretation": "보호자는 지민이의 반복적인 확인 요청에 반복적으로 답해주고 있지만, 지민이의 불안이 해소되지 않아 보호자가 무력감을 느끼는 상호작용이 반복되고 있습니다.",
+          "evidence": [
+            {
+              "subject": "patient",
+              "question_id": "concern",
+              "quote": "괜찮다고 말해 줘도 몇 분 뒤에 또 같은 걸 물어서, 제 말이 아무 도움이 안 되는 것 같아 더 걱정돼요."
+            }
+          ],
+          "certainty": "tentative"
+        }
+      ],
+      "unknowns": [
+        "지민이가 스스로를 문제라고 생각하는지 여부"
+      ]
+    }
+  },
+  "trace": [
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "state",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 50035,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 9536,
+        "completion_tokens": 974,
+        "total_tokens": 10510
+      },
+      "reason": "success"
+    },
+    {
+      "event": "model_attempt",
+      "request_id": null,
+      "generation": "state",
+      "attempt": 1,
+      "status": 200,
+      "duration_ms": 58614,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 12366,
+        "completion_tokens": 1074,
+        "total_tokens": 13440
+      },
+      "reason": "success"
+    }
+  ],
+  "stage_outputs": [
+    {
+      "stage": "state",
+      "retrieval": {
+        "indexed_sources": 23,
+        "retrieved_sources": 12,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "supporter:moment",
+          "user_goal:want",
+          "user_goal:goal",
+          "patient:mood",
+          "patient:describe",
+          "patient:concern",
+          "patient:need",
+          "patient:support",
+          "patient:barrier",
+          "patient:help"
+        ]
+      },
+      "output": {
+        "patient_state": {
+          "summary": "지민이는 학업과 진로에 대한 과도한 걱정으로 인해 계획을 반복적으로 수정하고 반복적인 확인을 요청하는 모습을 보입니다. 특히 완벽하게 준비해야 한다는 강한 압박감으로 인해 밤잠을 설쳐가며 계획표를 고치는 등 일상에 큰 지장을 받고 있습니다.",
+          "facts": [
+            {
+              "subject": "patient",
+              "question_id": "mood",
+              "quote": "초조하거나 긴장한 모습이 자주 보여요.",
+              "interpretation": "지민이는 현재 매우 초조하고 긴장된 상태이며, 불안감을 자주 드러냅니다.",
+              "certainty": "reported"
+            },
+            {
+              "subject": "patient",
+              "question_id": "describe",
+              "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요.",
+              "interpretation": "학업 스트레스로 인해 계획을 반복적으로 수정하고, 반복적인 확인을 통해 안심을 얻으려 합니다.",
+              "certainty": "reported"
+            },
+            {
+              "subject": "patient",
+              "question_id": "concern",
+              "quote": "밤에 잠을 못 자고 새벽까지 계획표를 고치고 있는 거요. 괜찮다고 말해 줘도 몇 분 뒤에 또 같은 걸 물어서, 제 말이 아무 도움이 안 되는 것 같아 더 걱정돼요.",
+              "interpretation": "지민이는 수면 부족과 반복적인 확인 요청으로 인해 일상적인 생활과 소통에 어려움을 겪고 있습니다.",
+              "certainty": "reported"
+            }
+          ],
+          "unknowns": [
+            "지민이가 느끼는 구체적인 감정의 깊이나 내부적인 동기"
+          ],
+          "user_goal": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+        },
+        "name_index": {
+          "alias": "지민이",
+          "source_question_id": "name",
+          "quote": "지민이요."
+        },
+        "question_plan": {
+          "skip": []
+        },
+        "relationship_memory": {
+          "patient": [
+            {
+              "interpretation": "지민이는 완벽주의적 성향으로 인해 스스로를 압박하며, 이를 해결하기 위해 보호자에게 반복적으로 확인을 요청하는 행동을 보입니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "describe",
+                  "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+                }
+              ],
+              "certainty": "tentative"
+            }
+          ],
+          "supporter": [
+            {
+              "interpretation": "보호자는 지민이가 새벽까지 울면서 힘들어하는 모습을 지켜보며 깊은 정서적 부담과 걱정을 느끼고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "moment",
+                  "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "relationship": [
+            {
+              "interpretation": "보호자는 지민이의 반복적인 확인 요청에 반복적으로 답해주고 있지만, 지민이의 불안이 해소되지 않아 보호자가 무력감을 느끼는 상호작용이 반복되고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "concern",
+                  "quote": "괜찮다고 말해 줘도 몇 분 뒤에 또 같은 걸 물어서, 제 말이 아무 도움이 안 되는 것 같아 더 걱정돼요."
+                }
+              ],
+              "certainty": "tentative"
+            }
+          ],
+          "unknowns": [
+            "지민이가 스스로를 문제라고 생각하는지 여부"
+          ]
+        }
+      }
+    },
+    {
+      "stage": "state",
+      "retrieval": {
+        "indexed_sources": 29,
+        "retrieved_sources": 16,
+        "questions": [
+          "patient:name",
+          "patient:rel",
+          "patient:mood",
+          "patient:describe",
+          "patient:concern",
+          "supporter:moment",
+          "supporter:mysupport",
+          "user_goal:want",
+          "user_goal:goal",
+          "patient:need",
+          "patient:support",
+          "patient:barrier",
+          "patient:help",
+          "supporter:feeling",
+          "supporter:cgchange",
+          "supporter:mycoping"
+        ]
+      },
+      "output": {
+        "patient_state": {
+          "summary": "지민이는 완벽주의적 성향으로 인해 학업과 진로에 대한 과도한 걱정을 하며, 이를 해결하기 위해 밤잠을 설쳐가며 계획을 반복적으로 수정하고 보호자에게 계속 확인을 요청하는 모습을 보입니다.",
+          "facts": [
+            {
+              "subject": "patient",
+              "question_id": "mood",
+              "quote": "초조하거나 긴장한 모습이 자주 보여요.",
+              "interpretation": "지민이는 현재 매우 초조하고 긴장된 상태이며, 불안감을 자주 드러냅니다.",
+              "certainty": "reported"
+            },
+            {
+              "subject": "patient",
+              "question_id": "describe",
+              "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요.",
+              "interpretation": "학업 스트레스로 인해 계획을 반복적으로 수정하고, 반복적인 확인을 통해 안심을 얻으려 합니다.",
+              "certainty": "reported"
+            },
+            {
+              "subject": "patient",
+              "question_id": "concern",
+              "quote": "밤에 잠을 못 자고 새벽까지 계획표를 고치고 있는 거요. 괜찮다고 말해 줘도 몇 분 뒤에 또 같은 걸 물어서, 제 말이 아무 도움이 안 되는 것 같아 더 걱정돼요.",
+              "interpretation": "지민이는 수면 부족과 반복적인 확인 요청으로 인해 일상적인 생활과 소통에 어려움을 겪고 있습니다.",
+              "certainty": "reported"
+            }
+          ],
+          "unknowns": [
+            "지민이가 스스로를 문제라고 생각하는지 여부"
+          ],
+          "user_goal": "계획이 바뀌어도 괜찮고, 걱정이 많은 너를 엄마는 답답해하는 게 아니라 이해하고 싶다는 것. 그리고 혼자 다 감당하지 않아도 된다는 걸 전하고 싶어요."
+        },
+        "name_index": {
+          "alias": "지민이",
+          "source_question_id": "name",
+          "quote": "지민이요."
+        },
+        "question_plan": {
+          "skip": []
+        },
+        "relationship_memory": {
+          "patient": [
+            {
+              "interpretation": "지민이는 완벽주의적 성향으로 인해 스스로를 압박하며, 이를 해결하기 위해 보호자에게 반복적으로 확인을 요청하는 행동을 보입니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "describe",
+                  "quote": "고2 올라오면서 성적이랑 진로 걱정이 커졌는지, 공부 계획을 세웠다가 하루 만에 다 갈아엎는 일이 반복돼요. 주말 약속도 전날 밤에 취소하고, 저한테 “이렇게 해도 되는 거 맞아?”를 몇 번씩 물어봐요."
+                }
+              ],
+              "certainty": "tentative"
+            }
+          ],
+          "supporter": [
+            {
+              "interpretation": "보호자는 지민이가 새벽까지 울면서 힘들어하는 모습을 지켜보며 깊은 정서적 부담과 걱정을 느끼고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "moment",
+                  "quote": "지난주 새벽 2시에 방 불이 켜져 있어서 들어갔더니, 울면서 “다 망한 것 같아”라고 했을 때요."
+                }
+              ],
+              "certainty": "reported"
+            },
+            {
+              "interpretation": "보호자는 아이 문제로 인한 가족 내 갈등과 수면 부족 등의 변화를 겪고 있으며, 동생에게 의지하며 버티고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "supporter",
+                  "question_id": "cgchange",
+                  "quote": "‘잠을 잘 못 자요’, ‘일이나 공부에 집중하기 어려워요’, ‘다른 가족과 갈등이 생겼어요’를 선택할게요."
+                }
+              ],
+              "certainty": "reported"
+            }
+          ],
+          "relationship": [
+            {
+              "interpretation": "보호자는 지민이의 반복적인 확인 요청에 반복적으로 답해주고 있지만, 지민이의 불안이 해소되지 않아 보호자가 무력감을 느끼는 상호작용이 반복되고 있습니다.",
+              "evidence": [
+                {
+                  "subject": "patient",
+                  "question_id": "concern",
+                  "quote": "괜찮다고 말해 줘도 몇 분 뒤에 또 같은 걸 물어서, 제 말이 아무 도움이 안 되는 것 같아 더 걱정돼요."
+                }
+              ],
+              "certainty": "tentative"
+            }
+          ],
+          "unknowns": [
+            "지민이가 스스로를 문제라고 생각하는지 여부"
+          ]
+        }
+      }
+    }
+  ]
+}

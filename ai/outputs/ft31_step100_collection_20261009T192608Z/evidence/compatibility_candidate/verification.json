@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "original_cases": 94,
+  "unchanged_existing_route_accepted": 60,
+  "collection_route_accepted": 94,
+  "input_object_role_order_content_preserved": true,
+  "negative_contract_checks": 11,
+  "gpu_models_loaded": 0,
+  "model_generations": 0,
+  "production_modified": false,
+  "new_route": "/v1/collection/chat/completions",
+  "before_sha256": {
+    "server.py": "7799bc1f1c8c1dc90891b603287c155ce9b02737bacf258dcbed2710d28ab424",
+    "active_cache_server.py": "b985485bd6f2bdc2ccc074adf2a522da2a52341347c0e56acb2a4bea25dfbe15"
+  },
+  "after_sha256": {
+    "server.py": "0c5feadf2eed7fa0c5d8489b826dafc10e1187bc5a3e472368528188867cae10",
+    "active_cache_server.py": "9b79212ea439931c231b26c5605ea1ab6807b78e3bf133c12e0c1917f9ad7508"
+  },
+  "application_requires": "Restart only the current step100 API, using existing run_server.sh; existing KV sessions will be lost."
+}

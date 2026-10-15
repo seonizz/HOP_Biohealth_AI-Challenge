@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "created_utc": "2026-10-09T12:35:34.004240+00:00",
+  "authorization_thread": "01a12000-fb4f-7fc3-b76d-6435d39db351",
+  "human_request": "100스탭에 평가",
+  "files": {
+    "scripts/checkpoint100_boundary.py": {
+      "sha256": "f830b6752dd44444b0c8d55acb3eff59859e0392b96c20b8cb282edbcbeba342"
+    },
+    "scripts/continue_checkpoint100.py": {
+      "sha256": "77817eda431d2df554f0dfdd17cb0ac0a02398e29b1c114fc4cd81b5b87a965c"
+    },
+    "scripts/test_checkpoint100_boundary.py": {
+      "sha256": "1d1dcb311639e3b6db706e0c3344de830e75b090bed2e066dfaeebfdff954c97"
+    },
+    "scripts/checkpoint100_eval.py": {
+      "sha256": "fe806d90716bd46f09a29dcfc1a630ceba0d04218ec882b4151125b0463ac09e"
+    },
+    "scripts/test_checkpoint100_eval.py": {
+      "sha256": "5b0f7f94d6d24a34291be57fb46973e6a4ecd2a37711dbc0ba8bbacbddf9c17f"
+    },
+    "scripts/run_checkpoint100_stages.sh": {
+      "sha256": "b2e6282ff79ecb66964ee722cafa8b4d2b875380c9ca8b2a49cae5b7649699d3"
+    },
+    "scripts/run_with_metrics_checkpoint100_v1.sh": {
+      "sha256": "8510ee1705ae5268a0b61ba9103f3c3f113b5521e702015c0ebc430a81ae5b83"
+    },
+    "scripts/early_training_driver.py": {
+      "sha256": "1f86d192f23c7d32e97834bd22ddc2bce4582f9ad7ea7bd6bd3f971b07c284ba"
+    }
+  },
+  "cpu_verification": {
+    "boundary": {
+      "passed": 8,
+      "skipped": 0,
+      "log": "work/collection/checkpoint100-boundary-cpu-tests-final.log",
+      "sha256": "89cf95ce6a4088e0bd8442aa9012f724eebcf1a020006629ad6a0d0f8e255394"
+    },
+    "eval": {
+      "passed": 10,
+      "skipped": 0,
+      "log": "work/collection/checkpoint100-eval-cpu-tests-final.log",
+      "sha256": "398bc098ae3ca03a01b1332cb8b33eb54331b4db7ea7b581f343ee5cba87f6bf"
+    }
+  },
+  "independent_review": "no blocking findings; deterministic committed checkpoint boundary and saved measurement recovery reviewed",
+  "original_kit_unchanged": true
+}

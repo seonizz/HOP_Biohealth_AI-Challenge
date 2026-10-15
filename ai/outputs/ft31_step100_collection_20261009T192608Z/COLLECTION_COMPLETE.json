@@ -1,0 +1,15 @@
+{
+  "assigned": 94,
+  "attempted": 94,
+  "eligible": 94,
+  "excluded": 0,
+  "full_94_collected": false,
+  "generations_sha256": "7cbcbb596fe3f539c25fe2862e5104065ec87187740e7fe600ef7be081618d2e",
+  "ledger_records": 94,
+  "reason": null,
+  "recorded_at": "2026-10-09T20:27:13.058042+00:00",
+  "responses": 93,
+  "run_id": "FT31_STEP100_20261009T192608Z",
+  "state": "complete",
+  "unexecuted": 0
+}

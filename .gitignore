@@ -1,13 +1,41 @@
+# Local dependencies, caches, and runtime state
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+.omx/
+.codex/
+.pytest_cache/
+coverage/
+runtime/
+
+# Local credentials (keep templates)
 .env
 .env.*
 !.env.example
-node_modules/
-backend/node_modules/
-frontend/dist/
-frontend/dist.previous-*/
-frontend/.build-*/
-test-results/
-playwright-report/
-*.log
-.runtime/
-artifacts/
+!.env.sample
+!.env.template
+*.pem
+*.key
+
+# Databases, model weights, and downloaded training bundles
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.db
+*.gguf
+*.safetensors
+*.pt
+*.pth
+/ai/downloads/
+/data/데이터셋/
+
+# Large files (10 MiB or greater) are kept locally.
+node_modules
+
+# Local archive links unavailable in this checkout
+/ai/outputs/handoff
+/data/deliverables
+/presentation/outputs/presentation_collection_FT31_STEP100_20261009T192608Z.zip

@@ -1,0 +1,9 @@
+
+> malssi-project@0.1.0 ai:test
+> cd ai && python3 -B -m unittest discover -s local_api -p 'test_*.py'
+
+.......................................
+----------------------------------------------------------------------
+Ran 39 tests in 0.015s
+
+OK

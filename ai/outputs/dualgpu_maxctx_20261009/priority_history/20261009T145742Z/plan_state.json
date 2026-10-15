@@ -1,0 +1,374 @@
+{
+  "objective": "긴 대화를 포함한 전체 데이터 1 epoch 본학습과 동일 기준 B0/B1 성능 비교 완료를 최우선으로 진행",
+  "remote_root": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009",
+  "hardware": [
+    {
+      "uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+      "memory_mib": 24564
+    },
+    {
+      "uuid": "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642",
+      "memory_mib": 24564
+    }
+  ],
+  "interconnect": "SYS; no NVLink",
+  "model_context_cap": 262144,
+  "candidate_distribution": "validated full-source setting:25316 context,split28/32 language layers,tiledMLP",
+  "training_and_inference_limits_separate": true,
+  "original_single_gpu_run": "preserved; stopped by latest user request, exit143; canary3 passed, B0 unfinished, no main training steps",
+  "new_dataset_policy": "preserve source split/group and 1261 held rows; longer accepted source rows only; no synthetic capacity data in training",
+  "next_steps": [
+    "Preserve live full-plan progress through committed checkpoint100",
+    "Evaluate exact original checkpoint100 on the same fixed32 validation sample",
+    "Resume original main checkpoint100 with original optimizer/scheduler/RNG/cursor through5052 and full4298row B1",
+    "Fresh zero-LoRA base full4298row B0, canonical B0/B1/COMPLETE and strict results",
+    "Deferred service inference input/output measurements"
+  ],
+  "explicit_user_long_conversation_inclusion": true,
+  "required_untruncated_training_context_at_least": 25316,
+  "target_train_rows": 40415,
+  "target_validation_rows": 4298,
+  "target_optimizer_steps": 5052,
+  "original_hold_rows": 1261,
+  "target_train_input_tokens": 237049716,
+  "target_validation_input_tokens": 23736126,
+  "target_train_supervised_tokens": 3291230,
+  "target_validation_supervised_tokens": 362003,
+  "full_long_source_export_verified": true,
+  "legacy_4096_subset_exact_raw_lines_match": true,
+  "training_capacity_observations": {
+    "4096": "passed actual both-GPU gradients + optimizer update",
+    "16384": "passed actual both-GPU gradients + optimizer update",
+    "32768": "OOM GPU1; GPU0 peak16.68GiB, GPU1 peak22.57GiB then1.31GiB allocation failed",
+    "25316": "PASSED final split28/tiled actual longest8-source accumulation8 updates2 + checkpoint + fresh-process update3; no truncation; allocator warnings preserved; no fatal error",
+    "32768_tiled_split26": "OOM GPU1 on2.05GiB allocation; no optimizer",
+    "28672_tiled_split26": "single update PASS but accum8 OOM on second microstep; NOT STABLE, cannot finalize",
+    "29440_tiled_split26": "OOM GPU0 before1stbackwardcompleted",
+    "30720_tiled_split24": "OOM GPU0 before1stbackwardcompleted",
+    "28672_tiled_split25": "FAILED: OOM GPU0 after9 microsteps and1 optimizer update; all evidence preserved"
+  },
+  "next_action": "Wait for original checkpoint100, same32 evaluation, then automatic continuation through5052; no separate40 replay",
+  "server_cpu_unit_tests": {
+    "passed": 99,
+    "skipped": 0,
+    "log": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/code-tests-v3.log"
+  },
+  "long_source_kit_data": {
+    "rows": 44713,
+    "ledger_sha256": "76b807320edff5394095ccd85073ea2d7fa82918c3b6ed311de39012b823ebb7",
+    "remote_directory": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/data"
+  },
+  "canary_plan": "longest eight source rows repeated only within canary for 2 initial updates plus 1 fresh-process resumed update",
+  "memory_optimization": "Installed Unsloth unsloth_tiled_mlp=True confirmed all60 language MLPs; no CPU save_on_cpu change applied",
+  "candidate_training_config": {
+    "max_length": 25316,
+    "layer_split": 28,
+    "unsloth_tiled_mlp": true,
+    "stability_confirmed": true,
+    "essential_stability_gate": "actual longest-source2+fresh1 canary with accumulation8"
+  },
+  "long_token_preparation": {
+    "pid": 1043658,
+    "status": "passed",
+    "log": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/prepare-long-tokens-28672.log",
+    "validated_rows": {
+      "train": 40415,
+      "validation": 4298
+    }
+  },
+  "inference_pipeline": {
+    "status": "waiting_for_training_B0_B1_and_strict_collection",
+    "script": "scripts/run_inference_after_training.py",
+    "report": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/inference_capacity_pipeline.json",
+    "probe_version": 6,
+    "layer_split": 32,
+    "first_gate": "8192input+64output full/chunk prefill parity",
+    "native_limit_candidates": {
+      "max_input": 262143,
+      "input_profile_output": 1,
+      "output_profile_input": 2,
+      "max_output": 262142
+    },
+    "candidates_are_not_measured_limits": true,
+    "fallback_prefill_chunks": [
+      4096,
+      2048,
+      1024,
+      512,
+      256,
+      128
+    ],
+    "do_not_launch_conflicting_gpu_jobs": true,
+    "former_pid": 1044080,
+    "cancelled": false,
+    "pid": 1044629,
+    "gpu_before_training_results": false,
+    "old_coordinator_stopped": true
+  },
+  "priority_updated_utc": "2026-10-09T10:31:13.093070+00:00",
+  "training_capacity_search": "deferred; no further maximum exploration before training/evaluation",
+  "main_training": {
+    "started": true,
+    "completed_optimizer_steps": 45,
+    "total_optimizer_steps": 5052,
+    "latest_loss": 3.978425114293078,
+    "last_step": {
+      "next_row_cursor": 360,
+      "microbatches": 8,
+      "elapsed_seconds": 119.59113900305238
+    },
+    "observed_utc": "2026-10-09T12:46:14.273818+00:00"
+  },
+  "verification_reuse_policy": "Reuse identical tokenization evidence when dataset/tokenizer/preparation/model/environment unchanged; prove old code hash and permitted non-tokenizing qualification module changes before import, then validate every cached row and preserve immutable provenance",
+  "qualification": {
+    "status": "passed",
+    "model_loss_matches_full_shape_reference": true,
+    "atol": 0.002,
+    "rtol": 0.002,
+    "thresholds_relaxed": false,
+    "proposed_fix": "independent BF16 reference at identical actual chunk matrix sizes",
+    "pid": 1044574,
+    "server_cpu_reference_tests": {
+      "passed": 9,
+      "skipped": 0
+    },
+    "tolerances_unchanged": true,
+    "checks": [
+      "gpu_pin",
+      "token_contract",
+      "fused_loss",
+      "fused_gradient",
+      "tiled_mlp_equivalence",
+      "generation_profile",
+      "weights_unchanged"
+    ],
+    "loss_comparisons": 13,
+    "hidden_gradient_comparisons": 4,
+    "worst_hidden_gradient_relative_l2": 0.006174788349179178,
+    "previous_reference_failure": "first_chunks_8"
+  },
+  "training_pipeline": {
+    "pid": 1048788,
+    "script": "scripts/continue_checkpoint100.py",
+    "status": "waiting_for_committed100_boundary",
+    "prior_wrapper_exit": 143,
+    "intentional_handoff": true,
+    "original_canary_preserved": true,
+    "canary_process_pid": 1045420,
+    "automatic_order": [
+      "Preserve live full-plan progress through committed checkpoint100",
+      "Evaluate exact original checkpoint100 on the same fixed32 validation sample",
+      "Resume original main checkpoint100 with original optimizer/scheduler/RNG/cursor through5052 and full4298row B1",
+      "Fresh zero-LoRA base full4298row B0, canonical B0/B1/COMPLETE and strict results",
+      "Deferred service inference input/output measurements"
+    ],
+    "early_processes": [
+      {
+        "pid": 1045875,
+        "state": "State:\tR (running)"
+      }
+    ],
+    "report": "work/collection/checkpoint100_pipeline_v1.json",
+    "original_driver_pid": 1046734,
+    "prior_coordinator_pid": 1045395,
+    "replay40_stage_deployed": false
+  },
+  "updated_utc": "2026-10-09T12:46:14.273818+00:00",
+  "token_cache_revalidation": {
+    "status": "passed",
+    "train_rows": 40415,
+    "validation_rows": 4298,
+    "max_train_sequence_length": 25316,
+    "max_validation_sequence_length": 14014,
+    "all_source_rows_untruncated": true,
+    "audit_directory": "training_kit/work/token-cache-rebind/20261009T095737Z-e6ec3d4bed814dff8c8b7efc34697720",
+    "token_files_unchanged": true
+  },
+  "canary": {
+    "passed": true,
+    "latest_step": {
+      "step": 3,
+      "target_mean_loss": 4.295423256817148,
+      "microbatches": 8,
+      "next_row_cursor": 24
+    },
+    "separate_from_main_training": true,
+    "first_checkpoint": {
+      "committed": true,
+      "manifest_sha256": "a2c926eba74bdd0eb7c078aa243221a1dba4f1119a9ff95df33728cc095ea5fc",
+      "adapter_bytes": 244980744,
+      "training_state_bytes": 490432379
+    },
+    "first_update_elapsed_seconds": 766.6132804990048,
+    "two_updates_and_save_passed": true,
+    "fresh_process_resume_passed": true,
+    "gate_artifact_hashes_verified": true,
+    "allocator_warning_count": 32
+  },
+  "last_goal_turn_classification": {
+    "previous_turn": "progress: actual source canary3 passed",
+    "current_turn": "progress: miniB0 completed, full40415/5052plan started, actual main step1 completed",
+    "observed_utc": "2026-10-09T11:00:44.841536+00:00"
+  },
+  "priority_history": [
+    {
+      "previous": "fullB0 → fulltraining → fullB1 → collection",
+      "new": "fixed32miniB0 → first16steps → same32miniB1 → continue5052 → fullB1 → freshbasefullB0 → strictresults",
+      "authorization_thread": "01a12000-fb4f-7fc3-b76d-6435d39db351",
+      "human_requests": [
+        "최대한 빠르게 데이터가 나와야해",
+        "중간 결과 먼저, 전체 학습 계속",
+        "지금 전달하고 실행 조정"
+      ]
+    },
+    {
+      "at_utc": "2026-10-09T12:37:57.160102+00:00",
+      "authorization_thread": "01a12000-fb4f-7fc3-b76d-6435d39db351",
+      "human_requests": [
+        "100스탭에 평가",
+        "40스탭에서 한번 중간정검 진행해줘",
+        "추가 시간이 들어도 40 step 모델 재평가"
+      ],
+      "order": [
+        "Preserve live full-plan progress through committed checkpoint100",
+        "Evaluate exact original checkpoint100 on the same fixed32 validation sample",
+        "In a separate branch replay original checkpoint16 through40 and evaluate the same32; label as replayed40",
+        "Resume original main checkpoint100 with original optimizer/scheduler/RNG/cursor through5052 and full4298row B1",
+        "Fresh zero-LoRA base full4298row B0, canonical B0/B1/COMPLETE and strict results",
+        "Deferred service inference input/output measurements"
+      ],
+      "original_live40_checkpoint_unavailable": true
+    },
+    {
+      "at_utc": "2026-10-09T12:44:52.487930+00:00",
+      "authorization_thread": "01a12000-fb4f-7fc3-b76d-6435d39db351",
+      "human_correction": "아니 지금 학습중인게 40이 됬을때 한번더 데이터를 만들라는 말이야",
+      "effect": "cancel separate16to40 replay before deployment; preserve original progress and100evaluation",
+      "actual_main_step_at_check": 44,
+      "original_live40_checkpoint_exists": false
+    }
+  ],
+  "early_driver": {
+    "sha256": "1f86d192f23c7d32e97834bd22ddc2bce4582f9ad7ea7bd6bd3f971b07c284ba",
+    "status": "deployed_pinned",
+    "server_cpu_tests": {
+      "passed": 11,
+      "skipped": 0,
+      "elapsed_seconds": 7.517
+    },
+    "independent_review": "no material findings",
+    "deployment_manifest": "work/collection/early_driver_deployment.json",
+    "sample_selection": "completed_before_predictions",
+    "early_report_paths": [
+      "training_kit/work/early_result.json",
+      "training_kit/work/early_result.csv"
+    ]
+  },
+  "early_sample": {
+    "sample_sha256": "38b324dda59ce4abbf6b05640fb4a760087904ce18f4be0a20ff2d39360fbf36",
+    "source_sha256": "cbae6e7b9ca6ab46ed15ee687d31d6e7732082a06390dd8324f58683d6a1e908",
+    "seed": 3407,
+    "method": "sequence_length_rank_quartiles_eight_without_replacement",
+    "selected_before_predictions": true,
+    "population_rows": 4298,
+    "sample_rows": 32,
+    "strata": [
+      {
+        "maximum_length": 2510,
+        "minimum_length": 77,
+        "population_rows": 1074,
+        "quartile": 1,
+        "sample_rows": 8
+      },
+      {
+        "maximum_length": 5265,
+        "minimum_length": 2516,
+        "population_rows": 1075,
+        "quartile": 2,
+        "sample_rows": 8
+      },
+      {
+        "maximum_length": 8284,
+        "minimum_length": 5268,
+        "population_rows": 1074,
+        "quartile": 3,
+        "sample_rows": 8
+      },
+      {
+        "maximum_length": 14014,
+        "minimum_length": 8284,
+        "population_rows": 1075,
+        "quartile": 4,
+        "sample_rows": 8
+      }
+    ],
+    "total_sequence_tokens": 172842,
+    "total_target_tokens": 2905,
+    "max_sequence_length": 12323,
+    "min_sequence_length": 318
+  },
+  "mini_B0": {
+    "completed": true,
+    "rows": 32,
+    "supervised_tokens": 2905,
+    "target_mean_loss": 4.685541869071593,
+    "elapsed_seconds": 131.42482704797294
+  },
+  "early_eta": {
+    "basis": "first actual main optimizer step157.263784sec; variable source lengths, provisional",
+    "minutes_from_20261009T1100Z": [
+      40,
+      60
+    ]
+  },
+  "checkpoint100": {
+    "status": "guard_armed_waiting",
+    "target_step": 100,
+    "rows": 800,
+    "cpu_tests_passed": 18,
+    "cpu_tests_skipped": 0,
+    "original_bound_kit_unchanged": true,
+    "guard_plan": "work/collection/checkpoint100_handoff_v1/guard_plan.json",
+    "expected_boundary": "checkpoint100 commit then owned latest pointer EISDIR; preserve exit1; coordinator releases pointer and evaluates before any step101",
+    "report": "training_kit/work/checkpoint100_result.json"
+  },
+  "checkpoint40_replay": {
+    "status": "cancelled_by_user_correction",
+    "authorization_thread": "01a12000-fb4f-7fc3-b76d-6435d39db351",
+    "human_request": "추가 시간이 들어도 40 step 모델 재평가",
+    "source_step": 16,
+    "target_step": 40,
+    "additional_optimizer_updates": 24,
+    "source_rows_through40": 320,
+    "original_live_checkpoint40_exists": false,
+    "preserve_main_progress": true,
+    "run_after": "original100evaluation",
+    "resume_main_from": 100,
+    "reported_model_origin": "replayed from checkpoint16, not saved live step40",
+    "limitation": "GPU nondeterminism may prevent exact equality with unsaved original live40",
+    "original_human_correction": "아니 지금 학습중인게 40이 됬을때 한번더 데이터를 만들라는 말이야",
+    "server_started": false,
+    "server_directory_exists": false,
+    "additional_training_authorized": false,
+    "original_live40_checkpoint_recoverable": false,
+    "actual_original40_validation_result": null,
+    "cancelled_utc": "2026-10-09T12:44:52.487930+00:00"
+  },
+  "early_comparison_completed": {
+    "mini_B0_nll": 4.685541869071593,
+    "mini_B16_nll": 4.6853906363505295,
+    "delta_nll": -0.00015123272106354335,
+    "relative_change_percent": -0.003227646348905832,
+    "validation_rows": 32,
+    "supervised_tokens": 2905,
+    "checkpoint16_committed": true
+  },
+  "native_goal_status": "paused_by_user; server pipeline continues; monitoring interval20minutes",
+  "monitor": {
+    "automation_id": "16-step",
+    "name": "본학습 100 step 평가 완료 확인",
+    "status": "ACTIVE",
+    "interval_minutes": 20,
+    "notify": "same32checkpoint100 result once; actual failure only before then; pause after report and main resume"
+  }
+}

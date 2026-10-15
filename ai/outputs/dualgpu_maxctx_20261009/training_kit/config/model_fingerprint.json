@@ -1,0 +1,68 @@
+{
+  "model_dir": "/home/slim/choieram/models/gemma-4-31B-it-unsloth-bnb-4bit",
+  "claimed_revision": "8e256fc6d63003fc0ca8c91b976e6dcc38433385",
+  "local_file_hashes": {
+    ".gitattributes": {
+      "bytes": 1570,
+      "sha256": "34448b82c17d60fec9b65b1f093c115ddbaadc04beb1b0140b6bfed2e012a930"
+    },
+    "README.md": {
+      "bytes": 27903,
+      "sha256": "b82f2ccfbab30870500528959ad18150d39a779346db50f99810a3a74cb6635f"
+    },
+    "chat_template.jinja": {
+      "bytes": 18924,
+      "sha256": "845f1ee48e39fc942fe190da9df6a1c5db229e17a96ea08966ad1c9274e73d1b"
+    },
+    "config.json": {
+      "bytes": 5586,
+      "sha256": "7c1b15e76038d3234812c093638bac540c498beb6331feaeebb59ce160302d25"
+    },
+    "generation_config.json": {
+      "bytes": 208,
+      "sha256": "70110aa886fa7ee25ce47346d102dd29ca5f967500490b4362fc72068e1db70a"
+    },
+    "model-00001-of-00004.safetensors": {
+      "bytes": 4955672168,
+      "sha256": "a3d1f8f8e4716758476825d0f1c540f7882e265201a101a911a9117d02a143ff",
+      "tensor_entries": 402,
+      "all_offsets_in_file": true
+    },
+    "model-00002-of-00004.safetensors": {
+      "bytes": 4968118751,
+      "sha256": "e4bb4a4c67295d6d23cb1142adca9e83312b0db61ce80c08d617a2eda152238c",
+      "tensor_entries": 956,
+      "all_offsets_in_file": true
+    },
+    "model-00003-of-00004.safetensors": {
+      "bytes": 4996516483,
+      "sha256": "d08f9b20870cca871eacc60da9eeb09abdf0c0c11f707bcaccbb112b6412c3cc",
+      "tensor_entries": 950,
+      "all_offsets_in_file": true
+    },
+    "model-00004-of-00004.safetensors": {
+      "bytes": 4161484319,
+      "sha256": "22e7791ecdd983e0c41163cc889429162682be04aa4c1a3d1868f41056308fdb",
+      "tensor_entries": 930,
+      "all_offsets_in_file": true
+    },
+    "model.safetensors.index.json": {
+      "bytes": 349481,
+      "sha256": "ea2421fd03e346456c12b324eab5fcb37f095a4b2a1aa8456ac0b0b7d6127d1d"
+    },
+    "processor_config.json": {
+      "bytes": 1688,
+      "sha256": "64cc87fb8b510da3dcd29368ed66f1c969146aadad63fd4a73de1c443cf62d99"
+    },
+    "tokenizer.json": {
+      "bytes": 32169626,
+      "sha256": "cc8d3a0ce36466ccc1278bf987df5f71db1719b9ca6b4118264f45cb627bfe0f"
+    },
+    "tokenizer_config.json": {
+      "bytes": 22084,
+      "sha256": "239e1a284bd1e75f2d968b11ea148aab984f753fcb437c4deef8c7ee9e5e6a6a"
+    }
+  },
+  "elapsed_seconds": 133.677826579893,
+  "scope": "local exact checkpoint fingerprint; not re-downloaded from upstream"
+}

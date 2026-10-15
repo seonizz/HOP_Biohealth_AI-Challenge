@@ -1,0 +1,97 @@
+--- a/counseling_pipeline/stage1_runtime_probe.py
++++ b/counseling_pipeline/stage1_runtime_probe.py
+@@ -193,6 +193,57 @@
+             'weights_unchanged': before == after, 'synthetic_inputs': True,
+             'scope': 'Two sequence tiles; MLP output, hidden gradient, and every MLP LoRA gradient; no attention truncation.',
+             'passed': before == after and len(results) == 2 and all(item['passed'] for item in results)}
++
++
++def ce_chunk_ranges(flat_rows, requested_chunks):
++    """Match torch.chunk's ceil-sized slices, including fewer effective chunks."""
++    require(type(flat_rows) is int and flat_rows > 0
++            and type(requested_chunks) is int and requested_chunks > 0, 'Invalid CE chunk dimensions')
++    size = (flat_rows + requested_chunks - 1) // requested_chunks
++    return [(start, min(start + size, flat_rows)) for start in range(0, flat_rows, size)]
++
++
++def chunk_reference_ce(hidden, weight, bias, labels, *, chunks, cap):
++    """Independent eager reference with the installed fused CE's GEMM shapes.
++
++    Shift each row once before flattening; retain every hidden row in each
++    BF16 GEMM, including ignored labels. Selecting supervised rows BEFORE
++    linear would change its shape again. No fused loss function is reused.
++    """
++    import torch
++    require(hidden.ndim == 3 and tuple(labels.shape) == tuple(hidden.shape[:2])
++            and bool((labels[:, 0] == -100).all()), 'Invalid chunk-reference label boundary')
++    shifted = torch.full_like(labels, -100, device=weight.device)
++    shifted[..., :-1] = labels[..., 1:].to(weight.device)
++    flat_labels = shifted.reshape(-1)
++    flat_hidden = hidden.reshape(-1, hidden.shape[-1])
++    ranges = ce_chunk_ranges(flat_hidden.shape[0], chunks)
++    values, counts = [], []
++    # Each loss is deliberately eager; the fused path remains torch-compiled.
++    with torch.no_grad():
++        for start, stop in ranges:
++            local_labels = flat_labels[start:stop]
++            selector = local_labels != -100
++            raw = torch.nn.functional.linear(flat_hidden[start:stop].to(device=weight.device, dtype=weight.dtype),
++                                             weight, bias)
++            logits = raw[selector].float()
++            token_ce = torch.nn.functional.cross_entropy(torch.tanh(logits / cap) * cap,
++                                                         local_labels[selector], reduction='none')
++            counts.append(int(selector.sum()))
++            values.extend(token_ce.cpu().tolist())
++            del raw, logits, token_ce
++    require(values and len(values) == int((labels != -100).sum()), 'Chunk reference lost supervised tokens')
++    return values, {'requested_chunks': chunks, 'effective_chunks': len(ranges),
++                    'flat_rows': flat_hidden.shape[0], 'hidden_size': flat_hidden.shape[1],
++                    'chunk_rows': [stop - start for start, stop in ranges],
++                    'supervised_items_per_chunk': counts, 'padding_rows_added': 0}
++
++
++def masked_reference_mean(values, selector):
++    """Global supervised-token denominator, never a mean of per-chunk means."""
++    require(len(values) == len(selector) and all(type(item) is bool for item in selector)
++            and any(selector), 'Invalid reference token selector')
++    return sum(value for value, selected in zip(values, selector) if selected) / sum(selector)
+ 
+ 
+ def qualify(model, tokenizer, raw_rows, lengths, bindings, report_path, *, max_length=32768):
+@@ -270,17 +321,23 @@
+                                      'cosine': cosine, 'minimum_cosine': .999, 'reference_norm': norm, 'passed': valid})
+         compare_gradient('actual_model_hidden', actual_grad)
+         # Unequal chunk supervision exercises global token denominator, including empty chunks.
++        chunk_references = {}
+         for chunks in (1, 3, 8):
++            chunk_values, chunk_layout = chunk_reference_ce(hidden, base.lm_head.weight, base.lm_head.bias,
++                                                            labels, chunks=chunks, cap=cap)
++            chunk_references[str(chunks)] = {**chunk_layout, 'per_token_reference_ce': chunk_values}
+             for name, selector in masks.items():
+                 masked = torch.full_like(labels, -100); points = idx[selector]
+                 masked[points[:, 0], points[:, 1]] = labels[points[:, 0], points[:, 1]]
+                 own_h = hidden.clone().requires_grad_(True)
+                 value = ce.unsloth_fused_ce_loss(None, own_h, base.lm_head.weight, base.lm_head.bias, masked,
+                                                 torch_compile=True, n_chunks=chunks, shift_labels=True, logit_softcapping=cap)
+-                observed = float(value.detach()); expected = sum(v for v, yes in zip(token_values, selector.cpu().tolist()) if yes) / int(selector.sum())
++                observed = float(value.detach())
++                expected = masked_reference_mean(chunk_values, selector.cpu().tolist())
+                 comparisons.append({'name': name + '_chunks_' + str(chunks), 'actual': observed, 'reference': expected,
+                                     'atol': .002, 'rtol': .002, 'passed': abs(observed-expected) <= .002+.002*abs(expected),
+-                                    'supervised_items': int(selector.sum())})
++                                    'supervised_items': int(selector.sum()),
++                                    'reference_layout': 'flattened_torch_chunk_before_bf16_linear'})
+                 if name == 'all':
+                     grad = torch.autograd.grad(value, own_h)[0]; compare_gradient('chunks_' + str(chunks), grad); del grad
+                 del own_h, value, masked; gc.collect(); torch.cuda.empty_cache()
+@@ -292,7 +349,9 @@
+         del wrong_raw, wrong
+         check('fused_loss', all(c['passed'] for c in comparisons) and abs(negative-reference) > .01 and ce._FUSED_CE_COMPILE_SUPPORTED is True,
+               {'criterion': 'bf16_linear_fp32_softcap_v1', 'comparisons': comparisons, 'per_token_reference_ce': token_values,
+-               'shifted_label_positions': idx.cpu().tolist(), 'wrong_unshifted_ce': negative, 'chunks': [1, 3, 8], 'compiled': ce._FUSED_CE_COMPILE_SUPPORTED})
++               'shifted_label_positions': idx.cpu().tolist(), 'wrong_unshifted_ce': negative, 'chunks': [1, 3, 8],
++               'compiled': ce._FUSED_CE_COMPILE_SUPPORTED, 'chunk_references': chunk_references,
++               'reference_scope': 'Actual model and all four hidden-gradient gates retain full-shape reference; explicit chunk losses use shape-matched eager BF16 GEMMs and global token denominators.'})
+         check('fused_gradient', all(c['passed'] for c in gradient_results), {'criterion': 'hidden_gradient_bf16_v1', 'results': gradient_results,
+               'upstream_gradients_by_device': upstream_gradients, 'comparison_device': str(head_device),
+               'scope': 'Gradient at final hidden states, not every LoRA tensor; upstream backward finite checked separately.'})

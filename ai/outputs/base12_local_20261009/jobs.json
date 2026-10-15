@@ -1,0 +1,472 @@
+[
+  {
+    "case_id": "DEV001",
+    "task": "response",
+    "request_file": "private/requests/response_DEV001.json"
+  },
+  {
+    "case_id": "DEV002",
+    "task": "response",
+    "request_file": "private/requests/response_DEV002.json"
+  },
+  {
+    "case_id": "DEV003",
+    "task": "response",
+    "request_file": "private/requests/response_DEV003.json"
+  },
+  {
+    "case_id": "DEV004",
+    "task": "response",
+    "request_file": "private/requests/response_DEV004.json"
+  },
+  {
+    "case_id": "DEV005",
+    "task": "response",
+    "request_file": "private/requests/response_DEV005.json"
+  },
+  {
+    "case_id": "DEV006",
+    "task": "response",
+    "request_file": "private/requests/response_DEV006.json"
+  },
+  {
+    "case_id": "DEV007",
+    "task": "response",
+    "request_file": "private/requests/response_DEV007.json"
+  },
+  {
+    "case_id": "DEV008",
+    "task": "response",
+    "request_file": "private/requests/response_DEV008.json"
+  },
+  {
+    "case_id": "DEV009",
+    "task": "response",
+    "request_file": "private/requests/response_DEV009.json"
+  },
+  {
+    "case_id": "DEV010",
+    "task": "response",
+    "request_file": "private/requests/response_DEV010.json"
+  },
+  {
+    "case_id": "DEV011",
+    "task": "response",
+    "request_file": "private/requests/response_DEV011.json"
+  },
+  {
+    "case_id": "DEV012",
+    "task": "response",
+    "request_file": "private/requests/response_DEV012.json"
+  },
+  {
+    "case_id": "DEV013",
+    "task": "response",
+    "request_file": "private/requests/response_DEV013.json"
+  },
+  {
+    "case_id": "DEV014",
+    "task": "response",
+    "request_file": "private/requests/response_DEV014.json"
+  },
+  {
+    "case_id": "DEV015",
+    "task": "response",
+    "request_file": "private/requests/response_DEV015.json"
+  },
+  {
+    "case_id": "DEV016",
+    "task": "response",
+    "request_file": "private/requests/response_DEV016.json"
+  },
+  {
+    "case_id": "DEV017",
+    "task": "response",
+    "request_file": "private/requests/response_DEV017.json"
+  },
+  {
+    "case_id": "DEV018",
+    "task": "response",
+    "request_file": "private/requests/response_DEV018.json"
+  },
+  {
+    "case_id": "DEV019",
+    "task": "response",
+    "request_file": "private/requests/response_DEV019.json"
+  },
+  {
+    "case_id": "DEV020",
+    "task": "response",
+    "request_file": "private/requests/response_DEV020.json"
+  },
+  {
+    "case_id": "DEV021",
+    "task": "response",
+    "request_file": "private/requests/response_DEV021.json"
+  },
+  {
+    "case_id": "DEV022",
+    "task": "response",
+    "request_file": "private/requests/response_DEV022.json"
+  },
+  {
+    "case_id": "DEV023",
+    "task": "response",
+    "request_file": "private/requests/response_DEV023.json"
+  },
+  {
+    "case_id": "DEV024",
+    "task": "response",
+    "request_file": "private/requests/response_DEV024.json"
+  },
+  {
+    "case_id": "DEV025",
+    "task": "response",
+    "request_file": "private/requests/response_DEV025.json"
+  },
+  {
+    "case_id": "DEV026",
+    "task": "response",
+    "request_file": "private/requests/response_DEV026.json"
+  },
+  {
+    "case_id": "DEV027",
+    "task": "response",
+    "request_file": "private/requests/response_DEV027.json"
+  },
+  {
+    "case_id": "DEV028",
+    "task": "response",
+    "request_file": "private/requests/response_DEV028.json"
+  },
+  {
+    "case_id": "DEV029",
+    "task": "response",
+    "request_file": "private/requests/response_DEV029.json"
+  },
+  {
+    "case_id": "DEV030",
+    "task": "response",
+    "request_file": "private/requests/response_DEV030.json"
+  },
+  {
+    "case_id": "DEV031",
+    "task": "response",
+    "request_file": "private/requests/response_DEV031.json"
+  },
+  {
+    "case_id": "DEV032",
+    "task": "response",
+    "request_file": "private/requests/response_DEV032.json"
+  },
+  {
+    "case_id": "T01",
+    "task": "response",
+    "request_file": "private/requests/response_T01.json"
+  },
+  {
+    "case_id": "T01",
+    "task": "action",
+    "request_file": "private/requests/action_T01.json"
+  },
+  {
+    "case_id": "T02",
+    "task": "response",
+    "request_file": "private/requests/response_T02.json"
+  },
+  {
+    "case_id": "T02",
+    "task": "action",
+    "request_file": "private/requests/action_T02.json"
+  },
+  {
+    "case_id": "T03",
+    "task": "response",
+    "request_file": "private/requests/response_T03.json"
+  },
+  {
+    "case_id": "T03",
+    "task": "action",
+    "request_file": "private/requests/action_T03.json"
+  },
+  {
+    "case_id": "T04",
+    "task": "response",
+    "request_file": "private/requests/response_T04.json"
+  },
+  {
+    "case_id": "T04",
+    "task": "action",
+    "request_file": "private/requests/action_T04.json"
+  },
+  {
+    "case_id": "T05",
+    "task": "response",
+    "request_file": "private/requests/response_T05.json"
+  },
+  {
+    "case_id": "T05",
+    "task": "action",
+    "request_file": "private/requests/action_T05.json"
+  },
+  {
+    "case_id": "T06",
+    "task": "response",
+    "request_file": "private/requests/response_T06.json"
+  },
+  {
+    "case_id": "T06",
+    "task": "action",
+    "request_file": "private/requests/action_T06.json"
+  },
+  {
+    "case_id": "T07",
+    "task": "response",
+    "request_file": "private/requests/response_T07.json"
+  },
+  {
+    "case_id": "T07",
+    "task": "action",
+    "request_file": "private/requests/action_T07.json"
+  },
+  {
+    "case_id": "T08",
+    "task": "response",
+    "request_file": "private/requests/response_T08.json"
+  },
+  {
+    "case_id": "T08",
+    "task": "action",
+    "request_file": "private/requests/action_T08.json"
+  },
+  {
+    "case_id": "T09",
+    "task": "response",
+    "request_file": "private/requests/response_T09.json"
+  },
+  {
+    "case_id": "T09",
+    "task": "action",
+    "request_file": "private/requests/action_T09.json"
+  },
+  {
+    "case_id": "T10",
+    "task": "response",
+    "request_file": "private/requests/response_T10.json"
+  },
+  {
+    "case_id": "T10",
+    "task": "action",
+    "request_file": "private/requests/action_T10.json"
+  },
+  {
+    "case_id": "T11",
+    "task": "response",
+    "request_file": "private/requests/response_T11.json"
+  },
+  {
+    "case_id": "T11",
+    "task": "action",
+    "request_file": "private/requests/action_T11.json"
+  },
+  {
+    "case_id": "T12",
+    "task": "response",
+    "request_file": "private/requests/response_T12.json"
+  },
+  {
+    "case_id": "T12",
+    "task": "action",
+    "request_file": "private/requests/action_T12.json"
+  },
+  {
+    "case_id": "T13",
+    "task": "response",
+    "request_file": "private/requests/response_T13.json"
+  },
+  {
+    "case_id": "T13",
+    "task": "action",
+    "request_file": "private/requests/action_T13.json"
+  },
+  {
+    "case_id": "T14",
+    "task": "response",
+    "request_file": "private/requests/response_T14.json"
+  },
+  {
+    "case_id": "T14",
+    "task": "action",
+    "request_file": "private/requests/action_T14.json"
+  },
+  {
+    "case_id": "T15",
+    "task": "response",
+    "request_file": "private/requests/response_T15.json"
+  },
+  {
+    "case_id": "T15",
+    "task": "action",
+    "request_file": "private/requests/action_T15.json"
+  },
+  {
+    "case_id": "T16",
+    "task": "response",
+    "request_file": "private/requests/response_T16.json"
+  },
+  {
+    "case_id": "T16",
+    "task": "action",
+    "request_file": "private/requests/action_T16.json"
+  },
+  {
+    "case_id": "T17",
+    "task": "response",
+    "request_file": "private/requests/response_T17.json"
+  },
+  {
+    "case_id": "T17",
+    "task": "action",
+    "request_file": "private/requests/action_T17.json"
+  },
+  {
+    "case_id": "T18",
+    "task": "response",
+    "request_file": "private/requests/response_T18.json"
+  },
+  {
+    "case_id": "T18",
+    "task": "action",
+    "request_file": "private/requests/action_T18.json"
+  },
+  {
+    "case_id": "T19",
+    "task": "response",
+    "request_file": "private/requests/response_T19.json"
+  },
+  {
+    "case_id": "T19",
+    "task": "action",
+    "request_file": "private/requests/action_T19.json"
+  },
+  {
+    "case_id": "T20",
+    "task": "response",
+    "request_file": "private/requests/response_T20.json"
+  },
+  {
+    "case_id": "T20",
+    "task": "action",
+    "request_file": "private/requests/action_T20.json"
+  },
+  {
+    "case_id": "T21",
+    "task": "response",
+    "request_file": "private/requests/response_T21.json"
+  },
+  {
+    "case_id": "T21",
+    "task": "action",
+    "request_file": "private/requests/action_T21.json"
+  },
+  {
+    "case_id": "T22",
+    "task": "response",
+    "request_file": "private/requests/response_T22.json"
+  },
+  {
+    "case_id": "T22",
+    "task": "action",
+    "request_file": "private/requests/action_T22.json"
+  },
+  {
+    "case_id": "T23",
+    "task": "response",
+    "request_file": "private/requests/response_T23.json"
+  },
+  {
+    "case_id": "T23",
+    "task": "action",
+    "request_file": "private/requests/action_T23.json"
+  },
+  {
+    "case_id": "T24",
+    "task": "response",
+    "request_file": "private/requests/response_T24.json"
+  },
+  {
+    "case_id": "T24",
+    "task": "action",
+    "request_file": "private/requests/action_T24.json"
+  },
+  {
+    "case_id": "T25",
+    "task": "response",
+    "request_file": "private/requests/response_T25.json"
+  },
+  {
+    "case_id": "T25",
+    "task": "action",
+    "request_file": "private/requests/action_T25.json"
+  },
+  {
+    "case_id": "T26",
+    "task": "response",
+    "request_file": "private/requests/response_T26.json"
+  },
+  {
+    "case_id": "T26",
+    "task": "action",
+    "request_file": "private/requests/action_T26.json"
+  },
+  {
+    "case_id": "T27",
+    "task": "response",
+    "request_file": "private/requests/response_T27.json"
+  },
+  {
+    "case_id": "T27",
+    "task": "action",
+    "request_file": "private/requests/action_T27.json"
+  },
+  {
+    "case_id": "T28-a",
+    "task": "response",
+    "request_file": "private/requests/response_T28-a.json"
+  },
+  {
+    "case_id": "T28-a",
+    "task": "action",
+    "request_file": "private/requests/action_T28-a.json"
+  },
+  {
+    "case_id": "T28-b",
+    "task": "response",
+    "request_file": "private/requests/response_T28-b.json"
+  },
+  {
+    "case_id": "T28-b",
+    "task": "action",
+    "request_file": "private/requests/action_T28-b.json"
+  },
+  {
+    "case_id": "T28-c",
+    "task": "response",
+    "request_file": "private/requests/response_T28-c.json"
+  },
+  {
+    "case_id": "T28-c",
+    "task": "action",
+    "request_file": "private/requests/action_T28-c.json"
+  },
+  {
+    "case_id": "T28-d",
+    "task": "response",
+    "request_file": "private/requests/response_T28-d.json"
+  },
+  {
+    "case_id": "T28-d",
+    "task": "action",
+    "request_file": "private/requests/action_T28-d.json"
+  }
+]

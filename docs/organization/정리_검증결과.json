@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "file_rows": 7204,
+  "local_links_checked": 87,
+  "linked_files_hash_checked": 56,
+  "snapshot_file_metadata_checked": 7204,
+  "errors": [],
+  "scope": "Document links, classification coverage and totals, unchanged snapshot metadata, referenced source file SHA-256. No application/model runtime tests."
+}

@@ -1,0 +1,1143 @@
+[
+  {
+    "id": "name",
+    "kind": "base",
+    "sort_order": 100,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "오늘 이야기할 분을 어떻게 부르면 될까요?\n이름이나 별명, 호칭 무엇이든 괜찮아요.",
+      "ph": "예: 엄마, 친구 지수",
+      "sec": "시작",
+      "why": "기록의 제목으로 쓰여요.",
+      "face": "hello",
+      "type": "text",
+      "short": true,
+      "required": true
+    }
+  },
+  {
+    "id": "want",
+    "kind": "base",
+    "sort_order": 200,
+    "enabled": true,
+    "subject": "user_goal",
+    "definition": {
+      "q": "{name}에게 꼭 전하고 싶은 말이 있다면 무엇인가요?",
+      "ph": "예: 네 편이라는 것, 병원에 같이 가 보자는 것",
+      "sec": "전하고 싶은 말",
+      "why": "당신의 진심을 그분이 받아들이기 쉬운 말로 옮겨 드릴게요.",
+      "face": "thanks",
+      "type": "text",
+      "intro": "먼저 {name}에게 건네고 싶은 마음부터 여쭤볼게요. 그 마음이 잘 닿도록 필요한 이야기를 이어서 함께 살펴볼게요.",
+      "required": true
+    }
+  },
+  {
+    "id": "goal",
+    "kind": "base",
+    "sort_order": 300,
+    "enabled": true,
+    "subject": "user_goal",
+    "definition": {
+      "q": "그 말을 통해 바라는 것은 무엇인가요?",
+      "sec": "전하고 싶은 말",
+      "face": "cheer",
+      "opts": [
+        [
+          "내가 곁에 있다는 걸 알리고 싶어요",
+          {
+            "t": "goal_near"
+          }
+        ],
+        [
+          "상담이나 진료를 권하고 싶어요",
+          {
+            "t": "goal_treat"
+          }
+        ],
+        [
+          "술·도박 등을 줄이자고 말하고 싶어요",
+          {
+            "t": "goal_reduce"
+          }
+        ],
+        [
+          "걱정된다는 마음을 전하고 싶어요",
+          {
+            "t": "goal_worry"
+          }
+        ],
+        [
+          "예전 갈등을 풀고 싶어요",
+          {
+            "t": "goal_reconcile"
+          }
+        ]
+      ],
+      "type": "multi"
+    }
+  },
+  {
+    "id": "rel",
+    "kind": "base",
+    "sort_order": 400,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name:와} 어떤 관계인가요?",
+      "sec": "관계",
+      "face": "hello",
+      "opts": [
+        "부모",
+        "자녀",
+        "배우자·연인",
+        "형제자매",
+        "친구",
+        "직장 동료"
+      ],
+      "type": "one",
+      "required": true,
+      "follow_up": {
+        "when": {
+          "min": 2,
+          "rule": "thin_custom"
+        },
+        "merge": "replace_text",
+        "question": {
+          "q": "조금만 더 알려 주세요. {name:와}는 어떤 사이인가요?",
+          "ph": "예: 대학 때부터 친한 친구",
+          "type": "text",
+          "short": true
+        }
+      }
+    }
+  },
+  {
+    "id": "contact",
+    "kind": "base",
+    "sort_order": 500,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name:와} 평소 얼마나 자주 만나거나 연락하세요?",
+      "sec": "관계",
+      "face": "listen",
+      "opts": [
+        "함께 살아요",
+        "일주일에 몇 번",
+        "한 달에 몇 번",
+        [
+          "그보다 드물게",
+          {
+            "t": "rare_contact"
+          }
+        ]
+      ],
+      "type": "one"
+    }
+  },
+  {
+    "id": "mood",
+    "kind": "base",
+    "sort_order": 600,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "요즘 {name}에게서 보이는 모습을 모두 골라 주세요.",
+      "cue": true,
+      "sec": "현재 겪고 있는 어려움",
+      "face": "listen",
+      "opts": [
+        [
+          "자주 우울하거나 가라앉아 보여요",
+          {
+            "d": 2,
+            "g": "기분과 의욕",
+            "s": "depressive_mood"
+          }
+        ],
+        [
+          "좋아하던 일에 흥미를 잃었어요",
+          {
+            "d": 2,
+            "g": "기분과 의욕",
+            "s": "anhedonia"
+          }
+        ],
+        [
+          "잠을 잘 못 자거나, 반대로 너무 많이 자요",
+          {
+            "d": 1,
+            "g": "기분과 의욕",
+            "s": "sleep_disturbance"
+          }
+        ],
+        [
+          "늘 피곤해하고 기운이 없어 보여요",
+          {
+            "d": 1,
+            "g": "기분과 의욕",
+            "s": "fatigue"
+          }
+        ],
+        [
+          "식사량이 눈에 띄게 줄었거나 늘었어요",
+          {
+            "d": 1,
+            "g": "기분과 의욕",
+            "s": "weight_appetite"
+          }
+        ],
+        [
+          "자신을 탓하거나 \"나는 쓸모없다\"는 말을 해요",
+          {
+            "d": 2,
+            "g": "기분과 의욕",
+            "s": "worthlessness"
+          }
+        ],
+        [
+          "집중을 잘 못 해요 (TV, 대화, 일 등)",
+          {
+            "d": 1,
+            "g": "기분과 의욕",
+            "s": "concentration"
+          }
+        ],
+        [
+          "말이나 행동이 눈에 띄게 느려졌거나, 반대로 안절부절못해요",
+          {
+            "d": 1,
+            "g": "기분과 의욕",
+            "s": "psychomotor"
+          }
+        ],
+        [
+          "죽고 싶다거나 사라지고 싶다는 말 또는 행동을 했어요",
+          {
+            "d": 2,
+            "g": "기분과 의욕",
+            "s": "suicidal"
+          }
+        ],
+        [
+          "초조하거나 긴장한 모습이 자주 보여요",
+          {
+            "a": 2,
+            "g": "걱정과 긴장",
+            "s": "anxiety_mood"
+          }
+        ],
+        [
+          "걱정을 멈추지 못하는 것 같아요",
+          {
+            "a": 2,
+            "g": "걱정과 긴장",
+            "s": "uncontrollable_worry"
+          }
+        ],
+        [
+          "여러 가지 일을 지나치게 걱정해요",
+          {
+            "a": 1,
+            "g": "걱정과 긴장",
+            "s": "excessive_worry"
+          }
+        ],
+        [
+          "편하게 쉬지 못해요",
+          {
+            "a": 1,
+            "g": "걱정과 긴장",
+            "s": "trouble_relaxing"
+          }
+        ],
+        [
+          "가만히 있지 못하고 안절부절해요",
+          {
+            "a": 1,
+            "g": "걱정과 긴장",
+            "s": "restlessness"
+          }
+        ],
+        [
+          "쉽게 짜증을 내거나 화를 내요",
+          {
+            "a": 1,
+            "g": "걱정과 긴장",
+            "s": "irritability"
+          }
+        ],
+        [
+          "무슨 나쁜 일이 생길 것처럼 불안해해요",
+          {
+            "a": 1,
+            "g": "걱정과 긴장",
+            "s": "fear_of_catastrophe"
+          }
+        ],
+        [
+          "하려던 것보다 더 많이, 더 오래 해요",
+          {
+            "g": "술·약물·도박·게임 등의 사용",
+            "s": "loss_of_control",
+            "x": 2
+          }
+        ],
+        [
+          "그것을 하고 싶어 하는 모습이 강하게 보여요",
+          {
+            "g": "술·약물·도박·게임 등의 사용",
+            "s": "craving",
+            "x": 2
+          }
+        ],
+        [
+          "못 하게 되면 예민해지거나 몸이 불편해 보여요",
+          {
+            "g": "술·약물·도박·게임 등의 사용",
+            "s": "withdrawal",
+            "x": 2
+          }
+        ],
+        [
+          "그것 때문에 일, 학업, 집안일을 소홀히 해요",
+          {
+            "g": "술·약물·도박·게임 등의 사용",
+            "s": "role_failure",
+            "x": 1
+          }
+        ],
+        [
+          "그것 때문에 가족이나 주변 사람과 갈등이 생겨요",
+          {
+            "g": "술·약물·도박·게임 등의 사용",
+            "s": "social_problems",
+            "x": 1
+          }
+        ],
+        [
+          "특별히 관찰된 변화가 없음",
+          {
+            "g": "",
+            "t": "no_change",
+            "none": 1
+          }
+        ]
+      ],
+      "rare": "마지막으로 {name:을} 보거나 연락했을 때 보인 모습을 모두 골라 주세요.\n다른 사람에게 전해 들은 모습도 괜찮아요.",
+      "type": "multi",
+      "required": true,
+      "follow_up": {
+        "when": {
+          "min": 6,
+          "rule": "empty_selection_thin_custom"
+        },
+        "merge": "custom",
+        "question": {
+          "q": "골라 주신 항목은 없었어요. 요즘 {name}에게서 '평소와 다르다'고 느낀 순간이 있다면 하나만 적어 주세요.",
+          "ph": "예: 주말 내내 방에서 안 나와요",
+          "type": "text"
+        }
+      },
+      "rare_when": {
+        "tag": "rare_contact"
+      }
+    }
+  },
+  {
+    "id": "dur",
+    "kind": "base",
+    "sort_order": 700,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "이런 모습이 보인 지 얼마나 됐나요?",
+      "sec": "현재 겪고 있는 어려움",
+      "face": "listen",
+      "opts": [
+        "2주 미만",
+        "2주~1개월",
+        [
+          "1~6개월",
+          {
+            "t": "dur_long"
+          }
+        ],
+        [
+          "6개월~1년",
+          {
+            "t": "dur_long"
+          }
+        ],
+        [
+          "1년 이상",
+          {
+            "t": "dur_long"
+          }
+        ],
+        "잘 모르겠어요"
+      ],
+      "rare": "이런 모습을 처음 알게 된 지 얼마나 됐나요?",
+      "type": "one",
+      "when": {
+        "any": [
+          {
+            "not": {
+              "tag": "no_change"
+            }
+          },
+          {
+            "custom": "mood"
+          }
+        ]
+      },
+      "noOwn": true,
+      "required": true,
+      "rare_when": {
+        "tag": "rare_contact"
+      }
+    }
+  },
+  {
+    "id": "freq",
+    "kind": "base",
+    "sort_order": 800,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "최근 2주 동안 이런 모습은 얼마나 자주 보였나요?",
+      "sec": "현재 겪고 있는 어려움",
+      "face": "listen",
+      "opts": [
+        [
+          "거의 없었어요",
+          {
+            "t": "freq_low"
+          }
+        ],
+        "며칠 정도",
+        [
+          "절반 이상",
+          {
+            "t": "freq_high"
+          }
+        ],
+        [
+          "거의 매일",
+          {
+            "t": "freq_high"
+          }
+        ],
+        [
+          "최근에 보거나 연락하지 못해서 잘 모르겠어요",
+          {
+            "t": "freq_unknown"
+          }
+        ]
+      ],
+      "rare": "최근 2주 동안 이런 모습을 얼마나 자주 보거나 전해 들었나요?",
+      "type": "one",
+      "when": {
+        "any": [
+          {
+            "not": {
+              "tag": "no_change"
+            }
+          },
+          {
+            "custom": "mood"
+          }
+        ]
+      },
+      "noOwn": true,
+      "required": true,
+      "rare_when": {
+        "tag": "rare_contact"
+      }
+    }
+  },
+  {
+    "id": "describe",
+    "kind": "base",
+    "sort_order": 900,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "다른 가족이나 친구에게 {name:의} 상황을 설명한다면, 어떻게 말씀하시겠어요?",
+      "ph": "예: 요즘 회사 일로 많이 지쳐서 주말엔 잠만 자요",
+      "cue": true,
+      "sec": "현재 겪고 있는 어려움",
+      "face": "hear",
+      "type": "text"
+    }
+  },
+  {
+    "id": "concern",
+    "kind": "base",
+    "sort_order": 1000,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name:의} 모습 중 가장 걱정되거나 마음에 걸리는 부분은 무엇인가요?",
+      "ph": "예: 밥을 거의 안 먹는 게 제일 걱정돼요",
+      "cue": true,
+      "sec": "현재 겪고 있는 어려움",
+      "face": "empathy",
+      "rare": "{name:의} 모습 중 가장 걱정되거나 마음에 걸리는 부분은 무엇인가요?\n마지막으로 봤을 때의 모습이나 전해 들은 이야기도 괜찮아요.",
+      "type": "text",
+      "required": true,
+      "follow_up": {
+        "when": {
+          "min": 8,
+          "rule": "thin_text"
+        },
+        "merge": "replace_text",
+        "question": {
+          "q": "짧게라도 괜찮아요. 요즘 {name:을} 보며 마음이 덜컥했던 장면 하나만 떠올려 적어 주세요.",
+          "ph": "예: 방에서 며칠째 안 나왔을 때",
+          "type": "text"
+        }
+      },
+      "rare_when": {
+        "tag": "rare_contact"
+      }
+    }
+  },
+  {
+    "id": "cause",
+    "kind": "base",
+    "sort_order": 1100,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name:이} 현재 어려움에 영향을 준 경험이나 상황이 있었을까요?",
+      "sec": "어려움의 원인과 생활환경",
+      "face": "ponder",
+      "opts": [
+        "네",
+        "아니요"
+      ],
+      "type": "one",
+      "noOwn": true,
+      "noSkip": true
+    }
+  },
+  {
+    "id": "events",
+    "kind": "base",
+    "sort_order": 1200,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "어떤 일이 있었나요?\n최근 1년 사이 {name}에게 있었던 일을 모두 골라 주세요.",
+      "fu": true,
+      "sec": "어려움의 원인과 생활환경",
+      "face": "ponder",
+      "opts": [
+        [
+          "이별·이혼",
+          {
+            "r": "breakup"
+          }
+        ],
+        [
+          "가까운 사람과의 사별",
+          {
+            "r": "bereavement"
+          }
+        ],
+        [
+          "실직·퇴사·휴학",
+          {
+            "r": "job_school_loss"
+          }
+        ],
+        [
+          "경제적 어려움",
+          {
+            "r": "financial_difficulty"
+          }
+        ],
+        [
+          "이사·환경 변화",
+          {
+            "r": "environment_change"
+          }
+        ],
+        [
+          "본인 또는 가족의 질병",
+          {
+            "r": "illness"
+          }
+        ],
+        [
+          "학업·업무 스트레스",
+          {
+            "r": "academic_work_stress"
+          }
+        ],
+        [
+          "대인관계 갈등",
+          {
+            "r": "interpersonal_conflict"
+          }
+        ],
+        [
+          "없어요",
+          {
+            "none": 1
+          }
+        ]
+      ],
+      "type": "multi",
+      "when": {
+        "selected": {
+          "option": "네",
+          "question_id": "cause"
+        }
+      }
+    }
+  },
+  {
+    "id": "others_why",
+    "kind": "base",
+    "sort_order": 1300,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "가족이나 주변 사람들은 {name:이} 왜 힘들어한다고 이야기하나요?",
+      "ph": "예: 승진에서 떨어지고 나서부터라고들 해요",
+      "cue": true,
+      "sec": "어려움의 원인과 생활환경",
+      "face": "hear",
+      "type": "text",
+      "ph_by_option": {
+        "values": {
+          "breakup": "예: 헤어지고 나서 많이 무너졌다고들 해요",
+          "illness": "예: 몸이 아프고 나서 마음까지 지쳤다고들 해요",
+          "bereavement": "예: 할머니가 돌아가신 뒤로 기운이 없다고들 해요",
+          "job_school_loss": "예: 회사를 그만두고 나서 자신감을 잃었다고 해요",
+          "environment_change": "예: 이사 온 뒤로 아는 사람이 없어 외로워한대요",
+          "academic_work_stress": "예: 승진에서 떨어지고 나서부터라고들 해요",
+          "financial_difficulty": "예: 빚 걱정 때문에 잠을 못 잔다고들 해요",
+          "interpersonal_conflict": "예: 친한 친구와 크게 다툰 뒤로 힘들어한대요"
+        },
+        "question_id": "events"
+      }
+    }
+  },
+  {
+    "id": "support",
+    "kind": "base",
+    "sort_order": 1400,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name}에게 힘이 되어 주는 사람, 관계, 활동이 있나요?",
+      "sec": "어려움의 원인과 생활환경",
+      "face": "joy",
+      "opts": [
+        [
+          "네",
+          {
+            "p": "social_support",
+            "ph": "예: 교회 친구들, 강아지 산책",
+            "ask": "어떤 사람이나 관계, 활동인가요?",
+            "input": true
+          }
+        ],
+        [
+          "아니요",
+          {
+            "r": "lack_of_support"
+          }
+        ]
+      ],
+      "type": "one",
+      "noOwn": true,
+      "noSkip": true
+    }
+  },
+  {
+    "id": "burden",
+    "kind": "base",
+    "sort_order": 1500,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "반대로, {name:을} 더 힘들게 하거나 회복을 어렵게 하는 생활 속 부담이 있을까요?",
+      "sec": "어려움의 원인과 생활환경",
+      "face": "think",
+      "opts": [
+        [
+          "네",
+          {
+            "r": "life_burden",
+            "ph": "예: 빚 문제, 야근이 많은 회사",
+            "ask": "어떤 부담인가요?",
+            "input": true
+          }
+        ],
+        "아니요"
+      ],
+      "type": "one",
+      "noOwn": true,
+      "noSkip": true
+    }
+  },
+  {
+    "id": "values",
+    "kind": "base",
+    "sort_order": 1600,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name:을} 이해하려면 알아 두면 좋을 생활 배경이나 중요하게 여기는 가치가 있을까요?\n(예: 가족 안에서의 역할, 종교, 직업, \"약한 모습을 보이면 안 된다\"는 생각 등)",
+      "ph": "예: 맏이라서 집안을 책임져야 한다고 생각해요",
+      "sec": "{name:의} 생활 배경과 가치관",
+      "face": "ponder",
+      "type": "text"
+    }
+  },
+  {
+    "id": "values_effect",
+    "kind": "base",
+    "sort_order": 1700,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "이러한 생활 배경이나 가치관이 {name:의} 현재 어려움에 어떤 영향을 주는 것 같나요?",
+      "ph": "예: 힘들다는 말을 못 하고 혼자 참는 것 같아요",
+      "sec": "{name:의} 생활 배경과 가치관",
+      "face": "think",
+      "type": "text"
+    }
+  },
+  {
+    "id": "extra",
+    "kind": "base",
+    "sort_order": 1800,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name:와} 관련해서 추가적으로 걱정되는 부분이 있다면 들려주세요.",
+      "ph": "예: 요즘 술 마시는 날이 부쩍 늘어서 걱정돼요",
+      "cue": true,
+      "sec": "{name:의} 생활 배경과 가치관",
+      "face": "empathy",
+      "type": "text"
+    }
+  },
+  {
+    "id": "help",
+    "kind": "base",
+    "sort_order": 2000,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name:은} 지금까지 어려움을 견디거나 해결하려고 어떤 방법을 써 왔나요?\n받아 본 도움을 모두 고르고, 그 밖에 해 온 방법이 있다면 적어 주세요.",
+      "cue": true,
+      "sec": "지금까지의 대처와 도움",
+      "face": "listen",
+      "opts": [
+        [
+          "정신건강의학과 진료",
+          {
+            "p": "accepting_attitude",
+            "t": "help_treat"
+          }
+        ],
+        [
+          "약물 치료",
+          {
+            "p": "accepting_attitude",
+            "t": "help_treat"
+          }
+        ],
+        [
+          "심리상담",
+          {
+            "p": "accepting_attitude",
+            "t": "help_treat"
+          }
+        ],
+        [
+          "정신건강복지센터·중독관리센터",
+          {
+            "p": "accepting_attitude",
+            "t": "help_treat"
+          }
+        ],
+        [
+          "학교·직장 상담",
+          {
+            "p": "accepting_attitude",
+            "t": "help_treat"
+          }
+        ],
+        [
+          "종교 기관",
+          {
+            "t": "help_religion"
+          }
+        ],
+        [
+          "가족·친구의 도움",
+          {
+            "p": "social_support"
+          }
+        ],
+        [
+          "아직 받은 적 없어요",
+          {
+            "t": "help_none",
+            "none": 1
+          }
+        ],
+        [
+          "잘 모르겠어요",
+          {
+            "none": 1
+          }
+        ]
+      ],
+      "type": "multi",
+      "ownPh": "예: 술을 마시거나, 친구를 만나 이야기해요"
+    }
+  },
+  {
+    "id": "barrier",
+    "kind": "base",
+    "sort_order": 2100,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "{name:이} 필요한 도움을 받는 데 어려웠던 점을 모두 골라 주세요.",
+      "sec": "지금까지의 대처와 도움",
+      "face": "ponder",
+      "opts": [
+        [
+          "본인이 문제라고 생각하지 않아요",
+          {
+            "t": "bar_denial"
+          }
+        ],
+        [
+          "본인이 도움받기를 거부해요",
+          {
+            "t": "bar_refuse"
+          }
+        ],
+        [
+          "주변 시선이 신경 쓰여요",
+          {
+            "t": "bar_stigma"
+          }
+        ],
+        [
+          "비용이 부담돼요",
+          {
+            "t": "bar_cost"
+          }
+        ],
+        [
+          "시간을 내기 어려워요",
+          {
+            "t": "bar_time"
+          }
+        ],
+        [
+          "어디로 가야 할지 몰라요",
+          {
+            "t": "bar_where"
+          }
+        ],
+        [
+          "전에 받은 도움이 별로였어요",
+          {
+            "t": "bar_bad"
+          }
+        ],
+        [
+          "없어요",
+          {
+            "none": 1
+          }
+        ]
+      ],
+      "type": "multi"
+    }
+  },
+  {
+    "id": "need",
+    "kind": "base",
+    "sort_order": 2200,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "현재 {name}에게 가장 필요하다고 생각하는 도움은 무엇인가요?",
+      "ph": "예: 전문가 상담, 푹 쉴 수 있는 시간",
+      "sec": "현재 필요한 도움",
+      "face": "think",
+      "type": "text",
+      "required": true
+    }
+  },
+  {
+    "id": "others_help",
+    "kind": "base",
+    "sort_order": 2300,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "가족이나 주변 사람들은 {name}에게 어떤 도움을 권하고 있나요?",
+      "ph": "예: 병원에 가 보라고 해요",
+      "sec": "현재 필요한 도움",
+      "face": "hear",
+      "type": "text"
+    }
+  },
+  {
+    "id": "moment",
+    "kind": "base",
+    "sort_order": 2400,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "q": "요즘 당신이 가장 마음 쓰였거나 힘들었던 순간은 언제였나요?",
+      "ph": "예: 새벽까지 연락이 안 됐을 때",
+      "sec": "당신의 마음",
+      "face": "empathy",
+      "type": "text",
+      "intro": "이제 당신에 대해 여쭤볼게요. 누군가를 곁에서 돕는 일은 생각보다 많이 지치는 일이에요.",
+      "required": true
+    }
+  },
+  {
+    "id": "moment_freq",
+    "kind": "base",
+    "sort_order": 2500,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "q": "그런 일은 얼마나 자주 있나요?",
+      "sec": "당신의 마음",
+      "face": "listen",
+      "opts": [
+        [
+          "거의 매일",
+          {
+            "t": "cgfreq_daily"
+          }
+        ],
+        "일주일에 몇 번",
+        "한 달에 몇 번",
+        "가끔"
+      ],
+      "type": "one",
+      "noOwn": true
+    }
+  },
+  {
+    "id": "feeling",
+    "kind": "base",
+    "sort_order": 2600,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "q": "그 순간 당신의 마음은 어떠셨어요?",
+      "ph": "예: 무섭고, 내가 뭘 잘못했나 싶었어요",
+      "sec": "당신의 마음",
+      "face": "hear",
+      "type": "text",
+      "follow_up": {
+        "when": {
+          "min": 4,
+          "rule": "thin_text"
+        },
+        "merge": "replace_text_or_none",
+        "question": {
+          "q": "말로 꺼내기 어려우시죠. 가장 가까운 마음을 골라 주세요.",
+          "opts": [
+            "속상하고 서운했어요",
+            "무섭고 걱정됐어요",
+            "내 탓 같아 미안했어요",
+            "지치고 막막했어요",
+            "화가 났어요"
+          ],
+          "type": "multi"
+        }
+      }
+    }
+  },
+  {
+    "id": "cgchange",
+    "kind": "base",
+    "sort_order": 2700,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "q": "{name:을} 돕는 동안 당신에게 생긴 변화를 모두 골라 주세요.",
+      "sec": "당신의 마음",
+      "face": "empathy",
+      "opts": [
+        [
+          "잠을 잘 못 자요",
+          {
+            "t": "cg_sleep"
+          }
+        ],
+        [
+          "몸이 자주 아프거나 지쳐요",
+          {
+            "t": "cg_body"
+          }
+        ],
+        [
+          "일이나 공부에 집중하기 어려워요",
+          {
+            "t": "cg_focus"
+          }
+        ],
+        [
+          "개인 시간이 거의 없어요",
+          {
+            "t": "cg_notime"
+          }
+        ],
+        [
+          "다른 사람을 만나는 일이 줄었어요",
+          {
+            "t": "cg_isolation"
+          }
+        ],
+        [
+          "다른 가족과 갈등이 생겼어요",
+          {
+            "t": "cg_family_conflict"
+          }
+        ],
+        [
+          "경제적 부담이 커졌어요",
+          {
+            "t": "cg_money"
+          }
+        ],
+        [
+          "특별한 변화는 없어요",
+          {
+            "none": 1
+          }
+        ]
+      ],
+      "type": "multi"
+    }
+  },
+  {
+    "id": "cgchange_more",
+    "kind": "base",
+    "sort_order": 2800,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "q": "위의 변화에 대해 더 들려주고 싶은 게 있다면 적어 주세요.",
+      "ph": "예: 저도 요즘 출근이 힘들어요",
+      "sec": "당신의 마음",
+      "face": "hear",
+      "type": "text",
+      "when": {
+        "any": [
+          {
+            "tag_prefix": "cg_"
+          },
+          {
+            "custom": "cgchange"
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "mycoping",
+    "kind": "base",
+    "sort_order": 2900,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "q": "힘든 상황이 생기면 당신은 보통 어떻게 하세요?\n해 봤던 방법 중 도움이 된 것과 그렇지 않았던 것이 있다면 들려주세요.",
+      "ph": "예: 친구에게 털어놓으면 좀 나아졌어요",
+      "sec": "당신의 마음",
+      "face": "listen",
+      "type": "text"
+    }
+  },
+  {
+    "id": "mysupport",
+    "kind": "base",
+    "sort_order": 3000,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "q": "이 어려움을 나누거나 기댈 수 있는 곳을 모두 골라 주세요.",
+      "sec": "당신의 마음",
+      "face": "joy",
+      "opts": [
+        [
+          "가족",
+          {
+            "t": "sup_family"
+          }
+        ],
+        [
+          "친구",
+          {
+            "t": "sup_friend"
+          }
+        ],
+        [
+          "같은 상황을 겪는 사람들(자조모임 등)",
+          {
+            "t": "sup_peer"
+          }
+        ],
+        [
+          "상담사·의료진",
+          {
+            "t": "sup_pro"
+          }
+        ],
+        [
+          "종교 공동체",
+          {
+            "t": "sup_religion"
+          }
+        ],
+        [
+          "아직 없어요",
+          {
+            "t": "sup_none",
+            "none": 1
+          }
+        ]
+      ],
+      "type": "multi"
+    }
+  },
+  {
+    "id": "gap_obs",
+    "kind": "gap",
+    "sort_order": 10000,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "q": "말하는 방법을 정확히 맞추려면 {name:의} 요즘 모습을 조금 더 알아야 해요. 가장 마음에 걸리는 장면을 떠올려 적어 주세요.",
+      "ph": "예: 밥을 거의 안 먹고 잠만 자요",
+      "cue": true,
+      "face": "think",
+      "type": "text",
+      "required": true
+    }
+  }
+]

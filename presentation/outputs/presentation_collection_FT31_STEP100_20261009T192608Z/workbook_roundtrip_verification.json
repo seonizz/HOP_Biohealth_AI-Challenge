@@ -1,0 +1,11 @@
+{
+  "verified": true,
+  "checked_at": "2026-10-09T20:28:14.613501+00:00",
+  "xlsx_sha256": "c09cd44216a8927d44a58fd2d440e8cb7d530f98b23d9556aa2a65b485625468",
+  "records": 94,
+  "exact_source_cells_checked": 1974,
+  "exact_answers_checked": 187,
+  "cached_summary_values_verified": true,
+  "formula_errors": 0,
+  "reader": "openpyxl 3.1.5"
+}

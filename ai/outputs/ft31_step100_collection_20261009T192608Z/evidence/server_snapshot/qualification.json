@@ -1,0 +1,298 @@
+{
+  "status": "passed",
+  "started_at": 1791572868.2499926,
+  "cases": [
+    {
+      "label": "warmup",
+      "input_tokens": 34,
+      "output_tokens": 4,
+      "metrics": {
+        "prefill_ms": 5851.038975059055,
+        "ttft_ms": 5854.998619994149,
+        "decode_ms": 4439.827968017198,
+        "total_ms": 10294.826588011347,
+        "output_tokens_per_second": 0.6757018563806613,
+        "prefill_chunks": 1,
+        "memory_before": {
+          "0": {
+            "allocated": 11119277568,
+            "reserved": 11142168576,
+            "peak": 11119277568,
+            "free": 13721272320,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8227248128,
+            "reserved": 8248098816,
+            "peak": 8227248128,
+            "free": 16615931904,
+            "total": 25391333376,
+            "usable": 24864030720
+          }
+        },
+        "memory_after": {
+          "0": {
+            "allocated": 11135575552,
+            "reserved": 11244929024,
+            "peak": 11229974016,
+            "free": 13618511872,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8253361152,
+            "reserved": 8352956416,
+            "peak": 8347558400,
+            "free": 16494297088,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        }
+      },
+      "cpu_seconds": 10.292140188999994,
+      "cpu_seconds_per_output_token": 2.5730350472499985,
+      "cache_bytes": {
+        "0": 15761408,
+        "1": 17580032
+      }
+    },
+    {
+      "label": "compiled_baseline",
+      "input_tokens": 34,
+      "output_tokens": 32,
+      "metrics": {
+        "prefill_ms": 248.87361808214337,
+        "ttft_ms": 249.89943101536483,
+        "decode_ms": 6985.158422961831,
+        "total_ms": 7235.057853977196,
+        "output_tokens_per_second": 4.437980948019136,
+        "prefill_chunks": 1,
+        "memory_before": {
+          "0": {
+            "allocated": 11119277568,
+            "reserved": 11244929024,
+            "peak": 11119277568,
+            "free": 13618511872,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8235767808,
+            "reserved": 8352956416,
+            "peak": 8235767808,
+            "free": 16494297088,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        },
+        "memory_after": {
+          "0": {
+            "allocated": 11147503104,
+            "reserved": 11257511936,
+            "peak": 11229974016,
+            "free": 13605928960,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8266664960,
+            "reserved": 8365539328,
+            "peak": 8347558400,
+            "free": 16481714176,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        }
+      },
+      "cpu_seconds": 7.242515388000001,
+      "cpu_seconds_per_output_token": 0.22632860587500003,
+      "cache_bytes": {
+        "0": 27688960,
+        "1": 30883840
+      }
+    },
+    {
+      "label": "eager_warmup",
+      "input_tokens": 34,
+      "output_tokens": 4,
+      "metrics": {
+        "prefill_ms": 249.2363549536094,
+        "ttft_ms": 250.2472490305081,
+        "decode_ms": 713.825564016588,
+        "total_ms": 964.0728130470961,
+        "output_tokens_per_second": 4.202707427735504,
+        "prefill_chunks": 1,
+        "memory_before": {
+          "0": {
+            "allocated": 11119801856,
+            "reserved": 11257511936,
+            "peak": 11119801856,
+            "free": 13605928960,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8235767808,
+            "reserved": 8365539328,
+            "peak": 8235767808,
+            "free": 16481714176,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        },
+        "memory_after": {
+          "0": {
+            "allocated": 11136099840,
+            "reserved": 11257511936,
+            "peak": 11230498304,
+            "free": 13605928960,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8253361152,
+            "reserved": 8365539328,
+            "peak": 8347558400,
+            "free": 16481714176,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        }
+      },
+      "cpu_seconds": 0.9660835609999907,
+      "cpu_seconds_per_output_token": 0.24152089024999768,
+      "cache_bytes": {
+        "0": 15761408,
+        "1": 17580032
+      }
+    },
+    {
+      "label": "eager_decode",
+      "input_tokens": 34,
+      "output_tokens": 32,
+      "metrics": {
+        "prefill_ms": 247.6316470419988,
+        "ttft_ms": 248.56008600909263,
+        "decode_ms": 6218.434054055251,
+        "total_ms": 6466.994140064344,
+        "output_tokens_per_second": 4.98517789696328,
+        "prefill_chunks": 1,
+        "memory_before": {
+          "0": {
+            "allocated": 11119801856,
+            "reserved": 11257511936,
+            "peak": 11119801856,
+            "free": 13605928960,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8235767808,
+            "reserved": 8365539328,
+            "peak": 8235767808,
+            "free": 16481714176,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        },
+        "memory_after": {
+          "0": {
+            "allocated": 11148027392,
+            "reserved": 11257511936,
+            "peak": 11230498304,
+            "free": 13605928960,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8266664960,
+            "reserved": 8365539328,
+            "peak": 8347558400,
+            "free": 16481714176,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        }
+      },
+      "cpu_seconds": 6.473694266999999,
+      "cpu_seconds_per_output_token": 0.20230294584374997,
+      "cache_bytes": {
+        "0": 27688960,
+        "1": 30883840
+      }
+    },
+    {
+      "label": "capacity_input_65536_decode_2",
+      "input_tokens": 65536,
+      "output_tokens": 2,
+      "metrics": {
+        "prefill_ms": 62182.78216209728,
+        "ttft_ms": 62183.83550597355,
+        "decode_ms": 394.08215705771,
+        "total_ms": 62577.91766303126,
+        "output_tokens_per_second": 2.5375419366006935,
+        "prefill_chunks": 16,
+        "memory_before": {
+          "0": {
+            "allocated": 11119277568,
+            "reserved": 11257511936,
+            "peak": 11119277568,
+            "free": 13605928960,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 8235767808,
+            "reserved": 8365539328,
+            "peak": 8235767808,
+            "free": 16481714176,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        },
+        "memory_after": {
+          "0": {
+            "allocated": 13678372352,
+            "reserved": 19016974336,
+            "peak": 17665267200,
+            "free": 5846466560,
+            "total": 25393692672,
+            "usable": 24863440896
+          },
+          "1": {
+            "allocated": 11901651968,
+            "reserved": 17551065088,
+            "peak": 15961295872,
+            "free": 7296188416,
+            "total": 25391333376,
+            "usable": 24847253504
+          }
+        }
+      },
+      "cpu_seconds": 62.621311741,
+      "cpu_seconds_per_output_token": 31.3106558705,
+      "cache_bytes": {
+        "0": 2550169600,
+        "1": 3657482240
+      }
+    }
+  ],
+  "adapter_sha256": "79258bc8ca13ea4a0b0fa91722453c0c0de46dbb539675876d63b30b4cc6f004",
+  "parameter_devices": [
+    "cuda:0",
+    "cuda:1"
+  ],
+  "optimization": {
+    "mode": "unsloth_eager_decode",
+    "gpu_only": true
+  },
+  "comparison": {
+    "tokens_equal": true,
+    "logits_equal": false,
+    "max_abs_logit_diff": 0.359375
+  },
+  "speed_ratio": 1.1232986250624581,
+  "cpu_time_ratio": 0.8938461183977809,
+  "finished_at": 1791573025.0222225
+}

@@ -1,0 +1,4 @@
+﻿단위,Train_행,Validation_행,macro_F1,micro_F1,우울_F1,중독_F1,불안_F1,기타_F1,모델,범위,근거
+상담,990,117,0.553491732513901,0.5641025641025641,0.5098039215686274,0.7164179104477612,0.5294117647058824,0.4583333333333333,NumPy weighted one-vs-rest multinomial Naive Bayes; alpha=0.1,기존 실행 smoke; 생성 품질·임상 효과 아님,데이터셋/학습용_3종_v1_20261009/baseline_smoke.json
+문장,1440,206,0.7584150177574834,0.8353221957040573,0.8518518518518519,0.9178082191780822,0.864,0.4,NumPy weighted one-vs-rest multinomial Naive Bayes; alpha=0.1,기존 실행 smoke; 생성 품질·임상 효과 아님,데이터셋/학습용_3종_v1_20261009/baseline_smoke.json
+단어,302,76,0.6212834663646023,0.631578947368421,0.6428571428571429,0.7450980392156863,0.5517241379310345,0.5454545454545454,NumPy weighted one-vs-rest multinomial Naive Bayes; alpha=0.1,기존 실행 smoke; 생성 품질·임상 효과 아님,데이터셋/학습용_3종_v1_20261009/baseline_smoke.json

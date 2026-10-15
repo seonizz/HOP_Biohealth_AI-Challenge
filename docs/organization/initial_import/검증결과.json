@@ -1,0 +1,28 @@
+{
+  "status": "passed",
+  "completed_at": "2026-10-15T10:35:56.916274+09:00",
+  "verified_files": 7204,
+  "verified_bytes": 29078863430,
+  "verification": "Every regular source and destination file SHA-256 matched; symlink targets matched; source file set, size and modification time remained stable.",
+  "symlinks": 7,
+  "external_symlinks": [
+    {
+      "path": "HOP_Home/.ppt-build/말씨_2페이지_20261010/node_modules",
+      "target": "/Users/chihun/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules"
+    },
+    {
+      "path": "HOP_Home/.ppt-build/말씨_기대효과_20261010/node_modules",
+      "target": "/Users/chihun/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules"
+    },
+    {
+      "path": "HOP_pptdata/outputs/ft31_datasheet_setup_20261010/node_modules",
+      "target": "/Users/chihun/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules"
+    },
+    {
+      "path": "HOP_pptdata/outputs/presentation_collection_FT31_STEP100_20261009T192608Z/node_modules",
+      "target": "/Users/chihun/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules"
+    }
+  ],
+  "cloned_files": 7204,
+  "copied_files": 0
+}

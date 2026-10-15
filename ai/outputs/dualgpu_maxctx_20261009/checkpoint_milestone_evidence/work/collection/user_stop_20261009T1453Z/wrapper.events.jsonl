@@ -1,0 +1,2 @@
+{"event": "start", "exit_code": null, "action": "resume", "segment_id": "20261009T143743Z-resume-1052182", "log_exit_code": null, "utc": "2026-10-09T14:37:43.182090+00:00", "monotonic_seconds": 887762.131374399}
+{"event": "end", "exit_code": 130, "action": "resume", "segment_id": "20261009T143743Z-resume-1052182", "log_exit_code": 0, "utc": "2026-10-09T14:54:25.313560+00:00", "monotonic_seconds": 888764.262836625}

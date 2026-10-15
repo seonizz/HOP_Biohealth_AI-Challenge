@@ -1,0 +1,30 @@
+{
+  "stage": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_docs_reconciliation_20261009T131808Z",
+  "files": [
+    {
+      "name": "README.md",
+      "before_sha256": "53a254798a8119355c7553d3885a0a90ccb90f6a30e16b1e71baaff008f76742",
+      "after_sha256": "ec000f09776bea8fdadf6dea9634a9429806e00271676153c0a435dda316b41e"
+    },
+    {
+      "name": "발표용_데이터_추출_활용안.md",
+      "before_sha256": "d8d3d4ae747c2e1041295ac2360b5024221c1daecc517d73351496744cde18f5",
+      "after_sha256": "e6597e7c2f71d70aba411b3d50ee753e2dc46e1e3a9dceb1d51d856a0693ec98"
+    },
+    {
+      "name": "에이전트용_발표수치_수집지침.md",
+      "before_sha256": "10638d0cb6aba5d45ecc8a4dd581dbcbfafe629a367e2a247f56e63a1c06a64e",
+      "after_sha256": "8c20130747204ae1e76f9ff084dbcb8a89542938cf46a5cb403fe56bf382585b"
+    },
+    {
+      "name": "LLM_학습전후_분류평가.md",
+      "before_sha256": "1851010282d7bbb1ec69a26fd1be09ae56c83667aa987202e39fe002b21ddcfd",
+      "after_sha256": "1200fb6615a08b51400c1caa30861deec7657b441ad99f20e963df2672f33cb3"
+    },
+    {
+      "name": "평가양식/평가설정.json",
+      "before_sha256": "13120e92169936f65ebf2ab777aa93bd3fc40b8fa47a5bb1cebe602b9629f383",
+      "after_sha256": "5510bc3c39df3e7718dccb038d78d1f36ab00c56c77c6b109fce77e8a2d84687"
+    }
+  ]
+}

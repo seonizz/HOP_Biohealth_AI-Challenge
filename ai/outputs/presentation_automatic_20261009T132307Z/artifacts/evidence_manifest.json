@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "run_id": "BASE12_MAC_20261009T125814Z",
+  "scope": "Frozen-record mechanical counts, hashes, termination, format and tokens only.",
+  "source_evidence_root": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009",
+  "source_files": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/run_manifest.json",
+      "sha256": "e5cff3f141ce9baf12091da7625047380e4807a1c7dabfb7fe5a5735e385a878"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/case_manifest.jsonl",
+      "sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/generations.jsonl",
+      "sha256": "3705721039ab0518b2a7aa1eb224e8f90d0892d3f87e545faa71c76a80e0e6f2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/COLLECTION_COMPLETE.json",
+      "sha256": "c4f611d06d7caa011da1985e0145f88a678d49d05f41b3b0e4f00d543557edf9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/model_verification.json",
+      "sha256": "fb5529b99243ad1c0968e320830f8849d62996f3831baabddb36165b8bad496e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/dataset_audit.json",
+      "sha256": "e6db9e4494ed6c332e2352ae5f30872c67e58b3ccd09e879b7ffdb2de716ffa1"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP_agent/outputs/base12_local_20261009/collector_provenance.json",
+      "sha256": "8937c21d3d5090ef2d0595b0e642df93cce866379c4ae02ca069921361a52940"
+    }
+  ],
+  "source_archive": {
+    "path": "/Users/chihun/Documents/ChatGPT/HOP_agent/말씨_학습_에이전트_인수인계_2026-10-09.zip",
+    "sha256": "18e5cffe5efa77e79c7aa56e739c52dfdf334af8aa9623f0b24743ead44f35ed"
+  },
+  "private_records": "Inputs, requests, raw responses and decoded responses remain under source_evidence_root/private. Hashes and links are independently checked for all 94 requests; private counseling text is not copied into this package.",
+  "outputs": [
+    {
+      "file": "comparison.md",
+      "sha256": "aee6b62473ecd31a19b52d20cf2ae8a754a18d42b518263cb64d9a92fd01ee9e",
+      "bytes": 2585
+    },
+    {
+      "file": "local_measurements.csv",
+      "sha256": "3631f26eb8cc2408b97611ae0ec0c18bad92c29f62e7c6f942e009a9cad01604",
+      "bytes": 12517
+    },
+    {
+      "file": "mechanical_measurements.json",
+      "sha256": "e2d5697d6092ea60bd6cb9546ea900ad0a643d894f67725f01665646a3115744",
+      "bytes": 14029
+    },
+    {
+      "file": "metrics.json",
+      "sha256": "0831fcf25a959fdec2e8feb84179e30ac3cd2dd90f0a7767b3c9c346f9e5fe2d",
+      "bytes": 13411
+    },
+    {
+      "file": "public_answers.md",
+      "sha256": "a493e87856e9818625e0e104048e97206386d2cee9b43e375af50534cbf658a7",
+      "bytes": 43447
+    },
+    {
+      "file": "verification.json",
+      "sha256": "9fd7e71ede09c5aa1c93044561bae4e657f602a95b59815a0ee3641dddc64ff5",
+      "bytes": 2557
+    },
+    {
+      "file": "verify_measurements.py",
+      "sha256": "03e638d1d23980ef1d3b78cfca27568430811abd418b870ab50feb52d394549f",
+      "bytes": 26365
+    }
+  ],
+  "verification": "verification.json",
+  "recalculation_expected": "mechanical_measurements.json"
+}

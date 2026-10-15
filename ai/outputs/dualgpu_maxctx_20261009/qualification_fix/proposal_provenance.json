@@ -1,0 +1,28 @@
+{
+  "active_probe_sha256": "5e3a4696b9e5f4b5c0f26e321da2d39d0d3d79faaa4e1384a0c324e5b1c89c6d",
+  "installed_fused_ce_source_sha256": "4ddfe6227d2a6a8886421be843c8b85cd4b407269d6e0925e36e8994baf154dd",
+  "active_kit_changed": false,
+  "proposed_probe_sha256": "22ad9c07d36e8441b112bfa686d135a1465352eb81dcc61f571e00120fd5a9e5",
+  "active_probe_unchanged": true,
+  "protected_gradient_gate_ast_identical": true,
+  "local_test_result": {
+    "passed": 5,
+    "skipped_torch_unavailable": 4,
+    "total": 9
+  },
+  "compilation": "AST parse passed for proposed probe and tests",
+  "precision_policy": "BF16 linear followed by explicit FP32 softcap; original numerical tolerances unchanged",
+  "reference_change": "Explicit chunk losses use exact flattened torch.chunk GEMM shapes before selecting supervised rows",
+  "unchanged": [
+    "actual_model_all full-shape reference",
+    "full-shape wrong-shift negative control",
+    "all four hidden-gradient gates against full-shape reference",
+    "13 loss comparison names",
+    "readiness and collector contracts",
+    "all active training-kit files"
+  ],
+  "pending": [
+    "Actual CPU torch tests on existing server interpreter",
+    "Fresh GPU qualification must prove shape-matched reference closes the observed discrepancy"
+  ]
+}

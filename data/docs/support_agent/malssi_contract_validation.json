@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "scope": "current service contract/local artifact consistency; code and model evidence remain separate",
+  "question_bank_preserved": true,
+  "design_examples_preserved": true,
+  "three_units_present": true,
+  "classification_and_sft_readiness_separated": true,
+  "model_training_performed": false,
+  "question_count": 17,
+  "contract_sha256": "9d7646696c6b88ef1966b7cb9831bb699acfb7c901fa73883879585846e622c1",
+  "code_verification": "outputs/private/malssi_round2_20261009/tests_result.json",
+  "round2_verification": "docs/support_agent/remediation_round2_verification.json"
+}

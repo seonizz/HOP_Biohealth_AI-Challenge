@@ -1,0 +1,22 @@
+{
+  "checkpoint100": {
+    "result_notified": true,
+    "reported_at_utc": "2026-10-09T14:49:04.686498+00:00",
+    "artifact_sha256": {
+      "checkpoint100_result.csv": "cc646f6dc51248c728c72e92cab6a28b8332365a05a915f5fce75d02810292f8",
+      "checkpoint100_result.json": "094cd5bdbcbd58fe25f0e74e9cfef9f9d5536c80819ead2aaf44d601e6863c0f"
+    },
+    "sha256_verified": true,
+    "checkpoint_manifest_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+    "checkpoint_saved": true,
+    "latest_observed_main_step": 100,
+    "latest_training_loss": 2.805223510032747,
+    "resume_confirmed": false,
+    "resume_phase": "verify_inputs",
+    "continuation_pid": 1052454,
+    "automation_action": "paused_by_user_stop",
+    "training_stopped_by_user": true,
+    "resume_cancelled": true,
+    "stopped_utc": "2026-10-09T14:56:31.628333+00:00"
+  }
+}

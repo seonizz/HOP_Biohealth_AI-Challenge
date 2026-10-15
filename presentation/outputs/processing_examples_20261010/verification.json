@@ -1,0 +1,29 @@
+{
+  "checks": {
+    "full_prefix_reconstruction_matches": true,
+    "source_sentence_and_word_spans_match": true,
+    "target_and_last_message_mask_match": true,
+    "stored_npy_statistics_match": true,
+    "numeric_evidence_attached": true
+  },
+  "image_files": {
+    "three_stage_examples.png": [
+      2400,
+      1500
+    ],
+    "01_원문정리.png": [
+      730,
+      1100
+    ],
+    "02_특징수치화.png": [
+      730,
+      1100
+    ],
+    "03_학습자료구성.png": [
+      730,
+      1100
+    ]
+  },
+  "visual_review": "overview inspected; readable Korean text, no clipping or overlap",
+  "source_training_jsonl_line": 11001
+}

@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T13:01:10.330429Z",
+  "message": {
+    "role": "assistant",
+    "content": "8년 동안이나 재택근무를 해오셨군요. 그동안은 어떻게 지내오셨어요?"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 5853122625,
+  "load_duration": 5936667,
+  "prompt_eval_count": 2101,
+  "prompt_eval_cached_count": 46,
+  "prompt_eval_duration": 4708566709,
+  "eval_count": 24,
+  "eval_duration": 1137190959
+}

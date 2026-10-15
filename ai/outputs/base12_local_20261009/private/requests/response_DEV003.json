@@ -1,0 +1,37 @@
+{
+  "model": "gemma4:12b",
+  "messages": [
+    {
+      "role": "system",
+      "content": "주어진 원본 상담 대화의 맥락을 따라 다음 상담사 발화를 작성하세요. 대화 속 내담자의 관점과 관계를 그대로 유지하세요."
+    },
+    {
+      "role": "assistant",
+      "content": "하고 싶어지거나 뭐 그런 그럴 수도 있잖아요."
+    },
+    {
+      "role": "user",
+      "content": "주말에 그랬어요."
+    },
+    {
+      "role": "assistant",
+      "content": "주말에?"
+    },
+    {
+      "role": "user",
+      "content": "그래가지고 교회를 못 갔어요."
+    }
+  ],
+  "think": false,
+  "stream": false,
+  "options": {
+    "temperature": 0,
+    "seed": 3407,
+    "num_predict": 512,
+    "num_ctx": 4096,
+    "top_k": 64,
+    "top_p": 0.95,
+    "repeat_penalty": 1.0
+  },
+  "keep_alive": "15m"
+}

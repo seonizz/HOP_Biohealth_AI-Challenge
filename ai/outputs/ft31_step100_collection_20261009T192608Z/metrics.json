@@ -1,0 +1,829 @@
+{
+  "schema_version": "ft31-saved-measurements-v1",
+  "run_id": "FT31_STEP100_20261009T192608Z",
+  "condition": "FT31_STEP100",
+  "model_id": "malssi-gemma4-31b-step100",
+  "checkpoint_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+  "generations_sha256": "7cbcbb596fe3f539c25fe2862e5104065ec87187740e7fe600ef7be081618d2e",
+  "collection_state": "complete",
+  "overall": {
+    "assigned": 94,
+    "eligible": 94,
+    "excluded": 0,
+    "attempted": 94,
+    "recorded_first_attempts": 94,
+    "responses": 93,
+    "unexecuted": 0,
+    "missing_first_attempt_records": 0,
+    "all_first_attempts_recorded": true,
+    "valid": 82,
+    "length_limit": 11,
+    "status_counts": {
+      "valid": 82,
+      "length_limit": 11,
+      "input_token_mismatch": 0,
+      "empty_output": 0,
+      "format_error": 0,
+      "unverified_termination": 0,
+      "identity_mismatch": 0,
+      "http_error": 0,
+      "unknown_completion": 1,
+      "unexecuted": 0,
+      "excluded": 0
+    },
+    "finish_reason_counts": {
+      "None": 1,
+      "length": 11,
+      "stop": 82
+    },
+    "final_valid_rate": {
+      "numerator": 82,
+      "denominator": 94,
+      "percent": 87.23404255319149
+    },
+    "token_count_denominator": 94,
+    "input_tokens": {
+      "observed": 93,
+      "missing": 1,
+      "sum": 76211,
+      "min": 80,
+      "max": 3167
+    },
+    "generated_tokens": {
+      "observed": 93,
+      "missing": 1,
+      "sum": 11566,
+      "min": 2,
+      "max": 512
+    },
+    "label_counts": {
+      "ASK_CFI": 4,
+      "CLARIFY": 11,
+      "SUPPORT": 8,
+      "SUPPORT_LIMITED": 0,
+      "SAFETY_SUPPORT": 7,
+      "END": 1
+    }
+  },
+  "by_task": {
+    "response": {
+      "assigned": 63,
+      "eligible": 63,
+      "excluded": 0,
+      "attempted": 63,
+      "recorded_first_attempts": 63,
+      "responses": 62,
+      "unexecuted": 0,
+      "missing_first_attempt_records": 0,
+      "all_first_attempts_recorded": true,
+      "valid": 51,
+      "length_limit": 11,
+      "status_counts": {
+        "valid": 51,
+        "length_limit": 11,
+        "input_token_mismatch": 0,
+        "empty_output": 0,
+        "format_error": 0,
+        "unverified_termination": 0,
+        "identity_mismatch": 0,
+        "http_error": 0,
+        "unknown_completion": 1,
+        "unexecuted": 0,
+        "excluded": 0
+      },
+      "finish_reason_counts": {
+        "None": 1,
+        "length": 11,
+        "stop": 51
+      },
+      "final_valid_rate": {
+        "numerator": 51,
+        "denominator": 63,
+        "percent": 80.95238095238095
+      },
+      "token_count_denominator": 63,
+      "input_tokens": {
+        "observed": 62,
+        "missing": 1,
+        "sum": 58823,
+        "min": 80,
+        "max": 3167
+      },
+      "generated_tokens": {
+        "observed": 62,
+        "missing": 1,
+        "sum": 11456,
+        "min": 3,
+        "max": 512
+      },
+      "label_counts": {
+        "ASK_CFI": 0,
+        "CLARIFY": 0,
+        "SUPPORT": 0,
+        "SUPPORT_LIMITED": 0,
+        "SAFETY_SUPPORT": 0,
+        "END": 0
+      }
+    },
+    "action": {
+      "assigned": 31,
+      "eligible": 31,
+      "excluded": 0,
+      "attempted": 31,
+      "recorded_first_attempts": 31,
+      "responses": 31,
+      "unexecuted": 0,
+      "missing_first_attempt_records": 0,
+      "all_first_attempts_recorded": true,
+      "valid": 31,
+      "length_limit": 0,
+      "status_counts": {
+        "valid": 31,
+        "length_limit": 0,
+        "input_token_mismatch": 0,
+        "empty_output": 0,
+        "format_error": 0,
+        "unverified_termination": 0,
+        "identity_mismatch": 0,
+        "http_error": 0,
+        "unknown_completion": 0,
+        "unexecuted": 0,
+        "excluded": 0
+      },
+      "finish_reason_counts": {
+        "stop": 31
+      },
+      "final_valid_rate": {
+        "numerator": 31,
+        "denominator": 31,
+        "percent": 100.0
+      },
+      "token_count_denominator": 31,
+      "input_tokens": {
+        "observed": 31,
+        "missing": 0,
+        "sum": 17388,
+        "min": 547,
+        "max": 596
+      },
+      "generated_tokens": {
+        "observed": 31,
+        "missing": 0,
+        "sum": 110,
+        "min": 2,
+        "max": 5
+      },
+      "label_counts": {
+        "ASK_CFI": 4,
+        "CLARIFY": 11,
+        "SUPPORT": 8,
+        "SUPPORT_LIMITED": 0,
+        "SAFETY_SUPPORT": 7,
+        "END": 1
+      }
+    }
+  },
+  "by_split": {
+    "legacy_validation_development": {
+      "response": {
+        "assigned": 32,
+        "eligible": 32,
+        "excluded": 0,
+        "attempted": 32,
+        "recorded_first_attempts": 32,
+        "responses": 32,
+        "unexecuted": 0,
+        "missing_first_attempt_records": 0,
+        "all_first_attempts_recorded": true,
+        "valid": 21,
+        "length_limit": 11,
+        "status_counts": {
+          "valid": 21,
+          "length_limit": 11,
+          "input_token_mismatch": 0,
+          "empty_output": 0,
+          "format_error": 0,
+          "unverified_termination": 0,
+          "identity_mismatch": 0,
+          "http_error": 0,
+          "unknown_completion": 0,
+          "unexecuted": 0,
+          "excluded": 0
+        },
+        "finish_reason_counts": {
+          "length": 11,
+          "stop": 21
+        },
+        "final_valid_rate": {
+          "numerator": 21,
+          "denominator": 32,
+          "percent": 65.625
+        },
+        "token_count_denominator": 32,
+        "input_tokens": {
+          "observed": 32,
+          "missing": 0,
+          "sum": 49372,
+          "min": 80,
+          "max": 3167
+        },
+        "generated_tokens": {
+          "observed": 32,
+          "missing": 0,
+          "sum": 6244,
+          "min": 3,
+          "max": 512
+        },
+        "label_counts": {
+          "ASK_CFI": 0,
+          "CLARIFY": 0,
+          "SUPPORT": 0,
+          "SUPPORT_LIMITED": 0,
+          "SAFETY_SUPPORT": 0,
+          "END": 0
+        }
+      },
+      "action": {
+        "assigned": 0,
+        "eligible": 0,
+        "excluded": 0,
+        "attempted": 0,
+        "recorded_first_attempts": 0,
+        "responses": 0,
+        "unexecuted": 0,
+        "missing_first_attempt_records": 0,
+        "all_first_attempts_recorded": true,
+        "valid": 0,
+        "length_limit": 0,
+        "status_counts": {
+          "valid": 0,
+          "length_limit": 0,
+          "input_token_mismatch": 0,
+          "empty_output": 0,
+          "format_error": 0,
+          "unverified_termination": 0,
+          "identity_mismatch": 0,
+          "http_error": 0,
+          "unknown_completion": 0,
+          "unexecuted": 0,
+          "excluded": 0
+        },
+        "finish_reason_counts": {},
+        "final_valid_rate": {
+          "numerator": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "token_count_denominator": 0,
+        "input_tokens": {
+          "observed": 0,
+          "missing": 0,
+          "sum": 0,
+          "min": null,
+          "max": null
+        },
+        "generated_tokens": {
+          "observed": 0,
+          "missing": 0,
+          "sum": 0,
+          "min": null,
+          "max": null
+        },
+        "label_counts": {
+          "ASK_CFI": 0,
+          "CLARIFY": 0,
+          "SUPPORT": 0,
+          "SUPPORT_LIMITED": 0,
+          "SAFETY_SUPPORT": 0,
+          "END": 0
+        }
+      }
+    },
+    "synthetic_public_regression": {
+      "response": {
+        "assigned": 31,
+        "eligible": 31,
+        "excluded": 0,
+        "attempted": 31,
+        "recorded_first_attempts": 31,
+        "responses": 30,
+        "unexecuted": 0,
+        "missing_first_attempt_records": 0,
+        "all_first_attempts_recorded": true,
+        "valid": 30,
+        "length_limit": 0,
+        "status_counts": {
+          "valid": 30,
+          "length_limit": 0,
+          "input_token_mismatch": 0,
+          "empty_output": 0,
+          "format_error": 0,
+          "unverified_termination": 0,
+          "identity_mismatch": 0,
+          "http_error": 0,
+          "unknown_completion": 1,
+          "unexecuted": 0,
+          "excluded": 0
+        },
+        "finish_reason_counts": {
+          "None": 1,
+          "stop": 30
+        },
+        "final_valid_rate": {
+          "numerator": 30,
+          "denominator": 31,
+          "percent": 96.7741935483871
+        },
+        "token_count_denominator": 31,
+        "input_tokens": {
+          "observed": 30,
+          "missing": 1,
+          "sum": 9451,
+          "min": 302,
+          "max": 350
+        },
+        "generated_tokens": {
+          "observed": 30,
+          "missing": 1,
+          "sum": 5212,
+          "min": 14,
+          "max": 386
+        },
+        "label_counts": {
+          "ASK_CFI": 0,
+          "CLARIFY": 0,
+          "SUPPORT": 0,
+          "SUPPORT_LIMITED": 0,
+          "SAFETY_SUPPORT": 0,
+          "END": 0
+        }
+      },
+      "action": {
+        "assigned": 31,
+        "eligible": 31,
+        "excluded": 0,
+        "attempted": 31,
+        "recorded_first_attempts": 31,
+        "responses": 31,
+        "unexecuted": 0,
+        "missing_first_attempt_records": 0,
+        "all_first_attempts_recorded": true,
+        "valid": 31,
+        "length_limit": 0,
+        "status_counts": {
+          "valid": 31,
+          "length_limit": 0,
+          "input_token_mismatch": 0,
+          "empty_output": 0,
+          "format_error": 0,
+          "unverified_termination": 0,
+          "identity_mismatch": 0,
+          "http_error": 0,
+          "unknown_completion": 0,
+          "unexecuted": 0,
+          "excluded": 0
+        },
+        "finish_reason_counts": {
+          "stop": 31
+        },
+        "final_valid_rate": {
+          "numerator": 31,
+          "denominator": 31,
+          "percent": 100.0
+        },
+        "token_count_denominator": 31,
+        "input_tokens": {
+          "observed": 31,
+          "missing": 0,
+          "sum": 17388,
+          "min": 547,
+          "max": 596
+        },
+        "generated_tokens": {
+          "observed": 31,
+          "missing": 0,
+          "sum": 110,
+          "min": 2,
+          "max": 5
+        },
+        "label_counts": {
+          "ASK_CFI": 4,
+          "CLARIFY": 11,
+          "SUPPORT": 8,
+          "SUPPORT_LIMITED": 0,
+          "SAFETY_SUPPORT": 7,
+          "END": 1
+        }
+      }
+    }
+  },
+  "paired_BASE12": {
+    "response": {
+      "case_keys": [
+        [
+          "response",
+          "DEV001"
+        ],
+        [
+          "response",
+          "DEV002"
+        ],
+        [
+          "response",
+          "DEV003"
+        ],
+        [
+          "response",
+          "DEV004"
+        ],
+        [
+          "response",
+          "DEV005"
+        ],
+        [
+          "response",
+          "DEV006"
+        ],
+        [
+          "response",
+          "DEV007"
+        ],
+        [
+          "response",
+          "DEV008"
+        ],
+        [
+          "response",
+          "DEV009"
+        ],
+        [
+          "response",
+          "DEV010"
+        ],
+        [
+          "response",
+          "DEV011"
+        ],
+        [
+          "response",
+          "DEV012"
+        ],
+        [
+          "response",
+          "DEV013"
+        ],
+        [
+          "response",
+          "DEV014"
+        ],
+        [
+          "response",
+          "DEV015"
+        ],
+        [
+          "response",
+          "DEV016"
+        ],
+        [
+          "response",
+          "DEV017"
+        ],
+        [
+          "response",
+          "DEV018"
+        ],
+        [
+          "response",
+          "DEV019"
+        ],
+        [
+          "response",
+          "DEV020"
+        ],
+        [
+          "response",
+          "DEV021"
+        ],
+        [
+          "response",
+          "DEV022"
+        ],
+        [
+          "response",
+          "DEV023"
+        ],
+        [
+          "response",
+          "DEV024"
+        ],
+        [
+          "response",
+          "DEV025"
+        ],
+        [
+          "response",
+          "DEV026"
+        ],
+        [
+          "response",
+          "DEV027"
+        ],
+        [
+          "response",
+          "DEV028"
+        ],
+        [
+          "response",
+          "DEV029"
+        ],
+        [
+          "response",
+          "DEV030"
+        ],
+        [
+          "response",
+          "DEV031"
+        ],
+        [
+          "response",
+          "DEV032"
+        ],
+        [
+          "response",
+          "T01"
+        ],
+        [
+          "response",
+          "T02"
+        ],
+        [
+          "response",
+          "T03"
+        ],
+        [
+          "response",
+          "T04"
+        ],
+        [
+          "response",
+          "T05"
+        ],
+        [
+          "response",
+          "T06"
+        ],
+        [
+          "response",
+          "T07"
+        ],
+        [
+          "response",
+          "T08"
+        ],
+        [
+          "response",
+          "T09"
+        ],
+        [
+          "response",
+          "T10"
+        ],
+        [
+          "response",
+          "T11"
+        ],
+        [
+          "response",
+          "T12"
+        ],
+        [
+          "response",
+          "T13"
+        ],
+        [
+          "response",
+          "T14"
+        ],
+        [
+          "response",
+          "T15"
+        ],
+        [
+          "response",
+          "T16"
+        ],
+        [
+          "response",
+          "T17"
+        ],
+        [
+          "response",
+          "T18"
+        ],
+        [
+          "response",
+          "T19"
+        ],
+        [
+          "response",
+          "T20"
+        ],
+        [
+          "response",
+          "T21"
+        ],
+        [
+          "response",
+          "T22"
+        ],
+        [
+          "response",
+          "T23"
+        ],
+        [
+          "response",
+          "T24"
+        ],
+        [
+          "response",
+          "T25"
+        ],
+        [
+          "response",
+          "T26"
+        ],
+        [
+          "response",
+          "T27"
+        ],
+        [
+          "response",
+          "T28-a"
+        ],
+        [
+          "response",
+          "T28-b"
+        ],
+        [
+          "response",
+          "T28-c"
+        ],
+        [
+          "response",
+          "T28-d"
+        ]
+      ],
+      "denominator": 63,
+      "all_first_attempts_recorded": true,
+      "BASE12_valid": 62,
+      "FT31_STEP100_valid": 51,
+      "BASE12_percent": 98.41269841269842,
+      "FT31_STEP100_percent": 80.95238095238095,
+      "difference_percentage_points": -17.46031746031747
+    },
+    "action": {
+      "case_keys": [
+        [
+          "action",
+          "T01"
+        ],
+        [
+          "action",
+          "T02"
+        ],
+        [
+          "action",
+          "T03"
+        ],
+        [
+          "action",
+          "T04"
+        ],
+        [
+          "action",
+          "T05"
+        ],
+        [
+          "action",
+          "T06"
+        ],
+        [
+          "action",
+          "T07"
+        ],
+        [
+          "action",
+          "T08"
+        ],
+        [
+          "action",
+          "T09"
+        ],
+        [
+          "action",
+          "T10"
+        ],
+        [
+          "action",
+          "T11"
+        ],
+        [
+          "action",
+          "T12"
+        ],
+        [
+          "action",
+          "T13"
+        ],
+        [
+          "action",
+          "T14"
+        ],
+        [
+          "action",
+          "T15"
+        ],
+        [
+          "action",
+          "T16"
+        ],
+        [
+          "action",
+          "T17"
+        ],
+        [
+          "action",
+          "T18"
+        ],
+        [
+          "action",
+          "T19"
+        ],
+        [
+          "action",
+          "T20"
+        ],
+        [
+          "action",
+          "T21"
+        ],
+        [
+          "action",
+          "T22"
+        ],
+        [
+          "action",
+          "T23"
+        ],
+        [
+          "action",
+          "T24"
+        ],
+        [
+          "action",
+          "T25"
+        ],
+        [
+          "action",
+          "T26"
+        ],
+        [
+          "action",
+          "T27"
+        ],
+        [
+          "action",
+          "T28-a"
+        ],
+        [
+          "action",
+          "T28-b"
+        ],
+        [
+          "action",
+          "T28-c"
+        ],
+        [
+          "action",
+          "T28-d"
+        ]
+      ],
+      "denominator": 31,
+      "all_first_attempts_recorded": true,
+      "BASE12_valid": 31,
+      "FT31_STEP100_valid": 31,
+      "BASE12_percent": 100.0,
+      "FT31_STEP100_percent": 100.0,
+      "difference_percentage_points": 0.0
+    }
+  },
+  "notes": [
+    "종료·형식·실제 토큰 측정이며 상담 품질·안전성·분류 정확도 점수가 아니다.",
+    "기존 검증용 개발 사례와 공개 합성 회귀 사례이며 독립 최종 test가 아니다.",
+    "오류·길이 소진·미실행도 사전 실행 가능 분모에 남긴다. 미측정 토큰은 null이다.",
+    "각 과제의 첫 시도 기록이 모두 있을 때만 최종 비율과 차이를 표시한다.",
+    "BASE12와의 차이에는 모델 크기·배포 방식·학습 상태가 함께 반영된다."
+  ],
+  "semantic_scores_verified": false,
+  "latency_comparison": null
+}

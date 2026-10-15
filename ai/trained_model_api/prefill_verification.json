@@ -1,0 +1,32 @@
+{
+  "status": "passed",
+  "input_tokens": 8193,
+  "prefill_chunk_size": 4096,
+  "checkpoint_step": 100,
+  "checkpoint_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+  "scope": "One diverse synthetic text response regression, including a 1-token final chunk; not bitwise logits equivalence",
+  "updated_utc": "2026-10-09T16:17:38.009335+00:00",
+  "full": {
+    "text": "AB-314",
+    "finish_reason": "stop",
+    "prompt_tokens": 8193,
+    "completion_tokens": 6
+  },
+  "chunked": {
+    "text": "AB-314",
+    "finish_reason": "stop",
+    "prompt_tokens": 8193,
+    "completion_tokens": 6
+  },
+  "trace": {
+    "processed_input_tokens": 8193,
+    "prefill_chunks": [
+      4096,
+      4096,
+      1
+    ],
+    "cache_types": [
+      "DynamicCache"
+    ]
+  }
+}

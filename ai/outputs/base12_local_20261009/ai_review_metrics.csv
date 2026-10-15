@@ -1,0 +1,5 @@
+metric,BASE12_value,unit,numerator,denominator,status,scope
+요청 해결률,54.83870967741935,%,17,31,reviewed_by_ai,public synthetic; AI review only
+말·행동 구체성 통과율,70.96774193548387,%,22,31,reviewed_by_ai,public synthetic; AI review only
+주체·근거 보존율,67.74193548387096,%,21,31,reviewed_by_ai,public synthetic; AI review only
+불필요 질문률,54.83870967741935,%,17,31,reviewed_by_ai,public synthetic; AI review only

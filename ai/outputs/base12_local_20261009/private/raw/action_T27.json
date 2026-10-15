@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T13:07:36.172731Z",
+  "message": {
+    "role": "assistant",
+    "content": "CLARIFY"
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 449069791,
+  "load_duration": 6432958,
+  "prompt_eval_count": 556,
+  "prompt_eval_cached_count": 522,
+  "prompt_eval_duration": 266720584,
+  "eval_count": 3,
+  "eval_duration": 174741917
+}

@@ -1,0 +1,67 @@
+{
+  "status": "stopping_at_user_request",
+  "authorization_thread": "01a12000-fb4f-7fc3-b76d-6435d39db351",
+  "human_request": "지금 모델 학습을 멈추고 api로 호출해서 사용 가능하도록 구성해줘",
+  "utc": "2026-10-09T14:54:11.178991+00:00",
+  "checkpoint": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/training/checkpoints/step-000000100",
+  "checkpoint_integrity_verified": true,
+  "checkpoint_manifest_sha256": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+  "before_processes": {
+    "1044629": {
+      "pid": 1044629,
+      "ppid": 1,
+      "state": "S",
+      "start_ticks": 87071733,
+      "argv": [
+        "/home/slim/choieram/malssi-validation-20261009/.venv/bin/python",
+        "-B",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/scripts/run_inference_after_training.py"
+      ]
+    },
+    "1048788": {
+      "pid": 1048788,
+      "ppid": 1,
+      "state": "S",
+      "start_ticks": 88043299,
+      "argv": [
+        "/home/slim/choieram/malssi-validation-20261009/.venv/bin/python",
+        "-B",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/scripts/continue_checkpoint100.py"
+      ]
+    },
+    "1052454": {
+      "pid": 1052454,
+      "ppid": 1052187,
+      "state": "R",
+      "start_ticks": 88836768,
+      "argv": [
+        "/home/slim/choieram/malssi-validation-20261009/.venv/bin/python",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/scripts/early_training_driver.py",
+        "continue",
+        "--kit",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit"
+      ]
+    }
+  },
+  "latest_before_stop": {
+    "elapsed_seconds": 104.55345957505051,
+    "gradient_norm_before_clip": 1.9455583095550537,
+    "learning_rates": [
+      1.3157894736842108e-05
+    ],
+    "microbatches": 8,
+    "mode": "train",
+    "next_row_cursor": 800,
+    "step": 100,
+    "supervised_tokens": 820,
+    "target_mean_loss": 2.805223510032747
+  },
+  "automatic_training_resume_authorized": false,
+  "deferred_gpu_inference_authorized": false,
+  "checkpoint_files": {
+    "README.md": "c8328e37adb99e77c79b0ebc94bf64aebd09023e3c75040ffc0d6f6f6aab25a7",
+    "adapter_config.json": "caa301a0dcfb5d1f3a8813b87d8e46a72420238146a42f3dbfd8795f28c9bebd",
+    "adapter_model.safetensors": "153b2611645a5ce2cef69362d685fa241d67dac2333a5a47e5630ece99715b73",
+    "training_state.pt": "601584697acd66213a3b78134c17a8f14f1839d538ee417bc9fbd6fe5c26a5df"
+  }
+}

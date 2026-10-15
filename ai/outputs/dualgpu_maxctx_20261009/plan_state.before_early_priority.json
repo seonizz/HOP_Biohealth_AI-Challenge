@@ -1,0 +1,194 @@
+{
+  "objective": "긴 대화를 포함한 전체 데이터 1 epoch 본학습과 동일 기준 B0/B1 성능 비교 완료를 최우선으로 진행",
+  "remote_root": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009",
+  "hardware": [
+    {
+      "uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+      "memory_mib": 24564
+    },
+    {
+      "uuid": "GPU-a2d3d60c-4eae-7e46-45bc-146e24457642",
+      "memory_mib": 24564
+    }
+  ],
+  "interconnect": "SYS; no NVLink",
+  "model_context_cap": 262144,
+  "candidate_distribution": "final fallback candidate: 25316 context, split28/32 language layers, tiled MLP",
+  "training_and_inference_limits_separate": true,
+  "original_single_gpu_run": "preserved; stopped by latest user request, exit143; canary3 passed, B0 unfinished, no main training steps",
+  "new_dataset_policy": "preserve source split/group and 1261 held rows; longer accepted source rows only; no synthetic capacity data in training",
+  "next_steps": [
+    "Finish all44713 source tokenization and target-boundary verification",
+    "Numerical qualification of final25316/split28/tiled configuration",
+    "Actual longest8 source rows: accumulation8,2 optimizer updates,checkpoint save,fresh-process third update",
+    "B0 on all4298 validation rows",
+    "Full40415-row oneepoch training,5052 optimizer steps",
+    "B1 on identical4298 validation rows and collect results",
+    "Deferred service inference input/output measurements"
+  ],
+  "explicit_user_long_conversation_inclusion": true,
+  "required_untruncated_training_context_at_least": 25316,
+  "target_train_rows": 40415,
+  "target_validation_rows": 4298,
+  "target_optimizer_steps": 5052,
+  "original_hold_rows": 1261,
+  "target_train_input_tokens": 237049716,
+  "target_validation_input_tokens": 23736126,
+  "target_train_supervised_tokens": 3291230,
+  "target_validation_supervised_tokens": 362003,
+  "full_long_source_export_verified": true,
+  "legacy_4096_subset_exact_raw_lines_match": true,
+  "training_capacity_observations": {
+    "4096": "passed actual both-GPU gradients + optimizer update",
+    "16384": "passed actual both-GPU gradients + optimizer update",
+    "32768": "OOM GPU1; GPU0 peak16.68GiB, GPU1 peak22.57GiB then1.31GiB allocation failed",
+    "25316": "PASSED split28 + tiledMLP; 1 backward/update; phase107.04sec; allocated21.57/19.18GiB; repeated accumulation/state tests pending",
+    "32768_tiled_split26": "OOM GPU1 on2.05GiB allocation; no optimizer",
+    "28672_tiled_split26": "single update PASS but accum8 OOM on second microstep; NOT STABLE, cannot finalize",
+    "29440_tiled_split26": "OOM GPU0 before1stbackwardcompleted",
+    "30720_tiled_split24": "OOM GPU0 before1stbackwardcompleted",
+    "28672_tiled_split25": "FAILED: OOM GPU0 after9 microsteps and1 optimizer update; all evidence preserved"
+  },
+  "next_action": "Actual longest-source 2+1 canary will jointly prove repeated accumulation8 stability and fresh-process checkpoint resume; no redundant synthetic capacity run",
+  "server_cpu_unit_tests": {
+    "passed": 99,
+    "skipped": 0,
+    "log": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/code-tests-v3.log"
+  },
+  "long_source_kit_data": {
+    "rows": 44713,
+    "ledger_sha256": "76b807320edff5394095ccd85073ea2d7fa82918c3b6ed311de39012b823ebb7",
+    "remote_directory": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/data"
+  },
+  "canary_plan": "longest eight source rows repeated only within canary for 2 initial updates plus 1 fresh-process resumed update",
+  "memory_optimization": "Installed Unsloth unsloth_tiled_mlp=True confirmed all60 language MLPs; no CPU save_on_cpu change applied",
+  "candidate_training_config": {
+    "max_length": 25316,
+    "layer_split": 28,
+    "unsloth_tiled_mlp": true,
+    "stability_confirmed": false,
+    "essential_stability_gate": "actual longest-source2+fresh1 canary with accumulation8"
+  },
+  "long_token_preparation": {
+    "pid": 1043658,
+    "status": "passed",
+    "log": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/prepare-long-tokens-28672.log",
+    "validated_rows": {
+      "train": 40415,
+      "validation": 4298
+    }
+  },
+  "inference_pipeline": {
+    "status": "waiting_for_training_B0_B1_and_strict_collection",
+    "script": "scripts/run_inference_after_training.py",
+    "report": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/inference_capacity_pipeline.json",
+    "probe_version": 6,
+    "layer_split": 32,
+    "first_gate": "8192input+64output full/chunk prefill parity",
+    "native_limit_candidates": {
+      "max_input": 262143,
+      "input_profile_output": 1,
+      "output_profile_input": 2,
+      "max_output": 262142
+    },
+    "candidates_are_not_measured_limits": true,
+    "fallback_prefill_chunks": [
+      4096,
+      2048,
+      1024,
+      512,
+      256,
+      128
+    ],
+    "do_not_launch_conflicting_gpu_jobs": true,
+    "former_pid": 1044080,
+    "cancelled": false,
+    "pid": 1044629,
+    "gpu_before_training_results": false,
+    "old_coordinator_stopped": true
+  },
+  "priority_updated_utc": "20261009T094119Z",
+  "training_capacity_search": "deferred; no further maximum exploration before training/evaluation",
+  "main_training": {
+    "started": false,
+    "completed_optimizer_steps": 0,
+    "total_optimizer_steps": 5052,
+    "latest_loss": null,
+    "last_step": {}
+  },
+  "verification_reuse_policy": "Reuse identical tokenization evidence when dataset/tokenizer/preparation/model/environment unchanged; prove old code hash and permitted non-tokenizing qualification module changes before import, then validate every cached row and preserve immutable provenance",
+  "qualification": {
+    "status": "passed",
+    "failed_item": "first_chunks_8",
+    "model_loss_matches_full_shape_reference": true,
+    "atol": 0.002,
+    "rtol": 0.002,
+    "thresholds_relaxed": false,
+    "proposed_fix": "independent BF16 reference at identical actual chunk matrix sizes",
+    "pid": 1044574,
+    "server_cpu_reference_tests": {
+      "passed": 9,
+      "skipped": 0
+    },
+    "tolerances_unchanged": true,
+    "checks": [
+      "gpu_pin",
+      "token_contract",
+      "fused_loss",
+      "fused_gradient",
+      "tiled_mlp_equivalence",
+      "generation_profile",
+      "weights_unchanged"
+    ],
+    "loss_comparisons": 13,
+    "hidden_gradient_comparisons": 4,
+    "worst_hidden_gradient_relative_l2": 0.006174788349179178
+  },
+  "training_pipeline": {
+    "pid": 1044628,
+    "script": "scripts/continue_full_training.py",
+    "status": "actual_longest_source_canary",
+    "automatic_order": [
+      "canary2",
+      "fresh_process_canary1",
+      "B0",
+      "5052step_full_epoch",
+      "B1",
+      "strict_results"
+    ],
+    "canary_process_pid": 1044898
+  },
+  "updated_utc": "2026-10-09T10:19:45.140348+00:00",
+  "token_cache_revalidation": {
+    "status": "passed",
+    "train_rows": 40415,
+    "validation_rows": 4298,
+    "max_train_sequence_length": 25316,
+    "max_validation_sequence_length": 14014,
+    "all_source_rows_untruncated": true,
+    "audit_directory": "training_kit/work/token-cache-rebind/20261009T095737Z-e6ec3d4bed814dff8c8b7efc34697720",
+    "token_files_unchanged": true
+  },
+  "canary": {
+    "passed": false,
+    "latest_step": {
+      "step": 1,
+      "target_mean_loss": 4.302671840831415,
+      "microbatches": 8,
+      "next_row_cursor": 8
+    },
+    "separate_from_main_training": true,
+    "first_checkpoint": {
+      "committed": true,
+      "manifest_sha256": "a2c926eba74bdd0eb7c078aa243221a1dba4f1119a9ff95df33728cc095ea5fc",
+      "adapter_bytes": 244980744,
+      "training_state_bytes": 490432379
+    },
+    "first_update_elapsed_seconds": 766.6132804990048
+  },
+  "last_goal_turn_classification": {
+    "previous_turn": "verified_wait: live actual-source canary on two GPUs",
+    "current_turn": "progress: first real accumulation8 optimizer update and committed checkpoint observed; second update running",
+    "observed_utc": "2026-10-09T10:19:45.140348+00:00"
+  }
+}

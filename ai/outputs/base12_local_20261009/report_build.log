@@ -1,0 +1,1 @@
+{"run_id": "BASE12_MAC_20261009T125814Z", "artifacts": ["metrics.json", "answer_comparisons.json", "evidence_manifest.json", "comparison.md", "missing.md", "public_answers.md", "local_measurements.csv", "review_queue.jsonl"], "assigned": 94, "attempted": 94, "public_answers": 31, "review_queue": 63, "quality_scores": null, "comparison_ready": false}

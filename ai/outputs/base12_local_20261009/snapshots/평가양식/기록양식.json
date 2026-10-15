@@ -1,0 +1,135 @@
+{
+  "template_only": true,
+  "instruction": "Copy the relevant object per real record. Keep gold/reviews out of model inputs. null means unknown, not zero.",
+  "model_input_record": {
+    "case_id": null,
+    "task": "action",
+    "messages": []
+  },
+  "gold_record": {
+    "case_id": null,
+    "task": "action",
+    "source_conversation_id": null,
+    "source_group_id": null,
+    "provenance_reference": null,
+    "source_or_synthetic": null,
+    "input_sha256": null,
+    "gold_label": null,
+    "gold_rationale": null,
+    "reviews": [
+      {
+        "reviewer_id": null,
+        "label": null,
+        "rationale": null
+      },
+      {
+        "reviewer_id": null,
+        "label": null,
+        "rationale": null
+      }
+    ],
+    "adjudication": null,
+    "gold_approved": false,
+    "eligible_for_frozen_test": false,
+    "pre_model_exclusion_reason": null,
+    "overlap_audit_reference": null
+  },
+  "prediction_record": {
+    "run_id": null,
+    "condition": null,
+    "case_id": null,
+    "task": "action",
+    "protocol_sha256": null,
+    "input_sha256": null,
+    "model_files_sha256": null,
+    "adapter_sha256": null,
+    "prompt_sha256": null,
+    "generation_config_sha256": null,
+    "status": "not_started",
+    "status_allowed_values": [
+      "not_started",
+      "valid",
+      "format_error",
+      "generation_error",
+      "timeout",
+      "length_limit"
+    ],
+    "raw_output": null,
+    "predicted_label": null,
+    "error_detail": null,
+    "termination_reason": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "started_at": null,
+    "elapsed_seconds": null,
+    "tokenizer_sha256": null,
+    "chat_template_sha256": null
+  },
+  "summary_record": {
+    "task": "action",
+    "status": "not_executed",
+    "frozen_case_count": null,
+    "conversation_count": null,
+    "source_group_count": null,
+    "label_support": null,
+    "reviewer_initial_agreement_percent": null,
+    "pre_model_exclusion_counts": null,
+    "conditions": {
+      "BASE31": {
+        "accuracy_percent": null,
+        "macro_f1_points": null,
+        "valid_output_percent": null,
+        "status_counts": null,
+        "per_label_metrics": null,
+        "conversation_mean_accuracy_percent": null,
+        "confusion_matrix": null
+      },
+      "BASE12": {
+        "accuracy_percent": null,
+        "macro_f1_points": null,
+        "valid_output_percent": null,
+        "status_counts": null,
+        "per_label_metrics": null,
+        "conversation_mean_accuracy_percent": null,
+        "confusion_matrix": null
+      },
+      "FT31": {
+        "accuracy_percent": null,
+        "macro_f1_points": null,
+        "valid_output_percent": null,
+        "status_counts": null,
+        "per_label_metrics": null,
+        "conversation_mean_accuracy_percent": null,
+        "confusion_matrix": null
+      }
+    },
+    "comparisons": {
+      "FT31_vs_BASE31": {
+        "reference_condition_id": "BASE31",
+        "target_condition_id": "FT31",
+        "interpretation": "same_base_fine_tuning_effect",
+        "status": "unknown",
+        "accuracy_delta_pp": null,
+        "macro_f1_delta_points": null,
+        "accuracy_delta_95ci_pp": null,
+        "bootstrap_details": null
+      },
+      "FT31_vs_BASE12": {
+        "reference_condition_id": "BASE12",
+        "target_condition_id": "FT31",
+        "interpretation": "model_size_and_fine_tuning_combined_difference",
+        "status": "unknown",
+        "accuracy_delta_pp": null,
+        "macro_f1_delta_points": null,
+        "accuracy_delta_95ci_pp": null,
+        "bootstrap_details": null
+      }
+    }
+  },
+  "schema_version": "malssi-llm-classification-records-v2",
+  "condition_ids": [
+    "BASE31",
+    "BASE12",
+    "FT31"
+  ]
+}

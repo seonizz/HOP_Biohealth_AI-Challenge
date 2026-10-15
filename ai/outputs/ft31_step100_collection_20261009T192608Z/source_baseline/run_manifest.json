@@ -1,0 +1,55 @@
+{
+  "run_id": "BASE12_MAC_20261009T125814Z",
+  "frozen_at": "2026-10-09T12:58:14.931627+00:00",
+  "model": {
+    "name": "gemma4:12b",
+    "model": "gemma4:12b",
+    "modified_at": "2026-10-09T21:52:04.752699185+09:00",
+    "size": 7714091504,
+    "digest": "c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+    "details": {
+      "parent_model": "",
+      "format": "safetensors",
+      "family": "",
+      "families": null,
+      "parameter_size": "",
+      "quantization_level": "",
+      "runner": "mlx"
+    },
+    "capabilities": [
+      "completion",
+      "vision",
+      "audio",
+      "tools",
+      "thinking"
+    ]
+  },
+  "condition": "BASE12",
+  "trained_adapter": false,
+  "upstream_model_id": "google/gemma-4-12B-it",
+  "upstream_revision_binding": null,
+  "model_scope": "Ollama MLX NVFP4 distribution; no project fine tuning; not BF16 original weights",
+  "runtime": "Ollama 0.40.0 / MLX",
+  "hardware": {
+    "chip": "Apple M5",
+    "unified_memory_gib": 32
+  },
+  "case_manifest_sha256": "e754dfa212bb846dd39ff19d826c7660abe1be75ef999e35b1da1fa773768373",
+  "collector_sha256": "72ad282ecce634137b402aa2cbcfef8564cb682593a78e13d92fca3f27a01ed7",
+  "attempts_per_case": 1,
+  "concurrency": 1,
+  "response_max_new_tokens": 512,
+  "classification_max_new_tokens": 32,
+  "context_tokens": 4096,
+  "thinking": false,
+  "seed": 3407,
+  "temperature": 0,
+  "human_review_status": "pending",
+  "comparison_ready": false,
+  "comparison_limitations": [
+    "development/public regression only",
+    "BASE31 and FT31 outputs absent",
+    "BASE31/FT31 tokenizer length not verified",
+    "human reviews absent"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "scope": "collection kit only; no model training or measurements performed",
+  "date": "2026-10-09",
+  "json_templates_parsed": [
+    "templates/run_manifest.template.json",
+    "templates/dataset_profile.template.json",
+    "templates/record_templates.json",
+    "templates/preflight.template.json",
+    "templates/evaluation_plan.template.json"
+  ],
+  "markdown_files": 3,
+  "local_links_checked": 3,
+  "focused_checker_tests": 6,
+  "focused_checker_tests_passed": 6,
+  "independent_review": "prefill evidence fields, applicability denominators, and impossible counter checks added",
+  "file_sha256": {
+    "학습담당자_전달문.md": "aad9ae6d3da97ebba40bdeb673dfed9bf0959c144a168538b4593bac6cc62b95",
+    "README.md": "f32d29dfa9b100a7415230311a0de1bcbff99fb08743ea3e03a7f8eda00bbde4",
+    "학습_데이터수집_지침.md": "3756ee350851fe23c4f96a23f19a66166464d1578569193c0fde6fb6ca894e48",
+    "collection_tools.py": "8e34a979d5eaa9cf6c43002760af3b618c5f642c443b66260279c49af358d7e4",
+    "templates/run_manifest.template.json": "010f89ee69fb20037db2ebe03c229673d8dac237f460ebe25a8eb21d529886c4",
+    "templates/dataset_profile.template.json": "ba5382ea1161fc66ecb240ac8fbbf876ba35a012033dbb6fd1c6a1f6efe73c23",
+    "templates/record_templates.json": "6c9b86667e6bbdca30e342a0c9039863f67c5ed4682e7d82d8b8a338680b1214",
+    "templates/preflight.template.json": "8568730fede0e0619653c1b0fd848b3d549bf4075bd5fcd9752309153480d0fd",
+    "templates/evaluation_plan.template.json": "6d640ef0cae34f5351fcc12fe52b5b867061fdbbb20571071ab072ff2cdf0047"
+  }
+}

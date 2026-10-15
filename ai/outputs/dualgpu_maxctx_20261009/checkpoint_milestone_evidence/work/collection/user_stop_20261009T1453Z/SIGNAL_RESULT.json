@@ -1,0 +1,73 @@
+{
+  "utc": "2026-10-09T14:54:24.776264+00:00",
+  "signals": [
+    {
+      "pid": 1048788,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 1044629,
+      "signal": "SIGTERM"
+    },
+    {
+      "pid": 1052454,
+      "signal": "SIGINT"
+    }
+  ],
+  "processes_after": [
+    null,
+    null,
+    {
+      "pid": 1052454,
+      "ppid": 1052187,
+      "state": "Z",
+      "start_ticks": 88836768,
+      "argv": []
+    },
+    {
+      "pid": 1052187,
+      "ppid": 1052182,
+      "state": "S",
+      "start_ticks": 88776213,
+      "argv": [
+        "bash",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/scripts/run_checkpoint100_stages.sh"
+      ]
+    },
+    {
+      "pid": 1052182,
+      "ppid": 1,
+      "state": "S",
+      "start_ticks": 88776208,
+      "argv": [
+        "bash",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/scripts/run_with_metrics_checkpoint100_v1.sh"
+      ]
+    },
+    {
+      "pid": 1052188,
+      "ppid": 1052182,
+      "state": "S",
+      "start_ticks": 88776213,
+      "argv": [
+        "tee",
+        "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/training_kit/work/collection/20261009T143743Z-resume-1052182/console.log"
+      ]
+    }
+  ],
+  "latest_after_stop": {
+    "elapsed_seconds": 104.55345957505051,
+    "gradient_norm_before_clip": 1.9455583095550537,
+    "learning_rates": [
+      1.3157894736842108e-05
+    ],
+    "microbatches": 8,
+    "mode": "train",
+    "next_row_cursor": 800,
+    "step": 100,
+    "supervised_tokens": 820,
+    "target_mean_loss": 2.805223510032747
+  },
+  "checkpoint_manifest_sha256_after": "56244f8a6736e648dd8f4cd13d0889d7499a6bf776b9e55491a4ed59c446effd",
+  "audit_directory": "/home/slim/choieram/model_Training/malssi_dualgpu_maxctx_20261009/work/collection/user_stop_20261009T1453Z"
+}

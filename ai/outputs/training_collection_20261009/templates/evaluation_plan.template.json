@@ -1,0 +1,23 @@
+{
+  "schema_version": "malssi-collection-v1",
+  "run_id": null,
+  "plan_id": null,
+  "frozen_at": null,
+  "protocol_sha256": null,
+  "evaluation_dataset_sha256": null,
+  "task_profile": null,
+  "split": null,
+  "prompt_sha256": null,
+  "generation_config_sha256": null,
+  "conditions": [],
+  "case_manifest_file": null,
+  "checkpoint_selection_rule": null,
+  "retry_selection_rule": null,
+  "primary_metrics": [],
+  "reviewer_policy": null,
+  "uncertain_handling": null,
+  "group_aggregation_rule": null,
+  "test_used_for_selection": null,
+  "multi_turn_history_mode": null,
+  "missing_reasons": {}
+}

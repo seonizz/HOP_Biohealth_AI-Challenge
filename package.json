@@ -1,21 +1,18 @@
 {
-  "name": "malssi-fullstack",
-  "version": "1.0.0",
+  "name": "malssi-project",
+  "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "description": "Unified Malssi project entrypoint; dependencies remain in each module",
   "scripts": {
-    "setup": "node scripts/init-env.mjs",
-    "build": "node scripts/build.mjs",
-    "check": "node scripts/check.mjs",
-    "test": "node scripts/test.mjs",
-    "test:e2e": "playwright test",
-    "up": "docker compose up --build -d",
-    "down": "docker compose down",
-    "doctor": "node scripts/doctor.mjs",
-    "check:release": "node scripts/release-check.mjs",
-    "backup": "node scripts/backup.mjs"
+    "check": "npm --prefix app run check",
+    "test": "npm --prefix app test",
+    "app:dev": "npm --prefix app run dev",
+    "app:start": "npm --prefix app start",
+    "ai:test": "cd ai && python3 -B -m unittest discover -s local_api -p 'test_*.py'",
+    "data:test": "cd data && \"${MALSSI_PYTHON:-python3}\" -B -m unittest discover -s tests",
+    "test:paths": "cd ai && python3 -B -m unittest discover -s scripts -p test_project_paths.py"
   },
-  "devDependencies": {
-    "@playwright/test": "1.56.1"
+  "engines": {
+    "node": ">=24.14.0 <25"
   }
 }

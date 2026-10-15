@@ -1,0 +1,17 @@
+{
+  "model": "gemma4:12b",
+  "created_at": "2026-10-09T13:04:02.111368Z",
+  "message": {
+    "role": "assistant",
+    "content": "친구에게 조심스럽게 다가가며 대화를 시작할 수 있는 문장입니다.\n\n\"혹시 지금 이야기 좀 나눌 수 있는 상황이야? 괜찮다면 네 고민을 조금 들어보고 싶어.\""
+  },
+  "done": true,
+  "done_reason": "stop",
+  "total_duration": 2487257792,
+  "load_duration": 6296792,
+  "prompt_eval_count": 313,
+  "prompt_eval_cached_count": 277,
+  "prompt_eval_duration": 324634750,
+  "eval_count": 44,
+  "eval_duration": 2155836917
+}

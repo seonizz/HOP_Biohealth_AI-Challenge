@@ -1,0 +1,69 @@
+{
+  "objective": "README.md에 따른 1단계 원문 상담 응답 SFT, 검증 및 발표용 결과 수집",
+  "goal_status": "active",
+  "kit": "/home/slim/choieram/model_Training/malssi_stage1_training_20261009",
+  "ssh": {
+    "host": "slim@165.194.161.61",
+    "port": 20522,
+    "control_path": "/tmp/qwen38-slim-20522.sock"
+  },
+  "gpu_uuid": "GPU-a2ee5fcb-8ff8-01ef-334a-8948dae2f79c",
+  "launcher_pid": 1039749,
+  "start_segment": "20261009T080621Z-start-1039749",
+  "prepare_segment": "20261009T080503Z-prepare-1039712",
+  "prepare_exit_code": 0,
+  "prepare_reused_qualification": true,
+  "all_readme_bindings_matched": true,
+  "train_rows": 15512,
+  "validation_rows": 1724,
+  "expected_optimizer_steps": 1939,
+  "source_copy": "/home/slim/choieram/malssi-training-preparation-20261009/kit",
+  "deviations": [
+    "서버 경량 kit에 run.sh가 없어 복구 ZIP의 원본 1817 bytes를 새 사본에만 추가. SHA e3090b8d1e71446b654d8996d27006f810460aba3da2a7a5dcccaecea573520d 일치; 원본 MANIFEST 및 학습코드 변경 없음.",
+    "초기 관측에서 hop_node postgres/backend 프로세스가 실행 중이었음. 이번 작업에서 시작/중지하지 않음.",
+    "qualification 원본에 raw token IDs가 있어 발표용 묶음에는 원본 SHA와 정제한 수치 요약만 포함해야 함."
+  ],
+  "completion_requires": [
+    "actual canary 2 + resumed 1 passed",
+    "training 1939 steps cursor15512",
+    "final checkpoint hashes",
+    "B0/B1 1724 rows 123191 tokens",
+    "successful end event",
+    "RESULTS.md",
+    "privacy-safe presentation archive"
+  ],
+  "hop_deployment_ready": false,
+  "canary_passed": true,
+  "canary_steps": 3,
+  "canary_separate_process_resume": true,
+  "last_observed_utc": "2026-10-09T08:14:00.941683+00:00",
+  "next_phase": "base model validation B0 then full training",
+  "observer_pid": 1040674,
+  "observer_script": "/home/slim/choieram/model_Training/malssi_stage1_training_20261009/work/collection/completion_observer.py",
+  "observer_started": true,
+  "collector_sha256": "9e1448a70b9b04a0f44401f38fcd6e5560b2bca3c58abc10b55e0596afe639a9",
+  "collector_live_preflight": {
+    "identity": true,
+    "tokens": true,
+    "qualification": true,
+    "canary": true,
+    "training": false,
+    "validation": false,
+    "command_completion": false
+  },
+  "collector_fixture_checks_passed": 7,
+  "observer_fixture_checks_passed": 2,
+  "do_not_start_duplicate": true,
+  "next_actions": [
+    "Read status_remote.py via authorized SSH to inspect existing run.",
+    "While train process exists, observe current phase/step and do not launch another run.",
+    "On failure, preserve evidence and follow README resume/new-experiment rules.",
+    "On completion, inspect work/collection/completion_observer.log and observer-*/observer_result.json.",
+    "Fetch verified results directory RESULTS.md, summary.json, presentation_results.zip only; no raw private material.",
+    "Confirm final step1939/cursor15512/B0+B1, then mark native goal complete."
+  ],
+  "superseded_by_user_request": true,
+  "current_objective": "두 GPU를 활용해 학습과 서비스 추론 최대 입출력 토큰을 실측하고 검증된 최대 설정으로 README SFT 작업 완수",
+  "previous_run_action": "SIGINT then SIGTERM only to owned PID1040175; preserve all artifacts",
+  "do_not_resume_single_gpu_run": true
+}

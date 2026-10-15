@@ -1,0 +1,11 @@
+{
+  "attempt_index": 1,
+  "case_id": "DEV018",
+  "generation_id": "FT31_STEP100_20261009T192608Z_response_DEV018",
+  "input_sha256": "0bf30b3a72a67b000711b15d2ca1adf90e220188c7c33d63a93cb147cbb5404d",
+  "request_file": "private/requests/response_DEV018.json",
+  "request_sha256": "7c33f0aa5695bf9009ae8a8f7b10cce3d4afb2f8115fe2e877c299ff0f17df8e",
+  "run_id": "FT31_STEP100_20261009T192608Z",
+  "started_at": "2026-10-09T19:49:49.520884+00:00",
+  "task": "response"
+}
