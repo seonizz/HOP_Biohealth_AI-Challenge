@@ -52,7 +52,7 @@ export class Store {
         await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
           version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`);
-        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql']) {
+        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql']) {
           const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8');
           const checksum = digest(source);
           const applied = await client.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
@@ -144,9 +144,14 @@ export class Store {
       [id, owner, revision, reason, this.seal(context, `${owner}:patient-history:${id}:${revision}`)]);
   }
 
-  async createIntake(owner, state) {
+  async createIntake(owner, state, epoch) {
     const id = randomUUID();
     return this.transaction(async client => {
+      const browser = await client.query('SELECT conversation_epoch FROM browsers WHERE id=$1 FOR UPDATE', [owner]);
+      if (!browser.rowCount) throw notFound();
+      if (epoch !== undefined && epoch !== browser.rows[0].conversation_epoch) {
+        throw new HttpError(409, 'CONVERSATIONS_CHANGED', '대화 목록이 변경됐어요. 내 기록을 새로 확인한 뒤 시작해 주세요.');
+      }
       await client.query('INSERT INTO intakes(id,owner,revision,content,updated_at) VALUES ($1,$2,$3,$4,$5)',
         [id, owner, 0, this.seal(state, `${owner}:intake:${id}`), now()]);
       await this.writeContext(client, owner, id, 0, state, 'created');
@@ -183,9 +188,26 @@ export class Store {
     });
   }
 
-  async records(owner) {
-    const result = await this.pool.query('SELECT id,content FROM records WHERE owner=$1 ORDER BY created_at DESC,id DESC', [owner]);
+  async records(owner, client = this.pool) {
+    const result = await client.query('SELECT id,content FROM records WHERE owner=$1 ORDER BY created_at DESC,id DESC', [owner]);
     return result.rows.map(row => this.open(row.content, `${owner}:record:${row.id}`));
+  }
+
+  async history(owner) {
+    return this.transaction(async client => {
+      // Keep the two lists and creation epoch consistent with deletions and saves.
+      const browser = await client.query('SELECT conversation_epoch FROM browsers WHERE id=$1 FOR SHARE', [owner]);
+      if (!browser.rowCount) throw notFound();
+      const records = await this.records(owner, client);
+      const incomplete = await client.query(`SELECT i.id,i.content,i.updated_at FROM intakes i
+        WHERE i.owner=$1 AND NOT EXISTS (SELECT 1 FROM records r WHERE r.owner=i.owner AND r.intake_id=i.id)
+        ORDER BY i.updated_at DESC,i.id DESC`, [owner]);
+      return { records, conversation_epoch:browser.rows[0].conversation_epoch,
+        incomplete_intakes:incomplete.rows.map(row => {
+          const state = this.open(row.content, `${owner}:intake:${row.id}`);
+          return { id:row.id, title:state.chatTitle || state.name || '미완료 대화', updated_at:row.updated_at.toISOString() };
+        }) };
+    });
   }
 
   async nextRecordId() {
@@ -232,6 +254,29 @@ export class Store {
       const row = await client.query('DELETE FROM records WHERE owner=$1 AND id=$2 RETURNING intake_id', [owner, String(id)]);
       if (!row.rowCount) throw notFound();
       if (row.rows[0].intake_id) await client.query('DELETE FROM intakes WHERE owner=$1 AND id=$2', [owner, row.rows[0].intake_id]);
+      return { intake_id:row.rows[0].intake_id };
+    });
+  }
+
+  async deleteIntake(owner, id) {
+    return this.transaction(async client => {
+      await client.query('SELECT id FROM browsers WHERE id=$1 FOR UPDATE', [owner]);
+      const records = await client.query('SELECT id FROM records WHERE owner=$1 AND intake_id=$2', [owner, id]);
+      const row = await client.query('DELETE FROM intakes WHERE owner=$1 AND id=$2 RETURNING id', [owner, id]);
+      if (!row.rowCount) throw notFound();
+      return { record_ids:records.rows.map(record => record.id) };
+    });
+  }
+
+  async deleteConversations(owner) {
+    return this.transaction(async client => {
+      const browser = await client.query(`UPDATE browsers SET conversation_epoch=conversation_epoch+1
+        WHERE id=$1 RETURNING conversation_epoch`, [owner]);
+      if (!browser.rowCount) throw notFound();
+      // Also remove legacy records without an intake. Column read/bookmark state is independent.
+      await client.query('DELETE FROM records WHERE owner=$1', [owner]);
+      await client.query('DELETE FROM intakes WHERE owner=$1', [owner]);
+      return { conversation_epoch:browser.rows[0].conversation_epoch };
     });
   }
 

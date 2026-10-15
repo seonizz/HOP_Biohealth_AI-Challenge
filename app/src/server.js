@@ -114,7 +114,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         return json(res, 200, {
           schema_version:'1.0', csrf_token:browser.csrf,
           mode:'personal_demo', model_connected:Boolean(gateway),
-          records:await store.records(browser.id), column_state:await store.columnState(browser.id),
+          ...await store.history(browser.id), column_state:await store.columnState(browser.id),
           columns, categories, questions:questionCatalogOf(await store.questionSet())
         });
       }
@@ -153,14 +153,16 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         }
       }
       if (method === 'POST' && path === '/api/intakes') {
-        object(await body(req), []);
-        return json(res, 201, view(await store.createIntake(owner, createIntake(await store.questionSet()))));
+        const input = object(await body(req), ['conversation_epoch']);
+        const epoch = revisionOf(input.conversation_epoch);
+        return json(res, 201, view(await store.createIntake(owner, createIntake(await store.questionSet()), epoch)));
       }
       const intakeMatch = /^\/api\/intakes\/([^/]+)(?:\/(answers|back|context|result))?$/.exec(path);
       if (intakeMatch) {
         const [,id,action] = intakeMatch;
         if (!UUID.test(id)) throw new HttpError(404, 'NOT_FOUND', '대화를 찾을 수 없어요.');
         if (method === 'GET' && !action) return json(res, 200, view(await store.intake(owner, id)));
+        if (method === 'DELETE' && !action) return json(res, 200, { deleted:true, ...await store.deleteIntake(owner, id) });
         if (method === 'GET' && action === 'context') return json(res, 200, await store.context(owner, id));
         if (method === 'POST' && ['answers','back'].includes(action)) {
           const input = object(await body(req), action === 'back' ? ['revision'] : ['revision','question_id','text','selected','custom','skipped','follow_up']);
@@ -238,11 +240,12 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           return json(res, 200, await resultRuns.get(runKey));
         }
       }
-      if (method === 'GET' && path === '/api/records') return json(res, 200, { records:await store.records(owner) });
+      if (method === 'GET' && path === '/api/records') return json(res, 200, await store.history(owner));
+      if (method === 'DELETE' && path === '/api/conversations') return json(res, 200, { deleted:true, ...await store.deleteConversations(owner) });
       const recordMatch = /^\/api\/records\/(\d+)$/.exec(path);
       if (recordMatch) {
         if (method === 'GET') return json(res, 200, { record:await store.record(owner, recordMatch[1]) });
-        if (method === 'DELETE') { await store.deleteRecord(owner, recordMatch[1]); return json(res, 200, { deleted:true }); }
+        if (method === 'DELETE') return json(res, 200, { deleted:true, ...await store.deleteRecord(owner, recordMatch[1]) });
       }
       throw new HttpError(404, 'NOT_FOUND', '요청한 기능을 찾을 수 없어요.');
     } catch (error) {

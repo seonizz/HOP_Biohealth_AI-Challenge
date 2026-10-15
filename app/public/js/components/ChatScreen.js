@@ -19,8 +19,10 @@ const ChatScreen={
   <dialog class="leave" id="leaveDlg" aria-labelledby="leaveT">
     <img data-m="ponder" alt="">
     <h3 id="leaveT">정말 처음으로 돌아갈까요?</h3>
-    <p>처음으로 돌아가면 이 대화를 이어서 진행할 수 없어요. 입력한 내용이 서버에서 삭제되지는 않아요.</p>
+    <p>처음으로 돌아가면 이 대화를 이어서 진행할 수 없어요. 남겨 둔 대화는 「내 기록」에서 삭제할 수 있어요.</p>
     <div class="acts"><button class="btn" id="leaveStay" autofocus>계속 이야기하기</button><button class="ghost" id="leaveGo">나가기</button></div>
+    <button class="ghost" id="leaveDelete">이 대화 삭제하고 나가기</button>
+    <p id="leaveDeleteNotice" role="status" hidden></p>
   </dialog>
 </section>`;},
   mount(){
@@ -32,8 +34,9 @@ const ChatScreen={
     $("restart1").onclick=leaveConversation;
     window.addEventListener("beforeunload",e=>{if(this.started()){e.preventDefault();e.returnValue="";}});
     const d=$("leaveDlg");
-    $("leaveStay").onclick=()=>d.close();
-    d.onclick=e=>{if(e.target===d)d.close();};
+    $("leaveStay").onclick=()=>{if(!this._deleting)d.close();};
+    d.onclick=e=>{if(e.target===d&&!this._deleting)d.close();};
+    d.oncancel=e=>{if(this._deleting)e.preventDefault();};
   },
   started(){
     if($("chat").hidden||typeof S==="undefined"||!S)return false;
@@ -42,7 +45,18 @@ const ChatScreen={
   },
   leave(go){
     if(!this.started())return go();
-    $("leaveGo").onclick=()=>{$("leaveDlg").close();go();};
+    const button=$("leaveDelete"),notice=$("leaveDeleteNotice");
+    let confirmed=false;
+    button.hidden=!S?.id;button.disabled=false;button.textContent="이 대화 삭제하고 나가기";notice.hidden=true;
+    $("leaveGo").onclick=()=>{if(!this._deleting){$("leaveDlg").close();go();}};
+    button.onclick=async()=>{
+      if(this._deleting)return;
+      if(!confirmed){confirmed=true;button.textContent="삭제하고 나가기 확인";notice.textContent="이 대화와 관련 결과가 삭제돼요. 되돌릴 수 없어요.";notice.hidden=false;return;}
+      this._deleting=true;button.disabled=true;$("leaveGo").disabled=true;$("leaveStay").disabled=true;
+      try{await deleteCurrentConversation();$("leaveDlg").close();}
+      catch(error){notice.textContent=error.message;notice.hidden=false;}
+      finally{this._deleting=false;button.disabled=false;$("leaveGo").disabled=false;$("leaveStay").disabled=false;}
+    };
     $("leaveDlg").showModal();
   },
   clear(){$("log").innerHTML="";this.messages=[];this.think(false);},

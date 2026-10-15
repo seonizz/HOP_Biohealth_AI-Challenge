@@ -153,7 +153,7 @@ databaseTest('restart preserves encrypted data, startup rejects a changed key, a
   f.store = await Store.connect(databaseUrl, f.key, 30, { schema: f.schema });
   assert.deepEqual(await f.store.record(browser.id, 'demo-record'), exampleRecord());
   assert.deepEqual((await f.store.context(browser.id, intake.id)).context, buildContext(intake.state));
-  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 4);
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 5);
   await f.store.pool.query('UPDATE schema_migrations SET checksum=$1', ['tampered-checksum']);
   await assert.rejects(Store.connect(databaseUrl, f.key, 30, { schema: f.schema }), /checksum/);
 });
@@ -269,4 +269,94 @@ databaseTest('invalid or empty database questions fail instead of substituting t
 test('PostgreSQL schema names reject connection-option or identifier injection', async () => {
   await assert.rejects(Store.connect('postgresql://localhost/test', randomBytes(32), 30, { schema: 'public;drop' }), /schema name/);
   await assert.rejects(Store.connect('postgresql://localhost/test', randomBytes(32), 30, { schema: 'public -c statement_timeout=1' }), /schema name/);
+});
+
+async function assertConversationRows(store, owner, count = 0) {
+  for (const table of ['intakes', 'records', 'patient_states', 'patient_state_revisions']) {
+    assert.equal((await store.pool.query(`SELECT COUNT(*)::INTEGER AS count FROM ${table} WHERE owner=$1`, [owner])).rows[0].count, count, table);
+  }
+}
+
+databaseTest('history lists incomplete summaries and individual deletion purges all connected rows without crossing owners', async t => {
+  const { store } = await fixture(t), owner = (await store.createBrowser()).id, other = (await store.createBrowser()).id;
+  const incomplete = await store.createIntake(owner, createIntake(), 0);
+  const completed = await store.createIntake(owner, createIntake(), 0);
+  await store.saveRecord(owner, exampleRecord('complete'), completed.id);
+  await store.createIntake(other, createIntake(), 0);
+  const history = await store.history(owner);
+  assert.equal(history.conversation_epoch, 0);
+  assert.equal(history.records.length, 1);
+  assert.equal(history.incomplete_intakes.length, 1);
+  assert.deepEqual(Object.keys(history.incomplete_intakes[0]).sort(), ['id', 'title', 'updated_at']);
+  assert.equal(history.incomplete_intakes[0].id, incomplete.id);
+  await assert.rejects(store.deleteIntake(other, incomplete.id), {status:404});
+  assert.deepEqual(await store.deleteIntake(owner, completed.id), {record_ids:['complete']});
+  assert.deepEqual(await store.deleteIntake(owner, incomplete.id), {record_ids:[]});
+  await assertConversationRows(store, owner);
+  assert.equal((await store.history(other)).incomplete_intakes.length, 1);
+});
+
+databaseTest('whole-history deletion removes mixed and legacy records, keeps columns, and rejects stale creations', async t => {
+  const { store } = await fixture(t), owner = (await store.createBrowser()).id, other = (await store.createBrowser()).id;
+  const completed = await store.createIntake(owner, createIntake(), 0);
+  await store.updateIntake(owner, completed.id, 0, state => answer(state, 'name', '합성 친구'));
+  await store.createIntake(owner, createIntake(), 0);
+  await store.saveRecord(owner, exampleRecord('complete'), completed.id);
+  await store.saveRecord(owner, exampleRecord('legacy'));
+  await store.setColumnState(owner, 'article', {read:true, saved:true});
+  const foreign = await store.createIntake(other, createIntake(), 0);
+  await store.saveRecord(other, exampleRecord('foreign'), foreign.id);
+  assert.deepEqual(await store.deleteConversations(owner), {conversation_epoch:1});
+  await assertConversationRows(store, owner);
+  await assertConversationRows(store, other, 1);
+  assert.deepEqual(await store.columnState(owner), {read:['article'], saved:['article']});
+  await assert.rejects(store.createIntake(owner, createIntake(), 0), {code:'CONVERSATIONS_CHANGED'});
+  const fresh = await store.createIntake(owner, createIntake(), 1);
+  assert.equal((await store.intake(owner, fresh.id)).id, fresh.id);
+  assert.deepEqual(await store.deleteConversations(owner), {conversation_epoch:2});
+  await assertConversationRows(store, owner);
+});
+
+databaseTest('a failed whole-history deletion rolls back removed records, context, and creation epoch', async t => {
+  const { store } = await fixture(t), owner = (await store.createBrowser()).id;
+  const intake = await store.createIntake(owner, createIntake(), 0);
+  await store.saveRecord(owner, exampleRecord('complete'), intake.id);
+  await store.pool.query(`CREATE FUNCTION reject_test_delete() RETURNS trigger LANGUAGE plpgsql AS $$
+    BEGIN RAISE EXCEPTION 'synthetic deletion failure'; END $$;
+    CREATE TRIGGER reject_delete BEFORE DELETE ON intakes FOR EACH ROW EXECUTE FUNCTION reject_test_delete()`);
+  await assert.rejects(store.deleteConversations(owner), /synthetic deletion failure/);
+  await assertConversationRows(store, owner, 1);
+  assert.equal((await store.history(owner)).conversation_epoch, 0);
+  assert.deepEqual(await store.record(owner, 'complete'), exampleRecord('complete'));
+});
+
+databaseTest('concurrent creation, saving, and updates cannot recreate data after whole-history deletion', async t => {
+  const { store } = await fixture(t), owner = (await store.createBrowser()).id;
+  for (const deletionFirst of [true, false]) {
+    const epoch = (await store.history(owner)).conversation_epoch;
+    const intake = await store.createIntake(owner, createIntake(), epoch);
+    const remove = () => store.deleteConversations(owner);
+    const create = () => store.createIntake(owner, createIntake(), epoch);
+    const actions = deletionFirst ? [remove, create] : [create, remove];
+    actions.push(() => store.saveRecord(owner, exampleRecord('raced'), intake.id));
+    actions.push(() => store.updateIntake(owner, intake.id, 0, state => answer(state, 'name', '합성 친구')));
+    const outcomes = await Promise.allSettled(actions.map(action => action()));
+    assert.equal(outcomes[deletionFirst ? 0 : 1].status, 'fulfilled');
+    for (const outcome of outcomes) if (outcome.status === 'rejected') assert.ok(['NOT_FOUND', 'CONVERSATIONS_CHANGED'].includes(outcome.reason.code), outcome.reason.message);
+    await assertConversationRows(store, owner);
+  }
+});
+
+databaseTest('conversation epoch migration upgrades existing browser data without changing encrypted history', async t => {
+  const f = await fixture(t), owner = (await f.store.createBrowser()).id;
+  const intake = await f.store.createIntake(owner, createIntake(), 0);
+  await f.store.saveRecord(owner, exampleRecord('retained'), intake.id);
+  await f.store.pool.query('ALTER TABLE browsers DROP COLUMN conversation_epoch');
+  await f.store.pool.query("DELETE FROM schema_migrations WHERE version='005_conversation_epoch.sql'");
+  await f.store.close();f.store = null;
+  f.store = await Store.connect(databaseUrl, f.key, 30, {schema:f.schema});
+  assert.equal((await f.store.history(owner)).conversation_epoch, 0);
+  assert.deepEqual(await f.store.record(owner, 'retained'), exampleRecord('retained'));
+  assert.deepEqual((await f.store.context(owner, intake.id)).context, buildContext(intake.state));
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 5);
 });

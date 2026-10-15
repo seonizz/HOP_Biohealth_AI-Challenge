@@ -5,17 +5,19 @@
 | 경로 | 기능 |
 |---|---|
 | `GET /health` | 프로세스 상태, 모델 설정 유무·요청 이름, 앱 소스 해시·프롬프트 버전; 실제 모델 로딩을 보증하지 않음 |
-| `GET /api/bootstrap` | 기록, 칼럼 상태·목록·분류, 정확한 질문 목록, CSRF 토큰 |
+| `GET /api/bootstrap` | 완료 기록·미완료 대화 요약, conversation_epoch, 칼럼 상태·목록·분류, 정확한 질문 목록, CSRF 토큰 |
 | `GET /api/questions` | DB의 현재 활성 문항 카탈로그 |
-| `POST /api/intakes` | `{}`로 새 대화 생성 |
+| `POST /api/intakes` | `{conversation_epoch}`로 새 대화 생성; bootstrap 또는 최신 목록의 값을 사용 |
 | `GET /api/intakes/:id` | 현재 질문·진행률·대화 로그 |
 | `POST /api/intakes/:id/answers` | 원문 답변 저장 → 모델 상태 갱신 → 다음 질문 |
 | `POST /api/intakes/:id/back` | `{revision}`로 이전 질문 상태 복원; 첫 문항까지 반복 가능, 후속 질문에서는 본 질문 복원 |
 | `GET /api/intakes/:id/context` | `{id,revision,context}` 현재 서버 상태 |
 | `POST /api/intakes/:id/result` | `{revision}`로 실제 모델 결과 생성·저장; 완료 재시도는 기존 기록 반환 |
-| `GET /api/records` | `{records}` 최신순 기록 |
+| `GET /api/records` | `{records, incomplete_intakes, conversation_epoch}` 최신순 완료 기록 및 미완료 요약 |
 | `GET /api/records/:id` | `{record}` 상세 |
-| `DELETE /api/records/:id` | 기록과 연결된 대화/상태 이력 삭제 |
+| `DELETE /api/records/:id` | 기록과 연결된 대화/상태 이력 삭제; `{deleted, intake_id}` |
+| `DELETE /api/intakes/:id` | 완료 여부와 무관하게 대화와 결과·상태·이력 삭제; `{deleted, record_ids}` |
+| `DELETE /api/conversations` | 소유자의 완료·미완료 대화/결과 전체 삭제; `{deleted, conversation_epoch}`. 칼럼 상태 유지 |
 | `GET /api/columns` | `category=전체/우울/불안/중독/통합`, `only=unread/saved` 필터 |
 | `GET /api/columns/today?date=YYYY-MM-DD` | 호환용 오늘의 글 API; 현재 화면에서는 미사용 |
 | `GET /api/columns/random?exclude=listen` | 호환용 다른 글 뽑기 API; 현재 화면에서는 미사용 |
@@ -64,7 +66,7 @@
 
 원문 상태와 모델 메모리를 동일 트랜잭션에서 버전으로 보존합니다. 외부 모델 호출은 DB 잠금을 잡은 채 실행하지 않습니다. 늦게 도착한 모델 응답은 원래 버전이 달라졌다면 현재 상태에 덮어쓰지 않습니다. 되돌리기는 이후 답변·태그·후속 질문·로그와 그에 따른 모델 해석을 무효화합니다.
 
-세션 쿠키와 상담 보관은 분리합니다. 세션이 만료돼도 원문·결과·버전 이력을 자동 삭제하지 않습니다. `DELETE /api/records/:id`로 명시적으로 삭제한 기록만 연결된 상담 자료와 함께 제거합니다. 관리자 검증은 브라우저 세션에 의존하지 않는 로컬 `npm run export:verification`으로 수행합니다.
+세션 쿠키와 상담 보관은 분리합니다. 세션이 만료돼도 원문·결과·버전 이력을 자동 삭제하지 않습니다. 내 기록에서 완료 기록과 미완료 대화를 개별 삭제하거나 모두 삭제할 수 있습니다. 관련 상담 원문·결과·현재 상태·수정 이력은 소유자 범위 트랜잭션으로 제거하며 칼럼의 읽음·담음은 보존합니다. 쿠키 상실 또는 접근 기간 만료 후 복구/삭제 기능과 자동 보유기간 삭제는 제공하지 않습니다. 관리자 검증은 브라우저 세션에 의존하지 않는 로컬 `npm run export:verification`으로 수행합니다.
 
 ## 현재 관계 에이전트 프로토콜
 
@@ -81,3 +83,10 @@
 `result`는 `{record,revision}`을 반환합니다. `record`의 `profile,guide,log,followUps`는 현재 결과·기록 화면과 같습니다. `profile.scores={}`이며 임의 수치 평가는 없습니다. `guide.top`은 칼럼 분류용입니다. `provenance.kind=model`, 요청 모델 이름, `source_sha256`을 내부적으로 기록합니다. `/health`의 앱 해시와 대조할 수 있습니다. `runtime_model_identity_verified:false`이며 모델 alias만으로 실제 체크포인트를 확인했다는 뜻은 아닙니다.
 
 오류는 `{error:{code,message,request_id}}`입니다. 원문이나 인증 키는 포함하지 않습니다. 주요 상태는 400/422 입력 오류, 401 익명 세션 만료, 403 Origin/CSRF 거부, 404 소유하지 않은 자원, 409 버전 충돌, 429 요청 제한, 502 모델 출력 검증 실패, 503 모델 연결/인증 문제, 504 모델 응답 제한 시간입니다.
+
+## 삭제와 동시 요청
+
+- `incomplete_intakes`는 완료 기록이 없는 상담의 `{id, title, updated_at}` 요약만 반환하며 답변 원문·상태·이력을 목록에 추가하지 않습니다.
+- 전체 삭제와 새 상담 생성·결과 저장은 같은 브라우저 행을 잠급니다. 전체 삭제는 `conversation_epoch`를 증가시킵니다. 삭제 전에 시작한 생성 요청은 이전 epoch로 보내므로 삭제 뒤에 실행되면 `409 CONVERSATIONS_CHANGED`가 됩니다. 이 경우 최신 목록을 읽고 이용자가 다시 시작해야 합니다. epoch 누락·음수·비정수는 `422 INVALID_REVISION`입니다.
+- 삭제된 상담의 진행 중 답변·결과 저장은 `404 NOT_FOUND`로 끝나며 새 행을 만들지 않습니다. 완료·미완료 목록과 epoch는 삭제/저장과 일관된 범위에서 읽습니다.
+- 화면은 개별/전체 삭제를 두 단계로 확인하고 성공 응답 후에만 로컬 기록·현재 대화를 지웁니다. 삭제 실패 시 목록과 입력을 유지합니다. 목록 요청 순서와 현재 대화 토큰으로 삭제 이전의 목록·응답·결과가 다시 표시되지 않게 합니다.

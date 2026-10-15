@@ -90,7 +90,50 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "required": [
+                    "records",
+                    "incomplete_intakes",
+                    "conversation_epoch"
+                  ],
+                  "properties": {
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "incomplete_intakes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "title",
+                          "updated_at"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "conversation_epoch": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "전체 대화 삭제 시 증가하는 생성 버전. bootstrap 또는 최신 기록 목록에서 읽습니다."
+                    }
+                  }
                 }
               }
             }
@@ -188,7 +231,7 @@
             "description": "Origin/CSRF 거부"
           },
           "409": {
-            "description": "대화 버전 충돌"
+            "description": "CONVERSATIONS_CHANGED: 전체 삭제 이전의 생성 버전. 최신 목록을 읽고 다시 시작합니다."
           },
           "422": {
             "description": "입력 검증 실패"
@@ -208,7 +251,18 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "conversation_epoch"
+                ],
+                "properties": {
+                  "conversation_epoch": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "전체 대화 삭제 시 증가하는 생성 버전. bootstrap 또는 최신 기록 목록에서 읽습니다."
+                  }
+                }
               }
             }
           }
@@ -268,6 +322,84 @@
           {
             "in": "path",
             "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "대화 및 연결된 결과·상태·수정 이력 삭제",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "deleted",
+                    "record_ids"
+                  ],
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "record_ids": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          },
+          "404": {
+            "description": "해당 소유자의 대화/기록 없음"
+          }
+        },
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
             "required": true,
             "schema": {
               "type": "string"
@@ -543,7 +675,50 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "required": [
+                    "records",
+                    "incomplete_intakes",
+                    "conversation_epoch"
+                  ],
+                  "properties": {
+                    "records": {
+                      "type": "array",
+                      "items": {
+                        "type": "object"
+                      }
+                    },
+                    "incomplete_intakes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "id",
+                          "title",
+                          "updated_at"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "title": {
+                            "type": "string"
+                          },
+                          "updated_at": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        }
+                      }
+                    },
+                    "conversation_epoch": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "전체 대화 삭제 시 증가하는 생성 버전. bootstrap 또는 최신 기록 목록에서 읽습니다."
+                    }
+                  }
                 }
               }
             }
@@ -633,7 +808,23 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "required": [
+                    "deleted",
+                    "intake_id"
+                  ],
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "intake_id": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
                 }
               }
             }
@@ -938,6 +1129,77 @@
           {
             "in": "path",
             "name": "article",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/conversations": {
+      "delete": {
+        "summary": "내 완료·미완료 대화와 결과 전체 삭제; 칼럼 상태 유지",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "deleted",
+                    "conversation_epoch"
+                  ],
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "conversation_epoch": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "description": "전체 대화 삭제 시 증가하는 생성 버전. bootstrap 또는 최신 기록 목록에서 읽습니다."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "입력 오류"
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "409": {
+            "description": "대화 버전 충돌"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "502": {
+            "description": "모델 출력 검증 실패"
+          },
+          "503": {
+            "description": "모델 또는 저장소 연결 실패"
+          },
+          "504": {
+            "description": "모델 제한 시간 초과"
+          },
+          "404": {
+            "description": "해당 소유자의 대화/기록 없음"
+          }
+        },
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
             "required": true,
             "schema": {
               "type": "string"

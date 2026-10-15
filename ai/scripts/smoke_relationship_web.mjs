@@ -74,7 +74,7 @@ try {
     view=await send(`/api/intakes/${previous.intake_id}`);
   } else {
     const bootstrap=await send('/api/bootstrap');csrf=bootstrap.csrf_token;
-    view=await send('/api/intakes','POST',{});saveSession(view);
+    view=await send('/api/intakes','POST',{conversation_epoch:bootstrap.conversation_epoch});saveSession(view);
   }
   while(view.status==='active') {
     const q=view.question;

@@ -82,7 +82,7 @@ function deferred() {
 }
 
 function conversationHarness(request, { realUI = false } = {}) {
-  const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo', 'leaveStay', 'restart1']);
+  const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'rlist', 'rdetail', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo', 'leaveStay', 'leaveDelete', 'leaveDeleteNotice', 'restart1']);
   document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden><p></p></div>';
   const listeners={};
   const context = vm.createContext({
@@ -92,7 +92,7 @@ function conversationHarness(request, { realUI = false } = {}) {
     ...(!realUI ? { ChatInput: { clear() {}, render() {}, error(message) { throw new Error(message); } } } : {}),
     API: { request },
   });
-  vm.runInContext(script('core/utils.js') + (realUI ? script('core/questions.js') + script('components/ChatInput.js') : '') + script('components/ChatScreen.js') + script('core/conversation.js') + '\nglobalThis.ui = ChatScreen; globalThis.flow = { begin, leaveConversation, renderConversation, show, finish, answer, goBack };', context);
+  vm.runInContext(script('core/utils.js') + script('core/store.js') + (realUI ? script('core/questions.js') + script('components/ChatInput.js') : '') + script('components/ChatScreen.js') + script('core/conversation.js') + '\nglobalThis.ui = ChatScreen; globalThis.flow = { begin, leaveConversation, renderConversation, show, finish, answer, goBack, deleteCurrentConversation, deleteConversations, setHistory, loadRecs, loadIncomplete, getState:()=>S };', context);
   if (!realUI) context.ui.typing = (_, work) => Promise.resolve(typeof work === 'function' ? work() : work);
   return { document, context, listeners };
 }
@@ -743,5 +743,181 @@ for (const edit of [false, true]) {
     assert.equal(log.querySelectorAll('.me').length, 1);
     assert.equal(log.textContent.includes(nextPrompt.text), true);
     assert.equal(input.querySelector('.api-error'), null);
+  });
+}
+
+function historyHarness(request) {
+  const document = documentWith(['start','chat','result','records','about','columns','rlist','rdetail']);
+  const context = vm.createContext({document,M:{basic:'basic.png',hear:'hear.png'},GuideCards:{doAvoid:()=>''},StartScreen:{updRecN(){}},API:{request}});
+  vm.runInContext(script('core/utils.js')+script('core/store.js')+script('components/RecordsScreen.js')+'\nglobalThis.screen=RecordsScreen;globalThis.cache={set:setHistory,records:loadRecs,incomplete:loadIncomplete};',context);
+  return {document,context};
+}
+const historyRecord = {id:1,title:'완료 대화',date:'2026-10-15T00:00:00Z',profile:{rel:'친구',safety:false},guide:{top:'통합',script:'기록 문장',next:'다음 행동'},log:[]};
+const incompleteSummary = {id:'intake-1',title:'미완료 대화',updated_at:'2026-10-15T00:00:00Z'};
+
+test('incomplete-only history offers individually confirmed and whole-history deletion', async () => {
+  const calls=[],removal=deferred();
+  const {document,context}=historyHarness((path,options)=>{calls.push([path,options.method]);return removal.promise;});
+  context.cache.set({records:[],incomplete_intakes:[incompleteSummary],conversation_epoch:0});context.screen.draw();
+  assert.equal(document.getElementById('deleteAll').disabled,undefined);
+  assert.match(document.getElementById('rlist').textContent,/미완료 대화/);
+  assert.match(document.getElementById('rdetail').textContent,/완료된 기록은 아직 없어요/);
+  document.getElementById('rlist').querySelector('[data-intake-del="intake-1"]').click();
+  assert.equal(calls.length,0);
+  const deleting=document.getElementById('rlist').querySelector('[data-intake-del="intake-1"]').click();
+  assert.deepEqual(calls,[['/api/intakes/intake-1','DELETE']]);
+  assert.equal(context.cache.incomplete().length,1);
+  removal.resolve({deleted:true,record_ids:[]});await deleting;
+  assert.equal(context.cache.incomplete().length,0);
+  assert.equal(document.getElementById('deleteAll').disabled,true);
+});
+
+test('whole-history deletion confirms scope and blocks stale mixed-list refreshes', async () => {
+  const calls=[],removal=deferred(),refresh=deferred();
+  const {document,context}=historyHarness((path,options)=>{calls.push(path);return options?.method==='DELETE'?removal.promise:refresh.promise;});
+  const history={records:[historyRecord],incomplete_intakes:[incompleteSummary],conversation_epoch:0};
+  context.cache.set(history);context.screen.draw();
+  document.getElementById('deleteAll').click();
+  assert.equal(calls.length,0);assert.match(document.getElementById('rlist').textContent,/완료·미완료 대화와 결과를 모두 삭제/);
+  const deleting=document.getElementById('deleteAll').click();
+  const opening=context.screen.open();
+  assert.deepEqual(calls,['/api/conversations','/api/records']);
+  removal.resolve({deleted:true,conversation_epoch:1});await deleting;
+  refresh.resolve(history);await opening;
+  assert.equal(context.cache.records().length,0);assert.equal(context.cache.incomplete().length,0);
+  assert.doesNotMatch(document.getElementById('rdetail').textContent,/기록 문장/);
+});
+
+test('failed whole-history deletion retains completed and incomplete rows and selected detail', async () => {
+  const removal=deferred();
+  const {document,context}=historyHarness(()=>removal.promise);
+  context.cache.set({records:[historyRecord],incomplete_intakes:[incompleteSummary],conversation_epoch:0});context.screen.draw();
+  const detail=document.getElementById('rdetail').textContent;
+  document.getElementById('deleteAll').click();const deleting=document.getElementById('deleteAll').click();
+  removal.reject(new Error('삭제 요청 실패'));await deleting;
+  assert.equal(context.cache.records()[0],historyRecord);assert.equal(context.cache.incomplete()[0],incompleteSummary);
+  assert.equal(document.getElementById('rdetail').textContent,detail);
+  assert.match(document.getElementById('rlist').textContent,/삭제 요청 실패/);
+  assert.equal(document.getElementById('deleteAll').disabled,undefined);
+});
+
+test('chat deletion requires a second confirmation and failures preserve the current input and conversation', async () => {
+  const removal=deferred(),calls=[];
+  const {document,context}=conversationHarness((path,options)=>{calls.push([path,options.method]);return removal.promise;},{realUI:true});
+  const view=conversationView('친구');view.log=[{who:'me',text:'기존 대화'}];
+  context.flow.renderConversation(view,0);context.flow.show('chat');document.getElementById('ta').value='아직 보내지 않은 말';
+  context.flow.leaveConversation();document.getElementById('leaveDelete').click();
+  assert.equal(calls.length,0);assert.match(document.getElementById('leaveDeleteNotice').textContent,/되돌릴 수 없어요/);
+  const deleting=document.getElementById('leaveDelete').click();
+  assert.equal(document.getElementById('leaveStay').disabled,true);
+  removal.reject(new Error('잠시 연결되지 않았어요'));await deleting;
+  assert.equal(context.flow.getState(),view);assert.equal(document.getElementById('ta').value,'아직 보내지 않은 말');
+  assert.equal(document.getElementById('chat').hidden,false);assert.equal(document.getElementById('leaveDlg').open,true);
+  assert.match(document.getElementById('leaveDeleteNotice').textContent,/잠시 연결되지 않았어요/);
+  assert.equal(document.getElementById('leaveStay').disabled,false);
+});
+
+for(const action of ['answer','result']){
+  test(`successful chat deletion ignores a late ${action} response and clears local conversation content`,async()=>{
+    const pending=deferred(),removal=deferred(),shown=[];
+    const {document,context}=conversationHarness((path,options)=>options.method==='DELETE'?removal.promise:pending.promise,{realUI:true});
+    context.ResultScreen={open:(...args)=>shown.push(args)};
+    const view=conversationView('친구');view.log=[{who:'me',text:'기존 대화'}];context.flow.renderConversation(view,0);context.flow.show('chat');
+    const working=action==='answer'?context.flow.answer('보낸 말',[]):context.flow.finish();
+    context.flow.leaveConversation();document.getElementById('leaveDelete').click();const deleting=document.getElementById('leaveDelete').click();
+    removal.resolve({deleted:true,record_ids:['1']});await deleting;
+    pending.resolve(action==='answer'?{...conversationView('늦은 이름'),revision:2}:{revision:2,record:historyRecord});await working;
+    assert.equal(context.flow.getState(),null);assert.equal(context.flow.loadRecs().length,0);assert.equal(shown.length,0);
+    assert.equal(document.getElementById('start').hidden,false);assert.equal(document.getElementById('log').textContent,'');
+    assert.equal(document.getElementById('leaveDlg').open,false);
+  });
+}
+
+test('whole-history deletion invalidates a pending creation but permits an intentional new conversation with the new epoch',async()=>{
+  const initial=deferred(),calls=[];
+  const {document,context}=conversationHarness((path,options)=>{
+    calls.push([path,options.body]);
+    if(path==='/api/conversations')return Promise.resolve({deleted:true,conversation_epoch:1});
+    return calls.length===1?initial.promise:Promise.resolve({...conversationView('새 대화'),id:'new-intake'});
+  });
+  const beginning=context.flow.begin();await context.flow.deleteConversations();
+  initial.resolve(conversationView('삭제 전 대화'));await beginning;
+  assert.equal(context.flow.getState(),null);assert.equal(document.getElementById('chatTitle').textContent,'');
+  await context.flow.begin();
+  assert.equal(context.flow.getState().id,'new-intake');
+  assert.deepEqual(calls.filter(([path])=>path==='/api/intakes').map(([,body])=>body.conversation_epoch),[0,1]);
+});
+
+test('a stale creation epoch refreshes history and waits for an intentional retry',async()=>{
+  const calls=[];
+  const {document,context}=conversationHarness((path,options)=>{
+    calls.push([path,options?.body]);
+    if(path==='/api/records')return Promise.resolve({records:[],incomplete_intakes:[],conversation_epoch:2});
+    if(options.body.conversation_epoch===0)return Promise.reject(Object.assign(new Error('대화 목록이 변경됐어요.'),{code:'CONVERSATIONS_CHANGED'}));
+    return Promise.resolve(conversationView('새 대화'));
+  },{realUI:true});
+  await context.flow.begin();
+  assert.equal(calls.length,2);assert.equal(context.flow.getState(),null);
+  await document.getElementById('input').querySelector('.api-error').querySelector('button').click();
+  assert.equal(calls.at(-1)[1].conversation_epoch,2);assert.equal(context.flow.getState().chat_title,'새 대화');
+});
+
+test('deleting from chat invalidates a history request started before navigating away',async()=>{
+  const refresh=deferred();
+  const {context}=conversationHarness((path)=>path==='/api/records'?refresh.promise:Promise.resolve({deleted:true,record_ids:[]}));
+  vm.runInContext(script('components/RecordsScreen.js')+'\nglobalThis.historyScreen=RecordsScreen;',context);
+  const history={records:[],incomplete_intakes:[incompleteSummary],conversation_epoch:0};
+  context.flow.setHistory(history);
+  const opening=context.historyScreen.open();
+  context.flow.renderConversation(conversationView('친구'),0);context.flow.show('chat');
+  await context.flow.deleteCurrentConversation();
+  refresh.resolve(history);await opening;
+  assert.equal(context.flow.loadIncomplete().length,0);assert.equal(context.flow.getState(),null);
+});
+
+test('a result received while deletion waits is removed with its completed cache entry',async()=>{
+  const result=deferred(),removal=deferred();
+  const {context}=conversationHarness((path,options)=>options.method==='DELETE'?removal.promise:result.promise);
+  context.ResultScreen={open(){}};
+  context.flow.setHistory({records:[],incomplete_intakes:[incompleteSummary],conversation_epoch:0});
+  context.flow.renderConversation(conversationView('친구'),0);
+  const finishing=context.flow.finish(),deleting=context.flow.deleteCurrentConversation();
+  result.resolve({revision:2,record:historyRecord});await finishing;
+  assert.equal(context.flow.loadRecs().length,1);assert.equal(context.flow.loadIncomplete().length,0);
+  removal.resolve({deleted:true,record_ids:['1']});await deleting;
+  assert.equal(context.flow.loadRecs().length,0);assert.equal(context.flow.getState(),null);
+});
+
+for(const outcome of ['success','rejected','not-deleted']){
+  test(`whole-history deletion blocks new starts until a ${outcome} response and then restores them`,async()=>{
+    const removal=deferred(),calls=[];
+    const {document,context}=conversationHarness((path,options)=>{
+      calls.push([path,options?.body]);
+      return path==='/api/conversations'?removal.promise:Promise.resolve({...conversationView('새 대화'),id:'new-intake'});
+    },{realUI:true});
+    document.getElementById('rlist').innerHTML='<button data-go>시작</button><button id="go">시작</button><button id="crTalk">시작</button>';
+    const starts=document.querySelectorAll('[data-go],#go,#crTalk');
+    starts.forEach(button=>button.disabled=false);
+    context.flow.setHistory({records:[historyRecord],incomplete_intakes:[incompleteSummary],conversation_epoch:2});
+    const view=conversationView('이전 대화');context.flow.renderConversation(view,0);context.flow.show('chat');
+    document.getElementById('ta').value='아직 전송하지 않은 말';
+    const deleting=context.flow.deleteConversations();
+    const completion=outcome==='success'?deleting:assert.rejects(deleting,/삭제/);
+    assert.ok(starts.every(button=>button.disabled));
+    await context.flow.begin();
+    assert.equal(calls.length,1,'No creation request may race a pending whole-history deletion');
+    assert.equal(context.flow.getState(),view);
+    assert.equal(document.getElementById('ta').value,'아직 전송하지 않은 말');
+    if(outcome==='rejected')removal.reject(new Error('삭제 요청 실패'));
+    else removal.resolve({deleted:outcome==='success',conversation_epoch:3});
+    await completion;
+    assert.ok(starts.every(button=>button.disabled===false));
+    if(outcome!=='success'){
+      assert.equal(context.flow.getState(),view);assert.equal(context.flow.loadRecs()[0],historyRecord);
+      assert.equal(document.getElementById('ta').value,'아직 전송하지 않은 말');
+    }
+    await context.flow.begin();
+    assert.equal(calls.at(-1)[1].conversation_epoch,outcome==='success'?3:2);
+    assert.equal(context.flow.getState().id,'new-intake');
   });
 }

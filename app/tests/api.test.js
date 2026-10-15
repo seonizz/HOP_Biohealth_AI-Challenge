@@ -39,6 +39,7 @@ async function fixture(t, gateway = { model:'gemma4:12b', updateState:async () =
     return { bootstrap, cookie, csrf:bootstrap.csrf_token };
   };
   const request = async (session, path, method = 'GET', data, extra = {}) => {
+    if (path === '/api/intakes' && method === 'POST' && data && !Object.hasOwn(data, 'conversation_epoch')) data = { ...data, conversation_epoch:session.bootstrap?.conversation_epoch ?? 0 };
     const response = await fetch(base + path, { method, headers:{ cookie:session.cookie, 'x-csrf-token':session.csrf, 'content-type':'application/json', ...extra }, ...(data !== undefined ? { body:JSON.stringify(data) } : {}) });
     return { status:response.status, data:await response.json() };
   };
@@ -924,4 +925,93 @@ test('shared recovery exhaustion correlates both HTTP failures with one model op
   assert.equal(saved.revision,1);
   assert.equal(saved.model_pending,true);
   assert.equal(saved.log.filter(entry => entry.who === 'me').length,1);
+});
+
+async function assertDeletedOwner(f, owner) {
+  for (const table of ['intakes','records','patient_states','patient_state_revisions']) {
+    assert.equal((await f.store.pool.query(`SELECT COUNT(*)::INTEGER AS count FROM ${table} WHERE owner=$1`, [owner])).rows[0].count, 0, table);
+  }
+}
+
+test('incomplete-only and mixed history deletion is owner-scoped, CSRF protected, and preserves column state', {skip:!databaseUrl}, async t => {
+  const f = await fixture(t, null), session = await f.browser(), other = await f.browser();
+  const owner = (await f.store.browser(session.cookie.slice(15))).id;
+  assert.deepEqual(session.bootstrap.incomplete_intakes, []);
+  assert.equal(session.bootstrap.conversation_epoch, 0);
+  const initial = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  let history = (await f.request(session, '/api/records')).data;
+  assert.deepEqual(history.records, []);
+  assert.equal(history.incomplete_intakes[0].id, initial.id);
+  assert.deepEqual(Object.keys(history.incomplete_intakes[0]).sort(), ['id','title','updated_at']);
+  assert.equal((await f.request(other, `/api/intakes/${initial.id}`, 'DELETE')).status, 404);
+  for (const path of [`/api/intakes/${initial.id}`, '/api/conversations']) {
+    assert.equal((await f.request(session, path, 'DELETE', undefined, {'x-csrf-token':'invalid'})).status, 403);
+    assert.equal((await f.request(session, path, 'DELETE', undefined, {origin:'https://other.example'})).status, 403);
+  }
+  assert.equal((await f.request(session, `/api/intakes/${initial.id}`, 'DELETE')).status, 200);
+  await assertDeletedOwner(f, owner);
+  const incomplete = await f.store.createIntake(owner, createIntake(), 0);
+  const completed = await f.store.createIntake(owner, createIntake(), 0);
+  await f.store.saveRecord(owner, {id:123,date:new Date().toISOString()}, completed.id);
+  await f.store.setColumnState(owner, 'food', {read:true,saved:true});
+  const foreign = (await f.request(other, '/api/intakes', 'POST', {})).data;
+  const deleted = await f.request(session, '/api/conversations', 'DELETE');
+  assert.deepEqual(deleted, {status:200,data:{deleted:true,conversation_epoch:1}});
+  await assertDeletedOwner(f, owner);
+  for (const id of [incomplete.id, completed.id]) assert.equal((await f.request(session, `/api/intakes/${id}`)).status, 404);
+  assert.equal((await f.request(other, `/api/intakes/${foreign.id}`)).status, 200);
+  assert.deepEqual(await f.store.columnState(owner), {read:['food'],saved:['food']});
+  history = (await f.request(session, '/api/records')).data;
+  assert.deepEqual(history, {records:[],incomplete_intakes:[],conversation_epoch:1});
+  const stale = await f.request(session, '/api/intakes', 'POST', {conversation_epoch:0});
+  assert.equal(stale.status, 409);assert.equal(stale.data.error.code, 'CONVERSATIONS_CHANGED');
+  assert.equal((await f.request(session, '/api/intakes', 'POST', {conversation_epoch:1})).status, 201);
+  for (const value of [null,-1,1.2,'1']) assert.equal((await f.request(session, '/api/intakes', 'POST', {conversation_epoch:value})).status, 422);
+  const missing = await fetch(f.base+'/api/intakes', {method:'POST',headers:{cookie:session.cookie,'x-csrf-token':session.csrf,'content-type':'application/json'},body:'{}'});
+  assert.equal(missing.status, 422);
+});
+
+for (const action of ['answer', 'result']) {
+  test(`deleting an intake while ${action} work waits rejects the late save and leaves no connected rows`, {skip:!databaseUrl}, async t => {
+    let entered, release;
+    const started = new Promise(resolve => { entered = resolve; });
+    const blocked = new Promise(resolve => { release = resolve; });
+    const gateway = {
+      updateState:async () => { entered();await blocked;return update(memory); },
+      respond:async () => { entered();await blocked;return {patient_state:memory,guide,assessment:{safety:false},name_index:null}; },
+    };
+    const f = await fixture(t, gateway), session = await f.browser();
+    const owner = (await f.store.browser(session.cookie.slice(15))).id;
+    const row = await f.store.createIntake(owner, {...createIntake(),...(action==='result'?{status:'ready'}:{})}, 0);
+    const pending = f.request(session, `/api/intakes/${row.id}/${action==='result'?'result':'answers'}`, 'POST', action==='result'?{revision:0}:{revision:0,question_id:'name',text:'합성 친구'});
+    await started;
+    let deleted;
+    try { deleted = await f.request(session, action==='result'?'/api/conversations':`/api/intakes/${row.id}`, 'DELETE'); }
+    finally { release(); }
+    assert.equal(deleted.status, 200);
+    const response = await pending;
+    assert.equal(response.status, 404);assert.equal(response.data.error.code, 'NOT_FOUND');
+    await assertDeletedOwner(f, owner);
+    assert.equal((await f.request(session, '/api/records')).data.records.length, 0);
+  });
+}
+
+test('an HTTP creation paused before persistence is rejected after whole-history deletion', {skip:!databaseUrl}, async t => {
+  const f = await fixture(t, null), session = await f.browser();
+  let entered, release;
+  const started = new Promise(resolve => { entered = resolve; });
+  const blocked = new Promise(resolve => { release = resolve; });
+  const create = f.store.createIntake.bind(f.store);
+  f.store.createIntake = async (...args) => { entered();await blocked;return create(...args); };
+  const pending = f.request(session, '/api/intakes', 'POST', {conversation_epoch:0});
+  await started;
+  let deleted;
+  try { deleted = await f.request(session, '/api/conversations', 'DELETE'); }
+  finally { release(); }
+  assert.equal(deleted.status, 200);
+  const response = await pending;
+  assert.equal(response.status, 409);assert.equal(response.data.error.code, 'CONVERSATIONS_CHANGED');
+  const owner = (await f.store.browser(session.cookie.slice(15))).id;
+  await assertDeletedOwner(f, owner);
+  assert.equal((await f.request(session, '/api/intakes', 'POST', {conversation_epoch:1})).status, 201);
 });

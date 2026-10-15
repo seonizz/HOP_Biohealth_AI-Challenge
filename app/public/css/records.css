@@ -1,6 +1,8 @@
 /* 기록 (RecordsScreen) */
 #records .wrapk{flex:1;display:grid;grid-template-columns:420px minmax(0,1fr);gap:32px;margin-top:20px;min-height:0}
 .rlist{display:flex;flex-direction:column;gap:12px;overflow-y:auto;min-height:0;padding:4px}
+.record-actions{padding:4px 8px}.record-actions .note{margin:8px 0}.record-heading{font-size:16px;margin:4px 8px;color:var(--muted)}
+.rcard>div{min-width:0;overflow-wrap:anywhere}.rcard .x{flex-shrink:0;min-height:44px}
 .rcard{display:flex;gap:14px;align-items:center;text-align:left;background:var(--card);border:2px solid transparent;border-radius:22px;padding:14px 18px;color:var(--ink)}
 .rcard:hover{border-color:var(--leaf-soft)}
 .rcard[aria-current="true"]{border-color:var(--leaf)}

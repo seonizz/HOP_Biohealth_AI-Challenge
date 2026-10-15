@@ -19,7 +19,7 @@ const API={
   async bootstrap(){
     const data=await this.request("/api/bootstrap");
     this.csrf=data.csrf_token;this.data=data;
-    setRecs(data.records);
+    setHistory(data);
     COLUMNS.splice(0,COLUMNS.length,...data.columns);
     COLUMN_CATS.splice(0,COLUMN_CATS.length,...data.categories);
     return data;

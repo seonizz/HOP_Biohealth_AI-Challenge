@@ -5,13 +5,33 @@ let conversationToken=0;
 const nm=t=>String(t).replace(/\{name(?::([^}]+))?\}/g,(_,j)=>{const w=S?.name||"그분";return j?w+josa(w,j):w;});
 
 function leaveConversation(){ChatScreen.leave(()=>{conversationToken++;ChatScreen.think(false);show("start");window.scrollTo(0,0);});}
+function forgetConversation(id){
+  // A history fetch may still be pending after navigating to the chat screen.
+  if(typeof RecordsScreen!=="undefined")RecordsScreen._openSequence=(RecordsScreen._openSequence||0)+1;
+  if(id&&S?.id!==id)return;
+  conversationToken++;S=null;ChatScreen.clear();ChatInput.clear();ChatScreen.title("");
+  if($("rbody"))$("rbody").innerHTML="";
+}
+async function deleteCurrentConversation(){
+  if(!S?.id)return;
+  await deleteIntake(S.id);
+  show("start");window.scrollTo(0,0);
+}
 async function begin(){
-  const token=++conversationToken;
+  // Wait for the deletion result before a new conversation can use its epoch.
+  if(deletingConversations)return;
+  const token=++conversationToken,epoch=conversationEpoch;
   S=null;ChatScreen.clear();ChatScreen.progress(0);ChatScreen.title("");ChatScreen.section("");ChatInput.clear();show("chat");
   try{
-    const view=await ChatScreen.typing("hello",()=>token===conversationToken?API.request("/api/intakes",{method:"POST",body:{}}):null);
+    const view=await ChatScreen.typing("hello",()=>token===conversationToken?API.request("/api/intakes",{method:"POST",body:{conversation_epoch:epoch}}):null);
     if(token===conversationToken)renderConversation(view,token);
-  }catch(error){if(token===conversationToken)ChatInput.error(error.message,begin);}
+  }catch(error){
+    if(error.code==="CONVERSATIONS_CHANGED"&&token===conversationToken){
+      try{const data=await API.request("/api/records");if(token===conversationToken)setHistory(data);}
+      catch(readError){error=readError;}
+    }
+    if(token===conversationToken)ChatInput.error(error.message,begin);
+  }
 }
 
 function renderConversation(view,token){
@@ -112,7 +132,7 @@ async function finish(token=conversationToken){
     if(token!==conversationToken)return;
     ChatScreen.thinkStep(3);ChatScreen.think(false);
     S.revision=result.revision;
-    rememberRec(result.record);
+    rememberRec(result.record,id);
     ResultScreen.open(result.record.profile,result.record.guide,true,result.record.relationship_analysis);
   }catch(error){await recoverConversation(error,token,()=>finish(token),(message,retry)=>ChatScreen.thinkError(retry,message));}
 }
