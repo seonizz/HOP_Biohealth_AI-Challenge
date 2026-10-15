@@ -10,6 +10,8 @@ import { questionCatalogOf } from './question-bank.js';
 import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate,
   prepareModelAnswer, completeModelAnswer, discardModelAnswer } from './intake.js';
 import { ModelGateway } from './model.js';
+import { sourceFingerprint } from './source-identity.js';
+import { PROMPT_VERSION } from './relationship-prompts.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -43,6 +45,7 @@ const sameAnswer = (a, b) => JSON.stringify([
 const revisionConflict = () => new HttpError(409, 'REVISION_CONFLICT', '다른 요청이 먼저 반영됐어요. 현재 질문을 다시 확인해 주세요.');
 
 export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema = 'public', key, sessionDays = 30, publicOrigin, allowedOrigins = [], rateLimit = 600, gateway } = {}) {
+  const sourceIdentity=sourceFingerprint(fileURLToPath(new URL('../', import.meta.url)));
   if (!Array.isArray(allowedOrigins) || allowedOrigins.some(value => {
     try { const url = new URL(value); return url.origin !== value || !['http:', 'https:'].includes(url.protocol) || url.username || url.password; }
     catch { return true; }
@@ -75,7 +78,10 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (req.headers.origin && !origins.includes(req.headers.origin)) throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
       if (req.headers['sec-fetch-site'] === 'cross-site') throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
       const url = new URL(req.url, expectedOrigin), path = url.pathname, method = req.method;
-      if (path === '/health' && method === 'GET') return json(res, 200, { status:'ok', model_configured:Boolean(gateway), mode:'personal_demo' });
+      if (path === '/health' && method === 'GET') return json(res, 200, { status:'ok', model_configured:Boolean(gateway), mode:'personal_demo',
+        source_sha256:sourceIdentity.sha256, model_protocol:gateway?.protocol || null,
+        prompt_version:gateway?.protocol==='relationship_agent'?PROMPT_VERSION:null, model_requested:gateway?.model || null,
+        runtime_model_identity_verified:false });
       if (!path.startsWith('/api/')) {
         if (!['GET','HEAD'].includes(method)) throw new HttpError(405, 'METHOD_NOT_ALLOWED', '허용되지 않은 요청이에요.');
         let decoded;
@@ -219,7 +225,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
                 id:recordId, title:next.chatTitle || next.name || '그분', date:new Date().toISOString(),
                 profile:{ ...p, name:next.name }, guide:result.guide, log:next.log, followUps:state.fuCount,
                 ...(result.relationship_analysis ? {relationship_analysis:result.relationship_analysis} : {}),
-                provenance:{ kind:'model', model:gateway.model || 'gemma4:12b', clinically_validated:false,
+                provenance:{ kind:'model', model:gateway.model || 'unknown', clinically_validated:false,
+                  source_sha256:sourceIdentity.sha256, model_protocol:gateway.protocol || null, runtime_model_identity_verified:false,
                   ...(result.agent ? {agent:result.agent} : {}) }
               };
               next.agentRecord.context = buildContext(next);

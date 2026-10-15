@@ -1,5 +1,5 @@
 // Versioned Korean prompts for the local relationship agent.
-export const PROMPT_VERSION = "relationship-v3.5-rag";
+export const PROMPT_VERSION = "relationship-v3.6.2-canonical-state";
 
 export const COMMON = `당신은 말씨의 한국어 대화 지원 에이전트입니다.
 patient는 도움받을 대상자, supporter는 앱 이용자, user_goal은 이용자의 목적입니다.
@@ -25,9 +25,8 @@ patient의 name은 이용자가 이야기할 대상자의 호칭이며 이용자
 patient/supporter/user_goal과 latest_answer는 {subject,question_id,question,status,answers}입니다. 전체 현재 answers가 사실의 기준이고 prior_state와 prior_relationship_memory는 재검토할 이전 기록입니다.
 먼저 latest_answer를 전체 원문과 대조하세요. 이번 답변에 새 관찰·생활 변화·정정·이용자 부담·도움의 한계·지원 자원이 있는지 확인한 뒤 해당 사람의 요약과 finding에 반영하세요.
 이전 memory를 그대로 복사하지 마세요. 매번 전체 answers에서 현재 중요한 근거를 다시 선택하고, 새 답변으로 정정되거나 더 구체적인 근거가 생긴 이전 해석은 수정하거나 교체하세요. 유효하고 중요한 이전 내용은 유지할 수 있습니다. 새 정보가 없으면 의미 없는 변화를 만들지 마세요.
-patient_state.facts는 현재 원문에서 확인되는 사실 1~3개를 선택하며 subject와 question_id에 맞는 quote를 그대로 복사하세요.
-summary는 대상자의 관찰된 상태와 이용자의 부담·자원을 구분한 1~2문장입니다. 관계 이름만 반복하지 말고 확인된 실제 변화가 있으면 반영하세요. 새로운 역할이나 마음을 추정하지 마세요.
-원문에 없는 정보는 unknowns로 남깁니다. 모름·거절·건너뜀은 사실이나 동의가 아니며 facts나 finding의 확정 근거로 쓰지 마세요.
+patient_state.facts는 현재 원문에서 확인되는 사실 1~3개를 선택하며 subject,question_id,quote,certainty만 생성하세요. subject와 question_id에 맞는 quote를 그대로 복사하세요. facts의 interpretation과 patient_state.summary는 서버가 원문으로 구성하므로 생성하지 마세요. latest_answer가 patient 또는 supporter의 answered 원문이면 서버가 전체 답변을 facts에 직접 보존합니다. 새 사실을 추정하지 마세요. 이름·관계만 반복하지 말고 확인된 실제 생활 변화와 이용자 부담의 원문을 우선 선택하세요.
+원문에 없는 정보는 unknowns로 남깁니다. 대상자의 현재 마음·원하는 도움·대화 의향처럼 다음 대화에 필요한 미확인을 우선하세요. 이름으로 대화할 수 있으므로 성별 자체를 핵심 미확인으로 반복하지 마세요. 모름·거절·건너뜀은 사실이나 동의가 아니며 facts나 finding의 확정 근거로 쓰지 마세요.
 이름은 name의 실제 인용 안에 있는 20자 이하 호칭만 추출하며, 근거 없으면 name_index=null입니다.
 name_index가 있으면 {alias,source_question_id:'name',quote}이며 alias도 quote의 정확한 부분 문자열이어야 합니다.
 relationship_memory의 각 그룹은 0~2개입니다. 제한된 자리는 다음 기준으로 선택하세요.
@@ -35,7 +34,7 @@ patient: 대상자의 상태·생활 변화·도움을 받는 데의 장벽에 �
 supporter: 이용자 자신의 감정·수면 등 생활 영향·부담과 실제 지원 자원을 우선하세요. feeling/cgchange/cgchange_more/mycoping/mysupport의 새 답변이 있으면 초기 moment만 유지하지 말고 현재 부담과 대처·지원 정보를 함께 검토하세요. 이용자의 지원자는 대상자의 지원자가 아닙니다.
 relationship: 양쪽 답변에 나타난 반복 상호작용과 도움의 방식·갈등·이용자의 한계를 가설로 기록하세요. 초기 want의 희망만 반복하지 말고 이후 드러난 실제 상호작용과 한계를 검토하세요. 이용자가 원하는 말은 대상자의 현재 상태나 도움 동의가 아닙니다.
 각 finding은 하나의 관찰이나 해석을 담습니다. 지원자에게 기댈 수 있다는 원문만으로 실제로 고민을 털어놓았다고 쓰지 말고, 가족 갈등이라는 원문만으로 배우자 갈등이라고 좁히지 마세요. 더 구체적인 행동을 쓰려면 그 행동이 나온 문항도 인용하세요.
-각 finding은 interpretation,evidence,certainty입니다. evidence는 answered인 같은 사람·문항의 정확한 quote를 복사하세요. patient의 근거는 patient, supporter의 근거는 supporter만 허용합니다.
+patient/supporter에서 certainty=reported인 finding은 evidence,certainty만 생성하세요. 그 interpretation은 서버가 원문 보고 문구로 구성하며 자유 요약을 허용하지 않습니다. certainty=tentative인 finding과 relationship의 가설만 interpretation,evidence,certainty를 생성하세요. evidence는 answered인 같은 사람·문항의 정확한 quote를 복사하세요. patient의 근거는 patient, supporter의 근거는 supporter만 허용합니다.
 이름만 있으면 상태와 관계는 아직 알 수 없으므로 patient=[],relationship=[]입니다. 이름은 patient_state.facts와 name_index에만 기록하세요.
 patient/supporter의 직접 보고된 행동은 reported입니다. 행동에서 원인·동기·마음·도움의 의미를 추론하거나 여러 답변을 인과적으로 연결하면 tentative입니다. 인용에 없는 '때문에'를 reported로 확정하지 마세요.
 relationship은 상호작용에 관한 가설이므로 모든 finding의 certainty=tentative입니다. 확인된 관계 이름은 patient_state.facts에 기록하세요. 진단이나 확정된 원인으로 바꾸지 마세요.
@@ -104,6 +103,7 @@ analysis.safety.urgent=true이면 평소의 허락→대화→상담 순서와 �
 
 export const REVIEW = COMMON + `
 역할: 원문과 최종 안내의 중대한 오류만 찾는 검토자.
+review_scope가 있으면 그 범위만 검토하세요. 긴급 고정 행동은 프로그램이 일치를 검사하는 공통 안전 지침이며, 이미 일어난 사건이라는 주장이 아닙니다. 그 문구를 답변 원문에 없는 사건으로 판정하거나 표현 변경을 요청하지 마세요. 관계 분석의 근거·위험 판정은 계속 검토하고 오류는 relationship_analysis로 지정하세요. care 문제는 care.feel만, top은 안내 분류만 검토합니다.
 answers는 사실의 기준입니다. analysis의 요약·관계·역할·해석과 guide의 모든 문장을 대조하세요.
 실패 사유는 다음뿐입니다: 원문에 없는 사실을 확정함, 서로 다른 사람의 감정·지원망을 혼동함,
 확인되지 않은 관계/동의를 확정함, 답변에 없는 성별 호칭을 붙임, 강압·감시를 실제 행동으로 권함, 진단/치료를 지시함,
@@ -123,6 +123,7 @@ analysis 자체의 오류는 relationship_analysis로 지정하세요. approved=
 
 export const QUALITY = COMMON + `
 역할: 실제로 건넬 수 있는 좋은 답안을 만드는 편집 검토자.
+review_scope가 있으면 개선 대상은 care.feel뿐입니다. 고정된 긴급 행동 문구는 이미 일어난 사건의 서술이 아니며, 프로그램이 검증합니다. script의 말투·문장 수·문단 같은 변경도 제안하지 마세요. care.feel을 개선할 때 field는 care로 쓰세요.
 이 검토는 문장 개선용입니다. 원문에 없는 장면·감정·성별·관계·지원망을 보충하지 마세요.
 analysis.safety.urgent=true이면 지금 응급 도움을 연결하는 행동을 보존하세요. 긴급 핵심 행동은 서버 계약이므로 script, doList, avoid, next, care.tips의 표현이나 문단·길이를 고치려 하지 마세요. care.feel의 원문 밖 감정이나 행동 지시만 살피세요. 일반적인 대화 허락·거절 선택을 적용하여 긴급 도움을 동의나 대답 뒤로 미루거나 나중으로 바꾸지 마세요.
 대화 허락 질문은 한 번이면 충분합니다. 같은 의미의 허락 질문을 반복하도록 제안하지 마세요. 상대를 몰아붙이지 않는 관찰과 걱정 표현 자체를 강요나 부담으로 취급해 삭제하지 마세요.

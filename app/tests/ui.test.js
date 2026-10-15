@@ -102,6 +102,47 @@ const conversationView = chatTitle => ({
   section: '바람', status: 'active', question: { id: 'want', type:'text', required:true }, canGoBack: false,
 });
 
+test('service introduction keeps research and implementation details in documentation', () => {
+  const context = vm.createContext({ NavBar:() => '' });
+  vm.runInContext(script('components/AboutScreen.js') + '\nglobalThis.screen = AboutScreen;', context);
+  const html = context.screen.render();
+  assert.doesNotMatch(html, /12B|31B|NLL|Macro F1|1,661|1,462|40,415|800행|CFI|FMI|SSCS|부분학습|검증 117/);
+  assert.match(html, /질문으로 상황 이해하기/);
+  assert.match(html, /모른다고 답해도 괜찮아요/);
+  assert.match(html, /진단을 위한 검사가 아니/);
+  assert.match(html, /보관과 삭제 안내/);
+});
+
+test('start screen sets waiting expectations and opens the current storage limitations', () => {
+  const document = documentWith(['page']);
+  let begun = false, opened = false, scrolled = false;
+  const context = vm.createContext({ document, NavBar:() => '', loadRecs:() => [], begin:() => { begun = true; } });
+  vm.runInContext(script('core/utils.js') + script('components/StartScreen.js') + script('components/AboutScreen.js') + '\nglobalThis.start = StartScreen;globalThis.about = AboutScreen;', context);
+  const html = context.start.render();
+  assert.doesNotMatch(html, /10\s*[~–-]\s*15|12B|31B/);
+  assert.match(html, /전체 소요 시간은 답변과 서버 상황에 따라 달라/);
+  document.getElementById('page').innerHTML = html + context.about.render();
+  const policy = document.getElementById('data-policy');
+  policy.scrollIntoView = () => { scrolled = true; };
+  context.about.open = () => { opened = true; };
+  context.start.mount();
+  document.getElementById('dataPolicy').click();
+  assert.equal(opened, true); assert.equal(policy.open, true); assert.equal(scrolled, true);
+  for (const limitation of ['AI 모델로 전송', '저장 내용은 자동으로 삭제되지 않', '진행 중이거나 중단한 대화', '기존 기록을 열거나 삭제할 수 없']) assert.ok(policy.textContent.includes(limitation), limitation);
+  assert.equal(begun, false);
+  document.getElementById('go').click(); assert.equal(begun, true);
+});
+
+test('record storage notice distinguishes access expiry from server deletion', () => {
+  const context = vm.createContext({ NavBar:() => '' });
+  vm.runInContext(script('components/RecordsScreen.js') + '\nglobalThis.screen = RecordsScreen;', context);
+  const html = context.screen.render();
+  assert.match(html, /완료 기록을 삭제하면 관련 대화도 함께 삭제/);
+  assert.match(html, /쿠키를 지우거나 접근 기간이 끝나면 기존 기록을 열거나 삭제할 수 없/);
+  assert.match(html, /서버에 저장된 내용은 자동으로 삭제되지 않/);
+  assert.doesNotMatch(html, /상태 이력/);
+});
+
 test('server chat title is rendered literally and absent titles clear the previous name', () => {
   const { document, context } = conversationHarness(() => Promise.resolve());
   const label = '<img src=x onerror="alert(1)"> & 친구';
@@ -372,13 +413,15 @@ for (const kind of ['text', 'one', 'one-own', 'multi', 'multi-own', 'follow-up',
     assert.ok(input.querySelectorAll('input,textarea').every(element=>element.value===''), 'submitted text clears before the model response');
     assert.equal(bubble.children.length, 0, 'user text is never interpreted as HTML');
     assert.ok(log.querySelector('.dots'));
-    assert.equal(log.querySelector('[role="status"]').getAttribute('aria-label'), '답변을 기다리고 있어요');
+    assert.equal(log.querySelector('[role="status"]').getAttribute('aria-label'), 'AI 응답을 기다리고 있어요');
+    assert.match(log.querySelector('[role="status"]').textContent, /AI 응답을 기다리고 있어요. 대기가 길어질 수 있어요/);
     assert.equal(log.textContent.includes(nextPrompt.text), false);
     assert.equal(input.dataset.busy, 'true');
     assert.ok(input.querySelectorAll('button,input,textarea').every(element => element.disabled));
     response.resolve({ ...view, revision:3, log:[prompt, { who:'me', text:calls[0][1].text, fu:kind === 'follow-up' }, nextPrompt], question:{ id:'rel', type:'one', opts:['친구'], required:true } });
     await settleUI();
     assert.equal(log.querySelector('.dots'), null);
+    assert.equal(log.querySelector('[role="status"]'), null);
     assert.equal(log.querySelectorAll('.me').length, 1);
     assert.equal(log.querySelector('.me'), bubble, 'the confirmed bubble is retained');
     assert.equal(log.textContent.includes(nextPrompt.text), true);

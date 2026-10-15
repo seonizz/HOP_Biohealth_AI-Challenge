@@ -1,5 +1,5 @@
 import { HttpError } from './errors.js';
-import { contextGoal } from './agent-state.js';
+import { contextGoal, validatePatientState } from './agent-state.js';
 import { modelResponseFormat, riskEvidenceQuotes } from './model-schema.js';
 import { retrieveSources, retrievedContext, citedSources, citationsRetrieved } from './relationship-retrieval.js';
 import { STATE, ANALYZE, PLAN, WRITE, REVIEW, QUALITY, PROMPT_VERSION } from './relationship-prompts.js';
@@ -37,6 +37,14 @@ export const relationshipMemorySchema = object({
 });
 relationshipMemorySchema.properties.relationship.items=structuredClone(finding);
 relationshipMemorySchema.properties.relationship.items.properties.certainty.enum=['tentative'];
+export const relationshipMemoryDraftSchema=structuredClone(relationshipMemorySchema);
+for (const subject of ['patient','supporter']) {
+  const reference=structuredClone(evidence);reference.properties.subject.enum=[subject];
+  relationshipMemoryDraftSchema.properties[subject].items={anyOf:[
+    object({evidence:array(structuredClone(reference),3,1),certainty:{type:'string',enum:['reported']}}),
+    object({interpretation:string(500),evidence:array(structuredClone(reference),3,1),certainty:{type:'string',enum:['tentative']}}),
+  ]};
+}
 const analysisReviewSchema = structuredClone(reviewSchema);
 analysisReviewSchema.properties.issues.items.properties.field.enum=['relationship_analysis'];
 const qualitySchema = object({ improvements:array(object({
@@ -50,7 +58,22 @@ const invalid = reason => {
 };
 
 // Runtime validation remains necessary even when a runner accepts JSON Schema.
+function equalJSON(a,b) {
+  if (Object.is(a,b)) return true;
+  if (!a||!b||typeof a!=='object'||typeof b!=='object'||Array.isArray(a)!==Array.isArray(b)) return false;
+  const keys=Object.keys(a);
+  return keys.length===Object.keys(b).length&&keys.every(key=>Object.hasOwn(b,key)&&equalJSON(a[key],b[key]));
+}
+
 export function validateSchema(value, schema, path='output') {
+  if (schema.anyOf) {
+    for (const variant of schema.anyOf) {
+      try { return validateSchema(value,variant,path); }
+      catch (error) { if (!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE') throw error; }
+    }
+    invalid('agent_schema');
+  }
+  if (Object.hasOwn(schema,'const')&&!equalJSON(value,schema.const)) invalid('agent_schema');
   if (schema.type==='object') {
     if (!value || typeof value!=='object' || Array.isArray(value)) invalid('agent_schema');
     const keys=Object.keys(schema.properties);
@@ -62,7 +85,8 @@ export function validateSchema(value, schema, path='output') {
   } else if (schema.type==='string') {
     if (typeof value!=='string' || !value.trim() || value.length>schema.maxLength) invalid('agent_schema');
   } else if (schema.type==='boolean' && typeof value!=='boolean') invalid('agent_schema');
-  if (schema.enum && !schema.enum.includes(value)) invalid('agent_schema');
+  else if (schema.type==='null' && value!==null) invalid('agent_schema');
+  if (schema.enum && !schema.enum.some(candidate=>equalJSON(value,candidate))) invalid('agent_schema');
   return value;
 }
 
@@ -124,6 +148,7 @@ export function groundedEvidenceSchema(schema,context) {
     }
     for (const [key,child] of Object.entries(node.properties||{})) visit(child,[...path,key]);
     if (node.items) visit(node.items,[...path,'items']);
+    for (const child of node.anyOf||[]) visit(child,path);
   };
   visit(result);
   return result;
@@ -244,15 +269,76 @@ export function validateRelationshipMemory(value,context) {
   return structuredClone(value);
 }
 
+function reportedInterpretation(subject,quotes,certainty='reported',maxLength=500) {
+  const target=subject==='patient'?'대상자에 관해':'자신의 상황에 관해';
+  const report=certainty==='unknown'?'미확인으로 남긴':'보고한';
+  const introduction='이용자가 '+target+' '+report+' 답변 원문';
+  const literal=introduction+':\n'+quotes.map(quote=>'“'+quote+'”').join('\n');
+  return literal.length<=maxLength?literal:introduction+'은 근거에 보존했어요.';
+}
+
+export function canonicalPatientState(value,context) {
+  const state=validatePatientState(value,context);
+  state.facts=state.facts.map(fact=>({...fact,interpretation:reportedInterpretation(fact.subject,[fact.quote],fact.certainty,2000)}));
+  const summary=state.facts.map(fact=>fact.interpretation).join('\n');
+  state.summary=!summary?'대상자와 이용자의 상황은 아직 확인되지 않았어요.':summary.length<=4000?summary
+    :'대상자와 이용자에 관한 답변 원문은 근거에 보존했어요. 미확인 항목은 확정된 관찰이 아니에요.';
+  return validatePatientState(state,context);
+}
+
+export function canonicalRelationshipMemory(value,context) {
+  validateSchema(value,relationshipMemorySchema);
+  const memory=structuredClone(value);
+  for (const subject of ['patient','supporter']) for (const item of memory[subject]) if (item.certainty==='reported') {
+    item.interpretation=reportedInterpretation(subject,item.evidence.map(ref=>ref.quote));
+  }
+  return validateRelationshipMemory(memory,context);
+}
+
+export function canonicalRelationshipState(payload,context,schema=relationshipStateRequest(context,null).schema) {
+  validateSchema(payload,schema);
+  const latest=context.latest_answer;
+  const latestField=['patient','supporter'].includes(latest?.subject)?sourceField(context,latest):null;
+  // Preserve the complete newest answer on the server. Asking the model to select
+  // it again caused repeated failures and can lose denials or follow-up context.
+  // All model-selected references still passed the request schema above.
+  const latestQuotes=latestField?.status==='answered'?sourceTexts(latestField).flatMap(text=>{
+    const parts=[];
+    for (let start=0;start<text.length;) {
+      let end=Math.min(start+10000,text.length);
+      // Selected labels plus a valid 10k custom answer can exceed one quote.
+      // Preserve exact contiguous source segments without splitting a code point.
+      if(end<text.length&&/[\uD800-\uDBFF]/u.test(text[end-1]))end--;
+      const part=text.slice(start,end);if(part.trim())parts.push(part);
+      start=end;
+    }
+    return parts;
+  }):[];
+  const selected=latestQuotes.length
+    ? payload.patient_state.facts.filter(fact=>fact.subject!==latest.subject||fact.question_id!==latest.question_id)
+    : payload.patient_state.facts;
+  const retained=[...selected,...latestQuotes.map(quote=>({subject:latest.subject,
+    question_id:latest.question_id,quote,certainty:'reported'}))];
+  const facts=retained.map(fact=>({...fact,
+    interpretation:reportedInterpretation(fact.subject,[fact.quote],fact.certainty,2000)}));
+  const patient_state=canonicalPatientState({summary:'원문 근거를 확인했어요.',facts,
+    unknowns:payload.patient_state.unknowns,user_goal:contextGoal(context)},context);
+  const internal=structuredClone(payload.relationship_memory);
+  for (const subject of ['patient','supporter']) for (const item of internal[subject]) if (item.certainty==='reported') {
+    item.interpretation=reportedInterpretation(subject,item.evidence.map(ref=>ref.quote));
+  }
+  return {patient_state,name_index:payload.name_index,relationship_memory:canonicalRelationshipMemory(internal,context)};
+}
+
 export function currentRelationshipMemory(context) {
-  try { return validateRelationshipMemory(context.relationship_state,context); } catch { return null; }
+  try { return canonicalRelationshipMemory(context.relationship_state,context); } catch { return null; }
 }
 
 function reviewedRelationshipMemory(analysis,context) {
   const resources=[...analysis.relationship.strengths,...analysis.relationship.boundaries];
   const substantive=item=>item.evidence.some(ref=>ref.question_id!=='name');
   const findings=subject=>resources.filter(item=>substantive(item)&&item.evidence.every(ref=>ref.subject===subject)).slice(0,2);
-  return validateRelationshipMemory({patient:findings('patient'),supporter:findings('supporter'),
+  return canonicalRelationshipMemory({patient:findings('patient'),supporter:findings('supporter'),
     relationship:analysis.relationship.dynamics.filter(substantive).slice(0,2).map(item=>({...item,certainty:'tentative'})),
     unknowns:analysis.unknowns},context);
 }
@@ -295,6 +381,7 @@ export function urgentGuideActions(name) {
 }
 
 export async function runRelationshipAgent(gateway,context,memory,name,operation) {
+  memory=canonicalPatientState(memory,context);
   const data=agentContext(context);
   const stages=[], retrievalTrace=[];
   const generate=async (stage,prompt,payload,schema,tokens,validate)=>{
@@ -340,6 +427,16 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     }
     return schema;
   };
+  const currentReviewRequest=quality=>{
+    const schema=structuredClone(quality?qualitySchema:reviewSchema);
+    if (!analysis.safety.urgent) return {schema,metadata:{}};
+    schema.properties[quality?'improvements':'issues'].items.properties.field.enum=quality
+      ?['care']:['relationship_analysis','care','top'];
+    return {schema,metadata:{review_scope:{
+      guide_fields:quality?['care.feel']:['care.feel','top'],include_analysis:!quality,
+      fixed_action_fields:['script','doList','avoid','next','care.tips'],fixed_action_version:'immediate-help-v1',
+    }}};
+  };
   const validateDraft = draft => {
     validateSchema(draft,guideSchema);
     if (draft.assessment.safety!==analysis.safety.urgent) invalid('agent_safety_mismatch');
@@ -355,16 +452,31 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     if(treatmentGoal&&!analysis.safety.urgent&&!/상담|진료|전문가|의사|치료사/u.test(draft.guide.script))invalid('agent_goal_missing');
     return draft;
   };
+  const reviewGuide=async (stage,draft)=>{
+    const request=currentReviewRequest(false);
+    return generate(stage,REVIEW,{answers:data,analysis,guide:draft.guide,...request.metadata},request.schema,900,value=>{
+      validateSchema(value,request.schema);
+      return validateReview(value);
+    });
+  };
   const composeGuide=async suffix=>{
     const plan=await generate('communication_plan'+suffix,PLAN,{answers:data,analysis},groundedEvidenceSchema(planSchema,context),1200,v=>validatePlan(v,context));
     const writerData={answers:data,analysis,plan};
     let draft=await generate('guide_write'+suffix,WRITE,writerData,currentGuideSchema(),3600,validateDraft);
-    const quality=await generate('guide_quality'+suffix,QUALITY,{...writerData,guide:draft.guide},qualitySchema,1100,v=>validateSchema(v,qualitySchema));
+    const qualityRequest=currentReviewRequest(true);
+    const quality=await generate('guide_quality'+suffix,QUALITY,{...writerData,guide:draft.guide,...qualityRequest.metadata},
+      qualityRequest.schema,1100,value=>validateSchema(value,qualityRequest.schema));
     if (quality.improvements.length) {
+      const refinementSchema=currentGuideSchema();
+      if (analysis.safety.urgent) refinementSchema.properties.guide.properties.top.enum=[draft.guide.top];
       draft=await generate('guide_refine'+suffix,WRITE+'\n품질 검토의 제안을 적용하되 사실·관계·목적·안전 판단은 원문을 유지하세요.',
-        {...writerData,draft:draft.guide,quality},currentGuideSchema(),3600,validateDraft);
+        {...writerData,draft:draft.guide,quality},refinementSchema,3600,value=>{
+          validateDraft(value);
+          validateSchema(value.guide.top,refinementSchema.properties.guide.properties.top);
+          return value;
+        });
     }
-    const review=await generate('guide_review'+suffix,REVIEW,{answers:data,analysis,guide:draft.guide},reviewSchema,900,validateReview);
+    const review=await reviewGuide('guide_review'+suffix,draft);
     return {writerData,draft,review};
   };
   let phaseSuffix='';
@@ -382,7 +494,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     const suffix=(guideRepairs===1?'':'_2')+phaseSuffix;
     draft=await generate('guide_repair'+suffix,WRITE+'\n검토에서 지적한 중대한 문제를 바로잡고 전체 JSON을 다시 작성하세요.',
       {...writerData,draft:draft.guide,review},currentGuideSchema(),3600,validateDraft);
-    review=await generate('guide_review_after_repair'+suffix,REVIEW,{answers:data,analysis,guide:draft.guide},reviewSchema,900,validateReview);
+    review=await reviewGuide('guide_review_after_repair'+suffix,draft);
   }
   return {payload:{...draft,patient_state:memory,name_index:name},relationship_analysis:analysis,
     relationship_memory:reviewedRelationshipMemory(analysis,context),
@@ -392,27 +504,33 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
 }
 
 export function relationshipStateRequest(context,memory,final=false) {
+  if (memory) {
+    try { memory=canonicalPatientState(memory,context); } catch { memory=null; }
+  }
   const retrieval=retrieveSources(context,{stage:'state',required:citedSources({memory,relationship:currentRelationshipMemory(context)})});
   const data={...agentContext(context),prior_state:memory,final,retrieval};
   data.latest_answer=[...data.patient,...data.supporter,...data.user_goal].find(row=>
     row.question_id===context.latest_answer?.question_id&&row.subject===context.latest_answer?.subject)||null;
-  const schema=modelResponseFormat({...retrievedContext(context,retrieval),question_candidates:[]},false).json_schema.schema;
+  const scoped=retrievedContext(context,retrieval);
+  const schema=modelResponseFormat({...scoped,question_candidates:[]},false).json_schema.schema;
   const state=schema.properties.patient_state;
-  delete state.properties.user_goal;state.required=state.required.filter(key=>key!=='user_goal');
+  for (const key of ['summary','user_goal']) delete state.properties[key];
+  state.required=state.required.filter(key=>!['summary','user_goal'].includes(key));
+  for (const variant of state.properties.facts.items.anyOf||[]) {
+    delete variant.properties.interpretation;
+    variant.required=variant.required.filter(key=>key!=='interpretation');
+  }
   state.properties.facts.maxItems=3;state.properties.unknowns.maxItems=4;
-  const internal=structuredClone(relationshipMemorySchema);
+  const internal=structuredClone(relationshipMemoryDraftSchema);
   let prompt=STATE;
   for (const subject of ['patient','supporter']) {
-    internal.properties[subject].items=structuredClone(finding);
-    internal.properties[subject].items.properties.evidence.items=structuredClone(evidence);
-    internal.properties[subject].items.properties.evidence.items.properties.subject.enum=[subject];
-    const available=Object.values(context[subject]?.fields||{}).some(field=>field.status==='answered'&&field.id!=='name'&&sourceTexts(field).length);
+    const available=Object.values(scoped[subject]?.fields||{}).some(field=>field.status==='answered'&&field.id!=='name'&&sourceTexts(field).length);
     if (!available) {
       internal.properties[subject].maxItems=0;
       prompt+='\n'+subject+'의 분석에 사용할 answered 원문이 없으므로 relationship_memory.'+subject+'=[]입니다. user_goal의 원문을 옮겨 넣지 마세요.';
     }
   }
-  return {data,retrieval,schema:groundedEvidenceSchema(object({patient_state:state,name_index:schema.properties.name_index,relationship_memory:internal}),retrievedContext(context,retrieval)),prompt};
+  return {data,retrieval,schema:groundedEvidenceSchema(object({patient_state:state,name_index:schema.properties.name_index,relationship_memory:internal}),scoped),prompt};
 }
 
 export function assertRetrievedEvidence(value,retrieval) {

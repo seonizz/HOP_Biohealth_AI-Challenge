@@ -16,4 +16,4 @@
 | 대회 요구·제출 확인사항 | [대회 안내](competition/README.md) |
 | 슬라이드별 검토 | [발표 주장·PPT 검토](competition/03_발표주장과_PPT검토.md) |
 
-과거 설명과 연구 근거는 [archive](../archive/README.md), 문서 이동·검증 이력은 [organization](organization/README.md)에 있습니다. 저장된 실행 결과의 날짜를 현재 서비스 가동 확인일로 바꾸지 않습니다.
+과거 archive 원문 일부는 현재 체크아웃에 없습니다. 문서 이동·검증 이력은 [organization](organization/README.md)에 있습니다. 저장된 실행 결과의 날짜를 현재 서비스 가동 확인일로 바꾸지 않습니다.

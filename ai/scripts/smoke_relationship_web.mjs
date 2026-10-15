@@ -3,6 +3,9 @@ import { readFileSync,writeFileSync,mkdirSync,existsSync } from 'node:fs';
 import { request } from 'node:http';
 import { resolve } from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
+import { pathToFileURL } from 'node:url';
+import { sourceFingerprint } from '../../app/src/source-identity.js';
+import { assertWebSessionIdentity } from './evaluation_evidence.mjs';
 const root=resolve(import.meta.dirname,'..');
 const args=process.argv.slice(2);
 const runIndex=args.indexOf('--run-id');
@@ -11,17 +14,19 @@ if(runIndex>=0&&(!runId||!/^[a-z0-9_-]{1,40}$/.test(runId)))throw new Error('inv
 const options=args.filter((_,index)=>runIndex<0||(index!==runIndex&&index!==runIndex+1));
 if(options.some(arg=>arg!=='--resume'))throw new Error('unknown_option');
 const suffix=runId?'-'+runId:'';
-const {PROMPT_VERSION}=await import('../local_api/backend_patch/src/relationship-prompts.js');
+const backend=process.env.MALSSI_BACKEND_PATH||resolve(root,'../app');
+const {PROMPT_VERSION}=await import(pathToFileURL(resolve(backend,'src/relationship-prompts.js')));
+const sourceIdentity=sourceFingerprint(backend);
 const env=Object.fromEntries(readFileSync(resolve(root,'../app/.env'),'utf8').split(/\r?\n/).filter(l=>l.includes('=')).map(l=>{const i=l.indexOf('=');return[l.slice(0,i),l.slice(i+1)];}));
 const fixture=JSON.parse(readFileSync(resolve(root,'local_api/agent_data/mother_child.json'),'utf8'));
 const outputs=resolve(root,'outputs/relationship_agent');mkdirSync(outputs,{recursive:true});
 const sessionPath=resolve(root,'local_api/runtime/relationship-smoke-session'+suffix+'.json');
 if(runId&&existsSync(sessionPath)&&!options.includes('--resume'))throw new Error('test_run_exists_use_resume');
-let cookie='',csrf='';
+let cookie='',csrf='',sessionIdentity;
 const timings=[];
 function saveSession(view) {
   writeFileSync(sessionPath,JSON.stringify({kind:'synthetic_relationship_web_smoke',origin:env.PUBLIC_ORIGIN,
-    cookie,csrf,intake_id:view.id,turns:timings})+'\n',{mode:0o600});
+    cookie,csrf,intake_id:view.id,turns:timings,identity:sessionIdentity})+'\n',{mode:0o600});
 }
 function send(path,method='GET',data) {
   return new Promise((resolve,reject)=>{
@@ -45,10 +50,15 @@ customs.help='담임 선생님과 한 번 이야기한 적이 있어요. 그 밖
 customs.mysupport='가족 중에서는 여동생에게 기댈 수 있어요.';
 let view;
 try {
+  const health=await send('/health');
+  if(!env.MODEL_NAME||health.model_requested!==env.MODEL_NAME)throw new Error('model_identity_mismatch');
+  if(health.model_protocol!=='relationship_agent'||health.source_sha256!==sourceIdentity.sha256||health.prompt_version!==PROMPT_VERSION)throw new Error('application_source_mismatch');
+  sessionIdentity=Object.fromEntries(['source_sha256','prompt_version','model_requested','model_protocol'].map(key=>[key,health[key]]));
   if(options.includes('--resume')) {
     const previous=JSON.parse(readFileSync(sessionPath,'utf8'));
     if(previous.kind!=='synthetic_relationship_web_smoke'||previous.origin!==env.PUBLIC_ORIGIN||
       !/^[a-f0-9-]{36}$/.test(previous.intake_id))throw new Error('invalid_test_session');
+    assertWebSessionIdentity(previous.identity,sessionIdentity);
     cookie=previous.cookie;csrf=previous.csrf;timings.push(...previous.turns);
     view=await send(`/api/intakes/${previous.intake_id}`);
   } else {
@@ -81,7 +91,7 @@ try {
   }
   const started=performance.now();const value=await send(`/api/intakes/${view.id}/result`,'POST',{revision:view.revision});
   const record=value.record;
-  if(record.provenance.model!=='gemma4:12b'||!record.provenance.agent?.reviewed||
+  if(record.provenance.model!==env.MODEL_NAME||record.provenance.model_protocol!=='relationship_agent'||record.provenance.source_sha256!==sourceIdentity.sha256||!record.provenance.agent?.reviewed||
     !record.provenance.agent?.quality_reviewed||record.provenance.agent?.retrieval?.method!=='conversation_lexical_v1'||!record.relationship_analysis||!record.context.relationship_state)throw new Error('missing_agent_result');
   if(record.provenance.agent.prompt_version!==PROMPT_VERSION)throw new Error('unexpected_prompt_version');
   if(!record.relationship_analysis.observations)throw new Error('missing_original_observations');

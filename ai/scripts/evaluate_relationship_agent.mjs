@@ -1,19 +1,30 @@
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { request } from 'node:http';
+import { modelConfig, evaluationIdentity, attemptMetrics } from './evaluation_evidence.mjs';
 
 const root=resolve(import.meta.dirname,'..');
 const backend=process.env.MALSSI_BACKEND_PATH || resolve(root,'../app');
 const { ModelGateway }=await import(pathToFileURL(resolve(backend,'src/model.js')));
-const source=JSON.parse(readFileSync(resolve(root,'local_api/runtime/config.json'),'utf8'));
-const questionRows=JSON.parse(readFileSync(resolve(root,'local_api/agent_data/questions.json'),'utf8'));
-const args=process.argv.slice(2),stateOnly=args.includes('--state-only'),incremental=args.includes('--incremental'),webContext=args.includes('--web-context');
-if(args.some(arg=>arg.startsWith('--')&&!['--state-only','--incremental','--web-context'].includes(arg)))throw new Error('unknown_option');
+const { PROMPT_VERSION }=await import(pathToFileURL(resolve(backend,'src/relationship-prompts.js')));
+const legacyPath=resolve(root,'local_api/runtime/config.json');
+const source=!process.env.MODEL_BASE_URL&&existsSync(legacyPath)?JSON.parse(readFileSync(legacyPath,'utf8')):{};
+const questionsBytes=readFileSync(resolve(root,'local_api/agent_data/questions.json'));
+const questionRows=JSON.parse(questionsBytes);
+const args=process.argv.slice(2),stateOnly=args.includes('--state-only'),incremental=args.includes('--incremental'),webContext=args.includes('--web-context'),checkOnly=args.includes('--check-only');
+if(args.some(arg=>arg.startsWith('--')&&!['--state-only','--incremental','--web-context','--check-only'].includes(arg)))throw new Error('unknown_option');
+if(args.filter(arg=>!arg.startsWith('--')).length>1)throw new Error('one_fixture_required');
 if(incremental&&!stateOnly)throw new Error('incremental_requires_state_only');
-const fixture=JSON.parse(readFileSync(args.find(arg=>!arg.startsWith('--'))||resolve(root,'local_api/agent_data/mother_child.json'),'utf8'));
+const fixtureBytes=readFileSync(args.find(arg=>!arg.startsWith('--'))||resolve(root,'local_api/agent_data/mother_child.json'));
+const fixture=JSON.parse(fixtureBytes);
 if(!/^[a-z0-9_]{1,80}$/.test(fixture.case_id))throw new Error('invalid_case_id');
-if(source.ollama_url!=='http://127.0.0.1:11434')throw new Error('expected_verified_local_model');
+if(fixture.synthetic!==true)throw new Error('only_synthetic_fixtures_allowed');
+const config=modelConfig(process.env,source);
+const identify=context=>evaluationIdentity({backend,fixtureBytes,questionsBytes,promptVersion:PROMPT_VERSION,config,context,
+  contextSource:webContext?'saved_web_context':'synthetic_fixture',
+  checkpointSha256:process.env.MODEL_CHECKPOINT_SHA256||null});
 const field=(id,text,question,status='answered')=>({id,status,question,source:'app_user_report',text,rawText:text,custom:''});
 const context={schema_version:'1.0',patient:{alias:fixture.answers.name||'그분',fields:{}},supporter:{role:'informant',fields:{}},
   user_goal:{},answered_count:Object.keys(fixture.answers).length,question_candidates:[],name_index:null};
@@ -35,6 +46,13 @@ for(const row of questionRows) {
 const activeRows=questionRows.filter(row=>fixture.answers[row.id]!==undefined);
 const latest=activeRows.at(-1);
 context.latest_answer=latest?{subject:latest.subject,question_id:latest.id}:null;
+if(checkOnly) {
+  const identity=identify(webContext?null:context);
+  console.log(JSON.stringify({status:'configuration_checked',case_id:fixture.case_id,mode:stateOnly?'state':'final',
+    identity,model_configured:Boolean(config.baseUrl&&config.model&&config.apiKey),model_called:false},null,2));
+  process.exit(0);
+}
+if(!config.baseUrl||!config.model||!config.apiKey)throw new Error('set_MODEL_BASE_URL_MODEL_NAME_MODEL_API_KEY');
 if(webContext) {
   const session=JSON.parse(readFileSync(resolve(root,'local_api/runtime/relationship-smoke-session.json'),'utf8'));
   if(session.kind!=='synthetic_relationship_web_smoke'||!/^[a-f0-9-]{36}$/.test(session.intake_id)||!fixture.synthetic)throw new Error('invalid_test_session');
@@ -48,13 +66,18 @@ if(webContext) {
   });
   Object.assign(context,saved);
 }
+const identity=identify(context);
 const reportId=fixture.case_id+(webContext?'-web':'')+(incremental?'-incremental-state':stateOnly?'-state':'');
 const trace=[];const stageOutputs=[];
-const gateway=new ModelGateway({baseUrl:source.ollama_url+'/v1',apiKey:source.api_key,
-  model:'gemma4:12b',protocol:'relationship_agent',timeoutMs:600000,diagnosticLogger:entry=>{
+const gateway=new ModelGateway({...config,diagnosticLogger:entry=>{
     trace.push(entry); console.log(JSON.stringify({stage:entry.generation,attempt:entry.attempt,duration_ms:entry.duration_ms,reason:entry.reason}));
   }});
-const outputDir=resolve(root,'outputs/relationship_agent');mkdirSync(outputDir,{recursive:true});
+const outputDir=resolve(process.env.MALSSI_EVALUATION_DIR||resolve(root,'local_api/runtime/evaluations'));
+mkdirSync(outputDir,{recursive:true,mode:0o700});
+const runId=new Date().toISOString().replace(/[:.]/g,'-')+'-'+randomUUID();
+const target=resolve(outputDir,reportId+'-'+runId+'.json');
+const baseReport={run_id:runId,case_id:fixture.case_id,mode:stateOnly?'state':'final',incremental,web_context:webContext,
+  synthetic:true,model:config.model,identity,measured_at:new Date().toISOString(),human_review:'pending'};
 const complete=gateway.agentComplete.bind(gateway);
 gateway.agentComplete=async(...args)=>{
   const retrieval=args[2]?.retrieval;
@@ -65,6 +88,7 @@ gateway.agentComplete=async(...args)=>{
   return value;
 };
 const started=performance.now();
+let generatedResult;
 try {
   let initialState;
   if(incremental) {
@@ -81,6 +105,7 @@ try {
     context.agent_state=initialState.patient_state;context.relationship_state=initialState.relationship_memory;
   }
   const result=stateOnly?await gateway.updateState(context,initialState?.patient_state):await gateway.respond(context);
+  generatedResult=result;
   const expected=fixture.expectations||{};
   if(stateOnly) {
     for(const subject of ['patient','supporter']) {
@@ -95,12 +120,13 @@ try {
       if(!alternatives.some(word=>result.guide.script.includes(word)))throw new Error('missing_required_script_intent');
     }
   }
-  const report={case_id:fixture.case_id,mode:stateOnly?'state':'final',synthetic:fixture.synthetic,model:'gemma4:12b',
-    measured_at:new Date().toISOString(),duration_ms:Math.round(performance.now()-started),
+  const report={...baseReport,status:'passed',duration_ms:Math.round(performance.now()-started),metrics:attemptMetrics(trace),
     ...(initialState?{initial_state:initialState}:{}),result,trace,stage_outputs:stageOutputs};
-  const target=resolve(outputDir,reportId+'.json');writeFileSync(target,JSON.stringify(report,null,2)+'\n',{mode:0o600});
-  console.log(JSON.stringify({status:'passed',output:target,duration_ms:report.duration_ms,stages:result.agent?.stages||['state'],script:result.guide?.script},null,2));
+  writeFileSync(target,JSON.stringify(report,null,2)+'\n',{mode:0o600,flag:'wx'});
+  console.log(JSON.stringify({status:'automatic_checks_passed',human_review:'pending',output:target,duration_ms:report.duration_ms,stages:result.agent?.stages||['state']},null,2));
 } catch(error) {
-  writeFileSync(resolve(outputDir,reportId+'-failure.json'),JSON.stringify({case_id:fixture.case_id,code:error.code||error.message,reason:error.modelReason,trace,stage_outputs:stageOutputs},null,2)+'\n',{mode:0o600});
-  console.error(JSON.stringify({status:'failed',code:error.code||error.message,reason:error.modelReason}));process.exitCode=1;
+  const code=error.code||(/^[a-z0-9_]+$/.test(error.message)?error.message:'evaluation_error');
+  writeFileSync(target,JSON.stringify({...baseReport,status:'failed',duration_ms:Math.round(performance.now()-started),
+    code,reason:error.modelReason,metrics:attemptMetrics(trace),result:generatedResult,trace,stage_outputs:stageOutputs},null,2)+'\n',{mode:0o600,flag:'wx'});
+  console.error(JSON.stringify({status:'failed',code,reason:error.modelReason,output:target}));process.exitCode=1;
 }

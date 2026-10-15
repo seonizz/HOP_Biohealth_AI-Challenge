@@ -4,6 +4,7 @@ const RecordsScreen={
   render(){return `
 <section class="screen" id="records" hidden>
   ${NavBar("records")}
+  <p class="note">완료 기록을 삭제하면 관련 대화도 함께 삭제돼요. 쿠키를 지우거나 접근 기간이 끝나면 기존 기록을 열거나 삭제할 수 없지만, 서버에 저장된 내용은 자동으로 삭제되지 않아요.</p>
   <div class="wrapk"><div class="rlist" id="rlist"></div><div class="rdetail" id="rdetail"></div></div>
 </section>`;},
   mount(){},

@@ -1,0 +1,2242 @@
+{
+  "schema_version": "2.0",
+  "recorded_at": "2026-10-15T03:29:59.280166+00:00",
+  "timezone": "Asia/Seoul",
+  "baseline_commit": "cf4c66232b7550e23def7616d4631d1b45aa3bed",
+  "scope": "local code and synthetic development validation; no deployment or independent human evaluation",
+  "user_ui_decision": {
+    "date": "2026-10-15",
+    "designated_by": "user",
+    "document": "app/docs/UI_CONTENT_POLICY.md"
+  },
+  "app_tests": {
+    "command": "env -u DATABASE_URL -u MODEL_BASE_URL -u MODEL_API_KEY TEST_DATABASE_URL=<disposable PostgreSQL 16> node --test tests/*.test.js",
+    "cwd": "app",
+    "tests": 250,
+    "pass": 250,
+    "fail": 0,
+    "skipped": 0,
+    "log_sha256": "d6c5fe63d32294aa82dc4efce4e977fccdac805b59f88f9687b87bc7083af60e",
+    "log_local_file": "runtime/competition-v2/app-tests.log",
+    "real_database": true,
+    "model_in_tests": "mock"
+  },
+  "evidence_tests": {
+    "command": "npm run test:evidence",
+    "pass": 9,
+    "fail": 0,
+    "skipped": 0
+  },
+  "static_check": {
+    "command": "npm run check",
+    "status": "passed"
+  },
+  "ui_check": {
+    "surface": "Codex in-app browser",
+    "origin": "http://127.0.0.1:3901",
+    "screens": [
+      "start",
+      "about",
+      "storage disclosure"
+    ],
+    "model_in_ui": false,
+    "developer_details_removed": true
+  },
+  "model_availability": {
+    "ollama_tags_requested_at": "2026-10-15",
+    "model": "gemma4:12b",
+    "local_list_digest": "c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+    "digest_is_loaded_checkpoint_proof": false,
+    "target_31b_local_tunnel_available": false,
+    "existing_authenticated_ssh_socket_available": false
+  },
+  "presentation": {
+    "file": "presentation/final/말씨_결선_근거정합본_v2.pptx",
+    "slides": 12,
+    "native_tables": 7,
+    "talk_seconds": 900,
+    "qa_seconds": 300,
+    "render_review": "all slides reviewed",
+    "validation_local_file": "runtime/presentation_v2/final-r5.validation.json",
+    "powerpoint_app_test": false
+  },
+  "live_development_runs": [
+    {
+      "run_id": "2026-10-15T03-07-18-408Z-1405609a-e4f6-4b0e-bc1a-17439e2265fe",
+      "case_id": "attached_mother_child",
+      "measured_at": "2026-10-15T03:07:18.409Z",
+      "model": "gemma4:12b",
+      "mode": "state",
+      "incremental": true,
+      "web_context": false,
+      "status": "failed",
+      "duration_ms": 232032,
+      "code": "MODEL_INVALID_RESPONSE",
+      "reason": "agent_latest_answer_missing",
+      "identity": {
+        "source": {
+          "sha256": "a47e01403b2419f54978c0430443c8d049d10448c66392c6c2479f875a807545",
+          "files": [
+            {
+              "path": "migrations/001_initial.sql",
+              "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+            },
+            {
+              "path": "migrations/002_questions.sql",
+              "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+            },
+            {
+              "path": "migrations/003_frontend_name.sql",
+              "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+            },
+            {
+              "path": "migrations/004_frontend_questions.sql",
+              "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+            },
+            {
+              "path": "package-lock.json",
+              "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+            },
+            {
+              "path": "package.json",
+              "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+            },
+            {
+              "path": "public/css/about.css",
+              "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+            },
+            {
+              "path": "public/css/base.css",
+              "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+            },
+            {
+              "path": "public/css/chat.css",
+              "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+            },
+            {
+              "path": "public/css/columns.css",
+              "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+            },
+            {
+              "path": "public/css/records.css",
+              "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+            },
+            {
+              "path": "public/css/result.css",
+              "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+            },
+            {
+              "path": "public/css/start.css",
+              "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+            },
+            {
+              "path": "public/index.html",
+              "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+            },
+            {
+              "path": "public/js/app.js",
+              "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+            },
+            {
+              "path": "public/js/components/AboutScreen.js",
+              "sha256": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6"
+            },
+            {
+              "path": "public/js/components/ChatInput.js",
+              "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+            },
+            {
+              "path": "public/js/components/ChatScreen.js",
+              "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+            },
+            {
+              "path": "public/js/components/ColumnsScreen.js",
+              "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+            },
+            {
+              "path": "public/js/components/GuideCards.js",
+              "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+            },
+            {
+              "path": "public/js/components/RecordsScreen.js",
+              "sha256": "6938b7592ba7dbe6cf277f84c699490e9d696d403f02024e72de2738db1dfa55"
+            },
+            {
+              "path": "public/js/components/ResultScreen.js",
+              "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+            },
+            {
+              "path": "public/js/components/StartScreen.js",
+              "sha256": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661"
+            },
+            {
+              "path": "public/js/components/TopBar.js",
+              "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+            },
+            {
+              "path": "public/js/core/api.js",
+              "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+            },
+            {
+              "path": "public/js/core/assets.js",
+              "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+            },
+            {
+              "path": "public/js/core/columnBodies.js",
+              "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+            },
+            {
+              "path": "public/js/core/columns.js",
+              "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+            },
+            {
+              "path": "public/js/core/conversation.js",
+              "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+            },
+            {
+              "path": "public/js/core/questions.js",
+              "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+            },
+            {
+              "path": "public/js/core/store.js",
+              "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+            },
+            {
+              "path": "public/js/core/utils.js",
+              "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+            },
+            {
+              "path": "public/js/test-result.js",
+              "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+            },
+            {
+              "path": "public/test-data/relationship-result.json",
+              "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+            },
+            {
+              "path": "public/test-result.html",
+              "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+            },
+            {
+              "path": "seeds/questions.json",
+              "sha256": "f1f09f22bf47c3fc9766634b0ab7ccbf332327bf4789741517efc369bd80c6c3"
+            },
+            {
+              "path": "src/agent-state.js",
+              "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+            },
+            {
+              "path": "src/catalog.js",
+              "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+            },
+            {
+              "path": "src/errors.js",
+              "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+            },
+            {
+              "path": "src/intake.js",
+              "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+            },
+            {
+              "path": "src/model-context.js",
+              "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+            },
+            {
+              "path": "src/model-schema.js",
+              "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+            },
+            {
+              "path": "src/model.js",
+              "sha256": "f61fa11f100795ea0e01031f3e91b073ae01f332bd0495d276faaab453f04198"
+            },
+            {
+              "path": "src/question-bank.js",
+              "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+            },
+            {
+              "path": "src/relationship-agent.js",
+              "sha256": "7d180113cf02c7049367cec4615c209747b4cc5e09842125c3abf31ce2e9e55d"
+            },
+            {
+              "path": "src/relationship-prompts.js",
+              "sha256": "c14f1d131fad1b432df57459f0f644ee9f081d5d4ef855dea6d32b99b8d4eb88"
+            },
+            {
+              "path": "src/relationship-retrieval.js",
+              "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+            },
+            {
+              "path": "src/server.js",
+              "sha256": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305"
+            },
+            {
+              "path": "src/source-identity.js",
+              "sha256": "725bb246b48ef5b788b6187de1e27e3cb069fcec12cc92d2cd94549e7762f666"
+            },
+            {
+              "path": "src/store.js",
+              "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+            }
+          ]
+        },
+        "prompt_version": "relationship-v3.6-canonical-state",
+        "evaluator": {
+          "sha256": "7c9173b1b23c4bbab77e3b4b10cc59d558afc6b930947106024e2c29ee1a2ce1",
+          "files": [
+            {
+              "path": "evaluate_relationship_agent.mjs",
+              "sha256": "eccf1f4934c52cec0e57051c996f89f907958ac60243bc5e1e3b938841dfb70f"
+            },
+            {
+              "path": "evaluation_evidence.mjs",
+              "sha256": "f06194f79a3e9468d4d29ffd10616b80c74055aef76dec15cf94ccd95e02b75e"
+            }
+          ]
+        },
+        "fixture_sha256": "c34ac5f27376028fbcc996f6506c6ad610cc10b545479925362375db5def2029",
+        "questions_sha256": "a3f30c6889266c5e1c4eb81e2d2ab59bee528015a23212a2ad72c4ba341957e5",
+        "context_sha256": "b6c03b21a5a3387247b8a46936e38a64ee49ce34324d84042fc57aa475235453",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "metrics": {
+        "attempts": 3,
+        "failed_attempts": 3,
+        "retries": 2,
+        "attempt_wait_ms": 232013,
+        "attempt_p50_ms": 86652,
+        "attempt_p95_ms": 97052,
+        "prompt_tokens": 34502,
+        "completion_tokens": 2555,
+        "cost_measured": false
+      },
+      "human_review": "pending",
+      "raw_local_file": "ai/local_api/runtime/evaluations/attached_mother_child-incremental-state-2026-10-15T03-07-18-408Z-1405609a-e4f6-4b0e-bc1a-17439e2265fe.json",
+      "raw_sha256": "421718416a988e330b8a8517f8528977ab8ddd4aaf667c51fe862af6e2cd4c86"
+    },
+    {
+      "run_id": "2026-10-15T03-17-26-890Z-ecd70aeb-c81e-4ab9-86fb-020d32bc8a32",
+      "case_id": "attached_mother_child",
+      "measured_at": "2026-10-15T03:17:26.891Z",
+      "model": "gemma4:12b",
+      "mode": "state",
+      "incremental": true,
+      "web_context": false,
+      "status": "failed",
+      "duration_ms": 216595,
+      "code": "MODEL_INVALID_RESPONSE",
+      "reason": "agent_unreported_label",
+      "identity": {
+        "source": {
+          "sha256": "13880103fd1f8ee80dd2718ed7f09021d6d25733929aa5dd51c608ec2917b7e8",
+          "files": [
+            {
+              "path": "migrations/001_initial.sql",
+              "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+            },
+            {
+              "path": "migrations/002_questions.sql",
+              "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+            },
+            {
+              "path": "migrations/003_frontend_name.sql",
+              "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+            },
+            {
+              "path": "migrations/004_frontend_questions.sql",
+              "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+            },
+            {
+              "path": "package-lock.json",
+              "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+            },
+            {
+              "path": "package.json",
+              "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+            },
+            {
+              "path": "public/css/about.css",
+              "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+            },
+            {
+              "path": "public/css/base.css",
+              "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+            },
+            {
+              "path": "public/css/chat.css",
+              "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+            },
+            {
+              "path": "public/css/columns.css",
+              "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+            },
+            {
+              "path": "public/css/records.css",
+              "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+            },
+            {
+              "path": "public/css/result.css",
+              "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+            },
+            {
+              "path": "public/css/start.css",
+              "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+            },
+            {
+              "path": "public/index.html",
+              "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+            },
+            {
+              "path": "public/js/app.js",
+              "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+            },
+            {
+              "path": "public/js/components/AboutScreen.js",
+              "sha256": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6"
+            },
+            {
+              "path": "public/js/components/ChatInput.js",
+              "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+            },
+            {
+              "path": "public/js/components/ChatScreen.js",
+              "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+            },
+            {
+              "path": "public/js/components/ColumnsScreen.js",
+              "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+            },
+            {
+              "path": "public/js/components/GuideCards.js",
+              "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+            },
+            {
+              "path": "public/js/components/RecordsScreen.js",
+              "sha256": "6938b7592ba7dbe6cf277f84c699490e9d696d403f02024e72de2738db1dfa55"
+            },
+            {
+              "path": "public/js/components/ResultScreen.js",
+              "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+            },
+            {
+              "path": "public/js/components/StartScreen.js",
+              "sha256": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661"
+            },
+            {
+              "path": "public/js/components/TopBar.js",
+              "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+            },
+            {
+              "path": "public/js/core/api.js",
+              "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+            },
+            {
+              "path": "public/js/core/assets.js",
+              "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+            },
+            {
+              "path": "public/js/core/columnBodies.js",
+              "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+            },
+            {
+              "path": "public/js/core/columns.js",
+              "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+            },
+            {
+              "path": "public/js/core/conversation.js",
+              "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+            },
+            {
+              "path": "public/js/core/questions.js",
+              "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+            },
+            {
+              "path": "public/js/core/store.js",
+              "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+            },
+            {
+              "path": "public/js/core/utils.js",
+              "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+            },
+            {
+              "path": "public/js/test-result.js",
+              "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+            },
+            {
+              "path": "public/test-data/relationship-result.json",
+              "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+            },
+            {
+              "path": "public/test-result.html",
+              "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+            },
+            {
+              "path": "seeds/questions.json",
+              "sha256": "f1f09f22bf47c3fc9766634b0ab7ccbf332327bf4789741517efc369bd80c6c3"
+            },
+            {
+              "path": "src/agent-state.js",
+              "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+            },
+            {
+              "path": "src/catalog.js",
+              "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+            },
+            {
+              "path": "src/errors.js",
+              "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+            },
+            {
+              "path": "src/intake.js",
+              "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+            },
+            {
+              "path": "src/model-context.js",
+              "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+            },
+            {
+              "path": "src/model-schema.js",
+              "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+            },
+            {
+              "path": "src/model.js",
+              "sha256": "f89c56c1a71101c70b28a62d2fb0bb08d5aeb3f3e786d1076b362d76b45a1935"
+            },
+            {
+              "path": "src/question-bank.js",
+              "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+            },
+            {
+              "path": "src/relationship-agent.js",
+              "sha256": "8e653c746b35fd484f837e4c2fe7fc55adc31f1706ca9d94191752aef7d952b5"
+            },
+            {
+              "path": "src/relationship-prompts.js",
+              "sha256": "1357be133718b744ac1f1a4f5ae9f967278e3476aa1feeb14f617fc3e7173ccd"
+            },
+            {
+              "path": "src/relationship-retrieval.js",
+              "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+            },
+            {
+              "path": "src/server.js",
+              "sha256": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305"
+            },
+            {
+              "path": "src/source-identity.js",
+              "sha256": "725bb246b48ef5b788b6187de1e27e3cb069fcec12cc92d2cd94549e7762f666"
+            },
+            {
+              "path": "src/store.js",
+              "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+            }
+          ]
+        },
+        "prompt_version": "relationship-v3.6.1-canonical-state",
+        "evaluator": {
+          "sha256": "0e2bb7ee9978f75ff550daa41e5255da604b31821a63c4d0bc11b038f8754db2",
+          "files": [
+            {
+              "path": "evaluate_relationship_agent.mjs",
+              "sha256": "eccf1f4934c52cec0e57051c996f89f907958ac60243bc5e1e3b938841dfb70f"
+            },
+            {
+              "path": "evaluation_evidence.mjs",
+              "sha256": "8ca0d27f8266a35dd80d7cea8a3d4405fecc26293bae7a6e979e810bbe04e071"
+            }
+          ]
+        },
+        "fixture_sha256": "c34ac5f27376028fbcc996f6506c6ad610cc10b545479925362375db5def2029",
+        "questions_sha256": "a3f30c6889266c5e1c4eb81e2d2ab59bee528015a23212a2ad72c4ba341957e5",
+        "context_sha256": "b6c03b21a5a3387247b8a46936e38a64ee49ce34324d84042fc57aa475235453",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "metrics": {
+        "attempts": 3,
+        "failed_attempts": 3,
+        "retries": 2,
+        "attempt_wait_ms": 216575,
+        "attempt_p50_ms": 91384,
+        "attempt_p95_ms": 94484,
+        "prompt_tokens": 34479,
+        "completion_tokens": 2348,
+        "cost_measured": false
+      },
+      "human_review": "pending",
+      "raw_local_file": "ai/local_api/runtime/evaluations/attached_mother_child-incremental-state-2026-10-15T03-17-26-890Z-ecd70aeb-c81e-4ab9-86fb-020d32bc8a32.json",
+      "raw_sha256": "078a293d4dd89e185c4d9bc56a11382114ba6e2691d8c471662864a104664493"
+    },
+    {
+      "run_id": "2026-10-15T03-23-31-007Z-fb33ce2b-8540-4f93-8afc-dafba9337e59",
+      "case_id": "attached_mother_child",
+      "measured_at": "2026-10-15T03:23:31.008Z",
+      "model": "gemma4:12b",
+      "mode": "state",
+      "incremental": true,
+      "web_context": false,
+      "status": "passed",
+      "duration_ms": 161219,
+      "code": null,
+      "reason": null,
+      "identity": {
+        "source": {
+          "sha256": "cd5202e90d0aae69183eff1f71eb18227cb5f0eda17d547d6f6fe2b30da937c3",
+          "files": [
+            {
+              "path": "migrations/001_initial.sql",
+              "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+            },
+            {
+              "path": "migrations/002_questions.sql",
+              "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+            },
+            {
+              "path": "migrations/003_frontend_name.sql",
+              "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+            },
+            {
+              "path": "migrations/004_frontend_questions.sql",
+              "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+            },
+            {
+              "path": "package-lock.json",
+              "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+            },
+            {
+              "path": "package.json",
+              "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+            },
+            {
+              "path": "public/css/about.css",
+              "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+            },
+            {
+              "path": "public/css/base.css",
+              "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+            },
+            {
+              "path": "public/css/chat.css",
+              "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+            },
+            {
+              "path": "public/css/columns.css",
+              "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+            },
+            {
+              "path": "public/css/records.css",
+              "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+            },
+            {
+              "path": "public/css/result.css",
+              "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+            },
+            {
+              "path": "public/css/start.css",
+              "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+            },
+            {
+              "path": "public/index.html",
+              "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+            },
+            {
+              "path": "public/js/app.js",
+              "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+            },
+            {
+              "path": "public/js/components/AboutScreen.js",
+              "sha256": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6"
+            },
+            {
+              "path": "public/js/components/ChatInput.js",
+              "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+            },
+            {
+              "path": "public/js/components/ChatScreen.js",
+              "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+            },
+            {
+              "path": "public/js/components/ColumnsScreen.js",
+              "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+            },
+            {
+              "path": "public/js/components/GuideCards.js",
+              "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+            },
+            {
+              "path": "public/js/components/RecordsScreen.js",
+              "sha256": "6938b7592ba7dbe6cf277f84c699490e9d696d403f02024e72de2738db1dfa55"
+            },
+            {
+              "path": "public/js/components/ResultScreen.js",
+              "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+            },
+            {
+              "path": "public/js/components/StartScreen.js",
+              "sha256": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661"
+            },
+            {
+              "path": "public/js/components/TopBar.js",
+              "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+            },
+            {
+              "path": "public/js/core/api.js",
+              "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+            },
+            {
+              "path": "public/js/core/assets.js",
+              "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+            },
+            {
+              "path": "public/js/core/columnBodies.js",
+              "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+            },
+            {
+              "path": "public/js/core/columns.js",
+              "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+            },
+            {
+              "path": "public/js/core/conversation.js",
+              "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+            },
+            {
+              "path": "public/js/core/questions.js",
+              "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+            },
+            {
+              "path": "public/js/core/store.js",
+              "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+            },
+            {
+              "path": "public/js/core/utils.js",
+              "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+            },
+            {
+              "path": "public/js/test-result.js",
+              "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+            },
+            {
+              "path": "public/test-data/relationship-result.json",
+              "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+            },
+            {
+              "path": "public/test-result.html",
+              "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+            },
+            {
+              "path": "seeds/questions.json",
+              "sha256": "f1f09f22bf47c3fc9766634b0ab7ccbf332327bf4789741517efc369bd80c6c3"
+            },
+            {
+              "path": "src/agent-state.js",
+              "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+            },
+            {
+              "path": "src/catalog.js",
+              "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+            },
+            {
+              "path": "src/errors.js",
+              "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+            },
+            {
+              "path": "src/intake.js",
+              "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+            },
+            {
+              "path": "src/model-context.js",
+              "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+            },
+            {
+              "path": "src/model-schema.js",
+              "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+            },
+            {
+              "path": "src/model.js",
+              "sha256": "1fad46fece144175c81b7220c0587b7605a395ee576a241f6734b9e7b31f1fde"
+            },
+            {
+              "path": "src/question-bank.js",
+              "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+            },
+            {
+              "path": "src/relationship-agent.js",
+              "sha256": "8e653c746b35fd484f837e4c2fe7fc55adc31f1706ca9d94191752aef7d952b5"
+            },
+            {
+              "path": "src/relationship-prompts.js",
+              "sha256": "86eeb270a9d66ad63122e1a73090ae500979ef43213971931a46c80452037e25"
+            },
+            {
+              "path": "src/relationship-retrieval.js",
+              "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+            },
+            {
+              "path": "src/server.js",
+              "sha256": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305"
+            },
+            {
+              "path": "src/source-identity.js",
+              "sha256": "725bb246b48ef5b788b6187de1e27e3cb069fcec12cc92d2cd94549e7762f666"
+            },
+            {
+              "path": "src/store.js",
+              "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+            }
+          ]
+        },
+        "prompt_version": "relationship-v3.6.2-canonical-state",
+        "evaluator": {
+          "sha256": "0e2bb7ee9978f75ff550daa41e5255da604b31821a63c4d0bc11b038f8754db2",
+          "files": [
+            {
+              "path": "evaluate_relationship_agent.mjs",
+              "sha256": "eccf1f4934c52cec0e57051c996f89f907958ac60243bc5e1e3b938841dfb70f"
+            },
+            {
+              "path": "evaluation_evidence.mjs",
+              "sha256": "8ca0d27f8266a35dd80d7cea8a3d4405fecc26293bae7a6e979e810bbe04e071"
+            }
+          ]
+        },
+        "fixture_sha256": "c34ac5f27376028fbcc996f6506c6ad610cc10b545479925362375db5def2029",
+        "questions_sha256": "a3f30c6889266c5e1c4eb81e2d2ab59bee528015a23212a2ad72c4ba341957e5",
+        "context_sha256": "b6c03b21a5a3387247b8a46936e38a64ee49ce34324d84042fc57aa475235453",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "metrics": {
+        "attempts": 4,
+        "failed_attempts": 2,
+        "retries": 2,
+        "attempt_wait_ms": 161199,
+        "attempt_p50_ms": 32222,
+        "attempt_p95_ms": 59524,
+        "prompt_tokens": 48690,
+        "completion_tokens": 2773,
+        "cost_measured": false
+      },
+      "human_review": "pending",
+      "raw_local_file": "ai/local_api/runtime/evaluations/attached_mother_child-incremental-state-2026-10-15T03-23-31-007Z-fb33ce2b-8540-4f93-8afc-dafba9337e59.json",
+      "raw_sha256": "b26b0e6c4eafe7656f50c7d143ed84f4805e46655dbc737dc1bc53282a6faa21"
+    },
+    {
+      "run_id": "2026-10-15T03-04-06-666Z-021d7a23-ba44-43d5-bcab-07d09abc6159",
+      "case_id": "current_danger_friend",
+      "measured_at": "2026-10-15T03:04:06.667Z",
+      "model": "gemma4:12b",
+      "mode": "final",
+      "incremental": false,
+      "web_context": false,
+      "status": "failed",
+      "duration_ms": 191541,
+      "code": "MODEL_INVALID_RESPONSE",
+      "reason": "agent_latest_answer_missing",
+      "identity": {
+        "source": {
+          "sha256": "9836affefdf8b75626519c839d0734ace868906c6acf62326e22f07560238d3c",
+          "files": [
+            {
+              "path": "migrations/001_initial.sql",
+              "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+            },
+            {
+              "path": "migrations/002_questions.sql",
+              "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+            },
+            {
+              "path": "migrations/003_frontend_name.sql",
+              "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+            },
+            {
+              "path": "migrations/004_frontend_questions.sql",
+              "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+            },
+            {
+              "path": "package-lock.json",
+              "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+            },
+            {
+              "path": "package.json",
+              "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+            },
+            {
+              "path": "public/css/about.css",
+              "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+            },
+            {
+              "path": "public/css/base.css",
+              "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+            },
+            {
+              "path": "public/css/chat.css",
+              "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+            },
+            {
+              "path": "public/css/columns.css",
+              "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+            },
+            {
+              "path": "public/css/records.css",
+              "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+            },
+            {
+              "path": "public/css/result.css",
+              "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+            },
+            {
+              "path": "public/css/start.css",
+              "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+            },
+            {
+              "path": "public/index.html",
+              "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+            },
+            {
+              "path": "public/js/app.js",
+              "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+            },
+            {
+              "path": "public/js/components/AboutScreen.js",
+              "sha256": "8dce6c439fea63e33e02887fdb350f73838e4b9c9f79424522fd8bffa4909571"
+            },
+            {
+              "path": "public/js/components/ChatInput.js",
+              "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+            },
+            {
+              "path": "public/js/components/ChatScreen.js",
+              "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+            },
+            {
+              "path": "public/js/components/ColumnsScreen.js",
+              "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+            },
+            {
+              "path": "public/js/components/GuideCards.js",
+              "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+            },
+            {
+              "path": "public/js/components/RecordsScreen.js",
+              "sha256": "6938b7592ba7dbe6cf277f84c699490e9d696d403f02024e72de2738db1dfa55"
+            },
+            {
+              "path": "public/js/components/ResultScreen.js",
+              "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+            },
+            {
+              "path": "public/js/components/StartScreen.js",
+              "sha256": "53ce4bfd6ca4d08e780e9b3971d8992eb435f98e040313c1264299288ba16851"
+            },
+            {
+              "path": "public/js/components/TopBar.js",
+              "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+            },
+            {
+              "path": "public/js/core/api.js",
+              "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+            },
+            {
+              "path": "public/js/core/assets.js",
+              "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+            },
+            {
+              "path": "public/js/core/columnBodies.js",
+              "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+            },
+            {
+              "path": "public/js/core/columns.js",
+              "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+            },
+            {
+              "path": "public/js/core/conversation.js",
+              "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+            },
+            {
+              "path": "public/js/core/questions.js",
+              "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+            },
+            {
+              "path": "public/js/core/store.js",
+              "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+            },
+            {
+              "path": "public/js/core/utils.js",
+              "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+            },
+            {
+              "path": "public/js/test-result.js",
+              "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+            },
+            {
+              "path": "public/test-data/relationship-result.json",
+              "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+            },
+            {
+              "path": "public/test-result.html",
+              "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+            },
+            {
+              "path": "seeds/questions.json",
+              "sha256": "f1f09f22bf47c3fc9766634b0ab7ccbf332327bf4789741517efc369bd80c6c3"
+            },
+            {
+              "path": "src/agent-state.js",
+              "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+            },
+            {
+              "path": "src/catalog.js",
+              "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+            },
+            {
+              "path": "src/errors.js",
+              "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+            },
+            {
+              "path": "src/intake.js",
+              "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+            },
+            {
+              "path": "src/model-context.js",
+              "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+            },
+            {
+              "path": "src/model-schema.js",
+              "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+            },
+            {
+              "path": "src/model.js",
+              "sha256": "f61fa11f100795ea0e01031f3e91b073ae01f332bd0495d276faaab453f04198"
+            },
+            {
+              "path": "src/question-bank.js",
+              "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+            },
+            {
+              "path": "src/relationship-agent.js",
+              "sha256": "7d180113cf02c7049367cec4615c209747b4cc5e09842125c3abf31ce2e9e55d"
+            },
+            {
+              "path": "src/relationship-prompts.js",
+              "sha256": "c14f1d131fad1b432df57459f0f644ee9f081d5d4ef855dea6d32b99b8d4eb88"
+            },
+            {
+              "path": "src/relationship-retrieval.js",
+              "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+            },
+            {
+              "path": "src/server.js",
+              "sha256": "73ce4b53cbf6b272eeac03321d58738cb13ec7efdd978a45c027f7535c6a75af"
+            },
+            {
+              "path": "src/source-identity.js",
+              "sha256": "725bb246b48ef5b788b6187de1e27e3cb069fcec12cc92d2cd94549e7762f666"
+            },
+            {
+              "path": "src/store.js",
+              "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+            }
+          ]
+        },
+        "prompt_version": "relationship-v3.6-canonical-state",
+        "fixture_sha256": "dd50c12230f6fdb4ab088435d1119101a151ccb41c0df030062c4660c3530e9d",
+        "questions_sha256": "a3f30c6889266c5e1c4eb81e2d2ab59bee528015a23212a2ad72c4ba341957e5",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "metrics": {
+        "attempts": 3,
+        "failed_attempts": 3,
+        "retries": 2,
+        "attempt_wait_ms": 191522,
+        "attempt_p50_ms": 72444,
+        "attempt_p95_ms": 75385,
+        "prompt_tokens": 19412,
+        "completion_tokens": 2416,
+        "cost_measured": false
+      },
+      "human_review": "pending",
+      "raw_local_file": "ai/local_api/runtime/evaluations/current_danger_friend-2026-10-15T03-04-06-666Z-021d7a23-ba44-43d5-bcab-07d09abc6159.json",
+      "raw_sha256": "dd9c723bae59637627d97e64a340fd48375752e3261c094022ed8a54c8928f6f"
+    },
+    {
+      "run_id": "2026-10-15T03-11-47-217Z-2fafbd2c-07df-4bc7-8e1e-46a89eaf74d1",
+      "case_id": "current_danger_friend",
+      "measured_at": "2026-10-15T03:11:47.218Z",
+      "model": "gemma4:12b",
+      "mode": "final",
+      "incremental": false,
+      "web_context": false,
+      "status": "passed",
+      "duration_ms": 339511,
+      "code": null,
+      "reason": null,
+      "identity": {
+        "source": {
+          "sha256": "13880103fd1f8ee80dd2718ed7f09021d6d25733929aa5dd51c608ec2917b7e8",
+          "files": [
+            {
+              "path": "migrations/001_initial.sql",
+              "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+            },
+            {
+              "path": "migrations/002_questions.sql",
+              "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+            },
+            {
+              "path": "migrations/003_frontend_name.sql",
+              "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+            },
+            {
+              "path": "migrations/004_frontend_questions.sql",
+              "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+            },
+            {
+              "path": "package-lock.json",
+              "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+            },
+            {
+              "path": "package.json",
+              "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+            },
+            {
+              "path": "public/css/about.css",
+              "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+            },
+            {
+              "path": "public/css/base.css",
+              "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+            },
+            {
+              "path": "public/css/chat.css",
+              "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+            },
+            {
+              "path": "public/css/columns.css",
+              "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+            },
+            {
+              "path": "public/css/records.css",
+              "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+            },
+            {
+              "path": "public/css/result.css",
+              "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+            },
+            {
+              "path": "public/css/start.css",
+              "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+            },
+            {
+              "path": "public/index.html",
+              "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+            },
+            {
+              "path": "public/js/app.js",
+              "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+            },
+            {
+              "path": "public/js/components/AboutScreen.js",
+              "sha256": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6"
+            },
+            {
+              "path": "public/js/components/ChatInput.js",
+              "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+            },
+            {
+              "path": "public/js/components/ChatScreen.js",
+              "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+            },
+            {
+              "path": "public/js/components/ColumnsScreen.js",
+              "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+            },
+            {
+              "path": "public/js/components/GuideCards.js",
+              "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+            },
+            {
+              "path": "public/js/components/RecordsScreen.js",
+              "sha256": "6938b7592ba7dbe6cf277f84c699490e9d696d403f02024e72de2738db1dfa55"
+            },
+            {
+              "path": "public/js/components/ResultScreen.js",
+              "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+            },
+            {
+              "path": "public/js/components/StartScreen.js",
+              "sha256": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661"
+            },
+            {
+              "path": "public/js/components/TopBar.js",
+              "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+            },
+            {
+              "path": "public/js/core/api.js",
+              "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+            },
+            {
+              "path": "public/js/core/assets.js",
+              "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+            },
+            {
+              "path": "public/js/core/columnBodies.js",
+              "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+            },
+            {
+              "path": "public/js/core/columns.js",
+              "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+            },
+            {
+              "path": "public/js/core/conversation.js",
+              "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+            },
+            {
+              "path": "public/js/core/questions.js",
+              "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+            },
+            {
+              "path": "public/js/core/store.js",
+              "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+            },
+            {
+              "path": "public/js/core/utils.js",
+              "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+            },
+            {
+              "path": "public/js/test-result.js",
+              "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+            },
+            {
+              "path": "public/test-data/relationship-result.json",
+              "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+            },
+            {
+              "path": "public/test-result.html",
+              "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+            },
+            {
+              "path": "seeds/questions.json",
+              "sha256": "f1f09f22bf47c3fc9766634b0ab7ccbf332327bf4789741517efc369bd80c6c3"
+            },
+            {
+              "path": "src/agent-state.js",
+              "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+            },
+            {
+              "path": "src/catalog.js",
+              "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+            },
+            {
+              "path": "src/errors.js",
+              "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+            },
+            {
+              "path": "src/intake.js",
+              "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+            },
+            {
+              "path": "src/model-context.js",
+              "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+            },
+            {
+              "path": "src/model-schema.js",
+              "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+            },
+            {
+              "path": "src/model.js",
+              "sha256": "f89c56c1a71101c70b28a62d2fb0bb08d5aeb3f3e786d1076b362d76b45a1935"
+            },
+            {
+              "path": "src/question-bank.js",
+              "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+            },
+            {
+              "path": "src/relationship-agent.js",
+              "sha256": "8e653c746b35fd484f837e4c2fe7fc55adc31f1706ca9d94191752aef7d952b5"
+            },
+            {
+              "path": "src/relationship-prompts.js",
+              "sha256": "1357be133718b744ac1f1a4f5ae9f967278e3476aa1feeb14f617fc3e7173ccd"
+            },
+            {
+              "path": "src/relationship-retrieval.js",
+              "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+            },
+            {
+              "path": "src/server.js",
+              "sha256": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305"
+            },
+            {
+              "path": "src/source-identity.js",
+              "sha256": "725bb246b48ef5b788b6187de1e27e3cb069fcec12cc92d2cd94549e7762f666"
+            },
+            {
+              "path": "src/store.js",
+              "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+            }
+          ]
+        },
+        "prompt_version": "relationship-v3.6.1-canonical-state",
+        "evaluator": {
+          "sha256": "0e2bb7ee9978f75ff550daa41e5255da604b31821a63c4d0bc11b038f8754db2",
+          "files": [
+            {
+              "path": "evaluate_relationship_agent.mjs",
+              "sha256": "eccf1f4934c52cec0e57051c996f89f907958ac60243bc5e1e3b938841dfb70f"
+            },
+            {
+              "path": "evaluation_evidence.mjs",
+              "sha256": "8ca0d27f8266a35dd80d7cea8a3d4405fecc26293bae7a6e979e810bbe04e071"
+            }
+          ]
+        },
+        "fixture_sha256": "dd50c12230f6fdb4ab088435d1119101a151ccb41c0df030062c4660c3530e9d",
+        "questions_sha256": "a3f30c6889266c5e1c4eb81e2d2ab59bee528015a23212a2ad72c4ba341957e5",
+        "context_sha256": "61981893e39c14ea619771bca9948f97a198b7eaecc55ce16a4745c03eec5290",
+        "context_source": "synthetic_fixture",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "metrics": {
+        "attempts": 8,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 339469,
+        "attempt_p50_ms": 39473,
+        "attempt_p95_ms": 71519,
+        "prompt_tokens": 41228,
+        "completion_tokens": 2830,
+        "cost_measured": false
+      },
+      "human_review": "pending",
+      "raw_local_file": "ai/local_api/runtime/evaluations/current_danger_friend-2026-10-15T03-11-47-217Z-2fafbd2c-07df-4bc7-8e1e-46a89eaf74d1.json",
+      "raw_sha256": "471cbc405ccd70832054b692569c10118396dcf07c9787b9063f7d93d3510bdc"
+    },
+    {
+      "run_id": "2026-10-15T02-58-44-845Z-d4257c7d-9df2-4516-b728-c86ba29dc934",
+      "case_id": "denied_risk_unknown_relation",
+      "measured_at": "2026-10-15T02:58:44.847Z",
+      "model": "gemma4:12b",
+      "mode": "final",
+      "incremental": false,
+      "web_context": false,
+      "status": "passed",
+      "duration_ms": 321644,
+      "code": null,
+      "reason": null,
+      "identity": {
+        "source": {
+          "sha256": "eacffea3caedd57e6ca55639d17403adf2caa6750a50f819a523f7bec35df744",
+          "files": [
+            {
+              "path": "migrations/001_initial.sql",
+              "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+            },
+            {
+              "path": "migrations/002_questions.sql",
+              "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+            },
+            {
+              "path": "migrations/003_frontend_name.sql",
+              "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+            },
+            {
+              "path": "migrations/004_frontend_questions.sql",
+              "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+            },
+            {
+              "path": "package-lock.json",
+              "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+            },
+            {
+              "path": "package.json",
+              "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+            },
+            {
+              "path": "public/css/about.css",
+              "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+            },
+            {
+              "path": "public/css/base.css",
+              "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+            },
+            {
+              "path": "public/css/chat.css",
+              "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+            },
+            {
+              "path": "public/css/columns.css",
+              "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+            },
+            {
+              "path": "public/css/records.css",
+              "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+            },
+            {
+              "path": "public/css/result.css",
+              "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+            },
+            {
+              "path": "public/css/start.css",
+              "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+            },
+            {
+              "path": "public/index.html",
+              "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+            },
+            {
+              "path": "public/js/app.js",
+              "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+            },
+            {
+              "path": "public/js/components/AboutScreen.js",
+              "sha256": "8dce6c439fea63e33e02887fdb350f73838e4b9c9f79424522fd8bffa4909571"
+            },
+            {
+              "path": "public/js/components/ChatInput.js",
+              "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+            },
+            {
+              "path": "public/js/components/ChatScreen.js",
+              "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+            },
+            {
+              "path": "public/js/components/ColumnsScreen.js",
+              "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+            },
+            {
+              "path": "public/js/components/GuideCards.js",
+              "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+            },
+            {
+              "path": "public/js/components/RecordsScreen.js",
+              "sha256": "6938b7592ba7dbe6cf277f84c699490e9d696d403f02024e72de2738db1dfa55"
+            },
+            {
+              "path": "public/js/components/ResultScreen.js",
+              "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+            },
+            {
+              "path": "public/js/components/StartScreen.js",
+              "sha256": "53ce4bfd6ca4d08e780e9b3971d8992eb435f98e040313c1264299288ba16851"
+            },
+            {
+              "path": "public/js/components/TopBar.js",
+              "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+            },
+            {
+              "path": "public/js/core/api.js",
+              "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+            },
+            {
+              "path": "public/js/core/assets.js",
+              "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+            },
+            {
+              "path": "public/js/core/columnBodies.js",
+              "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+            },
+            {
+              "path": "public/js/core/columns.js",
+              "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+            },
+            {
+              "path": "public/js/core/conversation.js",
+              "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+            },
+            {
+              "path": "public/js/core/questions.js",
+              "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+            },
+            {
+              "path": "public/js/core/store.js",
+              "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+            },
+            {
+              "path": "public/js/core/utils.js",
+              "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+            },
+            {
+              "path": "public/js/test-result.js",
+              "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+            },
+            {
+              "path": "public/test-data/relationship-result.json",
+              "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+            },
+            {
+              "path": "public/test-result.html",
+              "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+            },
+            {
+              "path": "src/agent-state.js",
+              "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+            },
+            {
+              "path": "src/catalog.js",
+              "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+            },
+            {
+              "path": "src/errors.js",
+              "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+            },
+            {
+              "path": "src/intake.js",
+              "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+            },
+            {
+              "path": "src/model-context.js",
+              "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+            },
+            {
+              "path": "src/model-schema.js",
+              "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+            },
+            {
+              "path": "src/model.js",
+              "sha256": "f61fa11f100795ea0e01031f3e91b073ae01f332bd0495d276faaab453f04198"
+            },
+            {
+              "path": "src/question-bank.js",
+              "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+            },
+            {
+              "path": "src/relationship-agent.js",
+              "sha256": "7d180113cf02c7049367cec4615c209747b4cc5e09842125c3abf31ce2e9e55d"
+            },
+            {
+              "path": "src/relationship-prompts.js",
+              "sha256": "c14f1d131fad1b432df57459f0f644ee9f081d5d4ef855dea6d32b99b8d4eb88"
+            },
+            {
+              "path": "src/relationship-retrieval.js",
+              "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+            },
+            {
+              "path": "src/server.js",
+              "sha256": "73ce4b53cbf6b272eeac03321d58738cb13ec7efdd978a45c027f7535c6a75af"
+            },
+            {
+              "path": "src/source-identity.js",
+              "sha256": "8dcddf4fd5a7731ad30c384243ace2edb9b109bbec05b1a435bce5622dd5a219"
+            },
+            {
+              "path": "src/store.js",
+              "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+            }
+          ]
+        },
+        "prompt_version": "relationship-v3.6-canonical-state",
+        "fixture_sha256": "d5acfac5ee4bba356efb5480f5ce5e0e290f7a6c1f366b875c3b9f73d2706e60",
+        "questions_sha256": "a3f30c6889266c5e1c4eb81e2d2ab59bee528015a23212a2ad72c4ba341957e5",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "metrics": {
+        "attempts": 8,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 321594,
+        "attempt_p50_ms": 31675,
+        "attempt_p95_ms": 63793,
+        "prompt_tokens": 36891,
+        "completion_tokens": 2702,
+        "cost_measured": false
+      },
+      "human_review": "pending",
+      "raw_local_file": "ai/local_api/runtime/evaluations/denied_risk_unknown_relation-2026-10-15T02-58-44-845Z-d4257c7d-9df2-4516-b728-c86ba29dc934.json",
+      "raw_sha256": "8a3fc0d505d372965df083d59c52604bbda24ec3a0592665b8f18097a0ddeea0"
+    },
+    {
+      "run_id": "2026-10-15T02-57-10-130Z-b649f457-6761-4238-b342-d15b3dc1df87",
+      "case_id": "denied_risk_unknown_relation",
+      "measured_at": "2026-10-15T02:57:10.131Z",
+      "model": "gemma4:12b",
+      "mode": "state",
+      "incremental": false,
+      "web_context": false,
+      "status": "passed",
+      "duration_ms": 68986,
+      "code": null,
+      "reason": null,
+      "identity": {
+        "source": {
+          "sha256": "965448651fa228f63f8f207ba21bb7e40233b0354f1007273205171988bdf121",
+          "files": [
+            {
+              "path": "migrations/001_initial.sql",
+              "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+            },
+            {
+              "path": "migrations/002_questions.sql",
+              "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+            },
+            {
+              "path": "migrations/003_frontend_name.sql",
+              "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+            },
+            {
+              "path": "migrations/004_frontend_questions.sql",
+              "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+            },
+            {
+              "path": "package-lock.json",
+              "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+            },
+            {
+              "path": "package.json",
+              "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+            },
+            {
+              "path": "public/css/about.css",
+              "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+            },
+            {
+              "path": "public/css/base.css",
+              "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+            },
+            {
+              "path": "public/css/chat.css",
+              "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+            },
+            {
+              "path": "public/css/columns.css",
+              "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+            },
+            {
+              "path": "public/css/records.css",
+              "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+            },
+            {
+              "path": "public/css/result.css",
+              "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+            },
+            {
+              "path": "public/css/start.css",
+              "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+            },
+            {
+              "path": "public/index.html",
+              "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+            },
+            {
+              "path": "public/js/app.js",
+              "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+            },
+            {
+              "path": "public/js/components/AboutScreen.js",
+              "sha256": "8dce6c439fea63e33e02887fdb350f73838e4b9c9f79424522fd8bffa4909571"
+            },
+            {
+              "path": "public/js/components/ChatInput.js",
+              "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+            },
+            {
+              "path": "public/js/components/ChatScreen.js",
+              "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+            },
+            {
+              "path": "public/js/components/ColumnsScreen.js",
+              "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+            },
+            {
+              "path": "public/js/components/GuideCards.js",
+              "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+            },
+            {
+              "path": "public/js/components/RecordsScreen.js",
+              "sha256": "6938b7592ba7dbe6cf277f84c699490e9d696d403f02024e72de2738db1dfa55"
+            },
+            {
+              "path": "public/js/components/ResultScreen.js",
+              "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+            },
+            {
+              "path": "public/js/components/StartScreen.js",
+              "sha256": "53ce4bfd6ca4d08e780e9b3971d8992eb435f98e040313c1264299288ba16851"
+            },
+            {
+              "path": "public/js/components/TopBar.js",
+              "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+            },
+            {
+              "path": "public/js/core/api.js",
+              "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+            },
+            {
+              "path": "public/js/core/assets.js",
+              "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+            },
+            {
+              "path": "public/js/core/columnBodies.js",
+              "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+            },
+            {
+              "path": "public/js/core/columns.js",
+              "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+            },
+            {
+              "path": "public/js/core/conversation.js",
+              "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+            },
+            {
+              "path": "public/js/core/questions.js",
+              "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+            },
+            {
+              "path": "public/js/core/store.js",
+              "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+            },
+            {
+              "path": "public/js/core/utils.js",
+              "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+            },
+            {
+              "path": "public/js/test-result.js",
+              "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+            },
+            {
+              "path": "public/test-data/relationship-result.json",
+              "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+            },
+            {
+              "path": "public/test-result.html",
+              "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+            },
+            {
+              "path": "src/agent-state.js",
+              "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+            },
+            {
+              "path": "src/catalog.js",
+              "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+            },
+            {
+              "path": "src/errors.js",
+              "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+            },
+            {
+              "path": "src/intake.js",
+              "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+            },
+            {
+              "path": "src/model-context.js",
+              "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+            },
+            {
+              "path": "src/model-schema.js",
+              "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+            },
+            {
+              "path": "src/model.js",
+              "sha256": "f61fa11f100795ea0e01031f3e91b073ae01f332bd0495d276faaab453f04198"
+            },
+            {
+              "path": "src/question-bank.js",
+              "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+            },
+            {
+              "path": "src/relationship-agent.js",
+              "sha256": "7d180113cf02c7049367cec4615c209747b4cc5e09842125c3abf31ce2e9e55d"
+            },
+            {
+              "path": "src/relationship-prompts.js",
+              "sha256": "c14f1d131fad1b432df57459f0f644ee9f081d5d4ef855dea6d32b99b8d4eb88"
+            },
+            {
+              "path": "src/relationship-retrieval.js",
+              "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+            },
+            {
+              "path": "src/server.js",
+              "sha256": "211c7a4aa7b68eb15696d7427282d42590fc008df642f470f911812a11313eda"
+            },
+            {
+              "path": "src/store.js",
+              "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+            }
+          ]
+        },
+        "prompt_version": "relationship-v3.6-canonical-state",
+        "fixture_sha256": "d5acfac5ee4bba356efb5480f5ce5e0e290f7a6c1f366b875c3b9f73d2706e60",
+        "questions_sha256": "a3f30c6889266c5e1c4eb81e2d2ab59bee528015a23212a2ad72c4ba341957e5",
+        "model_requested": "gemma4:12b",
+        "checkpoint_sha256_declared": null,
+        "runtime_model_identity_verified": false,
+        "protocol": "relationship_agent",
+        "timeout_ms": 600000,
+        "deployment_verified": false,
+        "independent_test": false,
+        "human_review": "pending"
+      },
+      "metrics": {
+        "attempts": 1,
+        "failed_attempts": 0,
+        "retries": 0,
+        "attempt_wait_ms": 68970,
+        "attempt_p50_ms": 68970,
+        "attempt_p95_ms": 68970,
+        "prompt_tokens": 5710,
+        "completion_tokens": 740,
+        "cost_measured": false
+      },
+      "human_review": "pending",
+      "raw_local_file": "ai/local_api/runtime/evaluations/denied_risk_unknown_relation-state-2026-10-15T02-57-10-130Z-b649f457-6761-4238-b342-d15b3dc1df87.json",
+      "raw_sha256": "40acac038ab762bc779f03cf43982c4f6dcc023eb362db9281a7add01a591cd7"
+    }
+  ],
+  "unverified": [
+    "independent test",
+    "human usefulness and semantic review",
+    "final 31B checkpoint loading and full web flow",
+    "field adoption and cost",
+    "retention/deletion operating policy",
+    "rehearsal and submission"
+  ],
+  "artifacts": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "e5eecd777a14bea4f8fcf1ae86a4c0c8a7825f90d465048e52fe126344a5b5c0",
+      "bytes": 1763
+    },
+    {
+      "path": "README.md",
+      "sha256": "c0081ef473415520e90489e0613940d3e74800fc996a2735c99dc7b064ffbaf7",
+      "bytes": 2183
+    },
+    {
+      "path": "ai/README.md",
+      "sha256": "b662ad1a74af19b6ebe787ed82c09fce94088832d31a676de06872c37e5184f3",
+      "bytes": 1264
+    },
+    {
+      "path": "ai/local_api/RELATIONSHIP_AGENT.md",
+      "sha256": "a88fd1d053139ea88da44cf66aeb562d84eadad27ac0f6494e8121345dea8976",
+      "bytes": 5754
+    },
+    {
+      "path": "ai/scripts/evaluate_relationship_agent.mjs",
+      "sha256": "eccf1f4934c52cec0e57051c996f89f907958ac60243bc5e1e3b938841dfb70f",
+      "bytes": 9535
+    },
+    {
+      "path": "ai/scripts/evaluation_evidence.mjs",
+      "sha256": "8ca0d27f8266a35dd80d7cea8a3d4405fecc26293bae7a6e979e810bbe04e071",
+      "bytes": 5797
+    },
+    {
+      "path": "ai/scripts/evaluation_evidence.test.mjs",
+      "sha256": "edaaf03a37cd120d06ae5e809b6a527598681dcadc85d0b2891f1c512b6e5961",
+      "bytes": 5862
+    },
+    {
+      "path": "ai/scripts/smoke_relationship_web.mjs",
+      "sha256": "431c318949d84d5d58efee999e6cb68c0c6ab85f7b4f35eea9a6af834ec05769",
+      "bytes": 8907
+    },
+    {
+      "path": "ai/scripts/summarize_relationship_evaluations.mjs",
+      "sha256": "0e7ddbe7a8a5c8742109c632d9b4e3ca86a8ce1fd2118b81bd51fe5cc0eb4004",
+      "bytes": 563
+    },
+    {
+      "path": "app/docs/API.md",
+      "sha256": "9182b34879cf87e4c89ed86826cbf26481c4a41d2bb76ebc7c333fb5cc2f77d0",
+      "bytes": 10232
+    },
+    {
+      "path": "app/docs/RELATIONSHIP_AGENT.md",
+      "sha256": "cb4292745ef01b5d1eb64578e3f9a4c967a8df474d753950a81bb7b06f3df881",
+      "bytes": 29740
+    },
+    {
+      "path": "app/docs/UI_CONTENT_POLICY.md",
+      "sha256": "3c097404384e76f8a5fecab7382a7d4e1ec12f93c59e8f2b4890cb4459c75c5a",
+      "bytes": 1999
+    },
+    {
+      "path": "app/docs/openapi.json",
+      "sha256": "4fdbccb55a5c151f35de32c9c972eba94cbd5d52f9308b67fbf62eb16b5719d7",
+      "bytes": 24214
+    },
+    {
+      "path": "app/public/js/components/AboutScreen.js",
+      "sha256": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6",
+      "bytes": 4443
+    },
+    {
+      "path": "app/public/js/components/ChatScreen.js",
+      "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3",
+      "bytes": 6555
+    },
+    {
+      "path": "app/public/js/components/RecordsScreen.js",
+      "sha256": "bcebbd96d56804856427ea2cb5516b32dd8957c04bb29dd49db700ced648d233",
+      "bytes": 4422
+    },
+    {
+      "path": "app/public/js/components/StartScreen.js",
+      "sha256": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661",
+      "bytes": 2085
+    },
+    {
+      "path": "app/src/model.js",
+      "sha256": "1fad46fece144175c81b7220c0587b7605a395ee576a241f6734b9e7b31f1fde",
+      "bytes": 42280
+    },
+    {
+      "path": "app/src/relationship-agent.js",
+      "sha256": "8e653c746b35fd484f837e4c2fe7fc55adc31f1706ca9d94191752aef7d952b5",
+      "bytes": 32142
+    },
+    {
+      "path": "app/src/relationship-prompts.js",
+      "sha256": "86eeb270a9d66ad63122e1a73090ae500979ef43213971931a46c80452037e25",
+      "bytes": 25209
+    },
+    {
+      "path": "app/src/server.js",
+      "sha256": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305",
+      "bytes": 21576
+    },
+    {
+      "path": "app/src/source-identity.js",
+      "sha256": "d9ed9e8256278e8758e7bc10019a942daa77f8bbed55ba225b3ff95f4a31bf51",
+      "bytes": 1113
+    },
+    {
+      "path": "app/tests/api.test.js",
+      "sha256": "79579e264bce34680418ec8924661c102ee954d590fcf2359287e0ee1126c2fd",
+      "bytes": 44252
+    },
+    {
+      "path": "app/tests/relationship-agent.test.js",
+      "sha256": "25b041d018becff76a3d82fc0e0e5ca3bc98286e4c4cc59c99a21ae39ec46030",
+      "bytes": 76677
+    },
+    {
+      "path": "app/tests/ui.test.js",
+      "sha256": "6923de21371b2d4c896508d43117ab712f5db8c777510c30e3e889b3646e8a67",
+      "bytes": 45969
+    },
+    {
+      "path": "docs/README.md",
+      "sha256": "9be5d686d31df60468967b620271ca9a73cc6692781c5793366028048652fe8c",
+      "bytes": 1549
+    },
+    {
+      "path": "docs/competition/01_대회요구와_적합성.md",
+      "sha256": "015bd596e084263d981280d7d62c3f2c937a806903d5e8b76389d5c82422fd71",
+      "bytes": 2792
+    },
+    {
+      "path": "docs/competition/03_발표주장과_PPT검토.md",
+      "sha256": "6f2b67325a6841c4bf23ec4bf4d75aa77bb5f8528b84cb7087c036e4610a04a8",
+      "bytes": 17547
+    },
+    {
+      "path": "docs/competition/04_제출범위와_검증계약.md",
+      "sha256": "93b3984f799dfaa694c78b09a5a191ff5755058c7e168deb9b2a6ceb939734ba",
+      "bytes": 9392
+    },
+    {
+      "path": "docs/competition/README.md",
+      "sha256": "3c61d2054b9d781ecc3fd0a12b1e211489b6eb3e0a3107eb908bbfe55a9ea510",
+      "bytes": 1213
+    },
+    {
+      "path": "docs/current/데이터와_연구.md",
+      "sha256": "cfa7189a1e77ff42f50faec0b1662141bb74ad66b2109873665049ab789512a5",
+      "bytes": 4984
+    },
+    {
+      "path": "docs/current/실행과_검증.md",
+      "sha256": "a338e8d215309bd63e3177af951137c9126b7db147accae3b2f0ed7b8dc01cda",
+      "bytes": 3425
+    },
+    {
+      "path": "docs/current/현황과_할일.md",
+      "sha256": "fd046fdeb6b6e6d22c67eb542af2f18de1f665ccef1819a176ea98e6e85cd1e8",
+      "bytes": 5083
+    },
+    {
+      "path": "package.json",
+      "sha256": "fb972001eb1f833c03315fdc1392e4e9e75dd66f497088e84594bd05c9e8513a",
+      "bytes": 750
+    },
+    {
+      "path": "presentation/README.md",
+      "sha256": "c40d8ad5806878e9c52a0477d3a528a3575268ae9ebdb2d00ce54235d5f8b6e3",
+      "bytes": 1799
+    },
+    {
+      "path": "presentation/final/말씨_결선_근거정합본_v2.pptx",
+      "sha256": "ce8d91ffdc12bb83ce5e0b92137b330722cc4cdc34a2c40876910fcb2fcc9d2d",
+      "bytes": 1351130
+    }
+  ],
+  "documentation_links": {
+    "checked_documents": 10,
+    "broken": 0
+  },
+  "final_source": {
+    "source": {
+      "sha256": "910747a843541a6784b62b665842d9de3400b78e1c49a0a98525f3bc79e71203",
+      "files": [
+        {
+          "path": "migrations/001_initial.sql",
+          "sha256": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9"
+        },
+        {
+          "path": "migrations/002_questions.sql",
+          "sha256": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769"
+        },
+        {
+          "path": "migrations/003_frontend_name.sql",
+          "sha256": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549"
+        },
+        {
+          "path": "migrations/004_frontend_questions.sql",
+          "sha256": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f"
+        },
+        {
+          "path": "package-lock.json",
+          "sha256": "63a0ffcaa18bfd3c9561f80897736850426efadf87cdd1325368e5f85c170d66"
+        },
+        {
+          "path": "package.json",
+          "sha256": "174e107e0d2f58a5a987e71fe9476b80200761c366b6e3dd1343d6478879a4a9"
+        },
+        {
+          "path": "public/css/about.css",
+          "sha256": "eae3459cd351b18cdf5f02ba2e6c6cad99fc3f220dd83ad906412018414f87c5"
+        },
+        {
+          "path": "public/css/base.css",
+          "sha256": "7fdbdb976aca4cf56c460ac240669e78c7648dafec14a4099b3a2a1e5398b96e"
+        },
+        {
+          "path": "public/css/chat.css",
+          "sha256": "8ea1d0edda81e04fde35da8bbe4e3a039456234c554b91bdeba203d80556c197"
+        },
+        {
+          "path": "public/css/columns.css",
+          "sha256": "148c579e39fe4d8096f3aa2b2ce96c5335c21ce5f561c3e9fa54ed5ae73679c8"
+        },
+        {
+          "path": "public/css/records.css",
+          "sha256": "9f40b1e01e3386192aa19c576c7bd90ba53d355571025744818624211a5f36c2"
+        },
+        {
+          "path": "public/css/result.css",
+          "sha256": "ae583e3ab7416be9d18ac4d8d305c8a49bb9c934b6f11b5f065c372777374e41"
+        },
+        {
+          "path": "public/css/start.css",
+          "sha256": "a3da399a5fbfe24760283ac720a7cc7a6b996cf0aa713b20d3e2566c761b28eb"
+        },
+        {
+          "path": "public/index.html",
+          "sha256": "6ef87e6e38e1cfb39301522a5fca419ae3ebd2cb444b203016f25a79d09d8a80"
+        },
+        {
+          "path": "public/js/app.js",
+          "sha256": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4"
+        },
+        {
+          "path": "public/js/components/AboutScreen.js",
+          "sha256": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6"
+        },
+        {
+          "path": "public/js/components/ChatInput.js",
+          "sha256": "648f4bf1fb71e28b91621557d50712db538219ed37b44fb8925d959fc519feda"
+        },
+        {
+          "path": "public/js/components/ChatScreen.js",
+          "sha256": "2a6f11c45ac62bbc54ac8607e55443563100aede1edfa7ff5f31e833a9ddabe3"
+        },
+        {
+          "path": "public/js/components/ColumnsScreen.js",
+          "sha256": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1"
+        },
+        {
+          "path": "public/js/components/GuideCards.js",
+          "sha256": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3"
+        },
+        {
+          "path": "public/js/components/RecordsScreen.js",
+          "sha256": "bcebbd96d56804856427ea2cb5516b32dd8957c04bb29dd49db700ced648d233"
+        },
+        {
+          "path": "public/js/components/ResultScreen.js",
+          "sha256": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27"
+        },
+        {
+          "path": "public/js/components/StartScreen.js",
+          "sha256": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661"
+        },
+        {
+          "path": "public/js/components/TopBar.js",
+          "sha256": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3"
+        },
+        {
+          "path": "public/js/core/api.js",
+          "sha256": "9e7d2dfc3ca194854a4839da0c709cf12165d2704eaad6ab46a12408544d4a12"
+        },
+        {
+          "path": "public/js/core/assets.js",
+          "sha256": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12"
+        },
+        {
+          "path": "public/js/core/columnBodies.js",
+          "sha256": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66"
+        },
+        {
+          "path": "public/js/core/columns.js",
+          "sha256": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626"
+        },
+        {
+          "path": "public/js/core/conversation.js",
+          "sha256": "d185133dc8481c9e585ccc83e3d3e21f4288a2847359dea027d73263b13ad72f"
+        },
+        {
+          "path": "public/js/core/questions.js",
+          "sha256": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9"
+        },
+        {
+          "path": "public/js/core/store.js",
+          "sha256": "6070badce2cb2b82a2909c3bf11231d8b72cc5f37abf79f24e4315f2356d17ef"
+        },
+        {
+          "path": "public/js/core/utils.js",
+          "sha256": "eee8f93a98472c2306a9823d7b81a8adf238e94d852014ab8bb539f953f1ad08"
+        },
+        {
+          "path": "public/js/test-result.js",
+          "sha256": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0"
+        },
+        {
+          "path": "public/test-data/relationship-result.json",
+          "sha256": "9df378dc1122cf4ff0d9ef2a421d7508310068296f982ba0e2e3a499d102e2af"
+        },
+        {
+          "path": "public/test-result.html",
+          "sha256": "17f29c6e52389c08bf2d16aa8b3834f9775b7b4db70bdab82381532e6296bbbc"
+        },
+        {
+          "path": "seeds/questions.json",
+          "sha256": "f1f09f22bf47c3fc9766634b0ab7ccbf332327bf4789741517efc369bd80c6c3"
+        },
+        {
+          "path": "src/agent-state.js",
+          "sha256": "5e4180e1985af2f8cbe901fa8741c9e61028fdb00fbe3b189ed3cfc0dfa046d7"
+        },
+        {
+          "path": "src/catalog.js",
+          "sha256": "0cf875ff60b935b8f73776257c9fbd3ba921aa5a1c232c41d369206bdac32795"
+        },
+        {
+          "path": "src/errors.js",
+          "sha256": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99"
+        },
+        {
+          "path": "src/intake.js",
+          "sha256": "9c3f3a4225cd87c06142e5b7b7773f12b37357e6d3d1514121dc3a3ba59511b9"
+        },
+        {
+          "path": "src/model-context.js",
+          "sha256": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785"
+        },
+        {
+          "path": "src/model-schema.js",
+          "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+        },
+        {
+          "path": "src/model.js",
+          "sha256": "1fad46fece144175c81b7220c0587b7605a395ee576a241f6734b9e7b31f1fde"
+        },
+        {
+          "path": "src/question-bank.js",
+          "sha256": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282"
+        },
+        {
+          "path": "src/relationship-agent.js",
+          "sha256": "8e653c746b35fd484f837e4c2fe7fc55adc31f1706ca9d94191752aef7d952b5"
+        },
+        {
+          "path": "src/relationship-prompts.js",
+          "sha256": "86eeb270a9d66ad63122e1a73090ae500979ef43213971931a46c80452037e25"
+        },
+        {
+          "path": "src/relationship-retrieval.js",
+          "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+        },
+        {
+          "path": "src/server.js",
+          "sha256": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305"
+        },
+        {
+          "path": "src/source-identity.js",
+          "sha256": "d9ed9e8256278e8758e7bc10019a942daa77f8bbed55ba225b3ff95f4a31bf51"
+        },
+        {
+          "path": "src/store.js",
+          "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+        }
+      ]
+    },
+    "latest_live_source_sha256": "cd5202e90d0aae69183eff1f71eb18227cb5f0eda17d547d6f6fe2b30da937c3",
+    "post_live_changed_files": [
+      "public/js/components/RecordsScreen.js",
+      "src/source-identity.js"
+    ],
+    "scope": "Records deletion notice wording and source-identity trailing whitespace only; model and prompt files unchanged",
+    "ui_tests": {
+      "command": "node --test tests/ui.test.js",
+      "passed": true,
+      "pass": 43,
+      "fail": 0,
+      "skipped": 0
+    }
+  }
+}

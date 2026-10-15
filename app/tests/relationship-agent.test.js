@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelGateway } from '../src/model.js';
-import { validateRelationship, validateRelationshipDraft, canonicalRelationship, urgentGuideActions, validatePlan, validateReview, agentContext, validateRelationshipMemory,relationshipStateRequest,groundedEvidenceSchema,relationshipSchema,relationshipDraftSchema } from '../src/relationship-agent.js';
+import { validateRelationship, validateRelationshipDraft, canonicalRelationship, urgentGuideActions, validatePlan, validateReview, validateSchema, agentContext, validateRelationshipMemory, canonicalPatientState, canonicalRelationshipMemory, canonicalRelationshipState, relationshipStateRequest,groundedEvidenceSchema,relationshipSchema,relationshipDraftSchema } from '../src/relationship-agent.js';
 import { createIntake,answerIntake,applyModelUpdate,buildContext,backIntake,prepareModelAnswer } from '../src/intake.js';
 
 const field=(id,text,status='answered')=>({id,text,rawText:text,custom:'',status,question:id});
@@ -22,8 +22,19 @@ const draftAnalysis=(value=analysis())=>{
   return {observations:{patient:[ref()],supporter:[{subject:'supporter',question_id:'feeling',quote:'무력하고 걱정돼요'}]},...draft};
 };
 const canonicalAnalysis=(value,ctx=context())=>canonicalRelationship(draftAnalysis(value),ctx);
+const draftState=payload=>{
+  const draft=structuredClone(payload);
+  delete draft.patient_state.summary;delete draft.patient_state.user_goal;
+  for(const fact of draft.patient_state.facts)delete fact.interpretation;
+  for(const subject of ['patient','supporter'])for(const item of draft.relationship_memory[subject]) {
+    if(item.certainty==='reported')delete item.interpretation;
+  }
+  return draft;
+};
 // Existing stored-report fixtures are adapted only at the model response boundary.
-const fixtureEnvelope=payload=>envelope(payload?.relationship&&Object.hasOwn(payload,'patient_summary')?draftAnalysis(payload):payload);
+const fixtureEnvelope=payload=>envelope(payload?.relationship&&Object.hasOwn(payload,'patient_summary')?draftAnalysis(payload)
+  :payload?.patient_state&&payload?.relationship_memory?draftState(payload):payload);
+const stateDraft=(ctx=context())=>draftState({patient_state:memory(),name_index:ctx.name_index,relationship_memory:relationshipMemory()});
 const riskContext=text=>{
   const ctx=context();ctx.patient.fields.risk=field('risk',text||'지금 자신을 해치겠다고 말하며 위험한 곳에 있어요.');return ctx;
 };
@@ -54,12 +65,15 @@ test('final analysis, quality and critical reviews use the same current evidence
     assert.ok(input.data.retrieval.documents.some(row=>row.question_id==='mood'));
     assert.equal(body.model,'gemma4:12b'); assert.equal(body.reasoning_effort,'none');
     assert.equal(requestContainsSecret(input),false);
+    if(input.stage==='guide_quality')assert.deepEqual(body.response_format.json_schema.schema.properties.improvements.items.properties.field.enum,['script','doList','avoid','next','care']);
+    if(input.stage==='guide_review')assert.deepEqual(body.response_format.json_schema.schema.properties.issues.items.properties.field.enum,['relationship_analysis','script','doList','avoid','next','care','top']);
+    assert.equal(Object.hasOwn(input.data,'review_scope'),false);
     return fixtureEnvelope(outputs[input.stage]);
   });
   const result=await model.respond(context(),memory());
   assert.deepEqual(stages,['relationship_analysis','analysis_review','communication_plan','guide_write','guide_quality','guide_review']);
   assert.deepEqual(result.guide,guide().guide);assert.deepEqual(result.relationship_analysis,canonicalAnalysis(analysis()));
-  assert.equal(result.agent.reviewed,true);assert.deepEqual(result.patient_state,memory());
+  assert.equal(result.agent.reviewed,true);assert.deepEqual(result.patient_state,canonicalPatientState(memory(),context()));
   assert.deepEqual(result.agent.retrieval.stages.map(row=>row.stage),stages);
   assert.equal(JSON.stringify(result.agent.retrieval).includes('밤에 계획표'),false);
 });
@@ -156,7 +170,7 @@ test('a stale memory is regenerated from current answers before planning',async(
     stages.push(input.stage);
     return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[input.stage]);
   });
-  const result=await model.respond(ctx,bad);assert.equal(stages[0],'state');assert.deepEqual(result.patient_state,memory());
+  const result=await model.respond(ctx,bad);assert.equal(stages[0],'state');assert.deepEqual(result.patient_state,canonicalPatientState(memory(),ctx));
 });
 
 test('every state turn reads all current answers and the verified previous relationship memory',async()=>{
@@ -169,8 +183,8 @@ test('every state turn reads all current answers and the verified previous relat
   });
   const result=await model.updateState(ctx,memory());
   assert.ok(observed.patient.some(row=>row.question_id==='early'));
-  assert.deepEqual(observed.prior_relationship_memory,relationshipMemory());
-  assert.deepEqual(result.relationship_memory,relationshipMemory());
+  assert.deepEqual(observed.prior_relationship_memory,canonicalRelationshipMemory(relationshipMemory(),ctx));
+  assert.deepEqual(result.relationship_memory,canonicalRelationshipMemory(relationshipMemory(),ctx));
   ctx.patient.fields.mood.status='unknown';
   assert.equal(agentContext(ctx).prior_relationship_memory,null);
 });
@@ -190,7 +204,7 @@ test('new supporter evidence is provided alongside prior observations and unavai
   const request=relationshipStateRequest(ctx,memory());
   assert.deepEqual(request.data.latest_answer.answers,['무력하고 걱정돼요']);
   assert.equal(request.data.latest_answer.subject,'supporter');
-  assert.deepEqual(request.data.prior_relationship_memory,relationshipMemory());
+  assert.deepEqual(request.data.prior_relationship_memory,canonicalRelationshipMemory(relationshipMemory(),ctx));
   ctx.latest_answer={question_id:'feeling',subject:'patient'};
   assert.equal(relationshipStateRequest(ctx,memory()).data.latest_answer,null);
 });
@@ -207,7 +221,9 @@ test('runner evidence choices bind a whole actor, question and literal source, e
   }
   assert.equal(candidates.some(ref=>ref.question_id==='private'),false);
   const state=relationshipStateRequest(ctx,null).schema;
-  assert.ok(state.properties.relationship_memory.properties.supporter.items.properties.evidence.items.enum.every(ref=>ref.subject==='supporter'));
+  for(const variant of state.properties.relationship_memory.properties.supporter.items.anyOf) {
+    assert.ok(variant.properties.evidence.items.enum.every(ref=>ref.subject==='supporter'));
+  }
 });
 
 test('safety grammar keeps the complete denied-risk sentence and long source input stays intact',()=>{
@@ -265,7 +281,10 @@ test('early goals cannot be copied into another actor in the state output schema
   const request=relationshipStateRequest(ctx,null);
   assert.equal(request.schema.properties.relationship_memory.properties.patient.maxItems,0);
   assert.equal(request.schema.properties.relationship_memory.properties.supporter.maxItems,0);
-  assert.deepEqual(request.schema.properties.relationship_memory.properties.supporter.items.properties.evidence.items.properties.subject.enum,['supporter']);
+  for(const variant of request.schema.properties.relationship_memory.properties.supporter.items.anyOf) {
+    assert.deepEqual(variant.properties.evidence.items.properties.subject.enum,['supporter']);
+    assert.equal(Object.hasOwn(variant.properties.evidence.items,'enum'),false);
+  }
 });
 
 test('MLX context overflow rejects once without dropping or shortening current source answers',async()=>{
@@ -347,7 +366,8 @@ test('a late analysis problem rebuilds the plan, guide and reviewed memory from 
   assert.deepEqual(result.relationship_analysis,canonicalAnalysis(corrected,ctx));
   assert.equal(result.relationship_analysis.supporter_summary,'이용자 자신의 상황에 관한 답변 원문:\n“여동생에게 힘든 점을 이야기해요”');
   assert.deepEqual(result.relationship_memory.relationship,[]);
-  assert.deepEqual(result.relationship_memory.supporter,corrected.relationship.strengths);
+  assert.deepEqual(result.relationship_memory.supporter,canonicalRelationshipMemory({patient:[],supporter:corrected.relationship.strengths,
+    relationship:[],unknowns:[]},ctx).supporter);
   assert.deepEqual(result.relationship_memory.unknowns,corrected.unknowns);
   assert.equal(result.agent.reviewed,true);assert.equal(result.agent.quality_reviewed,true);
 });
@@ -447,6 +467,206 @@ test('state facts and their previous valid sources stay inside the retrieval sch
   }
 });
 
+test('state generation accepts only raw facts and reported evidence while the server derives attributed text',async()=>{
+  const ctx=context();ctx.patient.fields.mood=field('mood','계획표를 반복해서 확인해요');
+  const raw=stateDraft(ctx),quote=ctx.patient.fields.mood.rawText;
+  raw.patient_state.facts[0].quote=quote;raw.relationship_memory.patient[0].evidence[0].quote=quote;
+  const tentative={...finding(),evidence:[{subject:'patient',question_id:'mood',quote}]};
+  raw.relationship_memory.patient.push(tentative);raw.relationship_memory.relationship=[tentative];
+  let calls=0;
+  const model=gateway(body=>{
+    calls++;const schema=body.response_format.json_schema.schema;
+    assert.deepEqual(schema.properties.patient_state.required,['facts','unknowns']);
+    for(const variant of schema.properties.patient_state.properties.facts.items.anyOf) {
+      assert.equal(Object.hasOwn(variant.properties,'interpretation'),false);
+    }
+    const variants=schema.properties.relationship_memory.properties.patient.items.anyOf;
+    assert.deepEqual(variants[0].required,['evidence','certainty']);
+    assert.deepEqual(variants[1].required,['interpretation','evidence','certainty']);
+    assert.deepEqual(validateSchema(raw,schema),raw);
+    return envelope(raw);
+  });
+  const result=await model.updateState(ctx,null);
+  assert.equal(calls,1);
+  const literal='이용자가 대상자에 관해 보고한 답변 원문:\n“'+quote+'”';
+  assert.equal(result.patient_state.summary,literal);
+  assert.equal(result.patient_state.facts[0].interpretation,literal);
+  assert.equal(result.relationship_memory.patient[0].interpretation,literal);
+  assert.deepEqual(result.relationship_memory.patient[0].evidence,raw.relationship_memory.patient[0].evidence);
+  assert.deepEqual(result.relationship_memory.patient[1],tentative);
+  assert.deepEqual(result.relationship_memory.relationship,[tentative]);
+  assert.equal(JSON.stringify(result).includes('불안 증세'),false);
+});
+
+test('generated free summaries, fact interpretations and expanded reported findings cannot bypass the draft boundary',async()=>{
+  for(const mutate of [
+    raw=>{raw.patient_state.summary='불안 증세와 반복 확인이 관찰됐어요.';},
+    raw=>{raw.patient_state.facts[0].interpretation='불안 증세와 반복 확인이 관찰됐어요.';},
+    raw=>{raw.relationship_memory.patient[0].interpretation='불안 증세와 반복 확인이 관찰됐어요.';},
+  ]) {
+    const raw=stateDraft();mutate(raw);let calls=0;
+    const model=gateway(body=>{
+      calls++;assert.throws(()=>validateSchema(raw,body.response_format.json_schema.schema),{modelReason:'agent_schema'});
+      return envelope(raw);
+    });
+    await assert.rejects(model.updateState(context(),memory()),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema'});
+    assert.equal(calls,3);
+  }
+});
+
+test('a stale model selection retains the complete latest answer without retrying',async()=>{
+  const ctx=context();ctx.latest_answer={subject:'supporter',question_id:'feeling'};
+  let calls=0;
+  const model=gateway(()=>{calls++;return envelope(stateDraft(ctx));});
+  const result=await model.updateState(ctx,memory());
+  assert.equal(calls,1);
+  assert.equal(result.patient_state.facts.at(-1).interpretation,'이용자가 자신의 상황에 관해 보고한 답변 원문:\n“무력하고 걱정돼요”');
+  assert.ok(result.patient_state.summary.includes('무력하고 걱정돼요'));
+});
+
+test('latest source retention preserves full denial, attribution and follow-up while leaving unknown and refused answers unconfirmed',()=>{
+  const ctx=context();ctx.latest_answer={subject:'supporter',question_id:'feeling'};
+  const full='다른 사람이 위험하다고 말했지만 제 생각은 아니고 지금은 그런 생각이 전혀 없어요.';
+  ctx.supporter.fields.feeling=field('feeling',full);
+  ctx.supporter.fields.feeling.followUp={answer:{text:'아까 말은 작년 일을 인용한 거예요. 지금 이야기로 바꾸지 말아 주세요.'}};
+  const result=canonicalRelationshipState(stateDraft(ctx),ctx);
+  const facts=result.patient_state.facts.filter(fact=>fact.subject==='supporter');
+  assert.deepEqual(facts.map(fact=>fact.quote),[full,ctx.supporter.fields.feeling.followUp.answer.text]);
+  for(const status of ['unknown','refused','skipped']) {
+    ctx.supporter.fields.feeling.status=status;
+    const uncertain=canonicalRelationshipState(stateDraft(ctx),ctx);
+    assert.equal(uncertain.patient_state.facts.some(fact=>fact.subject==='supporter'),false);
+  }
+});
+
+test('latest selected labels plus maximum custom text retain source without splitting Unicode',()=>{
+  const ctx=context();ctx.latest_answer={subject:'supporter',question_id:'feeling'};
+  const original='걱정됨 '+ '가'.repeat(9995)+'🌱'+' 지금은 그런 생각이 전혀 없어요.';
+  ctx.supporter.fields.feeling=field('feeling',original);
+  const result=canonicalRelationshipState(stateDraft(ctx),ctx);
+  const quotes=result.patient_state.facts.filter(fact=>fact.subject==='supporter').map(fact=>fact.quote);
+  assert.ok(quotes.length>1);
+  assert.equal(quotes.join(''),original);
+  for(const quote of quotes) {
+    assert.ok(quote.length<=10000);
+    assert.ok(quote.isWellFormed());
+  }
+});
+
+test('corrected current risk denial is retained literally and old affirmative state cannot survive source validation',async()=>{
+  const ctx=context();ctx.latest_answer={subject:'patient',question_id:'mood'};
+  const old=stateDraft(ctx),denial='과거에 자해 이야기를 했지만 지금은 그런 생각이 전혀 없다고 말했어요.';
+  ctx.patient.fields.mood=field('mood',denial);
+  ctx.relationship_state=null;
+  const fresh=stateDraft(ctx);
+  fresh.patient_state.facts[0].quote=denial;
+  fresh.relationship_memory.patient[0].evidence[0].quote=denial;
+  let calls=0;
+  const model=gateway(body=>{
+    calls++;
+    const input=JSON.parse(body.messages[1].content);
+    assert.equal(input.data.prior_state,null);
+    assert.deepEqual(input.data.latest_answer.answers,[denial]);
+    return envelope(calls===1?old:fresh);
+  });
+  const result=await model.updateState(ctx,memory());
+  assert.equal(calls,2);
+  assert.equal(result.patient_state.facts[0].quote,denial);
+  assert.ok(result.patient_state.summary.includes(denial));
+  assert.ok(result.relationship_memory.patient[0].interpretation.includes(denial));
+});
+
+test('state draft union references are actor-bound, current, answered and restricted to retrieved sources',()=>{
+  const ctx=context();ctx.patient.fields.private=field('private','답하고 싶지 않아요','refused');
+  ctx.patient.fields.old=field('old','이전 답변은 아니에요','unknown');
+  for(let i=0;i<45;i++)ctx.patient.fields['noise'+i]=field('noise'+i,'zz'+i+'qq');
+  const request=relationshipStateRequest(ctx,memory()),ids=new Set(request.retrieval.documents.map(row=>row.question_id));
+  for(const subject of ['patient','supporter']) {
+    for(const variant of request.schema.properties.relationship_memory.properties[subject].items.anyOf) {
+      for(const reference of variant.properties.evidence.items.enum) {
+        assert.equal(reference.subject,subject);assert.equal(ctx[subject].fields[reference.question_id].status,'answered');
+        assert.ok(ids.has(reference.question_id));
+      }
+    }
+  }
+  const missing=Object.values(ctx.patient.fields).find(row=>row.id.startsWith('noise')&&!ids.has(row.id));
+  assert.ok(missing);
+  for(const badRef of [
+    {subject:'supporter',question_id:'mood',quote:ref().quote},
+    {...ref(),quote:'확인하지 않은 원문'},
+    {subject:'patient',question_id:'private',quote:ctx.patient.fields.private.text},
+    {subject:'patient',question_id:'old',quote:ctx.patient.fields.old.text},
+    {subject:'patient',question_id:missing.id,quote:missing.text},
+  ]) {
+    const raw=stateDraft(ctx);raw.relationship_memory.patient[0].evidence=[badRef];
+    assert.throws(()=>canonicalRelationshipState(raw,ctx,request.schema),{modelReason:'agent_schema'});
+  }
+  const stale=stateDraft(ctx);ctx.patient.fields.mood=field('mood','학교에서 연락을 받았어요');
+  assert.throws(()=>canonicalRelationshipState(stale,ctx),{modelReason:'agent_schema'});
+});
+
+test('valid legacy prior summaries and reported interpretations are normalized before model input',()=>{
+  const ctx=context(),prior=memory();
+  prior.summary='걱정 때문에 불안 증세가 생겼어요.';prior.facts[0].interpretation='불안 증세와 반복 확인이 관찰됐어요.';
+  ctx.relationship_state.patient[0].interpretation='불안 증세와 반복 확인이 관찰됐어요.';
+  ctx.relationship_state.patient.push(finding());ctx.relationship_state.relationship=[finding()];
+  assert.deepEqual(validateRelationshipMemory(ctx.relationship_state,ctx),ctx.relationship_state);
+  const request=relationshipStateRequest(ctx,prior);
+  assert.equal(JSON.stringify(request.data).includes('불안 증세'),false);
+  assert.equal(request.data.prior_state.summary,'이용자가 대상자에 관해 보고한 답변 원문:\n“밤에 계획표를 고쳐요”');
+  assert.equal(request.data.prior_state.facts[0].interpretation,request.data.prior_state.summary);
+  assert.equal(request.data.prior_relationship_memory.patient[0].interpretation,request.data.prior_state.summary);
+  assert.deepEqual(request.data.prior_relationship_memory.patient[1],finding());
+  assert.deepEqual(request.data.prior_relationship_memory.relationship,[finding()]);
+  const stale=structuredClone(prior);stale.facts[0].quote='예전 답변';
+  assert.equal(relationshipStateRequest(ctx,stale).data.prior_state,null);
+  ctx.patient.fields.mood.status='refused';
+  assert.equal(agentContext(ctx).prior_relationship_memory,null);
+});
+
+test('long reported quotes remain complete in evidence and receive a short attributed interpretation',()=>{
+  const ctx=context(),quote='상황을 확인한 원문입니다. '.repeat(45);
+  ctx.patient.fields.long=field('long',quote);
+  const raw=stateDraft(ctx);raw.relationship_memory.patient[0].evidence=[{subject:'patient',question_id:'long',quote}];
+  const result=canonicalRelationshipState(raw,ctx);
+  assert.equal(result.relationship_memory.patient[0].interpretation,'이용자가 대상자에 관해 보고한 답변 원문은 근거에 보존했어요.');
+  assert.equal(result.relationship_memory.patient[0].evidence[0].quote,quote);
+  assert.ok(result.relationship_memory.patient[0].interpretation.length<=500);
+  const veryLong='긴 답변 원문입니다. '.repeat(220),prior=memory();
+  ctx.patient.fields.veryLong=field('veryLong',veryLong);
+  prior.facts=[{subject:'patient',question_id:'veryLong',quote:veryLong,interpretation:'예전 해석',certainty:'reported'}];
+  const normalized=canonicalPatientState(prior,ctx);
+  assert.equal(normalized.facts[0].quote,veryLong);
+  assert.equal(normalized.facts[0].interpretation,'이용자가 대상자에 관해 보고한 답변 원문은 근거에 보존했어요.');
+});
+
+test('unknown fact certainty stays unconfirmed and draft object references accept equivalent key order',()=>{
+  const ctx=context(),raw=stateDraft(ctx);raw.patient_state.facts[0].certainty='unknown';
+  const result=canonicalRelationshipState(raw,ctx);
+  assert.equal(result.patient_state.facts[0].certainty,'unknown');
+  assert.equal(result.patient_state.facts[0].interpretation,'이용자가 대상자에 관해 미확인으로 남긴 답변 원문:\n“밤에 계획표를 고쳐요”');
+  assert.equal(result.patient_state.summary,result.patient_state.facts[0].interpretation);
+  raw.relationship_memory.patient[0].evidence=[{quote:ref().quote,question_id:'mood',subject:'patient'}];
+  assert.doesNotThrow(()=>canonicalRelationshipState(raw,ctx));
+  const prior=memory();ctx.patient.fields.mood.status='unknown';prior.facts[0].certainty='unknown';
+  assert.ok(canonicalPatientState(prior,ctx).summary.includes('미확인으로 남긴'));
+  prior.facts[0].certainty='reported';assert.throws(()=>canonicalPatientState(prior,ctx),{code:'MODEL_INVALID_RESPONSE'});
+});
+
+test('reported final resources are normalized before they become the next state memory',async()=>{
+  const value=analysis();value.relationship.strengths=[{interpretation:'불안 증세와 반복 확인이 관찰됐어요.',certainty:'reported',evidence:[ref()]}];
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages.at(-1).content).stage;
+    return fixtureEnvelope({relationship_analysis:value,analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[stage]);
+  });
+  const result=await model.respond(context(),memory());
+  assert.equal(result.relationship_memory.patient[0].interpretation,'이용자가 대상자에 관해 보고한 답변 원문:\n“밤에 계획표를 고쳐요”');
+  assert.deepEqual(result.relationship_memory.patient[0].evidence,[ref()]);
+  const ctx=context();ctx.relationship_state=result.relationship_memory;
+  assert.equal(JSON.stringify(relationshipStateRequest(ctx,result.patient_state).data).includes('불안 증세'),false);
+});
+
 
 test('identical interpretations cannot be copied between dynamics, strengths and boundaries',()=>{
   const value=analysis();value.relationship.strengths=[finding()];
@@ -476,6 +696,77 @@ test('an unreported clinical or personality label cannot replace a cited observa
   const ctx=context();ctx.patient.fields.mood=field('mood','본인이 강박 진단을 받았다고 말했어요');
   const value=analysis();value.relationship.dynamics[0]={interpretation:'본인이 강박 진단을 받았다고 전해졌습니다.',evidence:[{subject:'patient',question_id:'mood',quote:ctx.patient.fields.mood.text}],certainty:'tentative'};
   assert.doesNotThrow(()=>validateRelationship(value,ctx));
+});
+
+test('STATE retries unsupported labels with literal reports and keeps the failed attempt without narrowing later calls',async()=>{
+  const ctx=context();ctx.latest_answer={subject:'supporter',question_id:'feeling'};
+  let calls=0;const trace=[];
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages[1].content),raw=stateDraft(ctx);
+    const schema=body.response_format.json_schema.schema;
+    assert.deepEqual(input.output_schema,schema);
+    calls++;
+    if(calls===1) {
+      raw.relationship_memory.patient=[{...finding(),interpretation:'완벽주의 성향이 있어요.'}];
+    } else if(calls===2) {
+      const memorySchema=schema.properties.relationship_memory.properties;
+      assert.equal(memorySchema.relationship.maxItems,0);
+      assert.deepEqual(memorySchema.patient.items.properties.certainty.enum,['reported']);
+      assert.equal(Object.hasOwn(memorySchema.patient.items.properties,'interpretation'),false);
+      assert.ok(body.messages[0].content.includes('이전 가설을 사실로 바꾸지'));
+    } else {
+      assert.equal(schema.properties.relationship_memory.properties.relationship.maxItems,2);
+      raw.relationship_memory.relationship=[finding()];
+    }
+    return envelope(raw);
+  });
+  model.diagnosticLogger=entry=>trace.push(entry);
+  const recovered=await model.updateState(ctx);
+  assert.equal(calls,2);
+  assert.deepEqual(trace.map(row=>row.reason),['agent_unreported_label','success']);
+  assert.equal(recovered.relationship_memory.relationship.length,0);
+  assert.ok(recovered.patient_state.facts.some(fact=>fact.subject==='supporter'&&fact.quote==='무력하고 걱정돼요'));
+  assert.equal(JSON.stringify(recovered).includes('완벽주의'),false);
+  const next=await model.updateState(ctx);
+  assert.deepEqual(next.relationship_memory.relationship,[finding()]);
+});
+
+test('literal STATE recovery still rejects ignored schema constraints and fabricated source quotes',async()=>{
+  for(const invalidRetry of ['hypothesis','quote']) {
+    let calls=0;
+    const model=gateway(()=>{
+      const raw=stateDraft();calls++;
+      if(calls===1)raw.relationship_memory.patient=[{...finding(),interpretation:'강박적인 행동이에요.'}];
+      else if(invalidRetry==='hypothesis')raw.relationship_memory.relationship=[finding()];
+      else raw.relationship_memory.patient[0].evidence[0].quote='원문에 없는 답변';
+      return envelope(raw);
+    });
+    await assert.rejects(model.updateState(context()),{modelReason:'agent_schema'});
+    assert.equal(calls,3);
+  }
+});
+
+test('a JSON failure during literal STATE recovery retains the reduced schema and empty evidence groups',async()=>{
+  const ctx=context();ctx.supporter.fields={};
+  let calls=0;const trace=[];
+  const model=gateway(body=>{
+    calls++;const raw=stateDraft(ctx);
+    if(calls===1)raw.relationship_memory.patient=[{...finding(),interpretation:'강박적인 행동이에요.'}];
+    else {
+      const memorySchema=body.response_format.json_schema.schema.properties.relationship_memory.properties;
+      assert.equal(memorySchema.supporter.maxItems,0);
+      assert.equal(memorySchema.relationship.maxItems,0);
+      assert.deepEqual(memorySchema.patient.items.properties.certainty.enum,['reported']);
+      if(calls===2)return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'{invalid'}}]}));
+    }
+    return envelope(raw);
+  });
+  model.diagnosticLogger=entry=>trace.push(entry);
+  const result=await model.updateState(ctx);
+  assert.equal(calls,3);
+  assert.deepEqual(trace.map(row=>row.reason),['agent_unreported_label','content_json','success']);
+  assert.deepEqual(result.relationship_memory.supporter,[]);
+  assert.deepEqual(result.relationship_memory.relationship,[]);
 });
 
 
@@ -625,17 +916,30 @@ test('a generated exact urgent contract is still quality-reviewed and critically
 
 test('urgent refinement and repair receive fresh fixed-action schemas and preserve the generated contract',async()=>{
   const ctx=riskContext(),stages=[],candidate=urgentGuide(ctx.name_index);
+  const revised=urgentGuide(ctx.name_index);revised.guide.care.feel='무력하고 걱정된다는 마음을 들려주셨어요.';
   const outputs={relationship_analysis:riskAnalysis(ctx),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
     guide_write:candidate,guide_quality:{improvements:[{field:'care',reason:'이용자 감정을 더 직접 표현하기',repair:'보고한 걱정과 무력감을 담으세요.'}]},
-    guide_refine:candidate,guide_review:{approved:false,issues:[{field:'care',reason:'이용자 감정을 분명히 쓰세요.',repair:'보고한 감정만 쓰세요.'}]},
-    guide_repair:candidate,guide_review_after_repair:{approved:true,issues:[]}};
+    guide_refine:revised,guide_review:{approved:false,issues:[{field:'care',reason:'이용자 감정을 분명히 쓰세요.',repair:'보고한 감정만 쓰세요.'}]},
+    guide_repair:revised,guide_review_after_repair:{approved:true,issues:[]}};
   const model=gateway(body=>{
-    const stage=JSON.parse(body.messages[1].content).stage;stages.push(stage);
+    const input=JSON.parse(body.messages[1].content),stage=input.stage;stages.push(stage);
     if(['guide_write','guide_refine','guide_repair'].includes(stage))assertUrgentSchema(body,ctx.name_index);
+    if(stage==='guide_refine')assert.deepEqual(body.response_format.json_schema.schema.properties.guide.properties.top.enum,[candidate.guide.top]);
+    if(stage==='guide_quality') {
+      assert.deepEqual(body.response_format.json_schema.schema.properties.improvements.items.properties.field.enum,['care']);
+      assert.deepEqual(input.data.review_scope.guide_fields,['care.feel']);
+      assert.equal(input.data.review_scope.include_analysis,false);
+    }
+    if(stage==='guide_review'||stage==='guide_review_after_repair') {
+      assert.deepEqual(body.response_format.json_schema.schema.properties.issues.items.properties.field.enum,['relationship_analysis','care','top']);
+      assert.deepEqual(input.data.review_scope.guide_fields,['care.feel','top']);
+      assert.equal(input.data.review_scope.include_analysis,true);
+    }
     return envelope(outputs[stage]);
   });
   const result=await model.respond(ctx,memory());
-  assert.deepEqual(stages,Object.keys(outputs));assert.deepEqual(result.guide,candidate.guide);
+  assert.deepEqual(stages,Object.keys(outputs));assert.deepEqual(result.guide,revised.guide);
+  assert.deepEqual(result.guide.care.tips,candidate.guide.care.tips);
 });
 
 test('unsafe urgent refined or repaired outputs cannot reach an approved result',async()=>{
@@ -704,6 +1008,18 @@ test('late repaired urgency changes recalculate action constraints and final met
         if(urgent)assertUrgentSchema(body,ctx.name_index);
         else assert.equal(Object.hasOwn(body.response_format.json_schema.schema.properties.guide.properties.script,'enum'),false);
       }
+      if(stage.startsWith('guide_quality')||stage.startsWith('guide_review')) {
+        const urgent=stage.endsWith('_after_analysis_repair')?repairedUrgent:initialUrgent,quality=stage.startsWith('guide_quality');
+        const fields=body.response_format.json_schema.schema.properties[quality?'improvements':'issues'].items.properties.field.enum;
+        const data=JSON.parse(body.messages[1].content).data;
+        if(urgent) {
+          assert.deepEqual(fields,quality?['care']:['relationship_analysis','care','top']);
+          assert.deepEqual(data.review_scope.guide_fields,quality?['care.feel']:['care.feel','top']);
+        } else {
+          assert.ok(fields.includes('script')&&fields.includes('next'));
+          assert.equal(Object.hasOwn(data,'review_scope'),false);
+        }
+      }
       return envelope(outputs[stage]);
     });
     const result=await model.respond(ctx,memory());
@@ -711,4 +1027,62 @@ test('late repaired urgency changes recalculate action constraints and final met
     assert.equal(Object.hasOwn(result.agent,'safety_guidance_version'),repairedUrgent);
     assert.equal(result.relationship_analysis.safety.urgent,repairedUrgent);
   }
+});
+
+test('urgent quality suggestions cannot request changes to fixed actions',async()=>{
+  const ctx=riskContext(),candidate=urgentGuide(ctx.name_index);
+  for(const field of ['script','doList','avoid','next']) {
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages[1].content),stage=input.stage;
+      if(stage==='relationship_analysis')return envelope(riskAnalysis(ctx));
+      if(stage==='analysis_review')return envelope({approved:true,issues:[]});
+      if(stage==='communication_plan')return envelope(plan());
+      if(stage==='guide_write')return envelope(candidate);
+      assert.equal(stage,'guide_quality');
+      assert.deepEqual(body.response_format.json_schema.schema.properties.improvements.items.properties.field.enum,['care']);
+      assert.deepEqual(input.data.review_scope.fixed_action_fields,['script','doList','avoid','next','care.tips']);
+      assert.equal(input.data.review_scope.fixed_action_version,'immediate-help-v1');
+      return envelope({improvements:[{field,reason:'고정 행동 문장을 바꾸고 싶어요.',repair:'상대 동의를 먼저 기다리도록 바꾸세요.'}]});
+    });
+    await assert.rejects(model.respond(ctx,memory()),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema'});
+  }
+});
+
+test('urgent critical reviews cannot reinterpret fixed actions as guide errors before or after repair',async()=>{
+  const ctx=riskContext(),candidate=urgentGuide(ctx.name_index);
+  for(const target of ['guide_review','guide_review_after_repair']) for(const field of ['script','doList','avoid','next']) {
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages[1].content),stage=input.stage;
+      if(stage==='relationship_analysis')return envelope(riskAnalysis(ctx));
+      if(stage==='analysis_review')return envelope({approved:true,issues:[]});
+      if(stage==='communication_plan')return envelope(plan());
+      if(stage==='guide_write'||stage==='guide_repair')return envelope(candidate);
+      if(stage==='guide_quality')return envelope({improvements:[]});
+      assert.deepEqual(body.response_format.json_schema.schema.properties.issues.items.properties.field.enum,['relationship_analysis','care','top']);
+      assert.equal(input.data.review_scope.include_analysis,true);
+      if(stage!==target) {
+        assert.equal(stage,'guide_review');
+        return envelope({approved:false,issues:[{field:'care',reason:'이용자의 감정을 명확히 쓰세요.',repair:'보고한 감정만 담으세요.'}]});
+      }
+      return envelope({approved:false,issues:[{field,reason:'고정 도움 요청 문장을 사건으로 읽었어요.',repair:'도움 요청을 다음 대화로 미루세요.'}]});
+    });
+    await assert.rejects(model.respond(ctx,memory()),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema'});
+  }
+});
+
+test('urgent quality refinement can change care feelings but cannot change the topic classification',async()=>{
+  const ctx=riskContext(),candidate=urgentGuide(ctx.name_index),changed=urgentGuide(ctx.name_index);
+  changed.guide.top='불안';
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages[1].content).stage;
+    if(stage==='relationship_analysis')return envelope(riskAnalysis(ctx));
+    if(stage==='analysis_review')return envelope({approved:true,issues:[]});
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_write')return envelope(candidate);
+    if(stage==='guide_quality')return envelope({improvements:[{field:'care',reason:'원문 감정 표현을 다듬기',repair:'보고한 걱정을 담으세요.'}]});
+    assert.equal(stage,'guide_refine');
+    assert.deepEqual(body.response_format.json_schema.schema.properties.guide.properties.top.enum,['통합']);
+    return envelope(changed);
+  });
+  await assert.rejects(model.respond(ctx,memory()),{modelReason:'agent_schema'});
 });

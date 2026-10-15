@@ -20,7 +20,35 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object"
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string"
+                    },
+                    "model_configured": {
+                      "type": "boolean"
+                    },
+                    "mode": {
+                      "type": "string"
+                    },
+                    "source_sha256": {
+                      "type": "string",
+                      "pattern": "^[a-f0-9]{64}$"
+                    },
+                    "prompt_version": {
+                      "type": "string"
+                    },
+                    "model_requested": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "runtime_model_identity_verified": {
+                      "type": "boolean",
+                      "enum": [
+                        false
+                      ]
+                    }
+                  }
                 }
               }
             }

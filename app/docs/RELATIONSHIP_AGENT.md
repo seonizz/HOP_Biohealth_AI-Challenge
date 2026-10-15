@@ -1,6 +1,6 @@
 # 관계 에이전트 기술 계약
 
-현재 코드의 프롬프트는 `relationship-v3.5-rag`입니다. 하나의 모델이 답변별 상태 갱신과 최종 분석·검토·가이드 생성을 순서대로 수행합니다. 실행 설정은 [앱 실행](../README.md), 확인된 검증과 남은 작업은 [현황과 할 일](../../docs/current/현황과_할일.md)을 기준으로 봅니다.
+현재 코드의 프롬프트는 `relationship-v3.6.2-canonical-state`입니다. 하나의 모델이 답변별 상태 갱신과 최종 분석·검토·가이드 생성을 순서대로 수행합니다. 이 버전은 앱 실행 경로에 원문 기반 STATE 계약과 긴급 검토 범위 제한을 통합한 버전이며, 이전 `relationship-v3.5-rag` 실험이나 `ai/local_api/backend_patch`의 실행 결과와 구분합니다. 실행 설정은 [앱 실행](../README.md), 확인된 검증과 남은 작업은 [현황과 할 일](../../docs/current/현황과_할일.md)을 기준으로 봅니다.
 
 ## 답변별 상태 갱신과 최종 생성
 
@@ -8,7 +8,11 @@
 
 최신 pending 질문의 문항·사람 metadata를 현재 원문의 해당 항목과 연결하여 `latest_answer={subject,question_id,question,status,answers}`로 전달합니다. STATE는 새 관찰·생활 변화·정정·이용자 부담·도움의 한계·지원 자원을 확인한 뒤 요약과 finding을 갱신합니다. 현재도 유효하고 중요한 이전 내용은 유지하되 더 구체적인 근거나 정정이 있으면 이전 해석을 수정·교체합니다. 새 정보가 없을 때 의미 없는 변화를 만들도록 요구하지 않습니다.
 
+`latest_answer`가 대상자 또는 이용자의 `answered` 원문이면 서버가 해당 문항의 전체 원문과 후속 답변을 `patient_state.facts`에 직접 보존합니다. 모델이 그 문항을 선택하지 않아도 누락을 이유로 다시 호출하지 않습니다. 모름·거절·건너뜀에는 적용하지 않으며 이용자 목적은 별도 목적 필드로 유지합니다. 원문이 인용 한도 10,000자를 넘으면 Unicode 문자를 자르지 않는 연속 구간으로 나눠 보존합니다. 의미적 중요성이나 가설 정확도를 인증하는 것은 아닙니다.
+
 서버 검증이 성공하면 두 메모리를 암호화된 대화 상태와 이력에 저장하고 다음 질문으로 진행합니다. 실패한 답변은 보존하며 같은 질문에서 수정하거나 재시도할 수 있습니다. 같은 답변의 재시도는 대화 기록을 중복 추가하지 않습니다.
+
+STATE가 원문에 없는 진단·성향명으로 거절되면(`agent_unreported_label`), 해당 호출의 남은 재시도는 `patient`/`supporter`의 원문 보고만 허용하고 `relationship=[]`로 요청합니다. 실패 응답을 삭제·변환해 수락하지 않고 새 응답을 축소 스키마와 기존 출처 검증으로 다시 확인합니다. 실패 trace·시도 상한·공통 deadline은 유지하며 다음 STATE와 최종 분석에는 원래 스키마를 사용합니다. 이 복구의 성공은 가설 생성의 성공을 뜻하지 않습니다.
 
 ### 별도 내부 관계 메모리
 
@@ -18,7 +22,9 @@
 | `relationship_memory` → `agentRelationshipMemory` | `patient`, `supporter`, `relationship`의 관찰·해석을 각각 0~2개와 별도 `unknowns`로 저장합니다. |
 | `relationship_state` → `prior_relationship_memory` | 다음 모델 호출에서 현재 원문으로 다시 검증한 관계 메모리만 제공합니다. 근거가 오래되었거나 사람·문항이 맞지 않으면 이전 메모리를 승인하지 않습니다. |
 
-관계 메모리의 각 finding은 `interpretation`, 정확한 원문 `evidence`, `certainty`를 가집니다. `patient`와 `supporter`의 직접 보고된 행동은 `reported`로 남깁니다. 원인·동기·마음이나 여러 답변 사이의 인과관계를 추론한 해석은 `tentative`로 표시하며 원문에 없는 원인을 확정하지 않습니다. `relationship`의 모든 finding은 관계 패턴에 대한 가설로 취급하여 스키마에서 `certainty=tentative`로 제한합니다. `patient` finding은 대상자 문항의 근거만, `supporter` finding은 이용자 문항의 근거만 사용합니다. 모름·거절·건너뜀은 확정 근거로 쓰지 않으며 확인되지 않은 정보는 `unknowns`에 남깁니다.
+STATE 모델은 `patient_state`의 `facts`와 `unknowns`만 생성합니다. 각 fact에는 `subject`, `question_id`, `quote`, `certainty`만 허용하고 자유로운 `summary`나 `interpretation`은 거절합니다. 서버가 사람과 보고·미확인 여부를 알리는 문구 및 정확한 인용으로 `interpretation`과 `summary`를 구성하고 이용자 목적을 원문에서 가져옵니다. 이전 상태의 근거가 현재 원문에 유효하더라도, 자유 요약·보고 해석은 모델에 다시 전달하기 전에 같은 계약으로 정규화합니다. 긴 원문이 표시 한도를 넘으면 근거를 보존했다는 고정 문구를 쓰며 원문 `quote`는 줄이지 않습니다.
+
+저장된 관계 메모리의 각 finding은 `interpretation`, 정확한 원문 `evidence`, `certainty`를 가집니다. 모델 생성 단계에서 `patient`와 `supporter`의 `reported` finding은 `evidence`, `certainty`만 허용하며 서버가 출처를 밝힌 원문 보고 문구를 만듭니다. 원인·동기·마음이나 여러 답변 사이의 인과관계를 추론하는 `tentative` finding만 모델이 해석을 작성합니다. `relationship`의 모든 finding도 스키마에서 `certainty=tentative`로 제한합니다. `patient` finding은 대상자 문항의 근거만, `supporter` finding은 이용자 문항의 근거만 사용합니다. 모름·거절·건너뜀은 확정 근거로 쓰지 않으며 확인되지 않은 정보는 `unknowns`에 남깁니다. `tentative`의 의미적 타당성은 별도 검토·평가가 필요합니다.
 
 매 턴 상태 출력 스키마는 각 사람의 실제 `answered` 원문을 확인합니다. 이름을 제외한 근거가 없으면 해당 `patient` 또는 `supporter` 배열의 `maxItems`를 `0`으로 지정합니다. 이용자 목적의 답변을 다른 사람의 원문으로 옮겨 넣을 수 없도록 근거의 `subject`도 해당 사람으로 제한합니다. 이름만을 근거로 한 finding은 서버 검증에서도 거절합니다.
 
@@ -63,6 +69,8 @@ v3.5의 모델 분석·분석 수정 출력은 `observations`, `relationship`, `
 ## 현재 즉각적 위험의 행동 계약
 
 원문 근거와 분석 검토에서 `safety.urgent=true`가 유지되면 `script`, `doList`, `avoid`, `next`, `care.tips`의 긴급 행동은 검토된 문구로 제한합니다. `urgentGuideActions`가 검증된 이름만 선택적으로 넣고, 생성 스키마의 문자열·배열 enum과 서버의 정확한 일치 검사로 같은 문구를 요구합니다. 현재 위험에 동의 대기나 나중 대화를 권한 초기 실패 출력을 조용히 덮어쓰지 않고 거절하여 다시 생성합니다. 모든 재시도가 실패하면 결과를 저장하지 않습니다.
+
+긴급 시 `review_scope`를 전달하여 품질 검토의 수정 대상을 `care.feel`로 제한합니다. 최종 오류 검토는 관계 분석과 위험 판정, `care.feel`, 안내 분류 `top`을 계속 검토합니다. 고정 행동 필드를 변경하라는 검토 출력은 스키마 검증에서 거절하며, 품질 수정에서는 `top`도 유지합니다. `care` 필드로 들어온 수정 제안이 있더라도 작성 결과의 `care.tips`는 정확한 일치 검사를 다시 통과해야 합니다. 이후 위험 판정이 정정되면 현재 판정에 맞게 검토 범위도 다시 계산합니다.
 
 분석을 나중에 수정해 긴급 여부가 바뀌면 작성·품질 수정·오류 수정마다 현재 분석으로 스키마를 새로 만듭니다. 긴급 행동 계약은 `agent.safety_guidance_version=immediate-help-v1`로 추적합니다. 일반적인 대화에는 이 고정 행동을 적용하지 않습니다. 긴급 도움 원칙의 참고 근거는 [NIMH 자살 FAQ](https://www.nimh.nih.gov/health/publications/suicide-faq)와 [Manchester NHS의 친구 지원 안내](https://mft.nhs.uk/camhs/supporting-a-friend/)입니다. 원문 관찰·관계 해석은 계속 현재 대화의 RAG 근거를 사용하고, 긴급 시 `care.feel`에는 이용자가 보고한 감정만 반영하도록 요청하고 최종 검토합니다. 위험 판정이나 자유로운 해석의 의미 전체가 자동으로 검증된다는 뜻은 아닙니다.
 
@@ -143,6 +151,6 @@ MLX runner는 토큰화한 입력을 모델 문맥 한계와 비교하여 한계
 
 운영 로그에는 요청 ID·오류 단계·시도 횟수·상태 코드·처리 시간만 남기고 대화 본문·모델 출력·인증 키를 넣지 않습니다. 복호화 검증 자료를 비공개 `runtime/server-verification.json`으로 내보내는 명령은 [실행·검증](../../docs/current/실행과_검증.md)을 따릅니다. 이 파일은 Git과 웹 제공 대상에서 제외합니다.
 
-현재 모델 호출은 `stream:false`, `reasoning_effort:none`, `temperature:0.2`와 단계별 JSON Schema를 사용합니다. 답변은 이용자의 보고이며 임상적으로 확인된 사실이 아닙니다. 내부 요약·해석은 모델 생성물이고 인용 검증은 임상 타당성 인증이 아닙니다. 임의 질환 점수는 계산하지 않으며 결과 분류는 칼럼 연결용입니다.
+현재 모델 호출은 `stream:false`, `reasoning_effort:none`, `temperature:0.2`와 단계별 JSON Schema를 사용합니다. 답변은 이용자의 보고이며 임상적으로 확인된 사실이 아닙니다. 원문 요약·보고 문구는 서버가 구성하며 가설·미확인 내용·가이드는 모델이 생성합니다. 인용 검증은 임상 타당성 인증이 아닙니다. 임의 질환 점수는 계산하지 않으며 결과 분류는 칼럼 연결용입니다.
 
 실행 코드는 [모델 게이트웨이](../src/model.js), [관계 에이전트](../src/relationship-agent.js), [대화 원문 검색](../src/relationship-retrieval.js), [역할 프롬프트](../src/relationship-prompts.js), [서버](../src/server.js)에 있습니다. 버전별 실험·배포 이력은 [정리 전 원문](../../archive/08_문서통합_원문/app/docs/RELATIONSHIP_AGENT.md)에 보존합니다.

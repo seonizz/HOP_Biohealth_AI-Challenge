@@ -2,7 +2,7 @@ import { HttpError } from './errors.js';
 import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { modelResponseFormat } from './model-schema.js';
 import { trainedContext } from './model-context.js';
-import { runRelationshipAgent, assertRetrievedEvidence, relationshipStateRequest, validateRelationshipMemory, currentRelationshipMemory } from './relationship-agent.js';
+import { runRelationshipAgent, assertRetrievedEvidence, relationshipStateRequest, canonicalRelationshipState, canonicalPatientState, currentRelationshipMemory, validateSchema } from './relationship-agent.js';
 
 const TRAINED_MODEL = 'malssi-gemma4-31b-step100';
 const FINAL_MAX_TOKENS = 4096;
@@ -261,6 +261,7 @@ export class ModelGateway {
     return this.operation(options, async operation => {
       if (this.protocol === 'relationship_agent') {
         let memory=validMemory(priorMemory || context.agent_state,context);
+        if (memory) memory=canonicalPatientState(memory,context);
         let relationshipMemory=currentRelationshipMemory(context);
         let name=context.name_index ?? null;
         try { name=validateNameIndex(name,context); } catch { name=null; }
@@ -301,20 +302,37 @@ export class ModelGateway {
     return this.agentComplete('state',request.prompt,request.data,request.schema,1800,operation,payload=>{
       exactKeys(payload,['patient_state','name_index','relationship_memory']);
       assertRetrievedEvidence(payload,request.retrieval);
-      exactKeys(payload.patient_state,['summary','facts','unknowns']);
-      const state=validateState({patient_state:{...payload.patient_state,user_goal:contextGoal(context)},
-        name_index:payload.name_index,question_plan:{skip:[]}},context);
-      return {...state,relationship_memory:validateRelationshipMemory(payload.relationship_memory,context)};
+      const canonical=canonicalRelationshipState(payload,context,request.schema);
+      const state=validateState({patient_state:canonical.patient_state,
+        name_index:canonical.name_index,question_plan:{skip:[]}},context);
+      return {...state,relationship_memory:canonical.relationship_memory};
     });
   }
 
   async agentComplete(stage,prompt,payload,schema,maxTokens,operation,validate) {
-    return this.request(({repairReason,repairs})=>({
-      model:this.model,stream:false,reasoning_effort:'none',temperature:0.2,max_tokens:maxTokens,
-      response_format:{type:'json_schema',json_schema:{name:stage,strict:true,schema}},
-      messages:[{role:'system',content:prompt+correction(repairReason,repairs)},
-        {role:'user',content:JSON.stringify({stage,data:payload,output_schema:schema})}],
-    }),operation,validate,stage);
+    let requestSchema=schema, literalState=false;
+    return this.request(({repairReason,repairs})=>{
+      // Retry unsupported STATE hypotheses as source reports. The rejected
+      // response remains a failed attempt; never relabel its inference as fact.
+      if(stage==='state'&&repairReason==='agent_unreported_label'&&!literalState) {
+        literalState=true;requestSchema=structuredClone(schema);
+        const memory=requestSchema.properties.relationship_memory.properties;
+        for(const subject of ['patient','supporter']) {
+          memory[subject].items=memory[subject].items.anyOf.find(branch=>branch.properties.certainty.enum[0]==='reported');
+        }
+        memory.relationship.maxItems=0;
+      }
+      const scope=literalState?'\n이번 STATE 재시도에서는 관계 가설을 만들지 마세요. relationship_memory.relationship는 []이고 patient/supporter는 원문 evidence와 certainty=reported만 작성합니다. interpretation을 쓰거나 이전 가설을 사실로 바꾸지 마세요.':'';
+      return {
+        model:this.model,stream:false,reasoning_effort:'none',temperature:0.2,max_tokens:maxTokens,
+        response_format:{type:'json_schema',json_schema:{name:stage,strict:true,schema:requestSchema}},
+        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope},
+          {role:'user',content:JSON.stringify({stage,data:payload,output_schema:requestSchema})}],
+      };
+    },operation,value=>{
+      if(literalState)validateSchema(value,requestSchema);
+      return validate(value);
+    },stage);
   }
 
   async trainedState(context, memory, operation, finalProjection = false) {

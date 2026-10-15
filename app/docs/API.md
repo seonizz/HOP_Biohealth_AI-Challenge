@@ -4,7 +4,7 @@
 
 | 경로 | 기능 |
 |---|---|
-| `GET /health` | 프로세스 상태와 모델 설정 유무; 실제 모델 준비 여부를 보증하지 않음 |
+| `GET /health` | 프로세스 상태, 모델 설정 유무·요청 이름, 앱 소스 해시·프롬프트 버전; 실제 모델 로딩을 보증하지 않음 |
 | `GET /api/bootstrap` | 기록, 칼럼 상태·목록·분류, 정확한 질문 목록, CSRF 토큰 |
 | `GET /api/questions` | DB의 현재 활성 문항 카탈로그 |
 | `POST /api/intakes` | `{}`로 새 대화 생성 |
@@ -74,6 +74,6 @@
 
 ## 결과와 오류
 
-`result`는 `{record,revision}`을 반환합니다. `record`의 `profile,guide,log,followUps`는 현재 결과·기록 화면과 같습니다. `profile.scores={}`이며 임의 수치 평가는 없습니다. `guide.top`은 칼럼 분류용입니다. `provenance.kind=model`과 모델 이름을 내부적으로 기록합니다.
+`result`는 `{record,revision}`을 반환합니다. `record`의 `profile,guide,log,followUps`는 현재 결과·기록 화면과 같습니다. `profile.scores={}`이며 임의 수치 평가는 없습니다. `guide.top`은 칼럼 분류용입니다. `provenance.kind=model`, 요청 모델 이름, `source_sha256`을 내부적으로 기록합니다. `/health`의 앱 해시와 대조할 수 있습니다. `runtime_model_identity_verified:false`이며 모델 alias만으로 실제 체크포인트를 확인했다는 뜻은 아닙니다.
 
 오류는 `{error:{code,message,request_id}}`입니다. 원문이나 인증 키는 포함하지 않습니다. 주요 상태는 400/422 입력 오류, 401 익명 세션 만료, 403 Origin/CSRF 거부, 404 소유하지 않은 자원, 409 버전 충돌, 429 요청 제한, 502 모델 출력 검증 실패, 503 모델 연결/인증 문제, 504 모델 응답 제한 시간입니다.

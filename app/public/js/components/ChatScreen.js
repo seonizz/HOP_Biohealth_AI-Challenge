@@ -10,7 +10,7 @@ const ChatScreen={
       <div class="th-card">
         <img class="th-img" data-m="ponder" alt="">
         <h3>말을 정리하고 있어요 <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span></h3>
-        <p class="th-sub">들려주신 이야기에 따라 조금 걸릴 수 있어요.</p>
+        <p class="th-sub">AI가 대화 내용을 처리하고 있어요. 서버 상황과 답변 길이에 따라 대기가 길어질 수 있어요.</p>
         <ol class="th-steps"><li>들려주신 이야기를 다시 읽고 있어요</li><li>그분의 상황을 정리하고 있어요</li><li>마음이 잘 닿는 첫 문장을 고르고 있어요</li></ol>
         <div class="th-err" hidden><p>정리하는 중에 문제가 생겼어요. 답해 주신 내용은 그대로 있으니 다시 시도해 주세요.</p><button class="btn" id="thRetry">다시 시도</button></div>
       </div>
@@ -19,7 +19,7 @@ const ChatScreen={
   <dialog class="leave" id="leaveDlg" aria-labelledby="leaveT">
     <img data-m="ponder" alt="">
     <h3 id="leaveT">정말 처음으로 돌아갈까요?</h3>
-    <p>처음으로 돌아가면 이 대화를 이어서 진행할 수 없어요.</p>
+    <p>처음으로 돌아가면 이 대화를 이어서 진행할 수 없어요. 입력한 내용이 서버에서 삭제되지는 않아요.</p>
     <div class="acts"><button class="btn" id="leaveStay" autofocus>계속 이야기하기</button><button class="ghost" id="leaveGo">나가기</button></div>
   </dialog>
 </section>`;},
@@ -81,7 +81,7 @@ const ChatScreen={
   meSay(t){const d=document.createElement("div");d.className="msg me";d.textContent=t;$("log").appendChild(d);$("log").scrollTop=1e9;},
   // 서버/모델을 기다리는 동안 입력 중… 점 애니메이션을 보여 줘요.
   async typing(face,work){const r=document.createElement("div");r.className="ai-row";
-    r.innerHTML=`<img src="${M[face]}" alt=""><div class="msg" role="status" aria-label="답변을 기다리고 있어요"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span></div>`;
+    r.innerHTML=`<img src="${M[face]}" alt=""><div class="msg" role="status" aria-label="AI 응답을 기다리고 있어요"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span><span class="why">AI 응답을 기다리고 있어요. 대기가 길어질 수 있어요.</span></div>`;
     $("log").appendChild(r);$("log").scrollTop=1e9;
     try{
       if(typeof work==="function"){

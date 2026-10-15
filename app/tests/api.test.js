@@ -7,6 +7,7 @@ import { createApp } from '../src/server.js';
 import { createIntake, answerIntake, currentView } from '../src/intake.js';
 import { HttpError } from '../src/errors.js';
 import { ModelGateway } from '../src/model.js';
+import { PROMPT_VERSION } from '../src/relationship-prompts.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const memory = { summary:'사용자가 전한 상황', facts:[], unknowns:['당사자의 직접 의향'], user_goal:'부담 없는 첫마디' };
@@ -40,6 +41,18 @@ async function fixture(t, gateway = { model:'gemma4:12b', updateState:async () =
   };
   return { ...app, base, browser, request };
 }
+
+test('health identifies the configured protocol without attributing relationship prompts to other protocols', {skip:!databaseUrl}, async t => {
+  for(const protocol of ['relationship_agent','json_schema','json_prompt',null]) {
+    const gateway=protocol?{model:'test-model',protocol}:null;
+    const f=await fixture(t,gateway);
+    const health=await (await fetch(f.base+'/health')).json();
+    assert.equal(health.model_protocol,protocol);
+    assert.equal(health.prompt_version,protocol==='relationship_agent'?PROMPT_VERSION:null);
+    assert.equal(health.model_requested,protocol?'test-model':null);
+    assert.equal(health.runtime_model_identity_verified,false);
+  }
+});
 
 test('relationship agent updates and persists internal analysis even for a skipped optional answer', {skip:!databaseUrl}, async t => {
   const observed=[];
@@ -228,6 +241,11 @@ test('server intake updates model memory and records; back/correct and deletion 
   assert.equal(result.status, 200, JSON.stringify(result.data));
   assert.equal(result.data.record.guide.script, guide.script);
   assert.equal(result.data.record.provenance.kind, 'model');
+  const health=await (await fetch(f.base+'/health')).json();
+  assert.match(health.source_sha256,/^[a-f0-9]{64}$/);
+  assert.equal(result.data.record.provenance.source_sha256,health.source_sha256);
+  assert.equal(result.data.record.provenance.model_protocol,health.model_protocol);
+  assert.equal(result.data.record.provenance.runtime_model_identity_verified,false);
   assert.deepEqual(result.data.record.profile.scores, {});
   const replay = await f.request(session, `/api/intakes/${id}/result`, 'POST', { revision:row.revision });
   assert.equal(replay.data.record.id, result.data.record.id);
