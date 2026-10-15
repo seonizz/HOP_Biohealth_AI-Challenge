@@ -2,7 +2,7 @@
   "schema_version": "malssi-adversarial-fixes-v6-evidence-v1",
   "recorded_at": "2026-10-15T06:30:40.567902+00:00",
   "baseline_commit": "ae1e1ef",
-  "purpose": "v5 A2 input boundary repair and D1 conservative partial-exposure admission hold; no regrading",
+  "purpose": "Adversarial review of v5 A2 input boundaries and D1 partial exposure: observed findings, evidence and limitations only; no regrading.",
   "historical_evaluation": [
     {
       "path": "docs/competition/결선_적대적_재평가_v5.md",
@@ -26,13 +26,12 @@
       "sha256": "1289b25994703419ffd1b5345f57dad515183ad0728902f155ded02bb5cc3774",
       "bytes": 4899
     },
-    "implementation_details_added_to_service": false,
     "model_itself_scored": false,
     "processing_time_scored": false,
     "new_score_assigned": false
   },
   "app_verification": {
-    "provenance": "Fresh checks from the parallel v6 evaluation in the same working directory; logs and tested snapshot independently verified here. Not a second full-suite run.",
+    "provenance": "Parallel v6 evaluation logs and snapshot were checked at recorded_at. Historical findings only; this document revision does not verify subsequent source changes.",
     "app_tests": {
       "total": 294,
       "passed": 294,
@@ -74,7 +73,9 @@
     "database": "Disposable PostgreSQL 16 with actual HTTP requests",
     "ui": "Real handlers exercised with mock DOM",
     "model": "Mock gateway",
-    "new_full_browser_e2e_run": false
+    "new_full_browser_e2e_run": false,
+    "as_of": "2026-10-15T06:30:40.567902+00:00",
+    "current_worktree_reverified_on_document_revision": false
   },
   "data_verification": {
     "full_suite": {
@@ -103,7 +104,6 @@
         "bytes": 171
       }
     },
-    "new_test_methods": 10,
     "independent_review": {
       "result": {
         "path": "runtime/adversarial-fixes-v6/independent-data/result.json",
@@ -167,7 +167,6 @@
   },
   "partial_exposure": {
     "policy_schema": "malssi-source-admission-v2",
-    "legacy_policy_read_supported": true,
     "threshold_normalized_characters": 200,
     "normalization": "NFKC and collapsed whitespace",
     "seed_characters": 100,
@@ -232,18 +231,6 @@
       "bytes": 898321
     }
   ],
-  "generation_logs": [
-    {
-      "path": "runtime/adversarial-fixes-v6/data-admission.log",
-      "sha256": "eb5006b5b4718f95f9d928fc3bd6ad46fb750cf1aa8f12961972cbf595e69f02",
-      "bytes": 1050
-    },
-    {
-      "path": "runtime/adversarial-fixes-v6/data-export.log",
-      "sha256": "df1c49b5b246918de2434fe65660bc8ec53cd2764ae1d4a014f974fdea6182c7",
-      "bytes": 1046
-    }
-  ],
   "source_and_document_files": [
     {
       "path": "data/counseling_pipeline/partial_exposure.py",
@@ -287,18 +274,18 @@
     },
     {
       "path": "data/README.md",
-      "sha256": "7beee9169714b6681958d0252f3f436f5e3cb388f315279577810ae6f9d80067",
-      "bytes": 16675
+      "sha256": "107dc9e253ab26a79e056b73c36778b370daaaefd531a148342550485ec4ddb9",
+      "bytes": 16685
     },
     {
       "path": "docs/current/데이터와_연구.md",
-      "sha256": "60f26a2cbeec63f5807e87855e37a174d9d9fa3ac1191f87888a45ad8c50a580",
-      "bytes": 6037
+      "sha256": "8da844b8b450c61202133698e26f57f978d2cd0d747f0167bb2cef08249eb90c",
+      "bytes": 6039
     },
     {
       "path": "docs/competition/결선_재평가_지적_수정_v6.md",
-      "sha256": "a857378d195893fbd7861442ba9fb097dba37c106f4b14021f72ee21ee56b9cd",
-      "bytes": 5352
+      "sha256": "6aad402247b78eb416e498e47a095e8cb510ca90d2afae50d70e5aaa3bfa7862",
+      "bytes": 3724
     }
   ],
   "privacy": {
@@ -314,5 +301,6 @@
     "Validation was used for selection and is not an untouched final test.",
     "Supporter-target construction and semantic label review coverage remain incomplete.",
     "Synthetic U+0000 search inputs fail closed with an SQLite error; current audited train messages and validation targets contain zero U+0000."
-  ]
+  ],
+  "document_revised_at": "2026-10-15T06:36:26.003947+00:00"
 }
