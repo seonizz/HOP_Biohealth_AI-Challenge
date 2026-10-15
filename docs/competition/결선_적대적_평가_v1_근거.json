@@ -1,0 +1,605 @@
+{
+  "schema_version": "malssi.final-adversarial-evaluation.v1",
+  "version": "v1.0",
+  "evaluation_date": "2026-10-15",
+  "timezone": "Asia/Seoul",
+  "recorded_at": "2026-10-15T11:47:15.819027+09:00",
+  "report_path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1.md",
+  "report_sha256": "f9b0f4f9856b62b4be38ebca15321836eef9aa7eb8202a9fe9be2c025e421285",
+  "scope": "Read-only project audit; new report and evidence manifest only. No remote inference, GPU, training, deployment or external literature verification.",
+  "git_at_start": {
+    "branch": "main",
+    "head": null,
+    "existing_project_files_untracked": true
+  },
+  "snapshot_scope": "Hashes of selected small evidence files, classification JSONL inputs, and all 32 candidate decks. The 12 GB corpus database was queried read-only by the data reviewer, not rehashed or copied. No whole-project source snapshot is asserted.",
+  "official_rubric": {
+    "source_id": "R01",
+    "page": 7,
+    "weights": {
+      "creativity_and_differentiation": 30,
+      "model_performance": 20,
+      "applicability": 30,
+      "presentation": 20
+    }
+  },
+  "reviewer_scores": {
+    "official_result": false,
+    "internal_subweights_not_official": true,
+    "creativity": {
+      "score": 16,
+      "max": 30
+    },
+    "model_performance": {
+      "score": 8,
+      "max": 20
+    },
+    "applicability": {
+      "score": 10,
+      "max": 30
+    },
+    "presentation_materials": {
+      "score": 5,
+      "max": 10
+    },
+    "live_delivery_and_qa": {
+      "score": null,
+      "max": 10
+    },
+    "assessed_sum": 39,
+    "assessed_max": 90,
+    "hypothetical_total_if_live_score_5": 44,
+    "arithmetic_range_varying_only_live_score": [
+      39,
+      49
+    ],
+    "range_is_statistical_interval": false
+  },
+  "fresh_checks": {
+    "app_static": {
+      "command": "node scripts/check.js",
+      "cwd": "app",
+      "exit_code": 0,
+      "result": "JavaScript syntax and JSON checks passed",
+      "executor": "app_applicability native subagent; tool stdout observed"
+    },
+    "app_offline_tests": {
+      "command": "env -u TEST_DATABASE_URL -u DATABASE_URL -u MODEL_BASE_URL -u MODEL_API_KEY node --test tests/*.test.js",
+      "cwd": "app",
+      "exit_code": 0,
+      "total": 229,
+      "passed": 196,
+      "skipped": 33,
+      "failed": 0,
+      "live_db_or_model_validated": false,
+      "executor": "app_applicability native subagent; tool stdout observed"
+    },
+    "classification_jsonl_audit": {
+      "conversation": {
+        "train_rows": 990,
+        "validation_rows": 117,
+        "conversation_id": {
+          "train_unique": 990,
+          "validation_unique": 117,
+          "overlap": 0
+        },
+        "group_id": {
+          "train_unique": 182,
+          "validation_unique": 23,
+          "overlap": 0
+        },
+        "subject_id_key": {
+          "train_unique": 182,
+          "validation_unique": 23,
+          "overlap": 0
+        },
+        "excluded_reasons": {
+          "incomplete_or_unusable_source_text": 354,
+          "normalized_body_same_split_duplicate": 1
+        }
+      },
+      "sentence": {
+        "train_rows": 1440,
+        "validation_rows": 206,
+        "human_verified_true": 0,
+        "independent_AI_reviewed_true": 205
+      },
+      "word": {
+        "train_rows": 302,
+        "validation_rows": 76,
+        "human_verified_true": 0,
+        "independent_AI_reviewed_true": 0
+      }
+    },
+    "database_aggregate": {
+      "mode": "SQLite mode=ro",
+      "conversations": 1462,
+      "train": 1299,
+      "validation": 163,
+      "observed_raw_ids": 211,
+      "verified_real_person_identity": false,
+      "executor": "model_evidence native subagent"
+    },
+    "web_state_latency": {
+      "synthetic": true,
+      "historical_model": "gemma4:12b",
+      "turns": 29,
+      "sum_ms": 1126522,
+      "median_ms": 36926,
+      "min_ms": 13932,
+      "max_ms": 135608,
+      "includes_human_input_and_final_guide_time": false,
+      "new_inference": false
+    },
+    "nll_relative_reduction_percent": 37.631634949390396,
+    "slide_text_audit": {
+      "decks": 32,
+      "slides": 60,
+      "decks_containing_37_6_in_slide_text": 14,
+      "decks_containing_12B_in_slide_text": 0,
+      "decks_containing_both_90_and_95_percent": 3
+    },
+    "missing_archive_links_in_scoped_docs": 5
+  },
+  "sources": [
+    {
+      "id": "R01",
+      "title": "첨부 운영계획(안)",
+      "location": "PDF 4쪽 주제, 5쪽 결선 일정, 7쪽 결선 평가표",
+      "path": "/Users/chihun/Downloads/[DJU_1][붙임 1] HOP Biohealth AI Challenge 운영계획(안)_송부용.pdf",
+      "bytes": 453664,
+      "sha256": "5e1b625c4670e08a97cb41ed20301dcf54e5fcca64a100453c7f526b7881f666"
+    },
+    {
+      "id": "R02",
+      "title": "현재 모델·실행본·미완료 상태",
+      "location": "7-20, 34-50행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/현황과_할일.md",
+      "bytes": 4971,
+      "sha256": "8e738b07ca1c78927934fb4f0ca7dc12df4a55eccca51585dd2738cda401090a"
+    },
+    {
+      "id": "R03",
+      "title": "데이터와 실험의 구분",
+      "location": "11-36행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/데이터와_연구.md",
+      "bytes": 5029,
+      "sha256": "60496cc7a8299e81b7c7760e3ac2c00410b240c980caaab0b5be8017de2f97af"
+    },
+    {
+      "id": "R04",
+      "title": "대회 과제와 현재 서비스의 연결",
+      "location": "7-24행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/01_대회요구와_적합성.md",
+      "bytes": 2467,
+      "sha256": "3eabd1f71df1963d71a199953284f0a39dc8b60eb77d6e2db9ab6188d6dfd342"
+    },
+    {
+      "id": "R05",
+      "title": "분류 릴리스·라벨·분할의 한계",
+      "location": "5-21, 26-32, 53-59행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/README.md",
+      "bytes": 7285,
+      "sha256": "0b58c920b057fc70459b4560a057d14cc628470c6d3a04a016bf92832a3e50a1"
+    },
+    {
+      "id": "R06",
+      "title": "분류 기준 모델 원시 지표",
+      "location": "5-26, 29-50행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/baseline_smoke.json",
+      "bytes": 2438,
+      "sha256": "50317c372f13dd1e5081e2815c372d952e873fefeda44c6069c44bc997a68ad9"
+    },
+    {
+      "id": "R07",
+      "title": "원본 상담사 응답 SFT 계약",
+      "location": "7-30, 46, 62, 70행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/docs/support_agent/말씨_원본상담_SFT_데이터계약_2026-10-09.md",
+      "bytes": 9193,
+      "sha256": "22d2926f6cbbb2f27a6003c0036021b4805b7f52a308c6f9401fab48aa41381c"
+    },
+    {
+      "id": "R08",
+      "title": "31B 부분학습·NLL 기록",
+      "location": "7-8, 50-60행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/outputs/dualgpu_maxctx_20261009/STOP_AND_API_HANDOFF.md",
+      "bytes": 6227,
+      "sha256": "e6469757bd1ea3c566a641aefccf031fdc311003be5f5397e267681f7c30905d"
+    },
+    {
+      "id": "R09",
+      "title": "31B 평가 원시 JSON",
+      "location": "validation_rows, validation_target_tokens, limitations, versus_base",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/outputs/dualgpu_maxctx_20261009/checkpoint100_result.json",
+      "bytes": 3840,
+      "sha256": "094cd5bdbcbd58fe25f0e74e9cfef9f9d5536c80819ead2aaf44d601e6863c0f"
+    },
+    {
+      "id": "R10",
+      "title": "BASE12/FT31 종료·형식 비교",
+      "location": "7-25행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/outputs/presentation_collection_FT31_STEP100_20261009T192608Z/comparison.md",
+      "bytes": 1465,
+      "sha256": "6a784b5e3b796a77f57b981538b07bc9d131caf4b1d27b7dafadbf9d2fc2341f"
+    },
+    {
+      "id": "R11",
+      "title": "웹 의미 검토·완주·실패 기록",
+      "location": "5, 14-52행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/outputs/relationship_agent/docker_web_smoke-v35-review-notes.json",
+      "bytes": 2709,
+      "sha256": "c50bba2bdee0d4fdc8b9837e5cbeb2294215ca0c8c05425f814033e7710c42c2"
+    },
+    {
+      "id": "R12",
+      "title": "합성 웹 29턴 원시 결과",
+      "location": "turns[].duration_ms; 합계·중앙값 직접 재계산",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/outputs/relationship_agent/docker_web_smoke-v35-failure.json",
+      "bytes": 62774,
+      "sha256": "dde901bff87376e4027f8f2bdb5116f5e9e087c3e4a83cfda8fc7f0eadcb7c21"
+    },
+    {
+      "id": "R13",
+      "title": "관계 에이전트 계약·운영 한계",
+      "location": "3, 47, 61, 102, 142행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/docs/RELATIONSHIP_AGENT.md",
+      "bytes": 26803,
+      "sha256": "4cb1134cd6c712223f973395a052df17b9cafafb517f8cf9893b3b417568edb0"
+    },
+    {
+      "id": "R14",
+      "title": "현재 대화 원문 검색 구현",
+      "location": "3-29, 32-74행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/relationship-retrieval.js",
+      "bytes": 5960,
+      "sha256": "0cb4c2746daa7b912931df2e5086920b8c1354e58814ca9596257f5321141913"
+    },
+    {
+      "id": "R15",
+      "title": "질문 예상 소요 시간 UI",
+      "location": "12행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/StartScreen.js",
+      "bytes": 1597,
+      "sha256": "dd17cff4da0fa3d801753b4769e45d9eab7995eee7b9bf36fd00ba03ec335f98"
+    },
+    {
+      "id": "R16",
+      "title": "저장·검증·모델 호출·결과 처리",
+      "location": "65-116, 162-222, 238행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/server.js",
+      "bytes": 20977,
+      "sha256": "211c7a4aa7b68eb15696d7427282d42590fc008df642f470f911812a11313eda"
+    },
+    {
+      "id": "R17",
+      "title": "발표 후보·확정본 상태",
+      "location": "3-15행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/README.md",
+      "bytes": 1188,
+      "sha256": "fcbc3ed318abae4715c20431736d57e47a75b88a22882a64630a7240a9dd4d8f"
+    },
+    {
+      "id": "R18",
+      "title": "37.6%·선행연구 표현",
+      "location": "슬라이드 1-2 본문 및 발표자 노트",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_방법론_2페이지_연구근거.pptx",
+      "bytes": 584447,
+      "sha256": "ffe66b69349e6c90dd46dfc47d3645f1268d24ccadff2ce816e26ab9cb9f5102"
+    },
+    {
+      "id": "R19",
+      "title": "시장·기대효과 수치 출처",
+      "location": "슬라이드 1 본문 및 발표자 노트",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_기대효과_원형템플릿_설명초록색.pptx",
+      "bytes": 36178,
+      "sha256": "097614f51826e341343729df29552030c3e1a6f7b378079bc2d290fb93a6c8b9"
+    },
+    {
+      "id": "R20",
+      "title": "로컬 적재 원시 집계",
+      "location": "7-15, 406-414행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/문장별_데이터셋/ingestion_report.json",
+      "bytes": 918233,
+      "sha256": "9a684a5dca484985ba34c7e5441495e407ea7fbf4fca85c6f386eeff635193b6"
+    },
+    {
+      "id": "R21",
+      "title": "분류 패키지 검증 상태",
+      "location": "8, 14-15행; 세부 행 재집계는 동반 근거 JSON",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/verification.json",
+      "bytes": 635,
+      "sha256": "1e1d6360d908b728a930f6772171a3885e5850ea08d672965c8cbe099e8dc3ed"
+    },
+    {
+      "id": "R22",
+      "title": "31B 비교 실행 조건",
+      "location": "79-83행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/outputs/ft31_step100_collection_20261009T192608Z/run_manifest.json",
+      "bytes": 36327,
+      "sha256": "ae72d0aaef3f8624550ffa97f941bd3f4978551263d8581b7d8ec0295d42f0ec"
+    },
+    {
+      "id": "R23",
+      "title": "별도 STATE 개선본",
+      "location": "실행본과 파일 해시 비교",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/local_api/backend_patch/src/relationship-agent.js",
+      "bytes": 30881,
+      "sha256": "74fcf3898052e659f1eb667577e286f95fac1184bbbd80d3e8e5aea5cde0c0be"
+    },
+    {
+      "id": "R24",
+      "title": "데이터·학습 설명 UI",
+      "location": "27, 33-65행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/AboutScreen.js",
+      "bytes": 14371,
+      "sha256": "6e9828ccb9d7fa918fa6bac7bd6de3b2fdd9a66a3d8469f59d6970bc9527da7c"
+    },
+    {
+      "id": "R25",
+      "title": "카드 실험 편집본·모델 원문 구분",
+      "location": "19-25행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/gemma12b_card_test/README.md",
+      "bytes": 12058,
+      "sha256": "f9a77bc938120f14308b73d3635b1e15dc1c7bec0c3963092ae2c6529291efa9"
+    },
+    {
+      "id": "R26",
+      "title": "암호화·세션 수명·소유권·삭제",
+      "location": "109-157, 229행",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/store.js",
+      "bytes": 12959,
+      "sha256": "af96b5a1961ac51c7c8ad4b522bd36ac6708cf69c649894b8d11fe9112864484"
+    },
+    {
+      "id": "R27",
+      "title": "상담 제외와 관측 ID 분리",
+      "location": "57-59, 117-118행 및 participant_identity_verified",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/source_preparation_manifest.json",
+      "bytes": 6459,
+      "sha256": "a960f537f62dc7b781d263ffe878fc170b9af3c34796a2b20a20bf7155baadc6"
+    },
+    {
+      "id": "R28",
+      "title": "실사용·상담사 비교의 계획 상태",
+      "location": "슬라이드 1-2 본문 및 발표자 노트",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선발표_추가연구와_검증결과반영.pptx",
+      "bytes": 29872,
+      "sha256": "cc35c8e0771e81f943dd2995f0924dd3737c3e6f770a6b664858b7709988d7f2"
+    },
+    {
+      "id": "R29",
+      "title": "현재 실행본의 상태·검토 구현",
+      "location": "132-234, 261-334행; 개선본과 해시 비교",
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/relationship-agent.js",
+      "bytes": 25742,
+      "sha256": "a4f7746d17c93b5e5a2c6fc583a0368a552efedebb65f5f13dd2056d2b5aed4f"
+    }
+  ],
+  "additional_audit_inputs": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/train.jsonl",
+      "bytes": 56687203,
+      "sha256": "444339b650bf6452f549a527941434f57b9bd89eac1db5602a8d345dd118be9f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/validation.jsonl",
+      "bytes": 6590355,
+      "sha256": "072feebefde9eb428e31d07d4f215fd5ab5aa8db2976cb0b22856c1ff159056b"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/train.jsonl",
+      "bytes": 1777970,
+      "sha256": "28046aeac76527921e6f96f494e219fe4ae1ef7c315c6b6e68447b7f962c67d7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/sentence/validation.jsonl",
+      "bytes": 255526,
+      "sha256": "bfd50a4599725aab44ff4ebb5f8adec231fcda592c53602069e62f82d9164965"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/train.jsonl",
+      "bytes": 250707,
+      "sha256": "2c0697971117826136a4f0c81a4322c99a36d0ad385d7b835891b39d8e670d91"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/word/validation.jsonl",
+      "bytes": 63848,
+      "sha256": "8a60332e5ab1122bd04a4a488267b37265bfcf466b504069a5b8524b5369d8c9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/data/데이터셋/학습용_3종_v1_20261009/conversation/excluded.jsonl",
+      "bytes": 157786,
+      "sha256": "547d777f813ab43815a423f73abd207bb1078af700a5e478354e9f34a2ed3f19"
+    }
+  ],
+  "slide_inputs": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선발표_다른구성_A안_B안.pptx",
+      "bytes": 27963,
+      "sha256": "12e155ce05988516215da9361a872ad1fda53715e133a91ca6a22c651d5f9c23"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선발표_데이터_모델_실사용.pptx",
+      "bytes": 29729,
+      "sha256": "c292d9f6e40ae767f2a5a40df267dc851fb73a3dcdbdda3a71f3a6f671783edd"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선발표_데이터_모델_실사용_6단_4단.pptx",
+      "bytes": 29667,
+      "sha256": "f9a801da82599f7936b8164ed6e5d5bd75c23cddb8989cdde55051d4d40037a1"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선발표_전처리와_상담사답변비교.pptx",
+      "bytes": 30147,
+      "sha256": "9ee63d99ec7ed62609b52d5927c126d2d76b50c06d04945a469e46db5cf69564"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선발표_추가연구반영_6단_4단.pptx",
+      "bytes": 29822,
+      "sha256": "37e311255d5368ec20e6d58e6ae39a9c8c2d8c9d86a743353df022817115247d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선발표_추가연구와_검증결과반영.pptx",
+      "bytes": 29872,
+      "sha256": "cc35c8e0771e81f943dd2995f0924dd3737c3e6f770a6b664858b7709988d7f2"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선준비_로드맵_6단_4단.pptx",
+      "bytes": 28331,
+      "sha256": "2535568bdd5447711d9f29ba6105e1b222866950ed8a832e69fd400982745f1a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선준비_로드맵_6단_4단_추가학습강화.pptx",
+      "bytes": 28503,
+      "sha256": "33c88a3194abcbfcc3ec2e92c9b8d6802eeaad8d5f68395ddd63b9c010040307"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선준비_로드맵_6단계_4단계.pptx",
+      "bytes": 27982,
+      "sha256": "ce4ec5509d470e1dbe351d29d734470a05cad870c92f253a34e9461664313c44"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선준비_로드맵_검증계획수정.pptx",
+      "bytes": 29742,
+      "sha256": "d3f602ef2f17ad7813fa2047d824fd8afffcd93f4e24fa40182ce1b77d09d960"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선준비_로드맵_답변품질비교.pptx",
+      "bytes": 29961,
+      "sha256": "fa4103488bdf5795aa91d067cb7c7be7da0f7b334f492ba3297b88da75077443"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선준비_로드맵_수치화_감정파악_사용자검증.pptx",
+      "bytes": 29740,
+      "sha256": "b320dec2a2b6d4a43cbe4a96f5b6ecb9be587bb011d0d5e6639a44aa26afaea9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선준비_로드맵_진행내용연결.pptx",
+      "bytes": 28662,
+      "sha256": "85bc529589a8a121e2646d345d031fa4569a714f3351c18fbd4d8fd1023140ff"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_결선준비_로드맵_추가학습.pptx",
+      "bytes": 28498,
+      "sha256": "3a41f38b0ea932fcd6eeb8e98a2cd3a5470063fa86b02ee9e9156e51fc70e867"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_기대효과_원형템플릿.pptx",
+      "bytes": 36115,
+      "sha256": "d4fe531ce32b8ccbd9af45e31bcf61e39d8c3110036e6979d081e537fa42328a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_기대효과_원형템플릿_설명초록색.pptx",
+      "bytes": 36178,
+      "sha256": "097614f51826e341343729df29552030c3e1a6f7b378079bc2d290fb93a6c8b9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_기대효과_원형템플릿_전체제목배경.pptx",
+      "bytes": 36170,
+      "sha256": "ec65faa94078b88c907a4b84d43381076fff3c9e22a710c347e75bc8002d4d8a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_기대효과_원형템플릿_제목배경.pptx",
+      "bytes": 36169,
+      "sha256": "58790835229daea8e8f1607f01d318805ca96eee8072d73f2c6148f019298f3c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_결선문안수정.pptx",
+      "bytes": 583642,
+      "sha256": "82a5276be76f6995f9d453a448ade8b1cf16a6d3a7d417319d8390111fcbb7c5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_대화분석지표.pptx",
+      "bytes": 583849,
+      "sha256": "9058c59bb6b4d68476fb563870ee8eb9f8e374d55ffe87767257eb96d7edc12a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_디자인수정.pptx",
+      "bytes": 583859,
+      "sha256": "eb0d6dd59816b6657a41efe3e9c34a6fc2a25da8ee9d50e7018914a02a91ace3"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_스타일통일.pptx",
+      "bytes": 583891,
+      "sha256": "346dd8bc5618748085de25c6b6b7353ca2dc5611a567da5e099282810d283102"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_최종.pptx",
+      "bytes": 31593,
+      "sha256": "a3ed60d8c1241dd8ca8d52f95d572aa831db9f21cae48ff71e83d30478b2a103"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_팀소개스타일.pptx",
+      "bytes": 583942,
+      "sha256": "7ef39dbc251a1a1468f46fb2a831c524f57eb674fee244e4c0d47439f6a3c23f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_학습방식구체화.pptx",
+      "bytes": 583973,
+      "sha256": "3aa60c6a4b7ce0411bfe32833b13e5769f76c37cd325cd1866ce5402ac74f690"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_학습분석계획.pptx",
+      "bytes": 583772,
+      "sha256": "f41701f0bac55b2d3c649383b93d8bf4505208fd5e9da1788ce7440d2eaf68e9"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_결선계획_2페이지_학습분석계획_색상통일.pptx",
+      "bytes": 583742,
+      "sha256": "c0322ea3875e8808e5360f448c12e52632b13455ac8f5564dc717749a42698a8"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_데이터처리과정_2페이지.pptx",
+      "bytes": 584053,
+      "sha256": "ab86a43f4fd5c84fb79fb79315fd4d96a0b86c06bfcaf3f35983b5b72b5277de"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_데이터처리과정_2페이지_하단문구삭제.pptx",
+      "bytes": 584021,
+      "sha256": "0bf5df5ae302766e5a101dbffd9b016efc4cde180fabd26bb5c22fa7c361a421"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_방법론_2페이지_간단문안.pptx",
+      "bytes": 584286,
+      "sha256": "88d1058260164b4b747474926cc1777d8c7e700b191080487e4d219bfa3d7ff4"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_방법론_2페이지_수정본.pptx",
+      "bytes": 584272,
+      "sha256": "eaa42f1e24e08a64d461179f3531d54e1462fd0953bb18b6ea86d3cbd10b9144"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/slides/말씨_차별점과_방법론_2페이지_연구근거.pptx",
+      "bytes": 584447,
+      "sha256": "ffe66b69349e6c90dd46dfc47d3645f1268d24ccadff2ce816e26ab9cb9f5102"
+    }
+  ],
+  "limitations": [
+    "No independent final test or human evaluation performed in this audit.",
+    "No observation of live presentation or Q&A.",
+    "Draft event PDF may be superseded.",
+    "Archive references unavailable locally.",
+    "Local checks do not validate production service."
+  ],
+  "artifact_validation": {
+    "passed": true,
+    "errors": [],
+    "resolved_source_references": 29,
+    "checked_input_hashes": 68,
+    "markdown_tables_checked": 12,
+    "numeric_consistency_passed": true,
+    "independent_review": {
+      "reviewer": "model_evidence native subagent",
+      "result": "Two substantive unit/sampling corrections applied; remaining model/data facts and rubric logic accepted."
+    },
+    "markdown_parser": {
+      "name": "marked",
+      "passed": true,
+      "source_reference_count": 29
+    }
+  },
+  "git_at_finalization_before_evaluation_commit": {
+    "head": "44082f8105accd680cbb73b69e2d2f3bdfd95106",
+    "note": "Git commits appeared during the audit; only evaluation artifacts are to be committed by this task."
+  }
+}
