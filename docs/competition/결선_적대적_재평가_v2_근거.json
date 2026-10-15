@@ -1,0 +1,929 @@
+{
+  "schema_version": "1.0",
+  "version": "reevaluation-v2.0",
+  "evaluation_date": "2026-10-15",
+  "timezone": "Asia/Seoul",
+  "recorded_at": "2026-10-15T04:09:49.099983+00:00",
+  "target_commit": "1e4641697d467fa3bbdd3192f633f9d55d27aed6",
+  "report": {
+    "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v2.md",
+    "bytes": 26292,
+    "sha256": "6714776b3b892e4be2358a5cf3ad9f2bb2d46059273c6c2b79719e37c2572ac9"
+  },
+  "scope": "Adversarial reassessment of current local source and evidence. Application/model/presentation unchanged. Not independent human or clinical validation.",
+  "official_rubric": {
+    "source": {
+      "source_id": "R01",
+      "page": 7,
+      "weights": {
+        "creativity_and_differentiation": 30,
+        "model_performance": 20,
+        "applicability": 30,
+        "presentation": 20
+      }
+    },
+    "page": 7,
+    "weights": [
+      30,
+      20,
+      30,
+      20
+    ],
+    "same_pdf_as_v1": true,
+    "latest_notice_verified": false
+  },
+  "reviewer_scores": {
+    "official_result": false,
+    "internal_subweights_not_official": true,
+    "creativity": {
+      "v1": 16,
+      "v2": 18,
+      "max": 30,
+      "subscores": [
+        9,
+        9
+      ]
+    },
+    "model_performance": {
+      "v1": 8,
+      "v2": 8,
+      "max": 20,
+      "subscores": [
+        5,
+        3
+      ]
+    },
+    "applicability": {
+      "v1": 10,
+      "v2": 12,
+      "max": 30,
+      "subscores": [
+        9,
+        3
+      ]
+    },
+    "presentation_materials": {
+      "v1": 5,
+      "v2": 8,
+      "max": 10
+    },
+    "live_delivery_and_qa": {
+      "score": null,
+      "max": 10
+    },
+    "assessed_sum": 46,
+    "assessed_max": 90,
+    "v1_assessed_sum": 39,
+    "delta": 7
+  },
+  "preserved_artifacts": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1.md",
+      "bytes": 39139,
+      "sha256": "f9b0f4f9856b62b4be38ebca15321836eef9aa7eb8202a9fe9be2c025e421285",
+      "unchanged_from_target_commit": true
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1_근거.json",
+      "bytes": 28067,
+      "sha256": "770ff842748fc20c3c6c110c78492aae15d92759a41886716ddc5aa57a61c387",
+      "unchanged_from_target_commit": true
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v2.md",
+      "bytes": 9171,
+      "sha256": "68c4eb5eca1f7abd166847c902251729ee43721af937daec7d4ce6981cfc5401",
+      "unchanged_from_target_commit": true
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v2_근거.json",
+      "bytes": 90494,
+      "sha256": "780da62e52d70150dcfb423bb5af24edf6dab5926ef117f9a5d67931d3d728dd",
+      "unchanged_from_target_commit": true
+    }
+  ],
+  "v1_input_comparison": {
+    "same": 59,
+    "changed": 9,
+    "missing": 0,
+    "changed_paths": [
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/현황과_할일.md",
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/데이터와_연구.md",
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/01_대회요구와_적합성.md",
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/app/docs/RELATIONSHIP_AGENT.md",
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/StartScreen.js",
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/server.js",
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/README.md",
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/AboutScreen.js",
+      "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/relationship-agent.js"
+    ],
+    "comparison_artifact": {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/v1-input-comparison.json",
+      "bytes": 10481,
+      "sha256": "b4a379029f9d30b54e556b6b9bf18f82feb9d53045cc4497ef439c24ba869ec7"
+    },
+    "scope": "68 v1 manifest entries, not a fresh full raw-data audit"
+  },
+  "fresh_checks": {
+    "initial_database_run": {
+      "container_name": "malssi-review-v2-9b6db82bbe",
+      "database": "disposable PostgreSQL 16; loopback-only; no host volume",
+      "model_in_tests": "mock",
+      "app-tests": {
+        "exit_code": 1,
+        "log": "runtime/adversarial-review-v2/app-tests.log",
+        "sha256": "04f898bb7177285f3153f63573fba6a1767d7f5a9bd50b02357c1f274c0abd8d",
+        "summary": [
+          "ℹ tests 250",
+          "ℹ suites 0",
+          "ℹ pass 249",
+          "ℹ fail 1",
+          "ℹ cancelled 0",
+          "ℹ skipped 0",
+          "ℹ todo 0",
+          "ℹ duration_ms 2731.418333"
+        ]
+      },
+      "app-static": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v2/app-static.log",
+        "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815",
+        "summary": [
+          "JavaScript syntax and JSON checks passed"
+        ]
+      },
+      "evidence-tests": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v2/evidence-tests.log",
+        "sha256": "e715050f769dd0880b37c408fcc5dbb5e435bbf86e7426ec72fb3aedd5204c87",
+        "summary": [
+          "ℹ tests 9",
+          "ℹ suites 0",
+          "ℹ pass 9",
+          "ℹ fail 0",
+          "ℹ cancelled 0",
+          "ℹ skipped 0",
+          "ℹ todo 0",
+          "ℹ duration_ms 67.507792"
+        ]
+      },
+      "disposable_container_stopped": true
+    },
+    "initial_failure_classification": "Disposable DB harness readiness race: health test saw database system is starting up. App code unchanged. Initial log retained.",
+    "confirmed_database_run": {
+      "container_name": "malssi-review-v2-34eccacb4b",
+      "database": "disposable PostgreSQL 16; loopback-only; no host volume",
+      "model_in_tests": "mock",
+      "app-tests": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v2/db-confirmed/app-tests.log",
+        "sha256": "b37248b99fff10bffb25b6af255834b9a70c6c44bc5facd13ba2853760906828",
+        "summary": [
+          "ℹ tests 250",
+          "ℹ suites 0",
+          "ℹ pass 250",
+          "ℹ fail 0",
+          "ℹ cancelled 0",
+          "ℹ skipped 0",
+          "ℹ todo 0",
+          "ℹ duration_ms 3201.0705"
+        ]
+      },
+      "app-static": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v2/db-confirmed/app-static.log",
+        "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815",
+        "summary": [
+          "JavaScript syntax and JSON checks passed"
+        ]
+      },
+      "evidence-tests": {
+        "exit_code": 0,
+        "log": "runtime/adversarial-review-v2/db-confirmed/evidence-tests.log",
+        "sha256": "b31e0284838a910b5ce2d7e76a580dee0daf2684c58e56a856272885be5b2282",
+        "summary": [
+          "ℹ tests 9",
+          "ℹ suites 0",
+          "ℹ pass 9",
+          "ℹ fail 0",
+          "ℹ cancelled 0",
+          "ℹ skipped 0",
+          "ℹ todo 0",
+          "ℹ duration_ms 82.547667"
+        ]
+      },
+      "disposable_container_stopped": true
+    },
+    "readiness_correction": "Require final TCP listener via pg_isready -h 127.0.0.1 before test invocation",
+    "app_test_model": "mock",
+    "executed_commands": [
+      "cd app && node --test tests/*.test.js",
+      "cd app && node scripts/check.js",
+      "node --test ai/scripts/evaluation_evidence.test.mjs"
+    ],
+    "database_environment": "Ephemeral PostgreSQL16, loopback port, no host volumes, no production DB; both containers stopped."
+  },
+  "prior_model_run_verification": {
+    "prior_runs": [
+      {
+        "run_id": "2026-10-15T03-07-18-408Z-1405609a-e4f6-4b0e-bc1a-17439e2265fe",
+        "case_id": "attached_mother_child",
+        "prompt_version": "relationship-v3.6-canonical-state",
+        "mode": "state",
+        "incremental": true,
+        "path": "ai/local_api/runtime/evaluations/attached_mother_child-incremental-state-2026-10-15T03-07-18-408Z-1405609a-e4f6-4b0e-bc1a-17439e2265fe.json",
+        "sha256": "421718416a988e330b8a8517f8528977ab8ddd4aaf667c51fe862af6e2cd4c86",
+        "stored_hash_matches": true,
+        "metrics_match": true,
+        "status": "failed",
+        "duration_ms": 232032,
+        "metrics": {
+          "attempts": 3,
+          "failed_attempts": 3,
+          "retries": 2,
+          "attempt_wait_ms": 232013,
+          "attempt_p50_ms": 86652,
+          "attempt_p95_ms": 97052,
+          "prompt_tokens": 34502,
+          "completion_tokens": 2555,
+          "cost_measured": false
+        }
+      },
+      {
+        "run_id": "2026-10-15T03-17-26-890Z-ecd70aeb-c81e-4ab9-86fb-020d32bc8a32",
+        "case_id": "attached_mother_child",
+        "prompt_version": "relationship-v3.6.1-canonical-state",
+        "mode": "state",
+        "incremental": true,
+        "path": "ai/local_api/runtime/evaluations/attached_mother_child-incremental-state-2026-10-15T03-17-26-890Z-ecd70aeb-c81e-4ab9-86fb-020d32bc8a32.json",
+        "sha256": "078a293d4dd89e185c4d9bc56a11382114ba6e2691d8c471662864a104664493",
+        "stored_hash_matches": true,
+        "metrics_match": true,
+        "status": "failed",
+        "duration_ms": 216595,
+        "metrics": {
+          "attempts": 3,
+          "failed_attempts": 3,
+          "retries": 2,
+          "attempt_wait_ms": 216575,
+          "attempt_p50_ms": 91384,
+          "attempt_p95_ms": 94484,
+          "prompt_tokens": 34479,
+          "completion_tokens": 2348,
+          "cost_measured": false
+        }
+      },
+      {
+        "run_id": "2026-10-15T03-23-31-007Z-fb33ce2b-8540-4f93-8afc-dafba9337e59",
+        "case_id": "attached_mother_child",
+        "prompt_version": "relationship-v3.6.2-canonical-state",
+        "mode": "state",
+        "incremental": true,
+        "path": "ai/local_api/runtime/evaluations/attached_mother_child-incremental-state-2026-10-15T03-23-31-007Z-fb33ce2b-8540-4f93-8afc-dafba9337e59.json",
+        "sha256": "b26b0e6c4eafe7656f50c7d143ed84f4805e46655dbc737dc1bc53282a6faa21",
+        "stored_hash_matches": true,
+        "metrics_match": true,
+        "status": "passed",
+        "duration_ms": 161219,
+        "metrics": {
+          "attempts": 4,
+          "failed_attempts": 2,
+          "retries": 2,
+          "attempt_wait_ms": 161199,
+          "attempt_p50_ms": 32222,
+          "attempt_p95_ms": 59524,
+          "prompt_tokens": 48690,
+          "completion_tokens": 2773,
+          "cost_measured": false
+        }
+      },
+      {
+        "run_id": "2026-10-15T03-04-06-666Z-021d7a23-ba44-43d5-bcab-07d09abc6159",
+        "case_id": "current_danger_friend",
+        "prompt_version": "relationship-v3.6-canonical-state",
+        "mode": "final",
+        "incremental": false,
+        "path": "ai/local_api/runtime/evaluations/current_danger_friend-2026-10-15T03-04-06-666Z-021d7a23-ba44-43d5-bcab-07d09abc6159.json",
+        "sha256": "dd9c723bae59637627d97e64a340fd48375752e3261c094022ed8a54c8928f6f",
+        "stored_hash_matches": true,
+        "metrics_match": true,
+        "status": "failed",
+        "duration_ms": 191541,
+        "metrics": {
+          "attempts": 3,
+          "failed_attempts": 3,
+          "retries": 2,
+          "attempt_wait_ms": 191522,
+          "attempt_p50_ms": 72444,
+          "attempt_p95_ms": 75385,
+          "prompt_tokens": 19412,
+          "completion_tokens": 2416,
+          "cost_measured": false
+        }
+      },
+      {
+        "run_id": "2026-10-15T03-11-47-217Z-2fafbd2c-07df-4bc7-8e1e-46a89eaf74d1",
+        "case_id": "current_danger_friend",
+        "prompt_version": "relationship-v3.6.1-canonical-state",
+        "mode": "final",
+        "incremental": false,
+        "path": "ai/local_api/runtime/evaluations/current_danger_friend-2026-10-15T03-11-47-217Z-2fafbd2c-07df-4bc7-8e1e-46a89eaf74d1.json",
+        "sha256": "471cbc405ccd70832054b692569c10118396dcf07c9787b9063f7d93d3510bdc",
+        "stored_hash_matches": true,
+        "metrics_match": true,
+        "status": "passed",
+        "duration_ms": 339511,
+        "metrics": {
+          "attempts": 8,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 339469,
+          "attempt_p50_ms": 39473,
+          "attempt_p95_ms": 71519,
+          "prompt_tokens": 41228,
+          "completion_tokens": 2830,
+          "cost_measured": false
+        }
+      },
+      {
+        "run_id": "2026-10-15T02-58-44-845Z-d4257c7d-9df2-4516-b728-c86ba29dc934",
+        "case_id": "denied_risk_unknown_relation",
+        "prompt_version": "relationship-v3.6-canonical-state",
+        "mode": "final",
+        "incremental": false,
+        "path": "ai/local_api/runtime/evaluations/denied_risk_unknown_relation-2026-10-15T02-58-44-845Z-d4257c7d-9df2-4516-b728-c86ba29dc934.json",
+        "sha256": "8a3fc0d505d372965df083d59c52604bbda24ec3a0592665b8f18097a0ddeea0",
+        "stored_hash_matches": true,
+        "metrics_match": true,
+        "status": "passed",
+        "duration_ms": 321644,
+        "metrics": {
+          "attempts": 8,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 321594,
+          "attempt_p50_ms": 31675,
+          "attempt_p95_ms": 63793,
+          "prompt_tokens": 36891,
+          "completion_tokens": 2702,
+          "cost_measured": false
+        }
+      },
+      {
+        "run_id": "2026-10-15T02-57-10-130Z-b649f457-6761-4238-b342-d15b3dc1df87",
+        "case_id": "denied_risk_unknown_relation",
+        "prompt_version": "relationship-v3.6-canonical-state",
+        "mode": "state",
+        "incremental": false,
+        "path": "ai/local_api/runtime/evaluations/denied_risk_unknown_relation-state-2026-10-15T02-57-10-130Z-b649f457-6761-4238-b342-d15b3dc1df87.json",
+        "sha256": "40acac038ab762bc779f03cf43982c4f6dcc023eb362db9281a7add01a591cd7",
+        "stored_hash_matches": true,
+        "metrics_match": true,
+        "status": "passed",
+        "duration_ms": 68986,
+        "metrics": {
+          "attempts": 1,
+          "failed_attempts": 0,
+          "retries": 0,
+          "attempt_wait_ms": 68970,
+          "attempt_p50_ms": 68970,
+          "attempt_p95_ms": 68970,
+          "prompt_tokens": 5710,
+          "completion_tokens": 740,
+          "cost_measured": false
+        }
+      }
+    ],
+    "prior_group_count": 7,
+    "fresh_metrics_match": true,
+    "fresh_source_matches": true,
+    "current_source": "910747a843541a6784b62b665842d9de3400b78e1c49a0a98525f3bc79e71203"
+  },
+  "fresh_model_run": {
+    "artifact": {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/model-runs/current_danger_friend-2026-10-15T03-59-11-215Z-dd1dc02a-9e62-4b71-a91b-65c25abcf53f.json",
+      "bytes": 49581,
+      "sha256": "10586b9f3accc96f28bebeace9e395517721c70bd11ecf6a46c48da7d044c74c"
+    },
+    "run_id": "2026-10-15T03-59-11-215Z-dd1dc02a-9e62-4b71-a91b-65c25abcf53f",
+    "case_id": "current_danger_friend",
+    "mode": "final",
+    "incremental": false,
+    "web_context": false,
+    "synthetic": true,
+    "status": "passed",
+    "measured_at": "2026-10-15T03:59:11.216Z",
+    "duration_ms": 188456,
+    "metrics": {
+      "attempts": 8,
+      "failed_attempts": 0,
+      "retries": 0,
+      "attempt_wait_ms": 188427,
+      "attempt_p50_ms": 21970,
+      "attempt_p95_ms": 42584,
+      "prompt_tokens": 41731,
+      "completion_tokens": 2946,
+      "cost_measured": false
+    },
+    "identity": {
+      "prompt_version": "relationship-v3.6.2-canonical-state",
+      "fixture_sha256": "dd50c12230f6fdb4ab088435d1119101a151ccb41c0df030062c4660c3530e9d",
+      "questions_sha256": "a3f30c6889266c5e1c4eb81e2d2ab59bee528015a23212a2ad72c4ba341957e5",
+      "context_sha256": "61981893e39c14ea619771bca9948f97a198b7eaecc55ce16a4745c03eec5290",
+      "context_source": "synthetic_fixture",
+      "model_requested": "gemma4:12b",
+      "checkpoint_sha256_declared": null,
+      "runtime_model_identity_verified": false,
+      "protocol": "relationship_agent",
+      "timeout_ms": 600000,
+      "deployment_verified": false,
+      "independent_test": false,
+      "human_review": "pending",
+      "source_sha256": "910747a843541a6784b62b665842d9de3400b78e1c49a0a98525f3bc79e71203",
+      "evaluator_sha256": "0e2bb7ee9978f75ff550daa41e5255da604b31821a63c4d0bc11b038f8754db2"
+    },
+    "trace": [
+      {
+        "event": "model_attempt",
+        "request_id": null,
+        "generation": "state",
+        "attempt": 1,
+        "status": 200,
+        "duration_ms": 42584,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 6423,
+          "completion_tokens": 809,
+          "total_tokens": 7232
+        },
+        "reason": "success"
+      },
+      {
+        "event": "model_attempt",
+        "request_id": null,
+        "generation": "relationship_analysis",
+        "attempt": 1,
+        "status": 200,
+        "duration_ms": 36366,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 6176,
+          "completion_tokens": 746,
+          "total_tokens": 6922
+        },
+        "reason": "success"
+      },
+      {
+        "event": "model_attempt",
+        "request_id": null,
+        "generation": "analysis_review",
+        "attempt": 1,
+        "status": 200,
+        "duration_ms": 8638,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 4218,
+          "completion_tokens": 10,
+          "total_tokens": 4228
+        },
+        "reason": "success"
+      },
+      {
+        "event": "model_attempt",
+        "request_id": null,
+        "generation": "communication_plan",
+        "attempt": 1,
+        "status": 200,
+        "duration_ms": 21970,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 4456,
+          "completion_tokens": 347,
+          "total_tokens": 4803
+        },
+        "reason": "success"
+      },
+      {
+        "event": "model_attempt",
+        "request_id": null,
+        "generation": "guide_write",
+        "attempt": 1,
+        "status": 200,
+        "duration_ms": 25293,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 5243,
+          "completion_tokens": 400,
+          "total_tokens": 5643
+        },
+        "reason": "success"
+      },
+      {
+        "event": "model_attempt",
+        "request_id": null,
+        "generation": "guide_quality",
+        "attempt": 1,
+        "status": 200,
+        "duration_ms": 16256,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 4752,
+          "completion_tokens": 148,
+          "total_tokens": 4900
+        },
+        "reason": "success"
+      },
+      {
+        "event": "model_attempt",
+        "request_id": null,
+        "generation": "guide_refine",
+        "attempt": 1,
+        "status": 200,
+        "duration_ms": 27815,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 5801,
+          "completion_tokens": 476,
+          "total_tokens": 6277
+        },
+        "reason": "success"
+      },
+      {
+        "event": "model_attempt",
+        "request_id": null,
+        "generation": "guide_review",
+        "attempt": 1,
+        "status": 200,
+        "duration_ms": 9505,
+        "finish_reason": "stop",
+        "usage": {
+          "prompt_tokens": 4662,
+          "completion_tokens": 10,
+          "total_tokens": 4672
+        },
+        "reason": "success"
+      }
+    ],
+    "human_review": "pending",
+    "reviewer_observation": "Final output inspected by AI reviewer only; automatic fixture expectations passed. Not independent human assessment.",
+    "new_case": false,
+    "pooled_success_rate": null,
+    "reproduction": "env -u MODEL_BASE_URL -u MODEL_NAME -u MODEL_API_KEY -u MODEL_TIMEOUT_MS MALSSI_EVALUATION_DIR=runtime/adversarial-review-v2/model-runs node ai/scripts/evaluate_relationship_agent.mjs ai/local_api/agent_data/current_danger_friend.json"
+  },
+  "model_availability": {
+    "endpoint_scope": "existing local Ollama loopback",
+    "requested_alias": "gemma4:12b",
+    "listed_digest": "c7597fc90b86aff6965317f37dd5465402284e26382d9b4bf2dfe3ef1491f4b6",
+    "listed_digest_is_runtime_checkpoint_proof": false,
+    "api_key_recorded": false
+  },
+  "new_findings": [
+    {
+      "id": "N1",
+      "priority": "P1",
+      "verification": "deterministic synthetic contract probe; no model call",
+      "observed": {
+        "synthetic": true,
+        "model_called": false,
+        "case": "long_sentence_denial_boundary",
+        "length": 319,
+        "safety_candidates": [
+          {
+            "length": 159,
+            "contains_current_denial": false
+          }
+        ],
+        "full_quote_in_safety_enum": false,
+        "clipped": "accepted",
+        "full": "agent_safety_context"
+      },
+      "limitation": "Does not measure actual model misclassification or clinical safety."
+    },
+    {
+      "id": "N2",
+      "priority": "P2",
+      "verification": "mock HTTP; no network",
+      "observed": {
+        "synthetic": true,
+        "network_called": false,
+        "case": "transient_failure_deadline_double_count",
+        "actual_fetch_calls": 1,
+        "error": "MODEL_TIMEOUT",
+        "trace": [
+          {
+            "event": "model_attempt",
+            "request_id": null,
+            "generation": "probe",
+            "attempt": 1,
+            "status": 503,
+            "duration_ms": 0,
+            "finish_reason": null,
+            "usage": null,
+            "reason": "http_transient"
+          },
+          {
+            "event": "model_attempt",
+            "request_id": null,
+            "generation": "probe",
+            "attempt": 1,
+            "status": 503,
+            "duration_ms": 101,
+            "finish_reason": null,
+            "usage": null,
+            "reason": "deadline"
+          }
+        ],
+        "metrics": {
+          "attempts": 2,
+          "failed_attempts": 2,
+          "retries": 0,
+          "attempt_wait_ms": 101,
+          "attempt_p50_ms": 0,
+          "attempt_p95_ms": 101,
+          "prompt_tokens": null,
+          "completion_tokens": null,
+          "cost_measured": false
+        }
+      },
+      "limitation": "No duplicate-attempt path observed in the seven stored runs or one fresh successful run."
+    },
+    {
+      "id": "N3",
+      "priority": "P2",
+      "verification": "pure identity/grouping probe; no network",
+      "observed": {
+        "synthetic": true,
+        "network_called": false,
+        "endpoint_a": "http://server-a.invalid/v1",
+        "endpoint_b": "http://server-b.invalid/v1",
+        "identities_equal": true,
+        "input_runs": 2,
+        "summary_groups": 1
+      },
+      "limitation": "Does not establish that historical runs were actually mixed across servers."
+    },
+    {
+      "id": "N4",
+      "priority": "P2",
+      "verification": "static code inspection only",
+      "path": "ai/scripts/smoke_relationship_web.mjs",
+      "lines": [
+        82,
+        89,
+        113
+      ],
+      "observed": [
+        "Failed request duration and overall elapsed omitted from failure file",
+        "Same run-id failure path overwritten with default writeFileSync"
+      ],
+      "operational_failure_injected": false
+    }
+  ],
+  "presentation_review": {
+    "artifact": {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/final/말씨_결선_근거정합본_v2.pptx",
+      "bytes": 1351130,
+      "sha256": "ce8d91ffdc12bb83ce5e0b92137b330722cc4cdc34a2c40876910fcb2fcc9d2d"
+    },
+    "slides": 12,
+    "native_tables": 7,
+    "notes_seconds": [
+      30,
+      60,
+      60,
+      90,
+      90,
+      150,
+      60,
+      90,
+      60,
+      60,
+      90,
+      60
+    ],
+    "notes_total_seconds": 900,
+    "qa_seconds_planned": 300,
+    "all_slide_text_and_notes_read": true,
+    "fresh_visual_sample_slides": [
+      5,
+      8,
+      10
+    ],
+    "saved_structural_validation": {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/presentation_v2/final-r5.validation.json",
+      "bytes": 4800,
+      "sha256": "d2a77eb97ba3331bd86b5d1e1b8796bc18b749521c77c348656fea9c95d992fb"
+    },
+    "saved_validation_matches_deck": true,
+    "new_full_visual_review": false,
+    "native_powerpoint_run": false,
+    "live_rehearsal": false
+  },
+  "limitations": [
+    "Final31B integration and runtime checkpoint loading unverified",
+    "No new independent test or independent human review",
+    "No latest full web E2E, concurrent load or current-session p95",
+    "No new field-user, adoption, operational cost or retention/deletion evidence",
+    "Newly discovered findings are not attributed to latest changes without regression evidence",
+    "Runtime logs, probes, synthetic outputs remain local and Git-ignored"
+  ],
+  "sources": [
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1.md",
+      "bytes": 39139,
+      "sha256": "f9b0f4f9856b62b4be38ebca15321836eef9aa7eb8202a9fe9be2c025e421285"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v2.md",
+      "bytes": 9171,
+      "sha256": "68c4eb5eca1f7abd166847c902251729ee43721af937daec7d4ce6981cfc5401"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/presentation/final/말씨_결선_근거정합본_v2.pptx",
+      "bytes": 1351130,
+      "sha256": "ce8d91ffdc12bb83ce5e0b92137b330722cc4cdc34a2c40876910fcb2fcc9d2d"
+    },
+    {
+      "path": "/Users/chihun/Downloads/[DJU_1][붙임 1] HOP Biohealth AI Challenge 운영계획(안)_송부용.pdf",
+      "bytes": 453664,
+      "sha256": "5e1b625c4670e08a97cb41ed20301dcf54e5fcca64a100453c7f526b7881f666"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v1_근거.json",
+      "bytes": 28067,
+      "sha256": "770ff842748fc20c3c6c110c78492aae15d92759a41886716ddc5aa57a61c387"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_평가_v2_근거.json",
+      "bytes": 90494,
+      "sha256": "780da62e52d70150dcfb423bb5af24edf6dab5926ef117f9a5d67931d3d728dd"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/04_제출범위와_검증계약.md",
+      "bytes": 9392,
+      "sha256": "93b3984f799dfaa694c78b09a5a191ff5755058c7e168deb9b2a6ceb939734ba"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/model-schema.js",
+      "bytes": 7963,
+      "sha256": "724354c12cba93ce79f9213f2c6874c3d40d8f5b6e312b708d019594169b2435"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/relationship-agent.js",
+      "bytes": 32142,
+      "sha256": "8e653c746b35fd484f837e4c2fe7fc55adc31f1706ca9d94191752aef7d952b5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/model.js",
+      "bytes": 42280,
+      "sha256": "1fad46fece144175c81b7220c0587b7605a395ee576a241f6734b9e7b31f1fde"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/scripts/evaluation_evidence.mjs",
+      "bytes": 5797,
+      "sha256": "8ca0d27f8266a35dd80d7cea8a3d4405fecc26293bae7a6e979e810bbe04e071"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/ai/scripts/smoke_relationship_web.mjs",
+      "bytes": 8907,
+      "sha256": "431c318949d84d5d58efee999e6cb68c0c6ab85f7b4f35eea9a6af834ec05769"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/source-identity.js",
+      "bytes": 1113,
+      "sha256": "d9ed9e8256278e8758e7bc10019a942daa77f8bbed55ba225b3ff95f4a31bf51"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/server.js",
+      "bytes": 21576,
+      "sha256": "c36b0dfdbb0ffb897cf487972f5969a3d6bca989ca9890a8dfa615a779771305"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/docs/UI_CONTENT_POLICY.md",
+      "bytes": 1999,
+      "sha256": "3c097404384e76f8a5fecab7382a7d4e1ec12f93c59e8f2b4890cb4459c75c5a"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/AboutScreen.js",
+      "bytes": 4443,
+      "sha256": "9a54773bbcd819a7352ac607b268c6da5c8aafff4fe3e240fde6603c8edd0cc6"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/StartScreen.js",
+      "bytes": 2085,
+      "sha256": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/presentation_v2/final-r5.validation.json",
+      "bytes": 4800,
+      "sha256": "d2a77eb97ba3331bd86b5d1e1b8796bc18b749521c77c348656fea9c95d992fb"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/데이터와_연구.md",
+      "bytes": 4984,
+      "sha256": "cfa7189a1e77ff42f50faec0b1662141bb74ad66b2109873665049ab789512a5"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/docs/current/현황과_할일.md",
+      "bytes": 5083,
+      "sha256": "fd046fdeb6b6e6d22c67eb542af2f18de1f665ccef1819a176ea98e6e85cd1e8"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/checks.json",
+      "bytes": 1247,
+      "sha256": "f3d3a31a943492c509e99287a3204c2401a8a4d355c746601a8aab11cd5d595f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/db-confirmed/checks.json",
+      "bytes": 1284,
+      "sha256": "34116bd3fcc2311eadb179e25213b19c315afd26cecf5b58cbf0f8462b7632eb"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/boundary-probes.mjs",
+      "bytes": 2543,
+      "sha256": "421c83e20eea5950a347904ff3b0151e992479a5ea9c2a258be947eee6fe67c7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/boundary-probes.json",
+      "bytes": 1362,
+      "sha256": "bddd4bfb7b5b0c95642d2866f9aedf0e34587a6d07c3c0addf9614ecf32c9042"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/endpoint-probe.mjs",
+      "bytes": 1061,
+      "sha256": "2227398d78ea0134d7a117d194f75c3bbcf35ec77cb2a9dea116e3fc5c487ece"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/endpoint-probe.json",
+      "bytes": 213,
+      "sha256": "49958bcd7cde02077094eff0890d51e4e807c69c417aaa49c7be026e3cb1701e"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/model-runs/current_danger_friend-2026-10-15T03-59-11-215Z-dd1dc02a-9e62-4b71-a91b-65c25abcf53f.json",
+      "bytes": 49581,
+      "sha256": "10586b9f3accc96f28bebeace9e395517721c70bd11ecf6a46c48da7d044c74c"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/v1-input-comparison.json",
+      "bytes": 10481,
+      "sha256": "b4a379029f9d30b54e556b6b9bf18f82feb9d53045cc4497ef439c24ba869ec7"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/model-evidence-check.json",
+      "bytes": 6526,
+      "sha256": "a555da4c3aba35a31cc527f26514aaef3a717d769993c162211de4cb91ff9e0f"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/app-tests.log",
+      "bytes": 38535,
+      "sha256": "04f898bb7177285f3153f63573fba6a1767d7f5a9bd50b02357c1f274c0abd8d"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/evidence-tests.log",
+      "bytes": 1003,
+      "sha256": "e715050f769dd0880b37c408fcc5dbb5e435bbf86e7426ec72fb3aedd5204c87"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/app-static.log",
+      "bytes": 41,
+      "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/db-confirmed/app-tests.log",
+      "bytes": 37356,
+      "sha256": "b37248b99fff10bffb25b6af255834b9a70c6c44bc5facd13ba2853760906828"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/db-confirmed/evidence-tests.log",
+      "bytes": 1004,
+      "sha256": "b31e0284838a910b5ce2d7e76a580dee0daf2684c58e56a856272885be5b2282"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/adversarial-review-v2/db-confirmed/app-static.log",
+      "bytes": 41,
+      "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/presentation_v2/final-rendered/slide-05.png",
+      "bytes": 99032,
+      "sha256": "ae97c8e1a55eed73973f27beadfe39b7e5f61a5944f4460212044bd139fdd0ab"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/presentation_v2/final-rendered/slide-08.png",
+      "bytes": 93058,
+      "sha256": "2d7b6c89bd5b811044ce5e8887f12d6af4d8d1b8572a71be44dc3068101a9562"
+    },
+    {
+      "path": "/Users/chihun/Documents/ChatGPT/HOP-Final/runtime/presentation_v2/final-rendered/slide-10.png",
+      "bytes": 91451,
+      "sha256": "be2cfd77bfee89eee06285c8fb967024aa855d80a1e2d3653aacb9792807ad33"
+    }
+  ],
+  "artifact_validation": {
+    "json_loadable": true,
+    "linked_existing_files_checked": 36,
+    "line_anchors_checked": 12,
+    "score_arithmetic_checked": true,
+    "prior_artifacts_unchanged": true
+  }
+}
