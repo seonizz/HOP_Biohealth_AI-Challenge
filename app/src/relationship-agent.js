@@ -1,4 +1,6 @@
 import { HttpError } from './errors.js';
+import { createHash } from 'node:crypto';
+import { answerComponents } from './answer-sources.js';
 import { contextGoal, validatePatientState } from './agent-state.js';
 import { modelResponseFormat, safetyEvidenceQuotes } from './model-schema.js';
 import { retrieveSources, retrievedContext, citedSources, citationsRetrieved } from './relationship-retrieval.js';
@@ -11,13 +13,14 @@ const evidence = object({ subject:{type:'string',enum:['patient','supporter','us
 // Length is bounded by the original intake fields and their exact enum values.
 // Applying an excerpt limit here can remove a later denial or attribution.
 const safetyEvidence = object({ subject:evidence.properties.subject,question_id:string(80),quote:{type:'string',minLength:1} });
+const MAX_SAFETY_SOURCES=18;
 const finding = object({ interpretation:string(500), evidence:array(evidence,3,1), certainty:{type:'string',enum:['reported','tentative']} });
 
 const legacyRelationshipSchema = object({
   patient_summary:string(1000), supporter_summary:string(1000),
   relationship:object({ label:string(100), supporter_role:string(100),
     dynamics:array(finding,3), strengths:array(finding,3), boundaries:array(finding,3) }),
-  unknowns:array(string(400),4), safety:object({ urgent:{type:'boolean'}, evidence:array(safetyEvidence,18) }),
+  unknowns:array(string(400),4), safety:object({ urgent:{type:'boolean'}, evidence:array(safetyEvidence,MAX_SAFETY_SOURCES*6) }),
 });
 legacyRelationshipSchema.properties.relationship.properties.dynamics.items=structuredClone(finding);
 legacyRelationshipSchema.properties.relationship.properties.dynamics.items.properties.certainty.enum=['tentative'];
@@ -30,6 +33,10 @@ export const relationshipDraftSchema=object({observations:observationsSchema,
   unknowns:legacyRelationshipSchema.properties.unknowns,safety:legacyRelationshipSchema.properties.safety});
 export const relationshipSchema=object({patient_summary:string(2400),supporter_summary:string(2400),
   ...relationshipDraftSchema.properties});
+// Model output selects a bounded list of source bundles. Full quotations are
+// restored by the server, so a valid 10k input need not fit the output budget.
+export const relationshipSelectionSchema=structuredClone(relationshipDraftSchema);
+relationshipSelectionSchema.properties.safety=object({urgent:{type:'boolean'},evidence_ids:array(string(40),MAX_SAFETY_SOURCES)});
 export const planSchema = object({ voice:string(300), opening_evidence:array(evidence,2), user_intent:string(700),
   patient_choice:string(500), supporter_care:array(string(500),3), avoid_patterns:array(string(500),4), next_step:string(500) });
 export const reviewSchema = object({ approved:{type:'boolean'}, issues:array(object({
@@ -104,6 +111,42 @@ function sourceTexts(field) {
     field?.followUp?.answer?.text,field?.followUp?.answer?.custom].filter(v=>typeof v==='string'&&v.trim()))];
 }
 
+function safetySource(subject,field) {
+  if (field?.status!=='answered') return null;
+  const components=answerComponents(field);
+  if (!components.length) return null;
+  return {id:'safety_'+createHash('sha256').update(JSON.stringify([subject,field.id,components])).digest('hex').slice(0,24),
+    subject,question_id:field.id,components};
+}
+
+export function safetySources(context) {
+  const fields=['patient','supporter'].flatMap(subject=>Object.values(context[subject]?.fields||{}).map(field=>[subject,field]));
+  for (const field of Object.values(context.user_goal||{})) if (field?.id) fields.push(['user_goal',field]);
+  return fields.map(([subject,field])=>safetySource(subject,field)).filter(Boolean);
+}
+
+// Validate the wire format before hydration. Quote-shaped legacy reports are
+// still readable, but are never accepted as a new model selection.
+export function canonicalRelationshipSelection(value,context,retrieval) {
+  const scoped=retrievedContext(context,retrieval);
+  validateSchema(value,groundedEvidenceSchema(relationshipSelectionSchema,scoped));
+  const ids=value.safety.evidence_ids;
+  if (new Set(ids).size!==ids.length) invalid('agent_safety_source');
+  const sources=new Map(safetySources(scoped).map(source=>[source.id,source]));
+  const references=ids.flatMap(id=>{
+    const source=sources.get(id);
+    if (!source) invalid('agent_safety_source');
+    if (!source.components.every(component=>retrieval.documents.some(document=>
+      document.subject===source.subject&&document.question_id===source.question_id&&document.text===component.text&&
+      document.origin===component.origin&&equalJSON(document.fields,component.fields)))) invalid('agent_retrieval_evidence');
+    // All representations and follow-ups travel with the selected question.
+    return [...new Set(source.components.map(row=>row.text))].map(quote=>({subject:source.subject,question_id:source.question_id,quote}));
+  });
+  const draft={...value,safety:{urgent:value.safety.urgent,evidence:references}};
+  assertRetrievedEvidence(draft,retrieval);
+  return canonicalRelationship(draft,context);
+}
+
 // Select whole source references in the runner's grammar; do not let independent
 // actor, question and quote choices form a reference that never appeared.
 export function groundedEvidenceSchema(schema,context) {
@@ -135,6 +178,12 @@ export function groundedEvidenceSchema(schema,context) {
   // Schema templates reuse nodes; each output path needs its own candidate pool.
   const result=JSON.parse(JSON.stringify(schema));
   const visit=(node,path=[])=>{
+    if (path.join('.')==='safety.evidence_ids') {
+      const ids=safetySources(context).map(source=>source.id);
+      node.maxItems=Math.min(MAX_SAFETY_SOURCES,ids.length);
+      if (ids.length) node.items.enum=ids;
+      else delete node.items.enum;
+    }
     if (path[0]==='observations'&&node.type==='array') {
       const subjects=node.items.properties.subject.enum;
       if (!references.some(ref=>subjects.includes(ref.subject)&&ref.question_id!=='name')) node.maxItems=0;
@@ -351,11 +400,13 @@ export function agentContext(context) {
   const fields = subject => Object.values(context[subject]?.fields||{}).filter(field=>
     ['answered','unknown','refused','skipped','auto_skipped'].includes(field.status)).map(field=>({
       subject,question_id:field.id,question:field.question,status:field.status,
-      answers:['answered','unknown'].includes(field.status)?sourceTexts(field):[],
+      answers:['answered','unknown'].includes(field.status)?answerComponents(field):[],
+      safety_source_id:safetySource(subject,field)?.id||null,
     }));
   const goals=['message','desired_outcomes'].map(key=>context.user_goal?.[key]).filter(Boolean).map(field=>({
     subject:'user_goal',question_id:field.id,question:field.question,status:field.status,
-    answers:field.status==='answered'?sourceTexts(field):[],
+    answers:field.status==='answered'?answerComponents(field):[],
+    safety_source_id:safetySource('user_goal',field)?.id||null,
   }));
   return { patient:fields('patient'),supporter:fields('supporter'),user_goal:goals,
     supplied_user_goal:contextGoal(context),alias:context.patient?.alias||'그분',
@@ -394,7 +445,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     const scoped=retrievedContext(context,retrieval);
     const result=await gateway.agentComplete(stage,prompt,{...payload,retrieval},groundedEvidenceSchema(schema,scoped),tokens,operation,value=>{
       assertRetrievedEvidence(value,retrieval);
-      return validate(value);
+      return validate(value,retrieval);
     });
     retrievalTrace.push({stage,indexed_sources:retrieval.indexed_sources,source_ids:retrieval.documents.map(row=>row.source_id)});
     stages.push(stage);
@@ -402,8 +453,14 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   };
   const relationKnown=context.patient?.fields?.rel?.status==='answered';
   const analysisPrompt=ANALYZE+(relationKnown ? '' : '\n관계 답변이 미확인입니다. relationship.label과 supporter_role은 반드시 확인되지 않음으로 쓰세요.');
-  const analysisSchema=groundedEvidenceSchema(relationshipDraftSchema,context);
-  let analysis=await generate('relationship_analysis',analysisPrompt,data,analysisSchema,2400,v=>canonicalRelationship(v,context));
+  const analysisSchema=relationshipSelectionSchema;
+  let safetySourceIds=[];
+  const validateAnalysis=(value,retrieval)=>{
+    const result=canonicalRelationshipSelection(value,context,retrieval);
+    safetySourceIds=[...value.safety.evidence_ids];
+    return result;
+  };
+  let analysis=await generate('relationship_analysis',analysisPrompt,data,analysisSchema,2400,validateAnalysis);
   const analysisReviewPrompt=REVIEW+'\n지금은 analysis만 원문과 대조하세요. 안내 문장은 아직 없으며 평가하지 마세요. 모든 issue.field는 relationship_analysis입니다.';
   let analysisRepairs=0;
   const repairAnalysis=async (review,late=false)=>{
@@ -412,7 +469,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     const analysisIssues={approved:false,issues:review.issues.filter(issue=>issue.field==='relationship_analysis')};
     analysis=await generate(late?'analysis_repair_after_guide_review':'analysis_repair',
       analysisPrompt+'\n검토의 중대한 분석 오류를 바로잡고 원문 근거로 전체 분석을 다시 작성하세요.',
-      {answers:data,draft:analysis,review:analysisIssues},analysisSchema,2400,v=>canonicalRelationship(v,context));
+      {answers:data,draft:analysis,review:analysisIssues},analysisSchema,2400,validateAnalysis);
     const repairedReview=await generate(late?'analysis_review_after_guide_review_repair':'analysis_review_after_repair',
       analysisReviewPrompt,{answers:data,analysis},analysisReviewSchema,900,validateReview);
     if (!repairedReview.approved) invalid('agent_analysis_review_rejected');
@@ -502,6 +559,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   return {payload:{...draft,patient_state:memory,name_index:name},relationship_analysis:analysis,
     relationship_memory:reviewedRelationshipMemory(analysis,context),
     agent:{prompt_version:PROMPT_VERSION,stages,reviewed:true,quality_reviewed:true,
+      safety_evidence_version:'question-bundle-v1',safety_source_ids:safetySourceIds,
       ...(analysis.safety.urgent?{safety_guidance_version:'immediate-help-v1'}:{}),
       retrieval:{method:'conversation_lexical_v1',stages:retrievalTrace}}};
 }

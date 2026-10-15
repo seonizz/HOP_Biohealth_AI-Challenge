@@ -4,7 +4,7 @@
 
 | 지금 볼 항목 | 현재 기준 | 자세히 보기 |
 |---|---|---|
-| 현재 테스트 실행본 | `app/` · 임시 Gemma4 12B · `relationship-v3.7-complete-safety-evidence` | [기술 구조와 사용자 흐름](app/docs/RELATIONSHIP_AGENT.md) |
+| 현재 테스트 실행본 | `app/` · 임시 Gemma4 12B · `relationship-v3.8-safety-source-selection` | [기술 구조와 사용자 흐름](app/docs/RELATIONSHIP_AGENT.md) |
 | 사용 흐름 | 질문 답변 → 원문에 근거한 상태 갱신 → 검토된 가이드 → 기록 | [질문 관리](app/docs/QUESTIONS.md) |
 | 실행 방법 | 프로젝트 루트의 공통 명령, 앱별 DB·모델 연결 설정 | [실행·검사 안내](docs/current/실행과_검증.md) |
 | 검증 상태 | 로컬 검사는 통과. 실제 모델·웹 의미 검토는 보완 필요 | [확인된 결과와 할 일](docs/current/현황과_할일.md) |

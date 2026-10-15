@@ -1,9 +1,7 @@
 import { createHash } from 'node:crypto';
+import { answerComponents } from './answer-sources.js';
 
 // A fresh, conversation-local index: never index generated memories or other sessions.
-const sourceTexts=field=>[...new Set([field.rawText,field.text,field.custom,
-  field.followUp?.answer?.rawText,field.followUp?.answer?.text,field.followUp?.answer?.custom]
-  .filter(value=>typeof value==='string'&&value.trim()))];
 const key=row=>JSON.stringify([row.subject,row.question_id]);
 const terms=text=>{
   const words=String(text||'').normalize('NFKC').toLowerCase().match(/[\p{L}\p{N}]+/gu)||[];
@@ -23,9 +21,9 @@ const lanes=[
 export function sourceDocuments(context) {
   const fields=['patient','supporter'].flatMap(subject=>Object.values(context[subject]?.fields||{}).map(field=>({subject,field})));
   for(const field of Object.values(context.user_goal||{})) if(field?.id) fields.push({subject:'user_goal',field});
-  return fields.filter(({field})=>field.status==='answered').flatMap(({subject,field})=>sourceTexts(field).map(text=>({
-    source_id:createHash('sha256').update(JSON.stringify([subject,field.id,text])).digest('hex').slice(0,24),
-    subject,question_id:field.id,question:field.question||field.id,text,
+  return fields.filter(({field})=>field.status==='answered').flatMap(({subject,field})=>answerComponents(field).map(component=>({
+    source_id:createHash('sha256').update(JSON.stringify([subject,field.id,component])).digest('hex').slice(0,24),
+    subject,question_id:field.id,...component,question:component.question||field.question||field.id,
   })));
 }
 

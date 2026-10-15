@@ -18,7 +18,7 @@ const riskPattern = /죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|�
 // selected labels. A following sentence or follow-up may correct the first one.
 export function safetyEvidenceQuotes(field) {
   const sources = [...new Set(sourceTexts(field))];
-  return sources.filter(source => !sources.some(other => other !== source && other.includes(source)));
+  return sources;
 }
 
 // These are exact reported words to preserve, not a new clinical assessment.

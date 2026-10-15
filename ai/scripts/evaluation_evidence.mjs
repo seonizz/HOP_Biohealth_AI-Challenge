@@ -66,41 +66,118 @@ export function percentile(values, fraction) {
   return sorted[Math.max(0, Math.ceil(sorted.length*fraction)-1)];
 }
 
-export function attemptMetrics(trace) {
-  const attempts = new Map(), conflicts = new Set();
+const terminalReasons = new Set(['success', 'deadline', 'internal_failure', 'authentication', 'http_rejected',
+  'retry_after_limit', 'connection_failure', 'envelope_read_failure']);
+// Matches ModelGateway.request's fixed retry ceiling; lower attempts must record their next step.
+const maxAttemptsPerGeneration = 3;
+const transientReasons = new Set(['connection_transient', 'http_transient']);
+const validDuration = row => Number.isFinite(row.duration_ms) && row.duration_ms >= 0;
+const nonempty = value => typeof value === 'string' && Boolean(value.trim());
+
+function inspectTrace(trace) {
+  const attempts = new Map(), waits = new Map(), generations = new Map(), conflicts = new Set(), errors = new Set();
+  const preflight = [];
   let legacy = 0, unknown = 0;
-  const waits = [], preflight = [];
-  for (const row of trace) {
-    if (row.event === 'model_retry_wait') { waits.push(row); continue; }
-    if (row.event === 'model_request_failure') { preflight.push(row); continue; }
-    if (row.event && row.event !== 'model_attempt') { unknown++; continue; }
-    // Older traces include backoff deadlines as attempts. Their request count cannot be recovered safely.
-    if (typeof row.attempt_id !== 'string' || !row.attempt_id) { legacy++; continue; }
-    if (attempts.has(row.attempt_id) && JSON.stringify(attempts.get(row.attempt_id)) !== JSON.stringify(row)) conflicts.add(row.attempt_id);
-    else attempts.set(row.attempt_id, row);
+  if (!Array.isArray(trace)) errors.add(trace == null ? 'missing_trace' : 'invalid_trace');
+  else if (!trace.length) errors.add('empty_trace');
+  for (const row of Array.isArray(trace) ? trace : []) {
+    if (!row || typeof row !== 'object' || Array.isArray(row)) { errors.add('invalid_event'); continue; }
+    if (!row.event || (row.event === 'model_attempt' && !nonempty(row.attempt_id))) {
+      legacy++; errors.add('legacy_attempt_event'); continue;
+    }
+    if (!['model_attempt', 'model_retry_wait', 'model_request_failure'].includes(row.event)) {
+      unknown++; errors.add('unknown_trace_event'); continue;
+    }
+    const isWait = row.event === 'model_retry_wait';
+    const isAttempt = row.event === 'model_attempt';
+    if (!nonempty(row.generation_id) || !nonempty(row.generation) || !Number.isSafeInteger(row.attempt)
+        || row.attempt < 1 || row.attempt > maxAttemptsPerGeneration
+        || !(row.request_id === null || nonempty(row.request_id)) || !validDuration(row) || !nonempty(row.reason)
+        || (isWait ? !nonempty(row.after_attempt_id) || !Number.isFinite(row.delay_ms) || row.delay_ms <= 0
+          || !['retry_ready', 'deadline'].includes(row.reason)
+          : !Object.hasOwn(row, 'status') || !Object.hasOwn(row, 'finish_reason') || !Object.hasOwn(row, 'usage')
+            || (isAttempt ? !nonempty(row.attempt_id) : row.attempt_id !== null))) {
+      errors.add('invalid_event_fields'); continue;
+    }
+    const records = isWait ? waits : isAttempt ? attempts : null;
+    const id = isWait ? row.after_attempt_id : row.attempt_id;
+    if (records?.has(id)) {
+      if (JSON.stringify(records.get(id)) !== JSON.stringify(row)) {
+        errors.add(isWait ? 'conflicting_retry_wait' : 'conflicting_attempt_id');
+        if (isAttempt) conflicts.add(id);
+      }
+      continue; // Identical repeated delivery is one event, including wait duration.
+    }
+    let generation = generations.get(row.generation_id);
+    if (!generation) {
+      generation = {name:row.generation, requestId:row.request_id, last:null, wait:null};
+      generations.set(row.generation_id, generation);
+    }
+    if (generation.name !== row.generation || generation.requestId !== row.request_id) errors.add('generation_identity_mismatch');
+    if (isWait) {
+      const previous = attempts.get(row.after_attempt_id);
+      if (!previous) errors.add('orphan_retry_wait');
+      else if (previous !== generation.last || previous.generation_id !== row.generation_id
+          || previous.attempt !== row.attempt || previous.request_id !== row.request_id) errors.add('retry_wait_mismatch');
+      if (previous && (!transientReasons.has(previous.reason) || previous.attempt === maxAttemptsPerGeneration)) errors.add('retry_wait_after_terminal');
+      waits.set(id, row); generation.wait = row;
+      continue;
+    }
+    if (row.attempt !== (generation.last?.attempt || 0) + 1) errors.add('attempt_sequence');
+    if (generation.last && (generation.last.event === 'model_request_failure' || terminalReasons.has(generation.last.reason)
+        || generation.wait?.reason === 'deadline')) errors.add('attempt_after_terminal');
+    if (transientReasons.has(generation.last?.reason) && !generation.wait) errors.add('missing_retry_wait');
+    generation.last = row; generation.wait = null;
+    if (isAttempt) attempts.set(id, row);
+    else {
+      if (row.reason === 'success') errors.add('invalid_preflight_failure');
+      preflight.push(row);
+    }
   }
-  const verified = legacy === 0 && unknown === 0 && conflicts.size === 0;
-  const rows = [...attempts.values()];
-  const validDuration = row => Number.isFinite(row.duration_ms) && row.duration_ms >= 0;
-  const durations = rows.every(validDuration) ? rows.map(row => row.duration_ms) : null;
+  for (const generation of generations.values()) {
+    if (generation.wait?.reason === 'retry_ready' || (!generation.wait && transientReasons.has(generation.last?.reason)
+        && generation.last.attempt < maxAttemptsPerGeneration)) errors.add('unfinished_retry');
+  }
+  return {attempts:[...attempts.values()], waits:[...waits.values()], preflight, legacy, unknown, conflicts, errors};
+}
+
+function metricsForTraces(traces) {
+  const inspected = traces.map(inspectTrace);
+  const errors = new Set(inspected.flatMap(result => [...result.errors]));
+  const rows = inspected.flatMap(result => result.attempts), waits = inspected.flatMap(result => result.waits);
+  const conflicts = new Set(inspected.flatMap(result => [...result.conflicts]));
+  const ids = new Set();
+  for (const row of rows) {
+    if (ids.has(row.attempt_id)) { conflicts.add(row.attempt_id); errors.add('attempt_id_reused_across_traces'); }
+    ids.add(row.attempt_id);
+  }
+  const verified = errors.size === 0;
+  const durations = rows.map(row => row.duration_ms);
   const tokenTotal = key => verified && rows.length && rows.every(row => Number.isSafeInteger(row.usage?.[key]) && row.usage[key] >= 0)
     ? rows.reduce((sum,row) => sum + row.usage[key], 0) : null;
   return {
-    attempt_count_verified:verified, legacy_attempt_events:legacy,
-    conflicting_attempt_ids:conflicts.size, unknown_trace_events:unknown,
+    attempt_count_verified:verified, attempt_count_scope:'validated_trace_events',
+    // Internal consistency cannot prove that an entire generation was never lost by a log collector.
+    trace_completeness_verified:false, trace_integrity_errors:[...errors].sort(),
+    legacy_attempt_events:inspected.reduce((sum,result) => sum + result.legacy, 0),
+    conflicting_attempt_ids:conflicts.size, unknown_trace_events:inspected.reduce((sum,result) => sum + result.unknown, 0),
     attempts:verified ? rows.length : null,
     failed_attempts:verified ? rows.filter(row => row.reason !== 'success').length : null,
     retries:verified ? rows.filter(row => row.attempt > 1).length : null,
-    attempt_wait_ms:verified && durations ? durations.reduce((sum,value) => sum+value, 0) : null,
-    attempt_p50_ms:verified && durations ? percentile(durations, .5) : null,
-    attempt_p95_ms:verified && durations ? percentile(durations, .95) : null,
+    attempt_wait_ms:verified ? durations.reduce((sum,value) => sum+value, 0) : null,
+    attempt_p50_ms:verified ? percentile(durations, .5) : null,
+    attempt_p95_ms:verified ? percentile(durations, .95) : null,
     retry_wait_events:verified ? waits.length : null,
     retry_wait_deadlines:verified ? waits.filter(row => row.reason === 'deadline').length : null,
-    retry_wait_ms:verified && waits.every(validDuration) ? waits.reduce((sum,row) => sum+row.duration_ms, 0) : null,
-    preflight_failures:verified ? preflight.length : null,
+    retry_wait_ms:verified ? waits.reduce((sum,row) => sum+row.duration_ms, 0) : null,
+    preflight_failures:verified ? inspected.reduce((sum,result) => sum + result.preflight.length, 0) : null,
     prompt_tokens:tokenTotal('prompt_tokens'), completion_tokens:tokenTotal('completion_tokens'),
     cost_measured:false,
   };
+}
+
+export function attemptMetrics(trace) {
+  return metricsForTraces([trace]);
 }
 
 export function summarizeRuns(reports) {
@@ -138,7 +215,7 @@ export function summarizeRuns(reports) {
       elapsed_total_ms:rows.reduce((sum,row) => sum+row.duration_ms, 0),
       elapsed_p50_ms:percentile(rows.map(row => row.duration_ms), .5),
       elapsed_p95_ms:percentile(rows.map(row => row.duration_ms), .95),
-      ...attemptMetrics(rows.flatMap(row => row.trace || [])),
+      ...metricsForTraces(rows.map(row => row.trace)),
       independent_test:false, human_review:'pending', clinical_effectiveness_verified:false,
     };
   });

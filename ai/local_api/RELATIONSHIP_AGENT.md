@@ -63,4 +63,8 @@ npm run test:evidence
 
 웹 smoke는 재개용 세션 파일과 시도 이력을 분리합니다. 실행별 UUID 경로 `ai/local_api/runtime/relationship-smoke-attempts/<attempt_id>/`에 `started.json`과 `result.json`을 배타적으로 생성합니다. 같은 세션의 재실패·성공은 각각 남고, 완료 전 중단도 시작 파일로 확인할 수 있습니다. 기존 실패·성공 파일은 보존합니다. 원문이 포함된 결과와 세션 접근 정보는 계속 Git 제외·소유자 전용이며 예상하지 못한 오류 메시지는 원문 대신 일반 오류 코드로 기록합니다.
 
-변경별 재현 결과와 남은 검증 범위는 [수정 v3](../../docs/competition/결선_재평가_지적_수정_v3.md)에 기록합니다.
+재평가 v3 이후에는 누락·빈 trace, 연결된 요청 없는 대기, generation·request 불일치, 시도 번호 누락·역전, 완료 이후 재시도와 미완료 대기를 미검증으로 처리합니다. 실행을 먼저 개별 검증하므로 다른 실행의 로그로 누락을 메울 수 없습니다. 정확히 같은 이벤트의 중복 전달만 한 번 집계합니다. 현재 생성 호출의 재시도 상한은 3회이며 앱 계약 변경 시 집계 검사도 함께 갱신해야 합니다.
+
+`attempt_count_verified:true`는 받은 trace의 구조·연결 검사가 통과했다는 뜻입니다. `attempt_count_scope=validated_trace_events`, `trace_completeness_verified:false`로 범위를 표시합니다. 생성 호출 전체가 로그에서 사라졌는지는 외부 완료 기록 없이는 증명할 수 없습니다. 오류 코드는 `trace_integrity_errors`에 남기며 원문·주소·키를 넣지 않습니다. 이전 원시 기록과 당시 집계는 보존합니다.
+
+변경별 재현 결과와 남은 검증 범위는 [수정 v4](../../docs/competition/결선_재평가_지적_수정_v4.md)에 기록합니다.

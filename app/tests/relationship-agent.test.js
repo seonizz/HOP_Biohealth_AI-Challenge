@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelGateway } from '../src/model.js';
-import { validateRelationship, validateRelationshipDraft, canonicalRelationship, urgentGuideActions, validatePlan, validateReview, validateSchema, agentContext, validateRelationshipMemory, canonicalPatientState, canonicalRelationshipMemory, canonicalRelationshipState, relationshipStateRequest,groundedEvidenceSchema,relationshipSchema,relationshipDraftSchema } from '../src/relationship-agent.js';
+import { validateRelationship, validateRelationshipDraft, canonicalRelationship, urgentGuideActions, validatePlan, validateReview, validateSchema, agentContext, validateRelationshipMemory, canonicalPatientState, canonicalRelationshipMemory, canonicalRelationshipState, relationshipStateRequest,groundedEvidenceSchema,relationshipSchema,relationshipDraftSchema,safetySources } from '../src/relationship-agent.js';
 import { createIntake,answerIntake,applyModelUpdate,buildContext,backIntake,prepareModelAnswer } from '../src/intake.js';
 
 const field=(id,text,status='answered')=>({id,text,rawText:text,custom:'',status,question:id});
@@ -32,14 +32,18 @@ const draftState=payload=>{
   return draft;
 };
 // Existing stored-report fixtures are adapted only at the model response boundary.
-const fixtureEnvelope=payload=>envelope(payload?.relationship&&Object.hasOwn(payload,'patient_summary')?draftAnalysis(payload)
-  :payload?.patient_state&&payload?.relationship_memory?draftState(payload):payload);
+const fixtureEnvelope=payload=>{
+  const value=payload?.relationship&&Object.hasOwn(payload,'patient_summary')?draftAnalysis(payload)
+    :payload?.patient_state&&payload?.relationship_memory?draftState(payload):structuredClone(payload);
+  if(value?.relationship&&value?.safety?.evidence?.length===0)value.safety={urgent:value.safety.urgent,evidence_ids:[]};
+  return envelope(value);
+};
 const stateDraft=(ctx=context())=>draftState({patient_state:memory(),name_index:ctx.name_index,relationship_memory:relationshipMemory()});
 const riskContext=text=>{
   const ctx=context();ctx.patient.fields.risk=field('risk',text||'지금 자신을 해치겠다고 말하며 위험한 곳에 있어요.');return ctx;
 };
 const riskAnalysis=(ctx,urgent=true)=>{
-  const draft=draftAnalysis();draft.safety={urgent,evidence:[{subject:'patient',question_id:'risk',quote:ctx.patient.fields.risk.text}]};return draft;
+  const draft=draftAnalysis();draft.safety={urgent,evidence_ids:[safetySources(ctx).find(row=>row.subject==='patient'&&row.question_id==='risk').id]};return draft;
 };
 const urgentGuide=name=>{
   const draft=guide(),actions=urgentGuideActions(name);
@@ -156,7 +160,7 @@ test('analysis review problems fail closed before any guide-only repair',async()
 
 test('relationship protocol keeps the existing per-turn state and question-plan validation',async()=>{
   const ctx=context();let calls=0;
-  const model=gateway(body=>{calls++;const input=JSON.parse(body.messages.at(-1).content).data;assert.ok(input.patient.some(row=>row.question_id==='rel'&&row.answers.includes('자녀')));
+  const model=gateway(body=>{calls++;const input=JSON.parse(body.messages.at(-1).content).data;assert.ok(input.patient.some(row=>row.question_id==='rel'&&row.answers.some(answer=>answer.text==='자녀')));
     const state=memory();delete state.user_goal;return fixtureEnvelope({patient_state:state,name_index:ctx.name_index,relationship_memory:relationshipMemory()});});
   const result=await model.updateState(ctx,null);
   assert.equal(calls,1);assert.deepEqual(result.question_plan,{skip:[]});
@@ -195,14 +199,14 @@ test('pending answers identify the newly supplied source without confusing the n
   assert.deepEqual(ctx.latest_answer,{question_id:'name',subject:'patient'});
   const request=relationshipStateRequest(ctx,null);
   assert.equal(request.data.latest_answer.question_id,'name');
-  assert.deepEqual(request.data.latest_answer.answers,['지민']);
+  assert.deepEqual(request.data.latest_answer.answers.map(row=>row.text),['지민']);
   assert.equal(request.data.latest_answer.status,'answered');
 });
 
 test('new supporter evidence is provided alongside prior observations and unavailable source IDs stay empty',()=>{
   const ctx=context();ctx.latest_answer={question_id:'feeling',subject:'supporter'};
   const request=relationshipStateRequest(ctx,memory());
-  assert.deepEqual(request.data.latest_answer.answers,['무력하고 걱정돼요']);
+  assert.deepEqual(request.data.latest_answer.answers.map(row=>row.text),['무력하고 걱정돼요']);
   assert.equal(request.data.latest_answer.subject,'supporter');
   assert.deepEqual(request.data.prior_relationship_memory,canonicalRelationshipMemory(relationshipMemory(),ctx));
   ctx.latest_answer={question_id:'feeling',subject:'patient'};
@@ -235,7 +239,7 @@ test('safety grammar keeps the complete denied-risk sentence and long source inp
   assert.equal(safety.some(ref=>ref.quote==='자해'),false);
   const candidates=schema.properties.relationship.properties.dynamics.items.properties.evidence.items.enum;
   assert.ok(candidates.some(ref=>ref.question_id==='long'&&ref.quote.length<=1000));
-  assert.equal(agentContext(ctx).patient.find(row=>row.question_id==='long').answers[0].length,2200);
+  assert.equal(agentContext(ctx).patient.find(row=>row.question_id==='long').answers[0].text.length,2200);
 });
 
 test('internal findings reject cross-person, invented, unknown, refused and skipped evidence',()=>{
@@ -566,7 +570,7 @@ test('corrected current risk denial is retained literally and old affirmative st
     calls++;
     const input=JSON.parse(body.messages[1].content);
     assert.equal(input.data.prior_state,null);
-    assert.deepEqual(input.data.latest_answer.answers,[denial]);
+    assert.deepEqual(input.data.latest_answer.answers.map(row=>row.text),[denial]);
     return envelope(calls===1?old:fresh);
   });
   const result=await model.updateState(ctx,memory());

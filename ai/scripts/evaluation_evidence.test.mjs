@@ -19,6 +19,15 @@ const identity = { model_requested:'31b', source:{sha256:'a'}, evaluator:{sha256
   endpoint_sha256_declared:sha256('https://example.test/v1'), deployment_id_sha256_declared:null,
   context_source:'synthetic_fixture', protocol:'relationship_agent', fixture_sha256:'one', questions_sha256:'q', timeout_ms:600000 };
 const run = (id,status,duration,overrides={}) => ({ run_id:id, status, duration_ms:duration, mode:'state', identity, trace:[], ...overrides });
+const attempt = (overrides={}) => ({event:'model_attempt',request_id:null,generation:'state',generation_id:'generation-one',
+  attempt:1,attempt_id:'attempt-one',status:200,duration_ms:20,finish_reason:'stop',usage:null,reason:'success',...overrides});
+const wait = (overrides={}) => ({event:'model_retry_wait',request_id:null,generation:'state',generation_id:'generation-one',
+  attempt:1,after_attempt_id:'attempt-one',delay_ms:100,duration_ms:100,reason:'deadline',...overrides});
+const assertUnverified = metrics => {
+  assert.equal(metrics.attempt_count_verified, false);
+  for (const key of ['attempts','failed_attempts','retries','attempt_wait_ms','attempt_p50_ms','attempt_p95_ms','prompt_tokens','completion_tokens',
+    'retry_wait_events','retry_wait_deadlines','retry_wait_ms','preflight_failures']) assert.equal(metrics[key], null, key);
+};
 test('failed runs remain in denominator and timing distribution', () => {
   const [summary] = summarizeRuns([run('1','passed',10),run('2','failed',100)]);
   assert.equal(summary.automatic_pass_rate,.5);
@@ -110,8 +119,8 @@ test('duplicated runs and malformed failure records are rejected', () => {
   assert.throws(() => summarizeRuns([run('1','failed',undefined)]), /invalid/);
 });
 test('missing usage is unknown and retries include failed attempts', () => {
-  const metrics = attemptMetrics([{event:'model_attempt',attempt_id:'one',attempt:1,reason:'timeout',duration_ms:20},
-    {event:'model_attempt',attempt_id:'two',attempt:2,reason:'success',duration_ms:10,usage:{prompt_tokens:4,completion_tokens:3}}]);
+  const metrics = attemptMetrics([attempt({reason:'content_json'}),
+    attempt({attempt_id:'two',attempt:2,duration_ms:10,usage:{prompt_tokens:4,completion_tokens:3}})]);
   assert.equal(metrics.prompt_tokens,null);
   assert.equal(metrics.completion_tokens,null);
   assert.equal(metrics.retries,1);
@@ -119,28 +128,93 @@ test('missing usage is unknown and retries include failed attempts', () => {
   assert.equal(metrics.attempt_wait_ms,30);
 });
 test('wait events never add requests or usage and identical request records count once', () => {
-  const attempt = {event:'model_attempt',attempt_id:'one',attempt:1,reason:'success',duration_ms:20,usage:{prompt_tokens:4,completion_tokens:3}};
-  const metrics = attemptMetrics([attempt, {...attempt}, {event:'model_retry_wait',after_attempt_id:'one',duration_ms:100,reason:'deadline'}]);
+  const request = attempt({status:503,reason:'http_transient',usage:{prompt_tokens:4,completion_tokens:3}});
+  const metrics = attemptMetrics([request, {...request}, wait(), wait()]);
   assert.equal(metrics.attempt_count_verified, true);
   assert.equal(metrics.attempts, 1);
-  assert.equal(metrics.failed_attempts, 0);
+  assert.equal(metrics.failed_attempts, 1);
   assert.equal(metrics.prompt_tokens, 4);
   assert.equal(metrics.completion_tokens, 3);
   assert.equal(metrics.attempt_wait_ms, 20);
   assert.equal(metrics.retry_wait_ms, 100);
+  assert.equal(metrics.retry_wait_events, 1);
   assert.equal(metrics.retry_wait_deadlines, 1);
 });
 test('legacy, mixed and conflicting traces do not claim exact requests, retries or tokens', () => {
   const legacy = [{event:'model_attempt',generation:'state',attempt:1,reason:'http_transient',duration_ms:1},
     {event:'model_attempt',generation:'state',attempt:1,reason:'deadline',duration_ms:100}];
-  const current = {event:'model_attempt',attempt_id:'one',attempt:1,reason:'success',duration_ms:10,usage:{prompt_tokens:4,completion_tokens:3}};
+  const current = attempt({duration_ms:10,usage:{prompt_tokens:4,completion_tokens:3}});
   for (const trace of [legacy, [...legacy,current], [current,{...current,reason:'deadline'}]]) {
     const metrics = attemptMetrics(trace);
-    assert.equal(metrics.attempt_count_verified, false);
-    for (const key of ['attempts','failed_attempts','retries','attempt_wait_ms','attempt_p95_ms','prompt_tokens','completion_tokens',
-      'retry_wait_events','retry_wait_deadlines','retry_wait_ms','preflight_failures']) assert.equal(metrics[key], null);
+    assertUnverified(metrics);
   }
   assert.equal(attemptMetrics(legacy).legacy_attempt_events, 2);
   assert.equal(attemptMetrics([current,{...current,reason:'deadline'}]).conflicting_attempt_ids, 1);
   assert.equal(attemptMetrics([{event:'unknown'}]).attempt_count_verified, false);
+});
+
+test('missing, malformed and empty traces never certify zero upstream requests', () => {
+  for (const trace of [undefined, null, {}, 'truncated', [], [null], [42]]) assertUnverified(attemptMetrics(trace));
+  for (const trace of [undefined, null, {}, []]) {
+    const [summary] = summarizeRuns([run('1','passed',1,{trace})]);
+    assertUnverified(summary);
+    assert.equal(summary.passed, 1);
+  }
+});
+
+test('retry waits require an earlier matching failed request and complete connection fields', () => {
+  const failed = attempt({status:503,reason:'http_transient'});
+  for (const trace of [[wait()], [wait(),failed], [failed,wait({after_attempt_id:'missing'})],
+    [failed,wait({generation_id:'another'})], [failed,wait({generation:'guide'})],
+    [failed,wait({request_id:'another'})], [failed,wait({attempt:2})],
+    [attempt(),wait()], [failed,wait({delay_ms:undefined})], [failed,wait({after_attempt_id:undefined})],
+    [failed,wait(),wait({duration_ms:101})]]) assertUnverified(attemptMetrics(trace));
+  assert.ok(attemptMetrics([wait()]).trace_integrity_errors.includes('orphan_retry_wait'));
+});
+
+test('generation attempts start at one, stay ordered and cannot continue after termination', () => {
+  const repair = attempt({reason:'content_json'});
+  const second = attempt({attempt_id:'attempt-two',attempt:2});
+  const transient = attempt({reason:'connection_transient',status:null,finish_reason:null});
+  for (const trace of [[second], [repair,{...second,attempt:3}], [second,repair],
+    [repair,{...second,attempt:1}], [repair,{...second,generation:'guide'}], [repair,{...second,request_id:'another'}],
+    [attempt(),second], [attempt({reason:'deadline'}),second], [transient,wait(),second],
+    [transient], [transient,second], [attempt({reason:'http_transient'}),second],
+    [transient,wait({reason:'retry_ready'})]]) assertUnverified(attemptMetrics(trace));
+  for (const key of ['generation_id','generation','attempt','attempt_id','request_id','reason','duration_ms','status','finish_reason','usage']) {
+    const incomplete = attempt(); delete incomplete[key];
+    assertUnverified(attemptMetrics([incomplete]));
+  }
+});
+
+test('valid repair, transient retry and independent generation sequences remain measurable', () => {
+  const trace = [attempt({reason:'connection_transient',status:null,finish_reason:null}),wait({reason:'retry_ready'}),
+    attempt({attempt:2,attempt_id:'attempt-two',reason:'content_json'}),attempt({attempt:3,attempt_id:'attempt-three'}),
+    attempt({generation:'guide',generation_id:'generation-two',attempt_id:'attempt-four'})];
+  const metrics = attemptMetrics(trace);
+  assert.equal(metrics.attempt_count_verified, true);
+  assert.equal(metrics.attempts, 4);
+  assert.equal(metrics.failed_attempts, 2);
+  assert.equal(metrics.retries, 2);
+  assert.equal(metrics.retry_wait_events, 1);
+  assert.deepEqual(metrics.trace_integrity_errors, []);
+  assert.equal(metrics.trace_completeness_verified, false);
+  assert.equal(metrics.attempt_count_scope, 'validated_trace_events');
+  const exhausted = [attempt({reason:'http_transient'}),wait({reason:'retry_ready'}),
+    attempt({attempt:2,attempt_id:'attempt-two',reason:'http_transient'}),wait({attempt:2,after_attempt_id:'attempt-two',reason:'retry_ready'}),
+    attempt({attempt:3,attempt_id:'attempt-three',reason:'http_transient'})];
+  assert.equal(attemptMetrics(exhausted).attempt_count_verified, true);
+  assert.equal(attemptMetrics(exhausted).failed_attempts, 3);
+});
+
+test('run aggregation cannot fill missing events from a different run or reuse request IDs', () => {
+  const failed = attempt({status:503,reason:'http_transient'});
+  for (const traces of [[undefined,[attempt()]], [[failed],[wait()]], [[attempt()],[attempt()]]]) {
+    const [summary] = summarizeRuns(traces.map((trace,index) => run(String(index),'passed',1,{trace})));
+    assertUnverified(summary);
+  }
+  const [summary] = summarizeRuns([run('1','passed',1,{trace:[attempt()]}),
+    run('2','passed',1,{trace:[attempt({generation_id:'generation-two',attempt_id:'attempt-two'})]})]);
+  assert.equal(summary.attempt_count_verified, true);
+  assert.equal(summary.attempts, 2);
 });
