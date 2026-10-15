@@ -12,6 +12,7 @@ import { agentContext, safetySources } from '../src/relationship-agent.js';
 import { retrieveSources, sourceDocuments } from '../src/relationship-retrieval.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
+const invisibleAnswers = ['\u200B', '\u2060', '\u200D', '\uFE0F', '\0', '(건너뛰었어요)\u200B', ' \u200B\u2060\u200D\uFE0F\0 '];
 const memory = { summary:'사용자가 전한 상황', facts:[], unknowns:['당사자의 직접 의향'], user_goal:'부담 없는 첫마디' };
 const update = state => ({ patient_state:state, name_index:null, question_plan:{ skip:[] } });
 const guide = { top:'통합', script:'요즘 어떻게 지내는지 듣고 싶어.', doList:['판단하지 않고 듣기'], avoid:['대답을 재촉하기'], next:'상대가 원하는 도움을 확인해 보세요.', care:{ feel:'곁에서 돕는 마음도 소중해요.', tips:['잠시 쉬어도 괜찮아요.','주변에 도움을 나누세요.'] } };
@@ -120,7 +121,7 @@ function assertDescribeSkipped(context) {
   return {status:field.status, skipped:field.skipped, text:field.text, selected:field.selected, custom:field.custom};
 }
 
-test('blank optional text matches explicit skip through HTTP, persisted context and final records', {skip:!databaseUrl}, async t => {
+test('blank and invisible optional text match explicit skip through HTTP, persisted context and final records', {skip:!databaseUrl}, async t => {
   const updates = [], finalContexts = [];
   const gateway = {model:'synthetic-model', protocol:'relationship_agent', updateState:async context => {
     updates.push(context); return update(memory);
@@ -129,8 +130,8 @@ test('blank optional text matches explicit skip through HTTP, persisted context 
   }};
   const f = await fixture(t, gateway), session = await f.browser();
   assert.equal(session.bootstrap.questions.length, 29);
-  let expected, blankView;
-  for (const input of [{text:'(건너뛰었어요)',skipped:true}, {text:''}, {text:' \t\n '}, {text:'(건너뛰었어요)'}]) {
+  let expected, skippedView;
+  for (const input of [{text:'(건너뛰었어요)',skipped:true}, {text:''}, {text:' \t\n '}, {text:'(건너뛰었어요)'}, ...invisibleAnswers.map(text => ({text}))]) {
     let view = await intakeAtDescribe(f, session);
     const before = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
     view = await sendCurrent(f, session, view, input);
@@ -140,6 +141,7 @@ test('blank optional text matches explicit skip through HTTP, persisted context 
     assert.deepEqual(reloaded.data, view);
     const context = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
     const actual = assertDescribeSkipped(context);
+    assert.equal(context.patient.fields.describe.rawText, input.text);
     expected ||= actual;
     assert.deepEqual(actual, expected);
     assert.equal(context.answered_count, before.answered_count);
@@ -148,10 +150,11 @@ test('blank optional text matches explicit skip through HTTP, persisted context 
     const state = f.store.open(stored.content, `${stored.owner}:intake:${view.id}`);
     assert.equal(state.ans.describe.skipped, true);
     assert.equal(state.ans.describe.text, '(건너뛰었어요)');
+    assert.equal(state.ans.describe.rawText, input.text);
     assert.equal(view.log.filter(row => row.who === 'me').at(-1).text, '(건너뛰었어요)');
-    if (input.text === '') blankView = view;
+    if (input.text === '\0') skippedView = view;
   }
-  let view = blankView, turns = 0;
+  let view = skippedView, turns = 0;
   while (view.status === 'active') {
     const question = view.question;
     const input = question.type === 'text'
@@ -165,6 +168,7 @@ test('blank optional text matches explicit skip through HTTP, persisted context 
   assert.equal(result.status, 200, JSON.stringify(result.data));
   assert.equal(finalContexts.length, 1);
   assertDescribeSkipped(finalContexts[0]);
+  assert.equal(finalContexts[0].patient.fields.describe.rawText, '\0');
   assertDescribeSkipped(result.data.record.context);
   const saved = await f.request(session, `/api/records/${result.data.record.id}`);
   assert.equal(saved.status, 200);
@@ -172,13 +176,13 @@ test('blank optional text matches explicit skip through HTTP, persisted context 
   assert.deepEqual(saved.data.record.context, result.data.record.context);
 });
 
-test('back after blank optional text restores a prompt and real text including 모름 and 없음 remains evidence', {skip:!databaseUrl}, async t => {
+test('back after invisible optional text restores a prompt and visible Unicode remains exact evidence', {skip:!databaseUrl}, async t => {
   const gateway = {model:'synthetic-model', protocol:'relationship_agent', updateState:async () => update(memory)};
   const f = await fixture(t, gateway), session = await f.browser();
   let view = await intakeAtDescribe(f, session);
   const answeredBefore = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context.answered_count;
-  view = await sendCurrent(f, session, view, {text:''});
-  for (const text of ['최근 저녁 식사를 거르는 모습을 보았어요.', '모름', '없음']) {
+  view = await sendCurrent(f, session, view, {text:'\u200B'});
+  for (const text of ['최근 저녁 식사를 거르는 모습을 보았어요.', '모름', '없음', '👨‍👩‍👧‍👦', 'e\u0301', '한글', ' \u200B한글\u2060 ']) {
     const back = await f.request(session, `/api/intakes/${view.id}/back`, 'POST', {revision:view.revision});
     assert.equal(back.status, 200); view = back.data;
     assert.equal(view.question.id, 'describe');
@@ -199,7 +203,7 @@ test('back after blank optional text restores a prompt and real text including �
   }
 });
 
-test('required and noSkip text reject empty, whitespace, marker and explicit skip without changing persisted state', {skip:!databaseUrl}, async t => {
+test('required and noSkip text reject empty, invisible, marker and explicit skip without changing persisted state', {skip:!databaseUrl}, async t => {
   let calls = 0;
   const gateway = {model:'synthetic-model', protocol:'relationship_agent', updateState:async () => {calls++;return update(memory);}};
   const f = await fixture(t, gateway), session = await f.browser();
@@ -214,7 +218,7 @@ test('required and noSkip text reject empty, whitespace, marker and explicit ski
     const storedBefore = (await f.store.pool.query('SELECT revision,content FROM intakes WHERE id=$1', [view.id])).rows[0];
     const countBefore = (await f.store.pool.query('SELECT count(*)::int AS count FROM patient_state_revisions WHERE intake_id=$1', [view.id])).rows[0].count;
     const callsBefore = calls;
-    for (const input of [{text:''}, {text:' \t\n '}, {text:'(건너뛰었어요)'}, {skipped:true}]) {
+    for (const input of [{text:''}, {text:' \t\n '}, {text:'(건너뛰었어요)'}, {skipped:true}, ...invisibleAnswers.map(text => ({text}))]) {
       const rejected = await f.request(session, `/api/intakes/${view.id}/answers`, 'POST', {
         revision:view.revision, question_id:id, ...input,
       });
@@ -228,6 +232,93 @@ test('required and noSkip text reject empty, whitespace, marker and explicit ski
     assert.equal((await f.store.pool.query('SELECT count(*)::int AS count FROM patient_state_revisions WHERE intake_id=$1', [view.id])).rows[0].count, countBefore);
     view = await sendCurrent(f, session, view, {text:id === 'name' ? '합성 친구' : '실제로 확인한 내용을 적었어요.'});
   }
+});
+
+test('required follow-up rejects invisible answers without persistence and preserves visible Unicode provenance', {skip:!databaseUrl}, async t => {
+  let calls = 0;
+  const gateway = {model:'synthetic-model', protocol:'relationship_agent', updateState:async () => {calls++;return update(memory);}};
+  const f = await fixture(t, gateway), session = await f.browser();
+  for (const text of ['모름', '👨‍👩‍👧‍👦', 'e\u0301', ' \u200B한글\u2060 ']) {
+    let view = await intakeAtDescribe(f, session);
+    view = await sendCurrent(f, session, view, {skipped:true});
+    view = await sendCurrent(f, session, view, {text:'식사'});
+    assert.equal(view.question.id, 'concern');
+    assert.equal(view.question.follow_up, true);
+    assert.equal(view.question.required, true);
+    const contextBefore = (await f.request(session, `/api/intakes/${view.id}/context`)).data;
+    const storedBefore = (await f.store.pool.query('SELECT revision,content FROM intakes WHERE id=$1', [view.id])).rows[0];
+    const countBefore = (await f.store.pool.query('SELECT count(*)::int AS count FROM patient_state_revisions WHERE intake_id=$1', [view.id])).rows[0].count;
+    const callsBefore = calls;
+    for (const value of invisibleAnswers) {
+      const rejected = await f.request(session, `/api/intakes/${view.id}/answers`, 'POST', {
+        revision:view.revision, question_id:'concern', follow_up:true, text:value,
+      });
+      assert.equal(rejected.status, 400, JSON.stringify(rejected.data));
+      assert.equal(rejected.data.error.code, 'answer_required');
+      assert.deepEqual((await f.request(session, `/api/intakes/${view.id}`)).data, view);
+      assert.deepEqual((await f.request(session, `/api/intakes/${view.id}/context`)).data, contextBefore);
+    }
+    assert.equal(calls, callsBefore);
+    assert.deepEqual((await f.store.pool.query('SELECT revision,content FROM intakes WHERE id=$1', [view.id])).rows[0], storedBefore);
+    assert.equal((await f.store.pool.query('SELECT count(*)::int AS count FROM patient_state_revisions WHERE intake_id=$1', [view.id])).rows[0].count, countBefore);
+    view = await sendCurrent(f, session, view, {text});
+    assert.notEqual(view.question.id, 'concern');
+    const context = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
+    const field = context.patient.fields.concern;
+    assert.equal(field.status, 'answered');
+    assert.equal(field.rawText, '식사');
+    assert.equal(field.followUp.answer.rawText, text);
+    assert.equal(field.followUp.answer.text, text);
+    assert.equal(context.answered_count, contextBefore.context.answered_count);
+    assert.ok(sourceDocuments(context).some(source => source.question_id === 'concern' && source.origin === 'follow_up' && source.text === text));
+    assert.equal(safetySources(context).filter(source => source.question_id === 'concern').length, 1);
+    const stored = (await f.store.pool.query('SELECT content,owner FROM intakes WHERE id=$1', [view.id])).rows[0];
+    const state = f.store.open(stored.content, `${stored.owner}:intake:${view.id}`);
+    assert.equal(state.ans.concern.followUp.answer.rawText, text);
+  }
+});
+
+test('choice custom input rejects invisible required content through HTTP while valid choices and Unicode persist', {skip:!databaseUrl}, async t => {
+  let calls = 0;
+  const gateway = {model:'synthetic-model', protocol:'relationship_agent', updateState:async () => {calls++;return update(memory);}};
+  const f = await fixture(t, gateway), session = await f.browser();
+  const variants = ['one','multi'].flatMap(type => ['required','noSkip'].map(rule => ({id:`custom_${type}_${rule.toLowerCase()}`,type,rule})));
+  for (const [index,{id,type,rule}] of variants.entries()) {
+    await f.store.pool.query(`INSERT INTO questions(id,kind,sort_order,enabled,subject,definition) VALUES ($1,'base',$2,TRUE,'patient',$3)`,
+      [id,140+index,{type,q:'추가로 알려 주실 내용인가요?',sec:'관찰',opts:['보기'],[rule]:true}]);
+  }
+  await f.store.pool.query(`INSERT INTO questions(id,kind,sort_order,enabled,subject,definition) VALUES ('yes_note','base',150,TRUE,'patient',$1)`,
+    [{type:'one',q:'확인한 내용이 있나요?',sec:'관찰',noSkip:true,noOwn:true,opts:[['네',{input:true}],'아니요']}]);
+  let view = (await f.request(session, '/api/intakes', 'POST', {})).data;
+  view = await sendCurrent(f, session, view, {text:'합성 친구'});
+  for (const [index,{id}] of variants.entries()) {
+    assert.equal(view.question.id,id);
+    const before = (await f.request(session, `/api/intakes/${view.id}/context`)).data;
+    const storedBefore = (await f.store.pool.query('SELECT revision,content FROM intakes WHERE id=$1',[view.id])).rows[0];
+    const callsBefore = calls;
+    for (const text of invisibleAnswers) {
+      const rejected = await f.request(session, `/api/intakes/${view.id}/answers`, 'POST', {
+        revision:view.revision,question_id:id,text,custom:text,
+      });
+      assert.equal(rejected.status,400,JSON.stringify(rejected.data));
+      assert.equal(rejected.data.error.code,'answer_required');
+      assert.deepEqual((await f.request(session, `/api/intakes/${view.id}/context`)).data,before);
+    }
+    assert.equal(calls,callsBefore);
+    assert.deepEqual((await f.store.pool.query('SELECT revision,content FROM intakes WHERE id=$1',[view.id])).rows[0],storedBefore);
+    const text = ['👨‍👩‍👧‍👦','e\u0301',' \u200B한글\u2060 ','모름'][index];
+    view = await sendCurrent(f, session, view, {text,custom:text});
+    const context = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context;
+    assert.equal(context.patient.fields[id].custom,text);
+    assert.equal(context.patient.fields[id].rawText,text);
+    assert.ok(sourceDocuments(context).some(source => source.question_id===id&&source.text===text));
+  }
+  assert.equal(view.question.id,'yes_note');
+  view = await sendCurrent(f, session, view, {selected:[0],text:'\u200B'});
+  const field = (await f.request(session, `/api/intakes/${view.id}/context`)).data.context.patient.fields.yes_note;
+  assert.equal(field.status,'answered');
+  assert.equal(field.text,'네');
+  assert.equal(field.rawText,'\u200B');
 });
 
 test('UI catalog, browser isolation, CSRF and persisted column interactions', { skip:!databaseUrl }, async t => {

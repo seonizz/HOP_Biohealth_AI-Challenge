@@ -1,4 +1,4 @@
-import { isThin, optLabel, optMeta, renderQuestion, renderText } from './catalog.js';
+import { hasAnswerContent, isThin, optLabel, optMeta, renderQuestion, renderText } from './catalog.js';
 import { initialQuestionSet, conditionMatches, followMatches, mergeFollow, branchGateIds } from './question-bank.js';
 import { HttpError } from './errors.js';
 import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
@@ -123,7 +123,7 @@ function normalizeAnswer(question, input) {
     if (selected.length || custom) invalid('invalid_answer', '이 질문에는 글로 답해 주세요.');
     // Empty input and the reserved UI skip marker are absence of an answer,
     // including requests from older clients which omitted the skipped flag.
-    if (!rawText.trim() || rawText.trim() === SKIP) {
+    if (!hasAnswerContent(rawText)) {
       if (question.required || question.noSkip) invalid('answer_required', '이 질문은 꼭 답해 주세요.');
       return { text: SKIP, sel: [], custom: '', skipped: true, rawText };
     }
@@ -135,25 +135,26 @@ function normalizeAnswer(question, input) {
     invalid('exclusive_selection', '없음 또는 모름 보기는 다른 보기와 함께 고를 수 없어요.');
   }
   if (question.noOwn && custom) invalid('custom_not_allowed', '이 질문은 제시된 보기에서 골라 주세요.');
-  if (question.type === 'one' && !selected.length && !custom.trim()) {
+  const hasCustom = hasAnswerContent(custom);
+  if (question.type === 'one' && !selected.length && !hasCustom) {
     invalid('answer_required', '하나의 보기를 고르거나 직접 입력해 주세요.');
   }
   if (question.noOwn && !selected.length) invalid('invalid_selection', '이 질문은 제시된 보기에서 골라 주세요.');
-  if (question.required && !selected.length && !custom.trim()) invalid('answer_required', '이 질문은 꼭 답해 주세요.');
+  if ((question.required || question.noSkip) && !selected.length && !hasCustom) invalid('answer_required', '이 질문은 꼭 답해 주세요.');
   if (question.type === 'one' && selected.length && custom) invalid('invalid_answer', '선택한 보기와 직접 입력을 함께 보낼 수 없어요.');
 
   let text;
   if (question.type === 'one' && selected.length && optMeta(question.opts[selected[0]]).input) {
     const label = optLabel(question.opts[selected[0]]);
     // The original UI combines the chosen "네" option and its detail textarea.
-    text = rawText.trim() ? (rawText === label || rawText.startsWith(`${label}, `) ? rawText : `${label}, ${rawText}`) : label;
+    text = hasAnswerContent(rawText) ? (rawText === label || rawText.startsWith(`${label}, `) ? rawText : `${label}, ${rawText}`) : label;
   } else {
     const parts = selected.map(index => optLabel(question.opts[index]));
-    if (custom.trim()) parts.push(custom);
+    if (hasCustom) parts.push(custom);
     text = parts.length ? parts.join(', ') : '해당 없음';
   }
   const detailInput = question.type === 'one' && selected.length && optMeta(question.opts[selected[0]]).input;
-  return { text, sel: [...selected], custom, skipped: false, rawText:detailInput ? rawText : text };
+  return { text, sel: [...selected], custom: hasCustom ? custom : '', skipped: false, rawText:detailInput ? rawText : text };
 }
 
 function commitAnswer(state, question, answer) {

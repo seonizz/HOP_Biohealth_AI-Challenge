@@ -1,5 +1,11 @@
 const $=id=>document.getElementById(id);
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// Inspect a copy only: format/control characters can join real letters or emoji.
+// The original answer must retain those characters when it contains content.
+function hasAnswerContent(text){
+  const visible=String(text).replace(/[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu,"").trim();
+  return visible!==""&&visible!=="(건너뛰었어요)";
+}
 // 받침에 맞는 조사: josa("엄마","은") → "는", josa("지수","이") → "가". 한글이 아니면 "은(는)"처럼 둘 다 표시
 const JOSA={은:["은","는"],는:["은","는"],이:["이","가"],가:["이","가"],을:["을","를"],를:["을","를"],과:["과","와"],와:["과","와"]};
 function josa(word,j){

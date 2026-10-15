@@ -107,8 +107,7 @@ function sourceField(context, ref) {
 }
 
 function sourceTexts(field) {
-  return [...new Set([field?.rawText,field?.text,field?.custom,field?.followUp?.answer?.rawText,
-    field?.followUp?.answer?.text,field?.followUp?.answer?.custom].filter(v=>typeof v==='string'&&v.trim()))];
+  return [...new Set(answerComponents(field).map(component=>component.text))];
 }
 
 function safetySource(subject,field) {

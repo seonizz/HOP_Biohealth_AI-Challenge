@@ -224,7 +224,7 @@ test('required and no-skip text reject blank Send and Enter without losing the i
   const calls = [];
   const { document, context } = conversationHarness((path, options) => { calls.push(options.body); }, { realUI:true });
   for (const rules of [{ required:true }, { noSkip:true }, { required:true, follow_up:true }]) {
-    for (const value of ['', ' \t\n\u3000 ', '(건너뛰었어요)']) {
+    for (const value of ['', ' \t\n\u3000 ', '(건너뛰었어요)', '\u200B', '\u2060', '\u200D', '\uFE0F', '\0', '(건너뛰었어요)\u200B']) {
       context.flow.renderConversation({ ...conversationView('친구'), question:{ id:'want', type:'text', ...rules } }, 0);
       const textarea = document.getElementById('ta'); textarea.value = value;
       await document.getElementById('send').click();
@@ -235,6 +235,22 @@ test('required and no-skip text reject blank Send and Enter without losing the i
       assert.equal(document.getElementById('input').querySelectorAll('.need').length, 1);
       assert.equal(document.getElementById('input').querySelector('.skip'), null);
     }
+  }
+});
+
+test('optional invisible-only Send skips while visible Unicode text is submitted intact', async () => {
+  const document = documentWith(['input']), context = vm.createContext({document});
+  vm.runInContext(script('core/utils.js') + script('components/ChatInput.js') + '\nglobalThis.ui=ChatInput;', context);
+  const empty = ['\u200B', '\u2060', '\u200D', '\uFE0F', '\0', '(건너뛰었어요)\u200B'];
+  const visible = ['모름', '👨‍👩‍👧‍👦', 'e\u0301', '한글', ' \u200B한글\u2060 '];
+  for (const value of [...empty, ...visible]) {
+    let submitted;
+    context.ui.render({id:'describe',type:'text'}, (...args) => {submitted=args;});
+    document.getElementById('ta').value = value;
+    await document.getElementById('send').click();
+    assert.equal(submitted[0], empty.includes(value) ? '(건너뛰었어요)' : value);
+    assert.equal(Boolean(submitted[3]), empty.includes(value));
+    assert.deepEqual(Array.from(submitted[1]), []);
   }
 });
 
@@ -261,11 +277,14 @@ test('blank yes detail retains the existing sentinel behavior', async () => {
   const document = documentWith(['input']);
   const context = vm.createContext({ document, question:structuredClone(questionCatalog.find(question => question.id === 'support')) });
   vm.runInContext(script('core/utils.js') + script('core/questions.js') + script('components/ChatInput.js') + '\nglobalThis.ui = ChatInput;', context);
-  let submitted;
-  context.ui.render(context.question, text => { submitted = text; });
-  document.getElementById('input').querySelectorAll('button').find(button => button.textContent === '네').click();
-  await document.getElementById('send').click();
-  assert.equal(submitted, '네');
+  for (const value of ['', '\u200B', '\u2060', '\u200D', '\uFE0F', '\0', '(건너뛰었어요)\u200B']) {
+    let submitted;
+    context.ui.render(context.question, text => { submitted = text; });
+    document.getElementById('input').querySelectorAll('button').find(button => button.textContent === '네').click();
+    document.getElementById('ta').value=value;
+    await document.getElementById('send').click();
+    assert.equal(submitted, '네');
+  }
 });
 
 test('a record refresh started during deletion cannot restore the deleted record', async () => {
@@ -354,6 +373,26 @@ test('DB multi choice without own text keeps its done action and only submits se
   await box.querySelector('.done').click(); assert.equal(submitted, undefined);
   box.querySelectorAll('.chip')[1].click(); await box.querySelector('.done').click();
   assert.equal(submitted[0], '둘째 보기'); assert.deepEqual(Array.from(submitted[1]), [1]); assert.equal(submitted[2], '');
+});
+
+test('choice custom input blocks invisible required answers and preserves visible Unicode', async () => {
+  const document = documentWith(['input']), context = vm.createContext({document});
+  vm.runInContext(script('core/utils.js') + script('core/questions.js') + script('components/ChatInput.js') + '\nglobalThis.ui=ChatInput;', context);
+  for (const type of ['one','multi']) for (const rules of [{required:true},{noSkip:true}]) {
+    for (const value of ['\u200B', '\u2060', '\u200D', '\uFE0F', '\0', '(건너뛰었어요)\u200B', '👨‍👩‍👧‍👦', 'e\u0301', ' \u200B한글\u2060 ']) {
+      let submitted;
+      context.ui.render({type,opts:['친구'],...rules}, (...args) => {submitted=args;});
+      const own=document.getElementById('own');own.value=value;
+      await (type==='one'?document.getElementById('ownSend'):document.getElementById('input').querySelector('.done')).click();
+      if (['👨‍👩‍👧‍👦','e\u0301',' \u200B한글\u2060 '].includes(value)) {
+        assert.equal(submitted[0],value);
+        assert.equal(submitted[2],value);
+      } else {
+        assert.equal(submitted,undefined);
+        assert.equal(own.value,value);
+      }
+    }
+  }
 });
 
 test('closing or refreshing an active conversation warns and completed screens do not', () => {

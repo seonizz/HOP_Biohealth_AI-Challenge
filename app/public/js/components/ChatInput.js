@@ -40,8 +40,8 @@ const ChatInput={
       box.innerHTML=`<div class="row"><textarea id="ta" rows="${q.short?1:2}" placeholder="${esc(q.ph||"")}"></textarea></div>`;
       box.querySelector(".row").appendChild(acts(mainBtn("send","보내기")));
       const ta=$("ta");ta.focus();
-      $("send").onclick=()=>{const v=ta.value.trim();
-        if(!v||v===SKIP){if(!canSkip&&!q.optionalDetail)return need(ta);return submit(SKIP,[],"",true);}
+      $("send").onclick=()=>{const v=ta.value;
+        if(!hasAnswerContent(v)){if(!canSkip&&!q.optionalDetail)return need(ta);return submit(SKIP,[],"",true);}
         return submit(v,[]);};
       ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("send").click();}};addBack();return;
     }
@@ -94,11 +94,11 @@ const ChatInput={
     const own=$("own");
     const pick=()=>btns.map((c,k)=>c.getAttribute("aria-pressed")==="true"?k:-1).filter(k=>k>=0);
     if(q.type==="one"){
-      const go=()=>{const v=own.value.trim();if(!v){own.focus();return;}submit(v,[],v);};
+      const go=()=>{const v=own.value;if(!hasAnswerContent(v)){own.focus();return;}submit(v,[],v);};
       $("ownSend").onclick=go;own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}};
     }else{
-      g.onclick=()=>{const sel=pick(),v=own?.value.trim()||"";
-        if((q.required||q.noOwn)&&!sel.length&&!v)return need();
+      g.onclick=()=>{const sel=pick(),raw=own?.value||"",v=hasAnswerContent(raw)?raw:"";
+        if((q.required||q.noSkip||q.noOwn)&&!sel.length&&!v)return need(own);
         const parts=sel.map(k=>optLabel(q.opts[k]));if(v)parts.push(v);
         submit(parts.length?parts.join(", "):"해당 없음",sel,v);};
       if(own)own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();g.click();}};

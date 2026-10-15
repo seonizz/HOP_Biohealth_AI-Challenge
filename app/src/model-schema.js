@@ -1,4 +1,5 @@
 import { contextGoal, nameSourceTexts } from './agent-state.js';
+import { answerComponents } from './answer-sources.js';
 
 const string = maxLength => ({ type: 'string', minLength: 1, maxLength });
 const literal = value => ({ type: 'string', const: value });
@@ -7,9 +8,7 @@ const array = (items, maxItems, minItems = 0) => ({ type: 'array', items, minIte
 const nullable = value => ({ anyOf: [{ type: 'null' }, value] });
 
 function sourceTexts(field) {
-  return [field?.rawText, field?.text, field?.custom, field?.followUp?.answer?.rawText,
-    field?.followUp?.answer?.text, field?.followUp?.answer?.custom]
-    .filter(value => typeof value === 'string' && value.trim());
+  return answerComponents(field).map(component => component.text);
 }
 
 const riskPattern = /죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|자해/u;

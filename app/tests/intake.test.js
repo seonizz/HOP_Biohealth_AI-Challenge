@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { questions, questionCatalog, columns, categories, optLabel } from '../src/catalog.js';
+import { questions, questionCatalog, columns, categories, optLabel, hasAnswerContent } from '../src/catalog.js';
 import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate,
   prepareModelAnswer, completeModelAnswer, discardModelAnswer } from '../src/intake.js';
 import { initialQuestionRows, createQuestionSet } from '../src/question-bank.js';
 
 const questionIds = ['name', 'want', 'goal', 'rel', 'contact', 'mood', 'dur', 'freq', 'describe', 'concern', 'cause', 'events', 'others_why', 'support', 'burden', 'values', 'values_effect', 'extra', 'coping', 'help', 'barrier', 'need', 'others_help', 'moment', 'moment_freq', 'feeling', 'cgchange', 'cgchange_more', 'mycoping', 'mysupport'];
+const invisibleAnswers = ['\u200B', '\u2060', '\u200D', '\uFE0F', '\0', '(건너뛰었어요)\u200B', ' \u200B\u2060\u200D\uFE0F\0 '];
+const visibleAnswers = ['모름', '👨‍👩‍👧‍👦', 'e\u0301', '한글', ' \u200B한글\u2060 ', '화면에 (건너뛰었어요)라고 표시돼요.'];
 
 function reply(state, input = {}) {
   const question = currentView(state).question;
@@ -228,11 +230,12 @@ test('required answers, current question, option bounds, single/exclusive select
   assert.throws(() => reply(cause, { skipped: true }), { code: 'answer_required' });
 });
 
-test('optional empty text and the reserved marker remain skipped before and after a model turn', () => {
+test('optional empty and invisible-only text remain skipped before and after a model turn', () => {
   const original = advanceTo('describe');
   const before = structuredClone(original);
   const count = buildContext(original).answered_count;
-  for (const input of [{}, { text:'' }, { text:' \t\n\u3000 ' }, { text:' (건너뛰었어요) ', skipped:false }, { skipped:true }]) {
+  for (const input of [{}, { text:'' }, { text:' \t\n\u3000 ' }, { text:' (건너뛰었어요) ', skipped:false }, { skipped:true },
+    ...invisibleAnswers.map(text => ({text}))]) {
     const pending = prepareModelAnswer(original, { question_id:'describe', ...input }, 12);
     const context = buildContext(pending);
     assert.equal(context.patient.fields.describe.status, 'skipped');
@@ -252,7 +255,8 @@ test('optional empty text and the reserved marker remain skipped before and afte
 test('a required follow-up rejects blank text and the reserved marker without changing its original answer', () => {
   const pending = reply(advanceTo('concern'), { text:'식사' });
   const before = structuredClone(pending);
-  for (const input of [{ text:'' }, { text:' \t\n\u3000 ' }, { text:' (건너뛰었어요) ' }, { skipped:true }]) {
+  for (const input of [{ text:'' }, { text:' \t\n\u3000 ' }, { text:' (건너뛰었어요) ' }, { skipped:true },
+    ...invisibleAnswers.map(text => ({text}))]) {
     assert.throws(() => reply(pending, input), { code:'answer_required', status:400 });
     assert.deepEqual(pending, before);
   }
@@ -260,12 +264,67 @@ test('a required follow-up rejects blank text and the reserved marker without ch
 
 test('nonempty text is preserved even when it states uncertainty, absence, or mentions the skip marker', () => {
   const original = advanceTo('describe');
-  for (const text of ['모름', '없음', '그런 변화는 없어요.', '(예전에는) 함께 산책했어요.', '화면에 (건너뛰었어요)라고 표시돼요.']) {
+  for (const text of ['없음', '그런 변화는 없어요.', '(예전에는) 함께 산책했어요.', ...visibleAnswers]) {
     const next = reply(original, { text });
     assert.equal(next.ans.describe.skipped, false);
     assert.equal(next.ans.describe.rawText, text);
     assert.equal(buildContext(next).patient.fields.describe.status, 'answered');
     assert.equal(buildContext(next).answered_count, buildContext(original).answered_count + 1);
+  }
+});
+
+test('content inspection ignores controls and default ignorables without deleting real Unicode content', () => {
+  for (const text of ['', ...invisibleAnswers, '\u200C\u202E\u034F\u00AD\u{E0100}', '(건\u200D너뛰었어요)']) {
+    assert.equal(hasAnswerContent(text), false);
+  }
+  for (const text of visibleAnswers) assert.equal(hasAnswerContent(text), true);
+});
+
+test('required and noSkip text reject invisible-only input while retaining complete visible originals', () => {
+  for (const rules of [{required:true}, {required:false,noSkip:true}]) {
+    const rows = structuredClone(initialQuestionRows);
+    Object.assign(rows.find(row => row.id === 'name').definition, rules);
+    delete rows.find(row => row.id === 'name').definition.follow_up;
+    const original = createIntake(createQuestionSet(rows));
+    for (const text of invisibleAnswers) assert.throws(() => reply(original, {text}), {code:'answer_required',status:400});
+    for (const text of visibleAnswers) {
+      const next = reply(original, {text});
+      assert.equal(next.ans.name.rawText, text);
+      assert.equal(next.ans.name.text, text);
+    }
+  }
+});
+
+test('selected yes stays answered when its extra detail has no visible content', () => {
+  const original = advanceTo('support');
+  for (const text of ['', ...invisibleAnswers]) {
+    const next = reply(original, {selected:[0],text});
+    assert.equal(next.ans.support.text, '네');
+    assert.equal(next.ans.support.rawText, text);
+    assert.equal(next.ans.support.skipped, false);
+  }
+});
+
+test('choice custom input cannot bypass required or noSkip with invisible text', () => {
+  for (const type of ['one', 'multi']) for (const rules of [{required:true}, {required:false,noSkip:true}]) {
+    const rows = structuredClone(initialQuestionRows);
+    rows.find(row => row.id === 'name').definition = {type, q:'어떤 관계인가요?', opts:['친구'], ...rules};
+    const original = createIntake(createQuestionSet(rows));
+    for (const custom of invisibleAnswers) {
+      assert.throws(() => reply(original, {text:custom,custom}), {code:'answer_required',status:400});
+    }
+    for (const custom of visibleAnswers) {
+      const next = reply(original, {text:custom,custom});
+      assert.equal(next.ans.name.custom, custom);
+      assert.equal(next.ans.name.text, custom);
+      assert.equal(next.ans.name.rawText, custom);
+    }
+    if (type === 'multi') for (const custom of invisibleAnswers) {
+      const next = reply(original, {selected:[0],custom});
+      assert.equal(next.ans.name.text, '친구');
+      assert.equal(next.ans.name.custom, '');
+      assert.equal(next.ans.name.skipped, false);
+    }
   }
 });
 
