@@ -1,0 +1,318 @@
+{
+  "schema_version": "malssi-adversarial-fixes-v6-evidence-v1",
+  "recorded_at": "2026-10-15T06:30:40.567902+00:00",
+  "baseline_commit": "ae1e1ef",
+  "purpose": "v5 A2 input boundary repair and D1 conservative partial-exposure admission hold; no regrading",
+  "historical_evaluation": [
+    {
+      "path": "docs/competition/결선_적대적_재평가_v5.md",
+      "sha256": "1a9b27977f153df991287702b0a76181a7d886cadca76f6ec44633f433bd6fd5",
+      "bytes": 15464
+    },
+    {
+      "path": "docs/competition/결선_적대적_재평가_v5_근거.json",
+      "sha256": "baa14dc1ec87c4351d850d1d0a6b2472eeeeb8947f92a27e97f656ebd5ac14f2",
+      "bytes": 86184
+    }
+  ],
+  "user_constraints": {
+    "ui_policy": {
+      "path": "app/docs/UI_CONTENT_POLICY.md",
+      "sha256": "3c097404384e76f8a5fecab7382a7d4e1ec12f93c59e8f2b4890cb4459c75c5a",
+      "bytes": 1999
+    },
+    "evaluation_scope": {
+      "path": "docs/competition/05_평가범위와_학습데이터_기준.md",
+      "sha256": "1289b25994703419ffd1b5345f57dad515183ad0728902f155ded02bb5cc3774",
+      "bytes": 4899
+    },
+    "implementation_details_added_to_service": false,
+    "model_itself_scored": false,
+    "processing_time_scored": false,
+    "new_score_assigned": false
+  },
+  "app_verification": {
+    "provenance": "Fresh checks from the parallel v6 evaluation in the same working directory; logs and tested snapshot independently verified here. Not a second full-suite run.",
+    "app_tests": {
+      "total": 294,
+      "passed": 294,
+      "failed": 0,
+      "skipped": 0,
+      "log": {
+        "path": "runtime/adversarial-review-v6/db-checks/app-tests.log",
+        "sha256": "46113dc13e69f8673941de21c7087eac8547f965a93a4021dc23da9400d2dae7",
+        "bytes": 49285
+      }
+    },
+    "evaluation_tool_tests": {
+      "total": 24,
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0,
+      "log": {
+        "path": "runtime/adversarial-review-v6/db-checks/evidence-tests.log",
+        "sha256": "2008f5a019e1dbbd431fe63827447b46353cac2d6297dcf6bf095b939e22b47e",
+        "bytes": 2513
+      }
+    },
+    "static_checks": {
+      "passed": true,
+      "log": {
+        "path": "runtime/adversarial-review-v6/db-checks/app-static.log",
+        "sha256": "5e9b1c7730a432ae7299701bef07a25d5848359632f4e0d4bc69c058de69e815",
+        "bytes": 41
+      }
+    },
+    "tested_snapshot": {
+      "path": "runtime/adversarial-review-v6/tested_source_snapshot.json",
+      "sha256": "988a9d78626f949ef2b53b81af0746c2c3ea2eeeab4ffd41e9c6374555e7ea2e",
+      "bytes": 16228
+    },
+    "snapshot_files_verified": 146,
+    "snapshot_changed_files": [],
+    "snapshot_scope": "All recorded files, including source, assets and incidental cache files; not 146 independent tests.",
+    "database": "Disposable PostgreSQL 16 with actual HTTP requests",
+    "ui": "Real handlers exercised with mock DOM",
+    "model": "Mock gateway",
+    "new_full_browser_e2e_run": false
+  },
+  "data_verification": {
+    "full_suite": {
+      "total": 345,
+      "passed": 337,
+      "failed": 0,
+      "skipped": 8,
+      "skip_reason": "Existing torch-dependent tests",
+      "cwd": "data",
+      "command": "python3 -B -m unittest discover -s tests",
+      "runtime": "/Users/chihun/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3",
+      "log": {
+        "path": "runtime/adversarial-fixes-v6/data-tests.log",
+        "sha256": "982a0935f6d478229d04a1b924fc81e0f7063a4473651c928a5e08a92ab35099",
+        "bytes": 3815
+      }
+    },
+    "focused_suite": {
+      "total": 72,
+      "passed": 72,
+      "failed": 0,
+      "included_in_full_suite": true,
+      "log": {
+        "path": "runtime/adversarial-fixes-v6/data-focused-tests.log",
+        "sha256": "7583cbcdc6886fba2baa325bee6a6b89d420639ae55e9a8995d9040546c90d79",
+        "bytes": 171
+      }
+    },
+    "new_test_methods": 10,
+    "independent_review": {
+      "result": {
+        "path": "runtime/adversarial-fixes-v6/independent-data/result.json",
+        "sha256": "ea297bdc6de1233954cfe826e74c56f18dfa718327366bcd342bbff8a3967856",
+        "bytes": 11660
+      },
+      "script": {
+        "path": "runtime/adversarial-fixes-v6/independent-data/check.py",
+        "sha256": "ea81350e9bc92e86470e3492d4a6873370f5545885b319656868588cd4dd7070",
+        "bytes": 14044
+      },
+      "code_review": {
+        "path": "runtime/adversarial-fixes-v6/independent-data/review.json",
+        "sha256": "e975d0e4fc628cc1386955caaf618cf74ba220e7deec03c72c4df5adbc363381",
+        "bytes": 1518
+      },
+      "production_pipeline_imported": false,
+      "original_v5_input_hashes_match": true,
+      "monitored_files_unchanged": true,
+      "all_source_rows_identity_checked": 45974,
+      "all_prior_hold_decisions_preserved": true,
+      "unchanged_train_admission_rows": 40415,
+      "new_validation_admission_rows": 4289,
+      "unique_train_messages": 81496,
+      "positive_index_controls": 12,
+      "detected_ids_equal_new_hold_ids": true,
+      "policy_metadata_matches_independent_results": true,
+      "monitored_files": 20,
+      "before": {
+        "validation_rows": 4298,
+        "searched_targets": 2080,
+        "windows": 10407,
+        "candidate_pairs": 154,
+        "held_ge200": 9
+      },
+      "after": {
+        "validation_rows": 4289,
+        "searched_targets": 2071,
+        "windows": 10261,
+        "candidate_pairs": 0,
+        "held_ge200": 0
+      },
+      "candidate_4096": {
+        "added_holds": 9,
+        "previously_sequence_over_cap": 9,
+        "admitted_id_sets_equal": true,
+        "export_counts": {
+          "train": 15512,
+          "validation": 1724
+        },
+        "additional_held_ids_absent_from_export": true,
+        "exported_source_bytes_equal_old_candidate": true,
+        "bound_to_new_source_admission": true
+      },
+      "semantic_review": {
+        "pending": 9,
+        "human_reviewed": 0,
+        "substantive_answer_or_template_decision": "not_established"
+      }
+    }
+  },
+  "partial_exposure": {
+    "policy_schema": "malssi-source-admission-v2",
+    "legacy_policy_read_supported": true,
+    "threshold_normalized_characters": 200,
+    "normalization": "NFKC and collapsed whitespace",
+    "seed_characters": 100,
+    "stride_characters": 50,
+    "search": "FTS5 case-sensitive trigram candidates plus literal seed containment and SequenceMatcher(autojunk=False) longest contiguous match",
+    "train_messages": "Previously admitted assistant past and target messages",
+    "validation_targets": "Previously admitted final assistant targets",
+    "original_rows": 45974,
+    "admitted_before": {
+      "train": 40415,
+      "validation": 4298,
+      "total": 44713
+    },
+    "admitted_after": {
+      "train": 40415,
+      "validation": 4289,
+      "total": 44704
+    },
+    "additional_validation_holds": 9,
+    "remaining_ge200_after_independent_check": 0,
+    "new_group_quarantines": 0,
+    "split_rows_moved": 0,
+    "model_run": false,
+    "tokenizer_run": false,
+    "training_run": false,
+    "existing_token_length_ledger_reused": true
+  },
+  "private_generated_outputs": [
+    {
+      "path": "data/outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json",
+      "sha256": "36b03947e5176bd86f9fd621d49935cd67c51481b99334f6f09c143b510aa687",
+      "bytes": 132923
+    },
+    {
+      "path": "data/outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz",
+      "sha256": "7b84f39fc689b9628b42040e3217f3626f0d178d64921a733f6608a234ee731a",
+      "bytes": 2031000
+    },
+    {
+      "path": "data/outputs/private/malssi_partial_exposure_20261015/candidate_4096/token_admission_policy.json",
+      "sha256": "51dfdec8e0fc47f9c42f073e7bd9fc157aadc1ab9d1c8ed659b6980dbc92b4bf",
+      "bytes": 9785
+    },
+    {
+      "path": "data/outputs/private/malssi_partial_exposure_20261015/candidate_4096/token_admission_rows.jsonl.gz",
+      "sha256": "33d401638939a38f965d862b27270f27d93fc088b3eed4be6ce730cef1210412",
+      "bytes": 2589856
+    },
+    {
+      "path": "data/outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows/export_manifest.json",
+      "sha256": "a917a6d445178e52882153ec834e53e670206b4e05d726c78df4c47a7ecc715c",
+      "bytes": 3521
+    },
+    {
+      "path": "data/outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows/train.jsonl.gz",
+      "sha256": "56ffe4288501d16bffe4575326b4e48d95b85e2e5ae43ea6079119bbdd887bb9",
+      "bytes": 8352177
+    },
+    {
+      "path": "data/outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows/validation.jsonl.gz",
+      "sha256": "7f200e26ff309830c063a819f9f337f663e61ae3377238c4783ad70ce6bb8a38",
+      "bytes": 898321
+    }
+  ],
+  "generation_logs": [
+    {
+      "path": "runtime/adversarial-fixes-v6/data-admission.log",
+      "sha256": "eb5006b5b4718f95f9d928fc3bd6ad46fb750cf1aa8f12961972cbf595e69f02",
+      "bytes": 1050
+    },
+    {
+      "path": "runtime/adversarial-fixes-v6/data-export.log",
+      "sha256": "df1c49b5b246918de2434fe65660bc8ec53cd2764ae1d4a014f974fdea6182c7",
+      "bytes": 1046
+    }
+  ],
+  "source_and_document_files": [
+    {
+      "path": "data/counseling_pipeline/partial_exposure.py",
+      "sha256": "a13977fcad4a0bf556a85337894c78ad5020714316ccd3d1ef308a7ba60acf8f",
+      "bytes": 4495
+    },
+    {
+      "path": "data/counseling_pipeline/source_admission.py",
+      "sha256": "4a994c6fa1619ab3edb0787b09015c35955d8c494d037fd1ab714d83c9238845",
+      "bytes": 20122
+    },
+    {
+      "path": "data/counseling_pipeline/token_admission.py",
+      "sha256": "a8cb97face2f44a8053f3c050d0f5e70afeb985ad5a923110b296ef4597e12e7",
+      "bytes": 27065
+    },
+    {
+      "path": "data/tests/test_partial_exposure.py",
+      "sha256": "71bde6931c24d35e548790418fba7c20d27a571adb92736c2c017c1a9bd84091",
+      "bytes": 5706
+    },
+    {
+      "path": "data/tests/test_source_admission.py",
+      "sha256": "55b28e412a9fe1256f3a8b8dea322fff5fac40cb2b705f0c217484cf5b7b82f9",
+      "bytes": 9141
+    },
+    {
+      "path": "data/tests/test_token_admission.py",
+      "sha256": "e61ccb9559bf84b9ddb44e02208720c6f47550889c577864b2ffffc5ec5e26fb",
+      "bytes": 26378
+    },
+    {
+      "path": "data/tests/test_round4_admission_boundaries.py",
+      "sha256": "bdb49b0cf57655b40dc1a252a683070e2deb34809a06da3d826ec143da9d22d2",
+      "bytes": 17320
+    },
+    {
+      "path": "data/tests/test_round4_admission_completeness.py",
+      "sha256": "7d43246580ae09e3ec53f6c16e4e6167b100b2003e5498c4145b59281753e557",
+      "bytes": 5724
+    },
+    {
+      "path": "data/README.md",
+      "sha256": "7beee9169714b6681958d0252f3f436f5e3cb388f315279577810ae6f9d80067",
+      "bytes": 16675
+    },
+    {
+      "path": "docs/current/데이터와_연구.md",
+      "sha256": "60f26a2cbeec63f5807e87855e37a174d9d9fa3ac1191f87888a45ad8c50a580",
+      "bytes": 6037
+    },
+    {
+      "path": "docs/competition/결선_재평가_지적_수정_v6.md",
+      "sha256": "a857378d195893fbd7861442ba9fb097dba37c106f4b14021f72ee21ee56b9cd",
+      "bytes": 5352
+    }
+  ],
+  "privacy": {
+    "raw_training_text_in_this_evidence": false,
+    "row_level_ids_in_this_evidence": false,
+    "private_outputs_committed": false,
+    "original_release_overwritten": false
+  },
+  "limits": [
+    "No semantic, discontinuous, short-overlap or train-user-message overlap guarantee.",
+    "All 9 partial matches remain pending template-versus-substantive-answer semantic review; no human review claimed.",
+    "Participant identity and same-person split failure are not established.",
+    "Validation was used for selection and is not an untouched final test.",
+    "Supporter-target construction and semantic label review coverage remain incomplete.",
+    "Synthetic U+0000 search inputs fail closed with an SQLite error; current audited train messages and validation targets contain zero U+0000."
+  ]
+}

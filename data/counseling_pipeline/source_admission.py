@@ -13,12 +13,15 @@ from pathlib import Path
 
 from . import source_sft as source
 from .source_selection_audit import block_keys, normalize
+from .partial_exposure import audit_partial_exposure
 import hashlib
 
-SCHEMA = "malssi-source-admission-v1"
+LEGACY_SCHEMA = "malssi-source-admission-v1"
+SCHEMA = "malssi-source-admission-v2"
 LONG_MATCH_CHARACTERS = 200
 GROUP_REASON = "quarantined_source_group_context_exposure"
 TARGET_REASON = "validation_target_seen_in_train_context"
+PARTIAL_REASON = "validation_target_partial_train_assistant_exposure"
 
 
 def identifier(value):
@@ -166,6 +169,7 @@ def build_admission(release, selection_audit, output):
     block_hashes, observed_target_hashes = {}, {}
     observed_blocks = {split: {} for split in source.SPLITS}
     ledger, by_id = [], {}
+    train_messages, validation_targets = {}, []
     for split in source.SPLITS:
         relative = f"conversation/{split}.jsonl.gz"
         path = file_check(release, manifest, relative)
@@ -183,6 +187,15 @@ def build_admission(release, selection_audit, output):
                     "token_length_gate_pending": True, "model_training_authorized": False}
             ledger.append(item)
             by_id[row_id] = item
+            if item["admitted"]:
+                if split == "train":
+                    for index, message in enumerate(row["messages"]):
+                        if message["role"] == "assistant":
+                            role = "target" if index == len(row["messages"]) - 1 else "past"
+                            train_messages.setdefault(message["content"], set()).add((conv, group, role))
+                else:
+                    validation_targets.append({"id": row_id, "source_conversation_id": conv,
+                                               "source_group_id": group, "text": row["messages"][-1]["content"]})
             if split == "train":
                 for message in row["messages"][:-1]:
                     if message["role"] == "assistant":
@@ -235,12 +248,21 @@ def build_admission(release, selection_audit, output):
         declared_validation = {(record["row_id"], record["conversation_id"], record["group_id"])
                                for record in match["validation_sources"]}
         source.require(declared_validation == validation_origins[digest], "past-target validation source inventory incomplete")
+    partial = audit_partial_exposure(train_messages, validation_targets)
+    partial_ids = {row["id"] for row in partial["matches"]}
+    for row_id in partial_ids:
+        item = by_id[row_id]
+        source.require(item["split"] == "validation" and item["admitted"], "partial hold must be a previously admitted validation target")
+        item.update(admitted=False, status="held", reasons=[PARTIAL_REASON])
     source.require(source.sha_file(manifest_path) == manifest_sha and source.sha_file(selection_audit) == audit_sha, "inputs changed during admission build")
+    for relative, digest in verified.items():
+        source.require(source.sha_file(release / relative) == digest, "source changed during admission build")
     held = [r for r in ledger if not r["admitted"]]
     policy = {"schema_version": SCHEMA, "training_profile": "observed_counselor_imitation",
               "release_directory": str(release.resolve()), "selection_audit_path": str(selection_audit.resolve()),
               "input_manifest_sha256": manifest_sha, "selection_audit_sha256": audit_sha, "verified_release_files": verified,
               "quarantined_source_groups": sorted(groups), "held_validation_example_ids": sorted(held_ids),
+              "partial_overlap_held_validation_example_ids": sorted(partial_ids), "partial_overlap_audit": partial,
               "threshold_normalized_characters": LONG_MATCH_CHARACTERS, "evidence": evidence,
               "first_eight_source_inventory_verified": True,
               "past_target_source_inventory_verified": True,
@@ -249,12 +271,13 @@ def build_admission(release, selection_audit, output):
               "counts": {"all_rows": len(ledger), "admitted_rows": len(ledger) - len(held), "held_rows": len(held),
                          "group_quarantine_rows": sum(GROUP_REASON in r["reasons"] for r in held),
                          "validation_target_hold_rows": len(held_ids),
+                         "partial_validation_target_hold_rows": len(partial_ids),
                          "both_hold_reasons_rows": sum(len(r["reasons"]) == 2 for r in held)},
               "token_length_gate_pending": True, "model_training_authorized": False,
               "original_release_modified": False, "source_split_moved": False, "source_text_modified": False,
               "minimum_target_character_rule_changed": False, "clinical_or_human_approval": False,
-              "interpretation": "Conservative validation exposure policy; shared text does not establish participant identity. Common 40-199 character phrases only hold matching validation targets, not whole source groups.",
-              "limitations": ["Admission is conditional on future real-tokenizer length gating.", "Not a training authorization, deployment approval, source-rights verification, or independent test set.", "Exact normalized block/message exposure checks do not prove absence of semantic or arbitrary-substring overlap."]}
+              "interpretation": "Conservative validation exposure policy; shared text does not establish participant identity. Long partial exposure holds only matching validation targets pending semantic review, without moving splits or quarantining additional source groups.",
+              "limitations": ["Admission is conditional on future real-tokenizer length gating.", "Not a training authorization, deployment approval, source-rights verification, or independent test set.", "Exact normalized checks do not prove absence of short, semantic or discontinuous overlap; template-versus-answer review remains pending."]}
     output.mkdir(parents=True, exist_ok=True)
     with gzip.open(rows_path, "wt", encoding="utf-8") as stream:
         for row in ledger:

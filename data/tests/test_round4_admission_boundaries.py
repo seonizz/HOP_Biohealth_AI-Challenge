@@ -250,7 +250,8 @@ class AdmissionBoundaryTests(unittest.TestCase):
         result = admission.build_admission(fixture.output, path, fixture.root / 'admission')
         self.assertEqual(result['quarantined_source_groups'], ['group-train_a', 'group-train_b', 'group-val_a', 'group-val_b'])
         self.assertEqual(result['counts'], {'all_rows': 10, 'admitted_rows': 2, 'held_rows': 8,
-                                          'group_quarantine_rows': 8, 'validation_target_hold_rows': 4, 'both_hold_reasons_rows': 4})
+                                          'group_quarantine_rows': 8, 'validation_target_hold_rows': 4,
+                                          'partial_validation_target_hold_rows': 0, 'both_hold_reasons_rows': 4})
         kept = [r for r in source.read_rows(fixture.root / 'admission/admission_rows.jsonl.gz') if r['admitted']]
         self.assertEqual({r['source_group_id'] for r in kept}, {'group-train_c'})
         graph = selection.overlap_graph(audit['bounded_cross_split_overlap']['whole_normalized_past_assistant_group']['matches'], 200)

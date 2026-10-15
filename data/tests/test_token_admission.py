@@ -65,7 +65,7 @@ class TokenAdmissionTests(unittest.TestCase):
         self.write_rows(self.ledger_path, self.ledger)
         self.write_rows(self.lengths_path, self.tokens)
         held = [r for r in self.ledger if not r["admitted"]]
-        self.policy = {"schema_version": admission.SCHEMA, "model_training_authorized": False,
+        self.policy = {"schema_version": admission.LEGACY_SCHEMA, "model_training_authorized": False,
                        "input_manifest_sha256": source.sha_file(self.release / "manifest.json"),
                        "verified_release_files": {k: v["sha256"] for k, v in self.manifest["files"].items()},
                        "quarantined_source_groups": sorted(self.groups), "held_validation_example_ids": sorted(self.targets),
@@ -163,6 +163,66 @@ class TokenAdmissionTests(unittest.TestCase):
         self.assertEqual(hashes, {p: source.sha_file(p) for p in paths})
         with self.assertRaisesRegex(ValueError, "already exists"):
             self.build(1024)
+
+    def add_partial_hold(self):
+        row = next(r for r in self.ledger if r['id'] == 'v1')
+        row.update(admitted=False, status='held', reasons=[admission.PARTIAL_REASON])
+        self.save_ledgers()
+        self.policy.update(schema_version=admission.SCHEMA,
+            partial_overlap_held_validation_example_ids=['v1'],
+            partial_overlap_audit={'schema_version':'malssi-partial-exposure-v1',
+                'threshold_normalized_characters':200, 'held_validation_rows':1,
+                'matches':[{k:row[k] for k in gate.IDENTITY} | {'max_shared_characters':210, 'target_characters':300}]})
+        self.policy['counts']['partial_validation_target_hold_rows'] = 1
+        self.save_documents()
+
+    def test_partial_hold_survives_cap_selection_and_export(self):
+        self.add_partial_hold()
+        report, joined = self.validate()
+        for cap in gate.CAPS:
+            self.assertEqual(report['caps'][str(cap)]['validation']['admitted_rows'], 0)
+            held = next(r for r in gate.make_cap_ledger(joined, cap) if r['id'] == 'v1')
+            self.assertFalse(held['admitted'])
+            self.assertIn(admission.PARTIAL_REASON, held['reasons'])
+        self.build(4096)
+        self.export(4096)
+        self.assertEqual(list(source.read_rows(self.output / 'source_rows/validation.jsonl.gz')), [])
+        exported = list(source.read_rows(self.output / 'source_rows/train.jsonl.gz'))
+        self.assertEqual({r['id'] for r in exported}, {'a','c'})
+
+    def test_partial_policy_requires_versioned_complete_inventory(self):
+        self.add_partial_hold()
+        original = copy.deepcopy(self.policy)
+        for change in ('missing-field','missing-match','duplicate-match','legacy-with-new-fields'):
+            self.policy = copy.deepcopy(original)
+            if change == 'missing-field': self.policy.pop('partial_overlap_audit')
+            elif change == 'missing-match': self.policy['partial_overlap_audit']['matches'] = []
+            elif change == 'duplicate-match': self.policy['partial_overlap_audit']['matches'] *= 2
+            else: self.policy['schema_version'] = admission.LEGACY_SCHEMA
+            self.save_documents()
+            with self.subTest(change=change), self.assertRaisesRegex(ValueError, 'partial exposure'):
+                self.validate()
+
+    def test_partial_hold_cannot_be_removed_only_from_the_persisted_ledger(self):
+        self.add_partial_hold()
+        row = next(r for r in self.ledger if r['id'] == 'v1')
+        row.update(admitted=True, status='admitted', reasons=[])
+        self.write_rows(self.ledger_path, self.ledger)
+        self.policy['files']['admission_rows.jsonl.gz'].update(
+            bytes=self.ledger_path.stat().st_size, sha256=source.sha_file(self.ledger_path))
+        self.save_documents()
+        with self.assertRaisesRegex(ValueError, 'hold decision inconsistent'):
+            self.validate()
+
+    def test_partial_hold_checks_origin_and_threshold(self):
+        self.add_partial_hold()
+        original = copy.deepcopy(self.policy)
+        for field, value in [('source_group_id','wrong'), ('max_shared_characters',199), ('max_shared_characters',True), ('target_characters',209)]:
+            self.policy = copy.deepcopy(original)
+            self.policy['partial_overlap_audit']['matches'][0][field] = value
+            self.save_documents()
+            with self.subTest(field=field,value=value), self.assertRaisesRegex(ValueError, 'partial exposure'):
+                self.validate()
 
     def test_duplicate_token_or_source_ids_fail(self):
         for side in ("tokens", "ledger"):

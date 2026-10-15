@@ -68,7 +68,8 @@ class AdmissionTests(unittest.TestCase):
         self.assertEqual(result['quarantined_source_groups'], ['tg1', 'vg1'])
         self.assertEqual(result['held_validation_example_ids'], ['v1', 'v2'])
         self.assertEqual(result['counts'], {'all_rows': 4, 'admitted_rows': 1, 'held_rows': 3,
-                                          'group_quarantine_rows': 2, 'validation_target_hold_rows': 2, 'both_hold_reasons_rows': 1})
+                                          'group_quarantine_rows': 2, 'validation_target_hold_rows': 2,
+                                          'partial_validation_target_hold_rows': 0, 'both_hold_reasons_rows': 1})
         self.assertEqual(result['after']['train']['rows'], 1)
         self.assertFalse(result['model_training_authorized'])
         self.assertTrue(result['token_length_gate_pending'])

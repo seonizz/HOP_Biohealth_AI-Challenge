@@ -9,7 +9,7 @@
 아래 명령은 `말씨/data/`에서 실행합니다.
 
 ```sh
-cd /Volumes/Dev/HOP_Projet/말씨/data
+cd /Users/chihun/Documents/ChatGPT/HOP-Final/data
 ```
 
 새 패키지를 설치하지 않는다. Python 표준 라이브러리와 **기존 NumPy**를 사용한다. 현재 확인한 런타임:
@@ -37,6 +37,30 @@ COUNSELING_PYTHON=/Users/chihun/.cache/codex-runtimes/codex-primary-runtime/depe
 `suitability`는 기존 DB와 수치 행렬을 변경하지 않고 사용 조건·마스크·진단을 추가한다. `verify`와 `all`에서도 실행하며, 입력·기반 행렬·구현·산출물 해시가 모두 일치할 때만 재사용한다. `structural_checks_passed=true`와 `clinical_training_ready=false`는 동시에 성립한다.
 
 적재는 `.building` 데이터베이스에 작성하고 검증 후 교체한다. 전체 적재·집계가 커밋된 stage는 원천 manifest와 모든 source 행이 일치할 때 최종 검증부터 재개한다. SQLite의 hot journal 복구도 유지한다. 완결 표식이 없거나 원천이 달라진 유효 SQLite stage는 자동 삭제하지 않고 보존·거절하므로 새 `--output`으로 안전하게 재실행한다. SQLite가 아닌 임시 파일은 별도 이름으로 보존한 뒤 재구축한다. 이미 완료된 적재는 입력 manifest와 내부 무결성 확인 후 재사용한다. 수치화는 단계 전체 재실행 단위이며 완료 manifest에 입력·설정·구현과 산출물 해시를 기록한다. 파일 손상이나 설정 변경을 감지하면 재계산한다. AI 입력은 레코드 해시로 중복을 방지한다. 원천이나 사용한 사전이 변경되면 주석 이력을 보존하기 위해 새 출력 버전을 사용한다. 동일 출력 디렉터리에 두 프로세스를 동시에 실행하지 않는다.
+
+## SFT 부분 노출 보류
+
+`source_admission`은 기존 전체 응답·문맥 보류 뒤 허용된 train의 과거/최종 assistant 메시지와 validation 정답을 비교한다. NFKC·공백 정규화 후 200자 이상 연속 일치를 발견하면 해당 validation 행만 별도 사유로 보류한다. 원문·split·기존 보류는 유지하고 같은 사람이나 반복 양식인지 자동 확정하지 않는다. `partial_exposure.py`는 100자 창을 50자 간격과 마지막 위치에서 검색하고 실제 포함 및 최장 일치를 검증한다. 이 범위는 200자 이상 연속 일치를 포함하며 짧은·의미·불연속 중복은 보장하지 않는다. SQLite FTS5 trigram을 지원하는 기존 Python 런타임이 필요하다.
+
+새 정책은 `malssi-source-admission-v2`이며, ID·해시·좌표·보류 사유는 Git 제외 로컬 장부에만 남긴다. `token_admission`은 과거 v1을 읽을 수 있고, v2에서는 부분 노출 목록·사유·집계의 일치를 필수로 검사한다. 새 출력 경로를 지정하며 기존 결과를 덮어쓰지 않는다. `counseling_pipeline all`은 아래 SFT 선별 명령을 대신 실행하지 않는다.
+
+```sh
+python3 -B -m counseling_pipeline.source_admission \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --output outputs/private/malssi_partial_exposure_20261015/admission
+
+python3 -B -m counseling_pipeline.token_admission \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --admission-rows outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --output outputs/private/malssi_partial_exposure_20261015/candidate_4096 \
+  --cap 4096 --export-source-rows
+```
+
+이 명령은 저장된 길이 장부와 결합해 원본 JSONL 행을 보존한 새 후보를 만든다. 모델·토크나이저 실행이나 학습은 하지 않는다. 현재 추가 보류 9행과 검증 결과는 [대응 수정 v6](../docs/competition/결선_재평가_지적_수정_v6.md)에 기록한다. 과거 학습 kit·발표 집계 스크립트·실험 산출물은 당시 버전을 유지한다.
 
 ## 파일과 사용 단위
 

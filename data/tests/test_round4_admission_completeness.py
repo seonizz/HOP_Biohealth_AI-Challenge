@@ -75,7 +75,8 @@ class AdmissionCompletenessTests(unittest.TestCase):
         result = self.build(fixture, audit, path)
         self.assertEqual(result["quarantined_source_groups"], ["group-train_a", "group-train_b", "group-val_0", "group-val_1"])
         self.assertEqual(result["counts"], {"all_rows":6,"admitted_rows":0,"held_rows":6,
-                                          "group_quarantine_rows":6,"validation_target_hold_rows":2,"both_hold_reasons_rows":2})
+                                          "group_quarantine_rows":6,"validation_target_hold_rows":2,
+                                          "partial_validation_target_hold_rows":0,"both_hold_reasons_rows":2})
         self.assertTrue(result["past_target_source_inventory_verified"])
 
     def test_short_match_still_holds_only_validation_targets(self):
@@ -89,8 +90,10 @@ class AdmissionCompletenessTests(unittest.TestCase):
         fixture, audit, path = self.pipeline(final_only=True)
         self.assertEqual(self.matches(audit)["matches"], [])
         result = self.build(fixture, audit, path)
-        self.assertEqual(result["counts"]["admitted_rows"], 3)
-        self.assertEqual(result["counts"]["held_rows"], 0)
+        self.assertEqual(result["held_validation_example_ids"], [])
+        self.assertEqual(result["counts"]["partial_validation_target_hold_rows"], 1)
+        self.assertEqual(result["counts"]["admitted_rows"], 2)
+        self.assertEqual(result["counts"]["held_rows"], 1)
 
 
 if __name__ == "__main__":

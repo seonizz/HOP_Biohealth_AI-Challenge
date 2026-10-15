@@ -90,7 +90,10 @@ def validate_and_summarize(release, admission_policy, admission_rows, tokenizer_
     manifest, policy, audit = map(source.read_json, (manifest_path, policy_path, audit_path))
     require(manifest.get("schema_version") == source.SCHEMA
             and manifest.get("training_profile") == "observed_counselor_imitation", "unsupported source manifest")
-    require(policy.get("schema_version") == admission.SCHEMA, "unsupported admission policy")
+    require(policy.get("schema_version") in {admission.LEGACY_SCHEMA, admission.SCHEMA}, "unsupported admission policy")
+    partial_fields = {"partial_overlap_held_validation_example_ids", "partial_overlap_audit"} & policy.keys()
+    require(len(partial_fields) == (2 if policy["schema_version"] == admission.SCHEMA else 0),
+            "partial exposure fields disagree with policy version")
     require(policy.get("model_training_authorized") is False, "source admission unexpectedly authorizes training")
     require(policy.get("input_manifest_sha256") == audit.get("manifest_sha256") == digests[str(manifest_path)],
             "manifest hash binding mismatch")
@@ -133,8 +136,26 @@ def validate_and_summarize(release, admission_policy, admission_rows, tokenizer_
     _check_counts(Counter(r["split"] for r in token_rows), expected, "tokenizer split")
     groups = _identifiers(policy.get("quarantined_source_groups"), "quarantined groups")
     targets = _identifiers(policy.get("held_validation_example_ids"), "held validation IDs")
-    require(groups <= {r["source_group_id"] for r in ledger} and targets <= source_ids.keys(),
+    partial_targets = _identifiers(policy.get("partial_overlap_held_validation_example_ids", []), "partial held validation IDs")
+    require(groups <= {r["source_group_id"] for r in ledger} and (targets | partial_targets) <= source_ids.keys(),
             "policy references missing source IDs")
+    if "partial_overlap_held_validation_example_ids" in policy:
+        partial = policy.get("partial_overlap_audit", {})
+        require(partial.get("schema_version") == "malssi-partial-exposure-v1"
+                and type(partial.get("threshold_normalized_characters")) is int
+                and partial["threshold_normalized_characters"] == 200, "invalid partial exposure policy")
+        matches = partial.get("matches", [])
+        require(isinstance(matches, list) and all(isinstance(r, dict) for r in matches) and len(matches) == len(partial_targets)
+                and {r.get("id") for r in matches} == partial_targets
+                and partial.get("held_validation_rows") == len(partial_targets), "partial exposure inventory mismatch")
+        require(not (targets & partial_targets), "partial holds overlap prior target holds")
+        for match in matches:
+            row = source_ids[match["id"]]
+            require(row["split"] == "validation" and all(match.get(k) == row[k] for k in IDENTITY[2:]),
+                    "partial exposure origin mismatch")
+            require(type(match.get("max_shared_characters")) is int and type(match.get("target_characters")) is int
+                    and 200 <= match["max_shared_characters"] <= match["target_characters"],
+                    "partial exposure length mismatch")
     joined = []
     for row in ledger:
         token = token_ids[row["id"]]
@@ -143,6 +164,9 @@ def validate_and_summarize(release, admission_policy, admission_rows, tokenizer_
         if row["id"] in targets:
             require(row["split"] == "validation", "validation target hold assigned to train")
             reasons.append(admission.TARGET_REASON)
+        if row["id"] in partial_targets:
+            require(row["split"] == "validation" and not reasons, "partial hold assigned to train or previously held row")
+            reasons.append(admission.PARTIAL_REASON)
         require(row.get("reasons") == reasons and type(row.get("admitted")) is bool
                 and row["admitted"] == (not reasons)
                 and row.get("status") == ("held" if reasons else "admitted"), "source hold decision inconsistent")
@@ -180,6 +204,8 @@ def validate_and_summarize(release, admission_policy, admission_rows, tokenizer_
               "group_quarantine_rows": sum(admission.GROUP_REASON in r["reasons"] for r in held),
               "validation_target_hold_rows": len(targets),
               "both_hold_reasons_rows": sum(len(r["reasons"]) == 2 for r in held)}
+    if "partial_overlap_held_validation_example_ids" in policy:
+        counts["partial_validation_target_hold_rows"] = len(partial_targets)
     _check_counts(counts, policy.get("counts"), "source admission")
     for key, subset in (("before", ledger), ("after", [r for r in ledger if r["admitted"]]), ("held", held)):
         require(policy.get(key) == admission.summary(subset), "source admission summary mismatch")
