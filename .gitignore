@@ -45,7 +45,7 @@ datasets/
 training_data/
 training-data/
 source_reference/
-training_kit/data/
+**/training_kit/data/
 데이터셋/
 학습데이터/
 학습_데이터/
