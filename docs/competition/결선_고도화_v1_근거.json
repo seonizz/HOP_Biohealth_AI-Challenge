@@ -1,0 +1,970 @@
+{
+  "schema_version": "malssi-finals-upgrade-v1",
+  "date": "2026-10-15",
+  "purpose": "결선용 구현 보강, 실패 재현과 수정 후 재검증, 발표 자료 연결",
+  "scope": {
+    "excluded_from_internal_evaluation": [
+      "model_performance",
+      "model_size",
+      "model_training_progress",
+      "model_generated_semantic_quality",
+      "model_loading_or_integration",
+      "processing_time"
+    ],
+    "model_20_points_replaced_by": {
+      "training_data_purpose": 5,
+      "training_data_quality": 5,
+      "training_data_split": 5,
+      "training_data_traceability": 5
+    },
+    "official_rubric_modified": false,
+    "new_score_assigned": false,
+    "historical_v6_score": {
+      "observed": 70,
+      "available": 90,
+      "data": 14,
+      "data_available": 20,
+      "unobserved_live_presentation_held": 10
+    },
+    "actual_project_model_executed": false,
+    "production_database_accessed_or_changed": false,
+    "deployed_or_submitted": false
+  },
+  "official_draft": {
+    "path": "/Users/chihun/Downloads/[DJU_1][붙임 1] HOP Biohealth AI Challenge 운영계획(안)_송부용.pdf",
+    "sha256": "5e1b625c4670e08a97cb41ed20301dcf54e5fcca64a100453c7f526b7881f666",
+    "page_count": 10,
+    "finals_operation_page": 5,
+    "finals_rubric_page": 7,
+    "rubric": {
+      "아이디어의 창의성 및 차별성": 30,
+      "모델 성능": 20,
+      "적용가능성": 30,
+      "발표력": 20
+    },
+    "limitation": "첨부 운영계획(안) 대조. 주최 측 최신 공지나 제출 완료 확인 아님."
+  },
+  "implementation_commits": {
+    "app_deletion_and_race_protection": "6f24a53b83d763fcb2ce6dc814eb3bff16f8566b",
+    "source_bound_evaluation_history": "9868e266a2bffec75b8fb202d776cf823500672a"
+  },
+  "source_snapshot": {
+    "sha256": {
+      "ai/scripts/apply_relationship_backend.py": "597c33ff8da932aa9feb791c94adcbfa7efa8f6109290d9e41651ad87820aa4a",
+      "ai/scripts/audit_ft31_source_exposure.py": "6455f272fee287ae8c678f23ff1b33b94da157882a62fba1a88a10cadc15e771",
+      "ai/scripts/await_ft31_completion.py": "45675868c8e98443f7bb94d252030be84906ea1ac170ef549c3ac8ab8a568242",
+      "ai/scripts/build_competition_data.py": "16a599a9148525843a05a3fec5e506cf7fb2710ce8e3d31ed3d770938e8ae244",
+      "ai/scripts/build_competition_workbook.mjs": "1ac66c550931bef9b397e13372d0332e6587a4e5efecca388f6fea3933cdc7c4",
+      "ai/scripts/collect_base12_local.py": "109ed605d50f9387d4cea5dec24341c6afb1c4d6a2b23a1a5aa654b7c98d1517",
+      "ai/scripts/collect_ft31_comparison.py": "759acea8fb12808c451041d709ce8f0cad45769f1c21e16e36075af7d8904a90",
+      "ai/scripts/compare_relationship_state_prior.mjs": "4579297fabccbb181b0f68ffbfa13c47381e6b1ca62bb30ea4ca7f47ddd4fd40",
+      "ai/scripts/deploy_ft31_compatibility.py": "07d4e471175d94e3f80a123cc663a1b5a14fab36575d3ae7ce943619bf357ec7",
+      "ai/scripts/evaluate_relationship_agent.mjs": "fd3b4b21beada90838f22754c11a9391ea8920fe4aed1448e65acd2cff7f38c3",
+      "ai/scripts/evaluation_evidence.mjs": "a35c6ad496bc8e3a1dd97468d396642c94c7000dd5c01385710b8b78cdbe8ef7",
+      "ai/scripts/evaluation_evidence.test.mjs": "f4d3bceca087aa9aa2e94e336f18ca69ee9bb2d5458fbd0233a5eb480b2829cc",
+      "ai/scripts/handoff/configure_local.py": "7c34d7bfb9098103279fb907f78959509b94d79342d2df4315a2507d890faa2c",
+      "ai/scripts/package_ft31_collection.py": "b796d5a34467f8108a15eabcf9d380d51ec39a7ebe1bf4adb3209e10a81ccb44",
+      "ai/scripts/package_project_handoff.py": "38211b48a16ed250c0815113b227f5092b7ae9257ea704c343aa65616e6b4fd0",
+      "ai/scripts/preflight_ft31_comparison.py": "d92df41ca5db09d2f631d1ba3b07cfda3802649847a36ad172febb6c0eeb5acc",
+      "ai/scripts/prepare_ft31_compatibility.py": "844e4df0e61b86c517fb6ee5cffa0238acf6892eed9f260617d06d1e53d9717b",
+      "ai/scripts/publish_base12_presentation.py": "055bd6c8096d774dce00ab979dfababf3cf3f02a6f6ade31fdcfb6a178bc5636",
+      "ai/scripts/reconcile_ft31_first_identity.py": "f92e9befb4eb48ee06348920077655d50ce857548017566778de4eaf257d2fab",
+      "ai/scripts/smoke_relationship_web.mjs": "2323e1b133019a2e24f3efd31e394b2a60f43d80166c72b6ebd4bd852293d7e8",
+      "ai/scripts/snapshot_ft31_server.py": "ab867778d262da85562a4cda93b032f4b8539ab10042155bc4ea41d9f26f3ba0",
+      "ai/scripts/summarize_base12_local.py": "5b588e740550cc28d5e4e73a66a8c14d0354bde1a39ce951f5511b4089ec91e2",
+      "ai/scripts/summarize_relationship_evaluations.mjs": "0e7ddbe7a8a5c8742109c632d9b4e3ca86a8ce1fd2118b81bd51fe5cc0eb4004",
+      "ai/scripts/test_collect_base12_local.py": "90fe6ff5b3eb4cf0e2ba608b557879ca7f1523cbf61bc8249ab53be007ad26d2",
+      "ai/scripts/test_collect_ft31_comparison.py": "96599d19f6dccbbaf5cf24957a9c1376ddc50ef7cb86a56958e918f1f52df24e",
+      "ai/scripts/test_project_paths.py": "8cd99f3ebd56fbe4cfcba6a85a17f86233bc622ea8ef5d77e9ce6952d7bec532",
+      "ai/scripts/test_training_collection.py": "738fe3c7ff56fafcb715681f413c8c0378d1596836d49d99ee96453cf67bca79",
+      "ai/scripts/test_verify_ft31_measurements.py": "907b0f035b2c975146d7ba9e3ec248a249f984abd1c030c1980dfc6b7f380f04",
+      "ai/scripts/verify_competition_outputs.py": "126ab2c846f3d0318b1510d5609095bc2b406444a23961bd0daff81b33ecc21b",
+      "ai/scripts/verify_ft31_measurements.py": "4774f1a6674e6289d273bdb3d0c0486bdb46ec1a080143a1ae642c229ccccfa4",
+      "ai/scripts/verify_ft31_xlsx.py": "1fcfef495210f1b2a3003cd4301e76b7dcb8dfe6787c594c4faf63b3ac8e5e6c",
+      "ai/scripts/web_smoke_evidence.mjs": "46d260e824573af8d49f1ab4d0a4c3c605fae84a9a8577de1e2701390d042caa",
+      "ai/scripts/web_smoke_evidence.test.mjs": "b53dbeae40bc8fe2ef7db26b03e150ff6c35a7bda8af25c82d64d73d88fd7534",
+      "app/docs/API.md": "23994739cd0d2a65d32b25bf451688131493fe9d415dfe337cfab7d39ebb1f93",
+      "app/docs/openapi.json": "0c65c707439c1fee58ac136be5ba6b71bef39b8f4a8f92968052b80be6156785",
+      "app/migrations/001_initial.sql": "df33be1a41d5e0cae4454e627d3f12f7c25598f7ea109d62aab801a9cd3f63e9",
+      "app/migrations/002_questions.sql": "86e72cc0369b0e256bbda76327f1f87d1883ebb535b763fc31b4ce3309619769",
+      "app/migrations/003_frontend_name.sql": "ff7aec241266c5c4c4c3070bc796f990f587bd9df63f60a67818870d7e046549",
+      "app/migrations/004_frontend_questions.sql": "0fcc94c52f27727a6a1ca3304ebc622d1fb270f1f9e9a92de16a9f9f09bda43f",
+      "app/migrations/005_conversation_epoch.sql": "b7b81feaa1aacf909cca085051d97b0d631296172b6cc133fe7c9219e4a5645f",
+      "app/public/css/records.css": "6d9020d3924c656cc0299bedca52fa440750eb7ab061fd2e4b98701a41c71486",
+      "app/public/js/app.js": "40895789d48f02101b4aec9c505229d056dddd74abb3a3f49023fc14635c51f4",
+      "app/public/js/components/AboutScreen.js": "c5501e7e0b02db769d82cb40de5e7ac230d3c4eb71947fac101194c3b9bf6199",
+      "app/public/js/components/ChatInput.js": "21d873c3e65f9fddfede2114c071fb142572b1ca6918a0fc411558b99f6dc568",
+      "app/public/js/components/ChatScreen.js": "712e868ebea6db57e1ac260259ba52f4f05e06188febac360742d8b1148d331b",
+      "app/public/js/components/ColumnsScreen.js": "581b626bf74cbb2bc56d5c4f75baf4d029225ad56853e3c71697ce050d92e1a1",
+      "app/public/js/components/GuideCards.js": "aced6e4bb4315b184e5196c3661bfec800f23adb900145961aed2fe1823e22e3",
+      "app/public/js/components/RecordsScreen.js": "d82ec1af6f8a3fbb5b218fca177e7ecf93933e73c644dd00846893f83bd6e119",
+      "app/public/js/components/ResultScreen.js": "e728705a645e547bc23ad3049ad0966fed94030c618e47e630da62165cfd8e27",
+      "app/public/js/components/StartScreen.js": "0c8c8d9c7fc126cef97c3b057237a7f9bce74d4d460a78b4be47118350a66661",
+      "app/public/js/components/TopBar.js": "5be87e00f3affa723f5e6200e72af531b7355f8ba3e35c9c96607656f5d56fc3",
+      "app/public/js/core/api.js": "032b2a36893b62009eae82547d8fb5b6cc030d1b86590427ce131f7fb3d12f58",
+      "app/public/js/core/assets.js": "2f3dc66b47beb9ad14e659cbaacfe1a9662f6281ebb663c673a8c51afe4d9f12",
+      "app/public/js/core/columnBodies.js": "75c7b73ba5dac273f91c63bfb233d326cb06f3ee47eb8a60da47e5fbc837ba66",
+      "app/public/js/core/columns.js": "ad333a25402526c0be49a77c661065e5b70dc370ac4f0fe592fbdc97c92e8626",
+      "app/public/js/core/conversation.js": "b08772c82efa8877a28d75c049bdbc774780b31802709b677f354eef5c832d27",
+      "app/public/js/core/questions.js": "4ee482d4c40f8b16254e282858202adcee5ba3dcbcaf6eab4227155ee4ec63a9",
+      "app/public/js/core/store.js": "d80d37819e21eefcaa7cc43f834b251edc7cecf5293bef67822f7e2960ddcf64",
+      "app/public/js/core/utils.js": "b7d40ab4eb210741a8ed58a95fe225b05d1d241bae43fcfa700a29237b758e6b",
+      "app/public/js/test-result.js": "ebfd29a11fadf1ea762d7d9457f38b3258ec42f483ae0538e0abbc5031bdafe0",
+      "app/scripts/check.js": "c24a6a5d44f92e78250c694b72f3c79b6908930ac8d7d02ea02d2bbb5660eade",
+      "app/scripts/export-verification.js": "cd124fc27783fe9425529d7c5d3dc76549cf00887022018532f84649dc655947",
+      "app/scripts/live-check.js": "84c8c609e91cbfb54f80090e76a22f076dbeb2e9a813b8c445ecffc11d063628",
+      "app/scripts/questions.js": "8c61bd027a19a6477b0fd72ae48e0d6032ad8dbcb249a37b03bcbd70bc8e17c7",
+      "app/scripts/setup.js": "04d9a05d00e3ab1ee433a72050eb297345614dea83501c87fe18ab75dc0c7beb",
+      "app/scripts/test-integration.js": "5d45039392ea3a81db2ab69f6550804d51e46752e8d816d59fb46bcdde0e70cb",
+      "app/src/agent-state.js": "697f4cb592830804c20f6bc78cc23294b0ca05947a18473fe942120e517914a5",
+      "app/src/answer-sources.js": "ba6d4b0fab81428d086523c97ab6b0c4fdda7280f5037d13704c834002686dec",
+      "app/src/catalog.js": "29503549354b19451192b4ad5c9fa089bf2289c7f57275711f2f6c03b029ca37",
+      "app/src/errors.js": "97714660e08161d8079f4ef1acfd78fb5d75e5e73daecd5047d0109366315c99",
+      "app/src/intake.js": "e316378c027493de32d37f30dbd3b0363cf5385ae4e024eb2a6aa164c3422368",
+      "app/src/model-context.js": "ee3e4f7d6c6243ec6a15c27be67686c9c7013dec267436b4747edd620f829785",
+      "app/src/model-schema.js": "924caf233561abd521f05a5ec39fced73753871176c4cea09fcce42d97ca5a57",
+      "app/src/model.js": "551812bec8e95ab0bb69137365f4cc78be4cda4b6667132224f27a23e1e5c1bd",
+      "app/src/question-bank.js": "b0a0de9514abf57faa7cdc6049d17fd25c2823b4ef230b11d101c0225bf1a282",
+      "app/src/relationship-agent.js": "86c68b8d62eaea2229032d9265dd21324f6c46e3b5531b2af8d2a297ff42a297",
+      "app/src/relationship-prompts.js": "1a0a8feb1cd99e1310ed58c24fdd1cd007e97cdda8fbdbed485209f39c817735",
+      "app/src/relationship-retrieval.js": "8d50f7efa069ec71f1e3cee182cd32bfbbaf38d4211160bacaa6e552e74237c6",
+      "app/src/server.js": "c8ee01a60be10c63ae0b50a214e708585139abc3fdc6ea2305c28c985e1750a9",
+      "app/src/source-identity.js": "d9ed9e8256278e8758e7bc10019a942daa77f8bbed55ba225b3ff95f4a31bf51",
+      "app/src/store.js": "60754a3efed1cfaf3c24683a794083ce0c7424f57a91e41943718d965089e9dc",
+      "app/tests/answer-content.test.js": "152f64fae135f1001fe02e459a401e8b73a431ea2711aa009b99a91ec718eeb0",
+      "app/tests/api.test.js": "10d370bb07f4aabd125d5b4be0aac82aad181ff326f02d8d30d7b0ba9e65b473",
+      "app/tests/frontend-questions.test.js": "1bb31f05513a13bfc0e26e5c8b23ca0604cbd1d3bf436c9c509915b0a7a8ab35",
+      "app/tests/intake.test.js": "d55c78f5999fc3bf3e86e5fdb8b9d100a14a0dc3c193ddaa3a088fb5b8cddfea",
+      "app/tests/model-recovery.test.js": "c9072e522e5bb7c102d5ba91211a9f8fea776bdede3fcb0dc038b92b5e6b95e1",
+      "app/tests/model.test.js": "b9b126792a780c6c6ee15ec9b24a0e81f3c0b1c2130ce94e5e2b91419197f69f",
+      "app/tests/questions.test.js": "c419d31c18005e6c659b413582ffec77d90913a157b995aef4b91e813c34d4e7",
+      "app/tests/relationship-agent.test.js": "df95fc36cc58c77deff3168ccd64d4f10587a945a5b2ba6aa47d85f807045a10",
+      "app/tests/relationship-retrieval.test.js": "24ac46ddd600ae5bc2ed9e3dd7766634044495f7de6049a72efa7903cd649b66",
+      "app/tests/relationship-ui.test.js": "fad37a440b6cea528e246e7cb9637c585cb30eadf81a5c62ec55560524be6a7a",
+      "app/tests/safety-evidence.test.js": "6b6a981361d13373e6b90c30aeb0caec29a0d631f10d52f5cfbb2e18472adf3b",
+      "app/tests/safety-selection.test.js": "3591340137056eca1f104193d925e486146675a0fb738e7c3a3e869e7988158c",
+      "app/tests/store.test.js": "f1427267572d9eaef65b42203c50e4f90326893d179ce23a8bd15e855c4a949c",
+      "app/tests/ui.test.js": "625f20946fbeabb37b67b645e9ae0ba05e9e766b416765dc309b56d82be732c8",
+      "data/README.md": "129fb0b2308267b7f4e2ac7b7b82641048f4eb0b1fce18381786bafbfaaef6d3",
+      "data/counseling_pipeline/__init__.py": "3e62783e8fd08cb133604ef0bcc6ef12239155f6412fc69bdfff0fbce5f89de2",
+      "data/counseling_pipeline/__main__.py": "f13f79e38da3b8c3b14add7bb4745c2a8d2a82b773e5228ba7be658d3b408801",
+      "data/counseling_pipeline/agent_dataset.py": "dafb751202709bc4890da76c6e6a6a91f81e2a483abca7cb7c20848e37c4bde9",
+      "data/counseling_pipeline/agent_evaluation.py": "0cf52c0f2a9ff914720b137e95da4d954ab9b88ee7a6a5f2eecaf7ed1425921b",
+      "data/counseling_pipeline/agent_training.py": "52ed68599b5773e2bb466ba6b1f386a167f318404131bcaa22071cea0705c0ab",
+      "data/counseling_pipeline/annotations.py": "ac8544359afd4547a8eaee36dcfeff690636769f46effa7f30d2024389f17af6",
+      "data/counseling_pipeline/checks.py": "e2242971fd19a4df11c53cd8753451a7f2fa03908cad658d2364acbdc094068f",
+      "data/counseling_pipeline/evaluation_audit.py": "6866cd1171a74bd987029234be52c1e9d6b63920c404d2008d7177e3d61cd092",
+      "data/counseling_pipeline/evaluation_history.py": "5209bfe4741f78255a9bf5fb0f971be8a9b881ddb8a11dd6bcb8d7227f57810b",
+      "data/counseling_pipeline/gemma4_generation_validation.py": "96503e0491449d30d95b51cbb8b80ae3084cce2e7a3af6f250c4e4077cc8e95d",
+      "data/counseling_pipeline/gemma4_token_validation.py": "4fb2b5bc12c6423bb565bb6b63c72e1655ac1b097000b5d6eb46463f81d6b516",
+      "data/counseling_pipeline/ingest.py": "534f5db5d1f2044bbc3c9b7e21ef4e64e90cffe8e539326cf73124c42b1b281e",
+      "data/counseling_pipeline/numeric.py": "95b366d95d11ddcda0cb624c711a1b23008ff69df2e87f296ce3d6c4cfff2ba9",
+      "data/counseling_pipeline/partial_exposure.py": "a13977fcad4a0bf556a85337894c78ad5020714316ccd3d1ef308a7ba60acf8f",
+      "data/counseling_pipeline/quality.py": "30bfe339ac815928a1a8c0fe82c8df16090ea0501f055ef3190f21543fa30619",
+      "data/counseling_pipeline/release_audit.py": "94ce920a5ddaa26d419a6e0da93319353364e763689e4fb8cd1af95b8936e767",
+      "data/counseling_pipeline/source_admission.py": "4a994c6fa1619ab3edb0787b09015c35955d8c494d037fd1ab714d83c9238845",
+      "data/counseling_pipeline/source_selection_audit.py": "ecbd2a5078b2c351b337459b88e5534a43cb060d52a7067681979a6f6bc3aff5",
+      "data/counseling_pipeline/source_sft.py": "61244c7e9f94785dea62a95cd15a88495cb76d4fc2f4e2e51d87ec269c71bc9b",
+      "data/counseling_pipeline/stage1_preparation.py": "4270f40191572fc108b05924832fef624fc095305d3ca892652e7012aef0636e",
+      "data/counseling_pipeline/stage1_readiness.py": "02b62162c3a82ad476c966a4db09df1d8875b38061dcab2e7034829c9a89c0d8",
+      "data/counseling_pipeline/stage1_runtime_probe.py": "af7ca4c52fbf40f676c3a6444fa1aa2c1a40c684bb5838451c3479f38730cccc",
+      "data/counseling_pipeline/stage1_training_loop.py": "d123c9a11a3d5b4a4d56ae83a955e70c5bff13b3853834c42da88305718a7e0e",
+      "data/counseling_pipeline/suitability.py": "9abc520893198afbd405ec3cea32ddd80132267cce0ce6bd910b681b069663d7",
+      "data/counseling_pipeline/text.py": "ce6c08826e7802122f7eef5d1741f3b9ed0ea2e2a96591d49e3793e0cabc552e",
+      "data/counseling_pipeline/token_admission.py": "a8cb97face2f44a8053f3c050d0f5e70afeb985ad5a923110b296ef4597e12e7",
+      "data/counseling_pipeline/verify.py": "5bdc749862457e16007c7bba1e815b09276d1a21de5dc2f1306957fe8c60257d",
+      "data/tests/test_agent_dataset.py": "737dbfe2ef3d4bbae9e660a6777d7827701bfe634f76b3d0288fe76692bc247c",
+      "data/tests/test_agent_evaluation.py": "f5ca3c9c805a1c03832ae319c99551f810adeb66b6f34fa6147ecbaa7a0e135c",
+      "data/tests/test_agent_training.py": "ab4037b2aabcacd8b803f96e0597a2d0fcc9fa0d5002305939ae4f4a68b93977",
+      "data/tests/test_agent_training_round2.py": "f2597152734503cdbbda7a5abb7f8ead330e9b7f98dd7cc727cb3623475d527d",
+      "data/tests/test_evaluation_audit.py": "d5f393d366468cb551e71083098f87ef639d9bcc93195d1b9e367d6e9c2aa876",
+      "data/tests/test_evaluation_history.py": "5e48e05db9dba502bdc004baffda057f5c86475ee011773e236259273f417985",
+      "data/tests/test_gemma4_generation_validation.py": "ee8b476e6127a43429f0cc6be72c1ad8acca328cf108ef2f66fb98ea09c6af2a",
+      "data/tests/test_gemma4_token_validation.py": "6ac102399d30e17adabe7970602e66654010843caa71c46e0fee4b33e6e9cf01",
+      "data/tests/test_gpu_validation.py": "0c477fe5ec7b3f1884e8b65baa82e50bb05b44e2bf9bcdd861704729aa826d63",
+      "data/tests/test_ingest.py": "a8f155869162140b3a5445d21de5dd78198712882d082968918b5b4c6eb7cbf8",
+      "data/tests/test_partial_exposure.py": "71bde6931c24d35e548790418fba7c20d27a571adb92736c2c017c1a9bd84091",
+      "data/tests/test_pipeline.py": "1b31a8297cc3038fe1233160249ea3a79fd5e01751500360603ee0f9dc972c65",
+      "data/tests/test_release_audit.py": "02131b1d4730faffe862696ae9ee2c1523d2143bef5d868564a6f70939ac9e03",
+      "data/tests/test_round4_admission_boundaries.py": "bdb49b0cf57655b40dc1a252a683070e2deb34809a06da3d826ec143da9d22d2",
+      "data/tests/test_round4_admission_completeness.py": "7d43246580ae09e3ec53f6c16e4e6167b100b2003e5498c4145b59281753e557",
+      "data/tests/test_round4_reference_audit.py": "125b0d64423084cf02e486ffaae9f04b0c10ea4e8031afa87a9b2ac1f47df5dc",
+      "data/tests/test_source_admission.py": "55b28e412a9fe1256f3a8b8dea322fff5fac40cb2b705f0c217484cf5b7b82f9",
+      "data/tests/test_source_selection_audit.py": "823d4dcbca1a4973b43deeac0ba8da23462857f41f050d9cf50ecd57232552da",
+      "data/tests/test_source_sft.py": "c71840da79f1e1bb3079962354dbcb38e5ff7b1760ffd1956742e6a0483b7de4",
+      "data/tests/test_stage1_preparation.py": "37c986d95c8132799e47625099a2ff19a8c796d9941cabde1e592528fc1a7a6b",
+      "data/tests/test_stage1_readiness.py": "319f59ca3dfaf285041aa58871468ee9289761fe2134bbb7843ef0e0a75275ea",
+      "data/tests/test_stage1_training_loop.py": "c6db17e8157577c483bce6858503b85be8bd8c96b24485f82a0b4dcea21b06b6",
+      "data/tests/test_suitability.py": "d1e0337323857b77fbc2978e8c4f34c83c00f25c3f0141d46a02b65953ceb263",
+      "data/tests/test_token_admission.py": "e61ccb9559bf84b9ddb44e02208720c6f47550889c577864b2ffffc5ec5e26fb",
+      "data/tests/test_tokenizer_audit_runner.py": "72b62d33e5dca20745e2bbc98b1428f3882cd0015ecf8967247b78b692b796f3"
+    },
+    "file_count": 148,
+    "changed_commit_files_match_worktree": true
+  },
+  "verification": {
+    "app": {
+      "totals": {
+        "tests": 317,
+        "pass": 317,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "receipt": {
+        "path": "runtime/finals-upgrade/verification/app-final.json",
+        "sha256": "6126873722943d3fc5723adc31e8c9ba2f2ddf6e23cc1b3a06673bbb3ced4a94",
+        "bytes": 316
+      },
+      "log": {
+        "path": "runtime/finals-upgrade/verification/app-final.log",
+        "sha256": "396cc9102844e50226e00dbcbdcf40e04023f32adec48391e290f320cd62add9",
+        "bytes": 51872
+      },
+      "environment": "ephemeral PostgreSQL 16; synthetic gateway"
+    },
+    "evidence_tools": {
+      "totals": {
+        "tests": 24,
+        "pass": 24,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "receipt": {
+        "path": "runtime/finals-upgrade/verification/evidence.json",
+        "sha256": "02f0bbfab8c1b37b209355055c90ff12a66b2ff91c32d154133b51b891cfd5c9",
+        "bytes": 381
+      },
+      "log": {
+        "path": "runtime/finals-upgrade/verification/evidence.log",
+        "sha256": "ea25c95e1b8de2a22a8d5be321c415e332126e37175923353792769e5659a3ac",
+        "bytes": 2507
+      }
+    },
+    "syntax": {
+      "static-final": {
+        "path": "runtime/finals-upgrade/verification/static-final.json",
+        "sha256": "026feb622211a9fd4f06e05b72a86a42f7a9ed3fcb803898de20014448c94406",
+        "bytes": 197
+      },
+      "smoke_syntax": {
+        "path": "runtime/finals-upgrade/verification/smoke_syntax.json",
+        "sha256": "6311233a1670f8dc66981b300799ac0a9f4e2a9fde8446cfd7bdc62919cf1fb4",
+        "bytes": 342
+      }
+    },
+    "app_independent_race": {
+      "result": {
+        "kind": "actual_http_and_synthetic_dom_after_fix",
+        "model_called": false,
+        "cases": [
+          {
+            "outcome": "success",
+            "blockedStarts": 2,
+            "duplicateDeletionRejected": true,
+            "preservedWhilePending": true,
+            "buttonStatesRestored": true,
+            "originalDisabledButtonPreserved": true,
+            "failurePreserved": null,
+            "newCreationEpoch": 1,
+            "newCreationStatus": 201,
+            "activeNewIntakeRetained": true,
+            "serverIncompleteCount": 1,
+            "calls": [
+              {
+                "path": "/api/conversations",
+                "method": "DELETE",
+                "status": 200
+              },
+              {
+                "path": "/api/intakes",
+                "method": "POST",
+                "epoch": 1,
+                "status": 201
+              }
+            ]
+          },
+          {
+            "outcome": "database_failure",
+            "blockedStarts": 2,
+            "duplicateDeletionRejected": true,
+            "preservedWhilePending": true,
+            "buttonStatesRestored": true,
+            "originalDisabledButtonPreserved": true,
+            "failurePreserved": true,
+            "newCreationEpoch": 0,
+            "newCreationStatus": 201,
+            "activeNewIntakeRetained": true,
+            "serverIncompleteCount": 2,
+            "calls": [
+              {
+                "path": "/api/conversations",
+                "method": "DELETE",
+                "status": 500
+              },
+              {
+                "path": "/api/intakes",
+                "method": "POST",
+                "epoch": 0,
+                "status": 201
+              }
+            ]
+          }
+        ],
+        "passed": 2,
+        "failed": 0
+      },
+      "artifact": {
+        "path": "runtime/finals-upgrade/review-app/late-delete-response-http-after.json",
+        "sha256": "aee03a4ae9867221e6efaab4c2c598c4b96f13e257eb59d11b83bfa04086a6d6",
+        "bytes": 1461
+      },
+      "script": {
+        "path": "runtime/finals-upgrade/review-app/late-delete-response-http-after.mjs",
+        "sha256": "8b88c38431ea02b75be0a4f4a6b893974e232284d53c0dd491985d7d697a5e28",
+        "bytes": 11981
+      }
+    },
+    "app_independent_ui_subset": {
+      "totals": {
+        "tests": 65,
+        "pass": 65,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "included_in_app_317": true,
+      "log": {
+        "path": "runtime/finals-upgrade/review-app/ui-tests-after.log",
+        "sha256": "4fc0a4e457a785d849eb1bd9e03103b98f08cc21b9d7d0ad1cfe48ec8927a1a8",
+        "bytes": 6551
+      }
+    },
+    "data": {
+      "tests": 99,
+      "passed": 99,
+      "failures": 0,
+      "skipped": 0,
+      "history_tests": 35,
+      "existing_related_tests": 64,
+      "receipt": {
+        "path": "runtime/finals-upgrade/data/evaluation_history_v2_tests.json",
+        "sha256": "83bee154bb416acc6b131ab050385e3902039bb5cc15bdb25f7522385b76074d",
+        "bytes": 543
+      },
+      "log": {
+        "path": "runtime/finals-upgrade/data/evaluation_history_v2_tests.log",
+        "sha256": "001372b366d5c85fb4e1e660307a8816188ecd1e9fb6d273c6c9f3ce9d3ef8a7",
+        "bytes": 15821
+      }
+    },
+    "data_independent_attacks": {
+      "passed": 7,
+      "result": {
+        "implementation_sha256": "5209bfe4741f78255a9bf5fb0f971be8a9b881ddb8a11dd6bcb8d7227f57810b",
+        "implementation_unchanged": true,
+        "synthetic_only": true,
+        "prior_evidence_preserved": true,
+        "results": [
+          {
+            "probe": "group_reassignment_all_downstream_rehashed",
+            "baseline_verified": true,
+            "original_release_unchanged": true,
+            "history_events_unchanged": true,
+            "rejected": true,
+            "exception_type": "ValueError",
+            "reason": "source admission policy differs from recomputed rules"
+          },
+          {
+            "probe": "row_omission_all_downstream_rehashed",
+            "baseline_verified": true,
+            "original_release_unchanged": true,
+            "history_events_unchanged": true,
+            "rejected": true,
+            "exception_type": "ValueError",
+            "reason": "declared total row count mismatch"
+          },
+          {
+            "probe": "hold_removal_admission_policy_rehashed",
+            "baseline_verified": true,
+            "original_release_unchanged": true,
+            "history_events_unchanged": true,
+            "rejected": true,
+            "exception_type": "ValueError",
+            "reason": "source admission policy differs from recomputed rules"
+          },
+          {
+            "probe": "hold_removal_policy_and_selection_evidence_rehashed",
+            "baseline_verified": true,
+            "original_release_unchanged": true,
+            "history_events_unchanged": true,
+            "rejected": true,
+            "exception_type": "ValueError",
+            "reason": "past-target shared text evidence incomplete"
+          },
+          {
+            "probe": "export_content_modified_all_downstream_rehashed",
+            "baseline_verified": true,
+            "original_release_unchanged": true,
+            "history_events_unchanged": true,
+            "rejected": true,
+            "exception_type": "ValueError",
+            "reason": "export content differs from original source line"
+          },
+          {
+            "probe": "malformed_policy_files_list",
+            "exit_code": 2,
+            "status": "invalid",
+            "traceback": false,
+            "output_created": false
+          },
+          {
+            "probe": "malformed_admission_policy_nested_files_list",
+            "exit_code": 2,
+            "status": "invalid",
+            "traceback": false,
+            "output_created": false
+          }
+        ]
+      },
+      "artifact": {
+        "path": "runtime/finals-upgrade/review-data/independent_probe-after.json",
+        "sha256": "4187158aa474c8f5fbccfcd5501d1f09aea7636edfb13a97afde2d336d63c2f3",
+        "bytes": 2144
+      },
+      "script": {
+        "path": "runtime/finals-upgrade/review-data/independent_probe-after.py",
+        "sha256": "0804f2696765a98ef481168a3c259de747d45c5d391c4403b62cae4a44f8d950",
+        "bytes": 5774
+      }
+    },
+    "data_independent_real_audit": {
+      "result": {
+        "implementation_sha256": "5209bfe4741f78255a9bf5fb0f971be8a9b881ddb8a11dd6bcb8d7227f57810b",
+        "implementation_unchanged": true,
+        "fresh_report_matches_saved": true,
+        "counts": {
+          "rows": 17236,
+          "source_groups": 199,
+          "development_exposed": 1724,
+          "history_unverified": 15512,
+          "development_exposed_source_groups": 21,
+          "history_unverified_source_groups": 178
+        },
+        "splits": {
+          "train": {
+            "rows": 15512,
+            "source_groups": 178,
+            "development_exposed": 0,
+            "history_unverified": 15512,
+            "development_exposed_source_groups": 0,
+            "history_unverified_source_groups": 178
+          },
+          "validation": {
+            "rows": 1724,
+            "source_groups": 21,
+            "development_exposed": 1724,
+            "history_unverified": 0,
+            "development_exposed_source_groups": 21,
+            "history_unverified_source_groups": 0
+          }
+        },
+        "source_admitted_rows": {
+          "train": 40415,
+          "validation": 4289
+        },
+        "verified_events": 5,
+        "independent_test_eligible": false,
+        "history_completeness_verified": false,
+        "admission_rules_recomputed": true,
+        "source_ledger_reconstructed": true,
+        "original_export_lines_verified": true,
+        "inputs_unchanged": true,
+        "limitations": [
+          "Missing events are not evidence of unused data; local history is not independently attested.",
+          "Recorded development use propagates to the whole original source group.",
+          "This audit does not establish purpose suitability, label accuracy, or human-review completion."
+        ]
+      },
+      "artifact": {
+        "path": "runtime/finals-upgrade/review-data/real-audit-after.json",
+        "sha256": "6ac3a271feb110eca519b8fb4164e2d58d11dc4850853eced7cbab237cadcbb2",
+        "bytes": 1501
+      }
+    },
+    "browser": {
+      "method": "manual CUA browser interaction",
+      "environment": "local isolated PostgreSQL; synthetic update gateway",
+      "actual_project_model_called": false,
+      "checks": [
+        {
+          "name": "create_and_answer",
+          "result": "observed"
+        },
+        {
+          "name": "leave_and_list_incomplete",
+          "result": "observed"
+        },
+        {
+          "name": "individual_delete_confirmation",
+          "result": "observed"
+        },
+        {
+          "name": "cancel_keeps_conversation",
+          "result": "observed"
+        },
+        {
+          "name": "whole_delete_confirmation",
+          "result": "observed"
+        },
+        {
+          "name": "whole_delete_empty_list",
+          "result": "observed"
+        },
+        {
+          "name": "reload_stays_empty",
+          "result": "observed"
+        },
+        {
+          "name": "intentional_new_start_after_delete",
+          "result": "observed"
+        },
+        {
+          "name": "individual_incomplete_delete",
+          "result": "observed"
+        }
+      ],
+      "screenshots": [
+        "runtime/finals-upgrade/ui/delete-confirm.jpg",
+        "runtime/finals-upgrade/ui/deleted-reloaded.jpg",
+        "runtime/finals-upgrade/ui/final-deleted-state.jpg"
+      ],
+      "console_warnings_or_errors": [],
+      "limitations": [
+        "Manual normal-flow check, not a complete browser E2E suite.",
+        "The subsequently found delayed-delete race is validated separately with HTTP/DB plus actual UI handlers."
+      ],
+      "post_fix_reload_checked": true,
+      "post_fix_screenshot": "runtime/finals-upgrade/ui/post-fix-reloaded.jpg",
+      "test_server_and_ephemeral_database_cleaned": true
+    },
+    "no_unique_sample_total_or_user_success_rate_claimed": true,
+    "authorization_event": "First app full-run approval review timed out before command execution; one permitted retry completed. Not counted as an app test or model failure."
+  },
+  "actual_training_data": {
+    "implementation_evidence": {
+      "schema_version": "malssi-evaluation-history-upgrade-evidence-v2",
+      "status": "passed",
+      "tests": 99,
+      "history_tests": 35,
+      "diagnostics": "Python AST, whitespace, git diff --check passed",
+      "original_reviewer_attacks_accepted": 3,
+      "followup_reviewer_attacks_accepted": 0,
+      "malformed_input": {
+        "exit_code": 2,
+        "json_invalid": true,
+        "traceback": false
+      },
+      "current_source_rows_reconstructed": 45974,
+      "current_candidate_rows": {
+        "train": 15512,
+        "validation": 1724
+      },
+      "source_admitted_rows": {
+        "train": 40415,
+        "validation": 4289
+      },
+      "validation_development_exposed_rows": 1724,
+      "validation_development_exposed_source_groups": 21,
+      "independent_test_cli_exit_code": 2,
+      "admission_rules_recomputed": true,
+      "original_export_lines_verified": true,
+      "actual_report_identifier_check_passed": true,
+      "verified_source_file_sha256": {
+        "conversation/source_dialogues.train.jsonl.gz": "af0eb9384dc39fb6eca59c40781b6ba5c41c7343a821eeae2900a6cdff139c36",
+        "conversation/source_dialogues.validation.jsonl.gz": "a858d48423139269569e78f9a99385ab9ab0a5f2bb4c8ea2bdf58df006f57e4f",
+        "conversation/train.jsonl.gz": "a9e8b2a0c8bb4b2fa6f863dcd2897f3f0a7bb7a3797ea4b437aace7bf5ca56a7",
+        "conversation/validation.jsonl.gz": "078ab0bf8f45c6bf327d73565233d3040b28807f2cc93739c39eaf96e507ad8d"
+      },
+      "preserved_v1_artifact_sha256": {
+        "evaluation_history_development.json": "646f6147c8e570bd54f103f4e91e36a190d1fd0a2aa441d1fbe507bdeeceae56",
+        "evaluation_history_independent_test.json": "742fb2b85c3b4a92b980fc173f8d3a1afd920009e2f0bfb7b75c745ff13e3cf2",
+        "evaluation_history_tests_final.log": "d05e6a1d49fc08c414c169beabc4156fefb34c09f54de325410f7b51a427044a",
+        "evaluation_history_events.jsonl": "2359cc142ca38fcc02251387247f8433be62e88eafbd5e330d146eba06eefbbf"
+      },
+      "preserved_original_reviewer_probe_sha256": "76654b4c4ecad3747af0203a52faaa303a3bfcefa9355e1b29e0bb1a5219c82b",
+      "preserved_original_reviewer_script_sha256": "391a6693e79c6597ed13105e201a7f5695c403005562d60d5924e8243ccc2208",
+      "artifact_sha256": {
+        "evaluation_history_v2_tests.json": "83bee154bb416acc6b131ab050385e3902039bb5cc15bdb25f7522385b76074d",
+        "evaluation_history_v2_tests.log": "001372b366d5c85fb4e1e660307a8816188ecd1e9fb6d273c6c9f3ce9d3ef8a7",
+        "evaluation_history_v2_adversarial.py": "a1ec6606653fdc5df652de64ac049ec67608644416e145433bafddd6db2c9ae4",
+        "evaluation_history_v2_adversarial.json": "5e5e4d25f153f0276b0fe5847efb8fd9951e06cd8ded8dbd9e2f34e642c8e834",
+        "evaluation_history_v2_development.json": "0cb780e46756b2698d1ba1425e9d4c3048fb9b025c0e6c119e84a052549adc1c",
+        "evaluation_history_v2_independent_test.json": "2b8c39aaf289253bf6310439a83bdbee0c4ccfbe0fd7860fb60384f51dd47efe"
+      },
+      "implementation_sha256": "5209bfe4741f78255a9bf5fb0f971be8a9b881ddb8a11dd6bcb8d7227f57810b",
+      "test_sha256": "5e48e05db9dba502bdc004baffda057f5c86475ee011773e236259273f417985",
+      "readme_sha256": "129fb0b2308267b7f4e2ac7b7b82641048f4eb0b1fce18381786bafbfaaef6d3",
+      "model_executed": false,
+      "source_text_split_labels_modified": false,
+      "raw_content_or_row_ids_exported": false,
+      "limitations": [
+        "The event inventory records validation use; train remains history_unverified, not unused.",
+        "Hashes and deterministic rules do not attest complete custody or authenticate event authors.",
+        "No independent-test certification, human-review completion, purpose-suitability or label-accuracy improvement is claimed."
+      ]
+    },
+    "aggregate_development_report": {
+      "schema_version": "malssi-evaluation-history-v2",
+      "status": "verified",
+      "intended_use": "development",
+      "independent_test_eligible": false,
+      "counts": {
+        "rows": 17236,
+        "source_groups": 199,
+        "development_exposed": 1724,
+        "history_unverified": 15512,
+        "development_exposed_source_groups": 21,
+        "history_unverified_source_groups": 178
+      },
+      "splits": {
+        "train": {
+          "rows": 15512,
+          "source_groups": 178,
+          "development_exposed": 0,
+          "history_unverified": 15512,
+          "development_exposed_source_groups": 0,
+          "history_unverified_source_groups": 178
+        },
+        "validation": {
+          "rows": 1724,
+          "source_groups": 21,
+          "development_exposed": 1724,
+          "history_unverified": 0,
+          "development_exposed_source_groups": 21,
+          "history_unverified_source_groups": 0
+        }
+      },
+      "source_admitted_rows": {
+        "train": 40415,
+        "validation": 4289
+      },
+      "verified_events": 5,
+      "events_by_purpose": {
+        "development_audit": 5
+      },
+      "input_sha256": {
+        "export_manifest": "a917a6d445178e52882153ec834e53e670206b4e05d726c78df4c47a7ecc715c",
+        "source_ledger": "7b84f39fc689b9628b42040e3217f3626f0d178d64921a733f6608a234ee731a",
+        "events": "2359cc142ca38fcc02251387247f8433be62e88eafbd5e330d146eba06eefbbf",
+        "token_policy": "51dfdec8e0fc47f9c42f073e7bd9fc157aadc1ab9d1c8ed659b6980dbc92b4bf",
+        "token_ledger": "33d401638939a38f965d862b27270f27d93fc088b3eed4be6ce730cef1210412",
+        "source_manifest": "5928bc8c03263a538411d5f7d2bb5a942589b263ce2e0c9e2a253f60ee9f1dac",
+        "admission_policy": "36b03947e5176bd86f9fd621d49935cd67c51481b99334f6f09c143b510aa687",
+        "selection_audit": "1fb748f7816ba6ae2de4da359f4bbf4ab685df6b1fcc2995ed12e33017436ecc",
+        "tokenizer_audit": "adb7908b877f6e16691d8fa07ccbfb9b929ffaf01830fa05880b30e838ad8a27",
+        "row_lengths": "4c1acf958a349010fbf956084407b84b31ccea5ad6b1b51318b60fbf4e3f5e22"
+      },
+      "source_manifest_sha256": "5928bc8c03263a538411d5f7d2bb5a942589b263ce2e0c9e2a253f60ee9f1dac",
+      "evidence_sha256": [
+        "2010b43540dd9d247a3b505f3683220743a1dac7cfffc3ede53952d5fec9e06e",
+        "461da217caaf8540400c678391ef045aad59d6233d7458a942e5f2a8d868a722",
+        "b268d85333cc96959a2c2bc13ecaf276952345f606448d4ad12a820a0d547ed3",
+        "baa14dc1ec87c4351d850d1d0a6b2472eeeeb8947f92a27e97f656ebd5ac14f2",
+        "e851782b1b9b6ed3e0a13433aa8601fc0a8ea4e9adc94dd8125c5191ef81bb49"
+      ],
+      "history_completeness_verified": false,
+      "admission_rules_recomputed": true,
+      "source_ledger_reconstructed": true,
+      "original_export_lines_verified": true,
+      "inputs_unchanged": true,
+      "source_text_modified": false,
+      "source_split_moved": false,
+      "raw_content_or_row_ids_exported": false,
+      "model_executed": false,
+      "model_training_authorized": false,
+      "limitations": [
+        "Missing events are not evidence of unused data; local history is not independently attested.",
+        "Recorded development use propagates to the whole original source group.",
+        "This audit does not establish purpose suitability, label accuracy, or human-review completion."
+      ]
+    },
+    "candidate_independent_test_request_exit_code": 2,
+    "original_rows": 45974,
+    "admitted_rows": 44704,
+    "held_rows": 1270,
+    "source_rows_split_labels_or_ledgers_modified": false,
+    "unit": "SFT rows; not independent people or counseling sessions",
+    "evidence_events_are_not_independent_experiments": true,
+    "limitations": [
+      "validation 1,724 rows / 21 source groups are development_exposed.",
+      "train 15,512 rows / 178 groups are history_unverified in this event inventory, not unused or untrained.",
+      "No independent-test certification or semantic/human-review/purpose-suitability completion claimed."
+    ]
+  },
+  "preserved_evidence": {
+    "historical_23": {
+      "historical_artifact_count": 23,
+      "unchanged_against_head": true,
+      "sha256": {
+        "docs/competition/결선_재평가_지적_수정_v3.md": "dc9bd2a0d569507e545d838905c8c6efb9168d05da6d0add3008618fe1c93b71",
+        "docs/competition/결선_재평가_지적_수정_v3_근거.json": "7b17265442405009f9f3b8ce7b1c7f586db6ac2dbbb5ca892deb618a2dfa77d2",
+        "docs/competition/결선_재평가_지적_수정_v4.md": "cbe7dd4c90ca650e47692207019c0fffbb52c6642be8228c155c9cf4c4675e3e",
+        "docs/competition/결선_재평가_지적_수정_v4_근거.json": "e6fa68002fca9acb6ff970e7c9e1fc75eb938c85585a7771abc8616073fb1a7f",
+        "docs/competition/결선_재평가_지적_수정_v5.md": "bc868e2bcdbde5049928f5afd3329ac67e4db4090904e07395759cc427ce2860",
+        "docs/competition/결선_재평가_지적_수정_v5_근거.json": "924bc37e565701be26669f38ebdcda9414785e712eac7274db70e8cf83622c0a",
+        "docs/competition/결선_재평가_지적_수정_v6.md": "6aad402247b78eb416e498e47a095e8cb510ca90d2afae50d70e5aaa3bfa7862",
+        "docs/competition/결선_재평가_지적_수정_v6_근거.json": "21a40da7e7ea2a3ca207474d2e953ba51abd66115e3d01cc92070d2d732e44aa",
+        "docs/competition/결선_적대적_재평가_v2.md": "6c13c06aedfb924c3902bebe257b74b08787ef82939223e0006d1a33f068b02d",
+        "docs/competition/결선_적대적_재평가_v2_근거.json": "58f656d6bf4876f1c43d97f1ea0073eee3d4816683d4be14b4a9fad0df521726",
+        "docs/competition/결선_적대적_재평가_v3.md": "f65d23025c9047f2d07703d48976f61ac58044e5a88c97cb07af55e577c9554a",
+        "docs/competition/결선_적대적_재평가_v3_근거.json": "6789253cbda5f137edb10d5c53c103a4d2f90a6886ef9f5b541ad77d991152af",
+        "docs/competition/결선_적대적_재평가_v4.md": "c51ad1a603427ef2d9037b6f2716668452fa086f5098c5da38b0407d0ed9b3bc",
+        "docs/competition/결선_적대적_재평가_v4_근거.json": "b268d85333cc96959a2c2bc13ecaf276952345f606448d4ad12a820a0d547ed3",
+        "docs/competition/결선_적대적_재평가_v5.md": "1a9b27977f153df991287702b0a76181a7d886cadca76f6ec44633f433bd6fd5",
+        "docs/competition/결선_적대적_재평가_v5_근거.json": "baa14dc1ec87c4351d850d1d0a6b2472eeeeb8947f92a27e97f656ebd5ac14f2",
+        "docs/competition/결선_적대적_재평가_v6.md": "84c3a280764d69ad8c075afbf5a1bbb19a6877c998a4c1c4c0a8e6ac8ae4f736",
+        "docs/competition/결선_적대적_재평가_v6_근거.json": "2010b43540dd9d247a3b505f3683220743a1dac7cfffc3ede53952d5fec9e06e",
+        "docs/competition/결선_적대적_평가_v1.md": "f9b0f4f9856b62b4be38ebca15321836eef9aa7eb8202a9fe9be2c025e421285",
+        "docs/competition/결선_적대적_평가_v1_근거.json": "770ff842748fc20c3c6c110c78492aae15d92759a41886716ddc5aa57a61c387",
+        "docs/competition/결선_적대적_평가_v2.md": "68c4eb5eca1f7abd166847c902251729ee43721af937daec7d4ce6981cfc5401",
+        "docs/competition/결선_적대적_평가_v2_근거.json": "780da62e52d70150dcfb423bb5af24edf6dab5926ef117f9a5d67931d3d728dd",
+        "presentation/final/말씨_결선_근거정합본_v2.pptx": "ce8d91ffdc12bb83ce5e0b92137b330722cc4cdc34a2c40876910fcb2fcc9d2d"
+      }
+    },
+    "artifacts": [
+      {
+        "path": "runtime/finals-upgrade/review-app/late-delete-response-http.json",
+        "sha256": "f2fd99020f949b574478c3145501bda2f40b6df4255310533d2a8867ee0502a2",
+        "bytes": 777
+      },
+      {
+        "path": "runtime/finals-upgrade/verification/delete-race-before.log",
+        "sha256": "559d46d113ee08ffc9f6648d6e9856c2cdd6777714cb1eb573a28fa93a389541",
+        "bytes": 3101
+      },
+      {
+        "path": "runtime/finals-upgrade/review-data/independent_probe.json",
+        "sha256": "76654b4c4ecad3747af0203a52faaa303a3bfcefa9355e1b29e0bb1a5219c82b",
+        "bytes": 2225
+      },
+      {
+        "path": "runtime/finals-upgrade/review-data/independent_probe.py",
+        "sha256": "391a6693e79c6597ed13105e201a7f5695c403005562d60d5924e8243ccc2208",
+        "bytes": 3420
+      },
+      {
+        "path": "runtime/finals-upgrade/verification/app.json",
+        "sha256": "bd9e2a8b16e88f29b5281f270cdf272c1152a932d7f7a489424c03b60925b360",
+        "bytes": 513
+      },
+      {
+        "path": "runtime/finals-upgrade/verification/app.log",
+        "sha256": "8a39272ce1cad720d523edd58c9eb5ccafd0a9c6c1688fe7e23dd0c2b306c1c9",
+        "bytes": 51514
+      },
+      {
+        "path": "runtime/finals-upgrade/data/evaluation_history_tests_final.log",
+        "sha256": "d05e6a1d49fc08c414c169beabc4156fefb34c09f54de325410f7b51a427044a",
+        "bytes": 14355
+      },
+      {
+        "path": "runtime/finals-upgrade/presentation-build/finalize.log",
+        "sha256": "e1c00201ddfaeaa6514321f3ef14cfe780864bb6607169d1f09508bd53f3d1e8",
+        "bytes": 3285
+      }
+    ],
+    "failure_findings": {
+      "A1": "Delayed whole-delete response cleared a newly started conversation UI; fixed and rechecked.",
+      "D1": "Coordinated downstream ledger/export rehash accepted despite missing original-source anchoring; fixed and rechecked.",
+      "D2": "Malformed policy.files produced traceback/exit1; now invalid JSON/exit2 without output file."
+    }
+  },
+  "presentation": {
+    "output": {
+      "path": "presentation/final/말씨_결선_실전발표_v3.pptx",
+      "sha256": "99a18de37c91e02d2f9f98999c066ab1b7646264422a9a7a71207cde0af82f0c",
+      "bytes": 1329840
+    },
+    "editable_source": {
+      "path": "presentation/final/말씨_결선_실전발표_v3.json",
+      "sha256": "7a0518149f3e8ca82e8b9b499e9b831da5711ce5a4d071ca28800b21ebea3970",
+      "bytes": 18652
+    },
+    "slide_count": 12,
+    "notes_verified_slides": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12
+    ],
+    "native_table_owner_slides": [
+      4,
+      6,
+      7,
+      9,
+      11
+    ],
+    "source_arithmetic_checked": true,
+    "source_arithmetic_equations": [
+      "45974=44704+1270",
+      "44704=40415+4289",
+      "17236=15512+1724",
+      "4298-9=4289"
+    ],
+    "package_finalizer": {
+      "package_passed": true,
+      "layout_findings": 0,
+      "first_party_import_passed": true,
+      "font": "Nanum Gothic",
+      "receipt": {
+        "path": "runtime/finals-upgrade/presentation-build/final-validation.json",
+        "sha256": "5363ed7be56c1491f933739cfd3dd7521754c55d292f1169fdb6a442910ea396",
+        "bytes": 4413
+      }
+    },
+    "native_table_arithmetic_automation_eligible_tables": 0,
+    "visual_inspection": {
+      "method": "Assistant visual inspection of every final PPTX re-import render at 1280x720",
+      "presentation_sha256": "99a18de37c91e02d2f9f98999c066ab1b7646264422a9a7a71207cde0af82f0c",
+      "slides_inspected": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "slides_passed": 12,
+      "observations": "No visible text clipping, overlapping text, missing assets, or unreadable main table content in the inspected renders. Screenshot is supporting evidence; key actions are written at presentation size.",
+      "native_powerpoint_or_google_slides_verified": false,
+      "previews": [
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-01.png",
+          "sha256": "3cfbef9746ce29c5a859a1223ac35a47892d0d45e84eac8d0f350d35df9371e6",
+          "bytes": 117866
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-02.png",
+          "sha256": "ba5699db038e812f9b8b00a48cf08d8548a3d680ee9e3e9109b7985c50b0e7d7",
+          "bytes": 111194
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-03.png",
+          "sha256": "34727839bf46e8c1b2f9a92f6faaee49de139fd66b4f3001cdf4f9907ff1bdd2",
+          "bytes": 80099
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-04.png",
+          "sha256": "8c26fd293a28e1bcb6abfed93923feae63c889233f0f407699b834473f8e24b2",
+          "bytes": 80613
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-05.png",
+          "sha256": "8532e1dbb2523c780e9e615ee4a4eb5ecea8d4f880f16483ac0efd8adca088de",
+          "bytes": 98438
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-06.png",
+          "sha256": "8a3d6fd8add41fa121704ddcf895b4314a314c6602ef7c2f2e58456537f600b7",
+          "bytes": 77228
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-07.png",
+          "sha256": "c8953605649a45c57a5d9acd50b41257627b7cb057bb4fe49abd6b2b4b41d4cc",
+          "bytes": 60455
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-08.png",
+          "sha256": "ce7a00d04f41b12b180a6de85d5e5237f87657bb9974b98c418052aa83a81dbc",
+          "bytes": 96798
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-09.png",
+          "sha256": "769f5fe4fcfda1d506cf34ff30858883f29ea0e2d882408b1dae552d18b7b9a4",
+          "bytes": 82668
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-10.png",
+          "sha256": "c69c467c6992b7250d1e7c58bc7cb6fb3ec8dbea19f7fe591d97e2ff8e0b4622",
+          "bytes": 156618
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-11.png",
+          "sha256": "9df770c56a48e3650a82520dde870267193a0b9355808998016ef40cef137fb3",
+          "bytes": 92989
+        },
+        {
+          "path": "runtime/finals-upgrade/presentation-build/final-previews/slide-12.png",
+          "sha256": "fd5ef9e8d05d5fc1824976e6f898fb8b2fcfdfc1ba655d67a9425684f2fac172",
+          "bytes": 103416
+        }
+      ]
+    },
+    "synthetic_browser_screenshot": {
+      "path": "presentation/final/assets/말씨_기록삭제_합성시연_v1.jpg",
+      "sha256": "2d21c6edc7baf5acc0655ce6daf9ba9e1674b7b52e9272e0933662eefb8df068",
+      "bytes": 35552
+    },
+    "native_powerpoint_or_google_slides_verified": false
+  },
+  "documents": [
+    {
+      "path": "docs/competition/결선_고도화_v1.md",
+      "sha256": "4a40b43751b96ef4864ab4021579d6c12ee1ec7b196ea4afeec3bea3b0554590",
+      "bytes": 12337
+    },
+    {
+      "path": "docs/competition/결선_실전_검증팩_v1.md",
+      "sha256": "64a4a7030a479103a73d008b89234ea0a5eb804ea3239de52f32a6d44f1db715",
+      "bytes": 14544
+    },
+    {
+      "path": "docs/competition/README.md",
+      "sha256": "c7eb4358efdc4c3d39aa4f766f71180da8c36477cc7d03642f2efc2c5191dbba",
+      "bytes": 3483
+    },
+    {
+      "path": "docs/current/현황과_할일.md",
+      "sha256": "c193a1699a8a4103cf09c53917d9d41589329053dec2f07d68e661fe8f6e0520",
+      "bytes": 5295
+    },
+    {
+      "path": "presentation/README.md",
+      "sha256": "cc7f5011dc0afaebbb6a4822a80e8f59b274133ec2235034f516b2abb08efadd",
+      "bytes": 2793
+    }
+  ],
+  "cleanup": {
+    "test_ui_server_stopped": true,
+    "temporary_ui_schema_dropped": true,
+    "ephemeral_postgresql_stopped_and_removed": true,
+    "temporary_browser_tab_closed": true
+  },
+  "remaining_unverified": [
+    "People-reviewed labels and task-aligned learning answers",
+    "Independent evaluation data with non-development exposure history",
+    "Actual participant task observation",
+    "Operating owner, retention policy and cookie-loss deletion path",
+    "Organizer final notice, actual rehearsal/Q&A and submission"
+  ],
+  "publication_boundary": "Aggregate counts, code/artifact hashes and paths only. No raw counseling text, row/group identifiers, event identifiers, credentials, weights or database contents."
+}
