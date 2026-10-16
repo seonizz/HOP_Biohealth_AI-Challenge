@@ -5,10 +5,27 @@ const GuideCards={
     <h3>대화보다 안전이 먼저예요</h3>
     <p>죽고 싶다거나 사라지고 싶다는 신호가 있었다고 알려 주셨어요. 말씀해 주셔서 정말 고마워요. 이건 혼자 감당하지 않으셔도 돼요.</p>
     <ul><li>자살예방 상담전화 <b>109</b> (24시간)</li><li>정신건강위기 상담전화 <b>1577-0199</b></li><li>지금 위험하다면 <b>112 / 119</b></li></ul></div></div>`,
-  list:items=>`<ul>${items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`,
+  list:items=>`<ul>${items.map(x=>`<li style="white-space:pre-wrap">${esc(x)}</li>`).join("")}</ul>`,
+  speech(g,detail,{copy=false}={}){
+    const titles={opening:"1. 첫마디와 관찰한 장면",listening:"2. 마음을 전하고 이야기 듣기",offer:"3. 작은 제안과 선택권"};
+    const sections=detail&&Object.keys(titles).every(key=>typeof detail[key]?.excerpt==="string"&&detail[key].excerpt.trim()&&typeof detail[key]?.why==="string"&&detail[key].why.trim());
+    const full=`<div${copy?' id="scr"':""} style="white-space:pre-wrap">${esc(g.script)}</div>`;
+    return `<div class="card script"><h3>이렇게 시작해 보세요</h3>${copy?'<button class="copy" id="cp" type="button">⧉ 문장 복사</button>':""}
+      ${sections?`<p class="note">한 번에 모두 말하기보다, 각 단계에서 상대의 답을 듣고 이어가 보세요.</p>
+      ${Object.entries(titles).map(([key,title])=>{
+        const section=detail[key],evidence=Array.isArray(section.evidence)?section.evidence.filter(ref=>typeof ref?.quote==="string"&&ref.quote.trim()):[];
+        return `<section class="speech-step"><h4>${title}</h4><p class="speech-line">${esc(section.excerpt)}</p>
+          <div class="speech-why"><b>왜 이렇게 말하나요?</b><p>${esc(section.why)}</p>
+          ${evidence.length?`<details><summary>이 말에 반영한 답변</summary>${evidence.map(ref=>`<blockquote>${esc(ref.quote)}</blockquote>`).join("")}</details>`:""}</div></section>`;
+      }).join("")}
+      <details class="speech-full"><summary>전체 발화 이어서 읽기</summary>${full}</details>`:full}</div>`;
+  },
   doAvoid(g,{wrapStyle="",doStyle=""}={}){
-    return `<div class="two"${wrapStyle?` style="${wrapStyle}"`:""}><div class="card do"${doStyle?` style="${doStyle}"`:""}><h3>이렇게 해 보세요</h3>${this.list(g.doList)}</div>
+    return `<div class="two guide-actions"${wrapStyle?` style="${wrapStyle}"`:""}><div class="card do"${doStyle?` style="${doStyle}"`:""}><h3>이렇게 해 보세요</h3>${this.list(g.doList)}</div>
     <div class="card avoid"><h3>피하면 좋아요</h3>${this.list(g.avoid)}</div></div>`;
+  },
+  next(g){
+    return `<div class="card next"><img src="${M.think}" alt=""><div><h3>다음 단계</h3><p>${esc(g.next)}</p></div></div>`;
   },
   relationship(a,{style=""}={}){
     if(!a||typeof a!=="object")return "";

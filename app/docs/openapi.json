@@ -1207,6 +1207,97 @@
           }
         ]
       }
+    },
+    "/api/intakes/{id}/progress": {
+      "get": {
+        "summary": "소유자에게 최종 안내 생성 진행 단계 공개",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "현재 실행 단계 또는 idle/complete 상태",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "revision",
+                    "progress"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "revision": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "progress": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "status",
+                        "completed",
+                        "current",
+                        "attempt"
+                      ],
+                      "properties": {
+                        "status": {
+                          "type": "string",
+                          "enum": [
+                            "idle",
+                            "running",
+                            "saving",
+                            "complete"
+                          ]
+                        },
+                        "completed": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "required": [
+                              "label"
+                            ],
+                            "additionalProperties": false,
+                            "properties": {
+                              "label": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        },
+                        "current": {
+                          "type": "string"
+                        },
+                        "attempt": {
+                          "type": "integer",
+                          "minimum": 1
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 없음"
+          },
+          "403": {
+            "description": "Origin 거부"
+          },
+          "404": {
+            "description": "삭제되었거나 소유하지 않은 대화"
+          }
+        }
+      }
     }
   },
   "components": {

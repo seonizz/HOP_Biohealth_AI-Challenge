@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelGateway } from '../src/model.js';
+import { HttpError } from '../src/errors.js';
 import { attemptMetrics } from '../../ai/scripts/evaluation_evidence.mjs';
 
 const REQUEST_ID = '9a281bfc-24e3-4fd5-a28a-bcf8a494870b';
@@ -309,4 +310,26 @@ test('502 and 504 recover while non-transient server responses are not retried',
     else await gateway.updateState(context());
     assert.equal(calls, status === 500 ? 1 : 2);
   }
+});
+
+test('progress counts only validated calls while retry feedback stays out of diagnostics', async () => {
+  const records=[],events=[],bodies=[];
+  const gateway=makeGateway(async(_url,request)=>{
+    bodies.push(JSON.parse(request.body));return envelope({ok:true});
+  },{protocol:'relationship_agent',diagnosticLogger:entry=>records.push(entry)});
+  const schema={type:'object',properties:{ok:{type:'boolean'}},required:['ok'],additionalProperties:false};
+  let validations=0;
+  await gateway.operation({onProgress:event=>events.push(event)},operation=>
+    gateway.agentComplete('guide_repair','검토 지침',{},schema,100,operation,value=>{
+      if(++validations===1){
+        const error=new HttpError(502,'MODEL_INVALID_RESPONSE','검증 실패');
+        error.modelReason='agent_speech_goal';error.modelFeedback='private repair feedback';throw error;
+      }
+      return value;
+    }));
+  assert.deepEqual(events.map(event=>[event.status,event.attempt]),[['started',1],['started',2],['completed',2]]);
+  assert.equal(JSON.parse(bodies[1].messages[1].content).validation_feedback,'private repair feedback');
+  assert.equal(JSON.stringify(records).includes('private repair feedback'),false);
+  assert.equal(new Set(records.map(entry=>entry.generation_id)).size,1);
+  assert.equal(new Set(records.map(entry=>entry.attempt_id)).size,2);
 });

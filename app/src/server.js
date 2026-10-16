@@ -10,6 +10,7 @@ import { questionCatalogOf } from './question-bank.js';
 import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate,
   prepareModelAnswer, completeModelAnswer, discardModelAnswer } from './intake.js';
 import { ModelGateway } from './model.js';
+import { generationProgress } from './generation-progress.js';
 import { sourceFingerprint } from './source-identity.js';
 import { PROMPT_VERSION } from './relationship-prompts.js';
 
@@ -55,7 +56,9 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
     baseUrl:process.env.MODEL_BASE_URL, apiKey:process.env.MODEL_API_KEY,
     model:process.env.MODEL_NAME || 'malssi-gemma4-31b-step100',
     timeoutMs:process.env.MODEL_TIMEOUT_MS ? Number(process.env.MODEL_TIMEOUT_MS) : undefined,
-    protocol:process.env.MODEL_PROTOCOL
+    protocol:process.env.MODEL_PROTOCOL,
+    agentFormat:process.env.MODEL_AGENT_FORMAT || 'json_schema',
+    reasoningEffort:process.env.MODEL_REASONING_EFFORT || 'none'
   }) : null;
   const limits = new Map();
   const resultRuns = new Map();
@@ -157,13 +160,19 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         const epoch = revisionOf(input.conversation_epoch);
         return json(res, 201, view(await store.createIntake(owner, createIntake(await store.questionSet()), epoch)));
       }
-      const intakeMatch = /^\/api\/intakes\/([^/]+)(?:\/(answers|back|context|result))?$/.exec(path);
+      const intakeMatch = /^\/api\/intakes\/([^/]+)(?:\/(answers|back|context|result|progress))?$/.exec(path);
       if (intakeMatch) {
         const [,id,action] = intakeMatch;
         if (!UUID.test(id)) throw new HttpError(404, 'NOT_FOUND', '대화를 찾을 수 없어요.');
         if (method === 'GET' && !action) return json(res, 200, view(await store.intake(owner, id)));
         if (method === 'DELETE' && !action) return json(res, 200, { deleted:true, ...await store.deleteIntake(owner, id) });
         if (method === 'GET' && action === 'context') return json(res, 200, await store.context(owner, id));
+        if (method === 'GET' && action === 'progress') {
+          const row=await store.intake(owner,id);
+          const active=resultRuns.get(`${owner}:${id}:${row.revision}`);
+          return json(res,200,{revision:row.revision,progress:active?.progress.state ||
+            {status:row.state.agentRecord?'complete':'idle',completed:[],current:row.state.agentRecord?'검토·저장 완료':'답안 준비',attempt:1}});
+        }
         if (method === 'POST' && ['answers','back'].includes(action)) {
           const input = object(await body(req), action === 'back' ? ['revision'] : ['revision','question_id','text','selected','custom','skipped','follow_up']);
           const revision = revisionOf(input.revision);
@@ -206,13 +215,15 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           const input = object(await body(req), ['revision']);
           const revision = revisionOf(input.revision);
           const runKey = `${owner}:${id}:${revision}`;
+          const progress=generationProgress();
           const run = async () => {
             let row = await store.intake(owner, id);
             if (row.state.agentRecord) return { record:await store.saveRecord(owner, row.state.agentRecord, id), revision:row.revision };
             if (row.revision !== revision || row.state.status !== 'ready') throw new HttpError(409, 'INTAKE_NOT_READY', '대화를 마친 뒤 결과를 확인해 주세요.');
             if (!gateway) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
             const context = (await store.context(owner, id)).context;
-            const result = await gateway.respond(context, row.state.agentMemory || null, { requestId });
+            const result = await gateway.respond(context, row.state.agentMemory || null, { requestId,onProgress:event=>progress.event(event) });
+            progress.finish('saving');
             const recordId = await store.nextRecordId();
             const p = { ...context.profileInput, scores:{}, safety:result.assessment.safety,
               symptoms:[], risks:[], protect:[] };
@@ -227,6 +238,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
                 id:recordId, title:next.chatTitle || next.name || '그분', date:new Date().toISOString(),
                 profile:{ ...p, name:next.name }, guide:result.guide, log:next.log, followUps:state.fuCount,
                 ...(result.relationship_analysis ? {relationship_analysis:result.relationship_analysis} : {}),
+                ...(result.conversation_detail ? {conversation_detail:result.conversation_detail} : {}),
                 provenance:{ kind:'model', model:gateway.model || 'unknown', clinically_validated:false,
                   source_sha256:sourceIdentity.sha256, model_protocol:gateway.protocol || null, runtime_model_identity_verified:false,
                   ...(result.agent ? {agent:result.agent} : {}) }
@@ -236,8 +248,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             }, 'model_update');
             return { record:await store.saveRecord(owner, row.state.agentRecord, id), revision:row.revision };
           };
-          if (!resultRuns.has(runKey)) resultRuns.set(runKey, run().finally(() => resultRuns.delete(runKey)));
-          return json(res, 200, await resultRuns.get(runKey));
+          if (!resultRuns.has(runKey)) resultRuns.set(runKey, {progress,promise:run().finally(() => resultRuns.delete(runKey))});
+          return json(res, 200, await resultRuns.get(runKey).promise);
         }
       }
       if (method === 'GET' && path === '/api/records') return json(res, 200, await store.history(owner));

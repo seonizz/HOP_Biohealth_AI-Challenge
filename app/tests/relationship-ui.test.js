@@ -77,14 +77,64 @@ test('saved records display optional analysis and older records remain readable'
   assert.ok(html.includes('친구가 걱정돼요.'));
 });
 
-test('finishing passes saved relationship analysis to the result screen',async()=>{
-  const record={profile,guide,relationship_analysis:analysis};let shown;
+test('finishing passes saved relationship analysis and speech detail to the result screen',async()=>{
+  const detail={opening:{excerpt:'먼저 인사해요.',why:'편하게 시작해요.'}};
+  const record={profile,guide,relationship_analysis:analysis,conversation_detail:detail};let shown;
   const context=vm.createContext({
+    setTimeout,clearTimeout,
     API:{request:async()=>({revision:2,record})},
     ChatInput:{clear(){}},ChatScreen:{think(){},thinkStep(){}},
     rememberRec(){},ResultScreen:{open(...args){shown=args;}},
   });
   vm.runInContext(script('core/conversation.js')+'\nS={id:"intake-1",revision:1};',context);
   await context.finish();
-  assert.equal(shown[0],profile);assert.equal(shown[1],guide);assert.equal(shown[2],true);assert.equal(shown[3],analysis);
+  assert.equal(shown[0],profile);assert.equal(shown[1],guide);assert.equal(shown[2],true);assert.equal(shown[3],analysis);assert.equal(shown[4],detail);
+});
+
+test('speech sections escape generated lines and evidence and keep full-script copying available',()=>{
+  const {context}=harness();
+  const detail=Object.fromEntries(['opening','listening','offer'].map(key=>[key,{excerpt:'<발화>',why:'<이유>',evidence:[null,{quote:'<원문>'},{quote:3}]}]));
+  const html=context.cards.speech(guide,detail,{copy:true});
+  for(const text of ['왜 이렇게 말하나요?','전체 발화 이어서 읽기','&lt;발화&gt;','&lt;이유&gt;','&lt;원문&gt;','id="scr"','id="cp"'])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/<원문>|<발화>|<이유>/);
+  assert.doesNotMatch(context.cards.speech(guide,detail),/id="scr"|id="cp"/,'saved record previews must not duplicate result element IDs');
+  for(const oldDetail of [undefined,null,{}, {opening:detail.opening}, {...detail,offer:{excerpt:'',why:'이유'}}]){
+    const oldHtml=context.cards.speech(guide,oldDetail);
+    assert.ok(oldHtml.includes(guide.script));
+    assert.doesNotMatch(oldHtml,/speech-step|전체 발화 이어서 읽기/);
+  }
+});
+
+test('saved speech detail, care tips, next step and collapsed history share the result card layout',()=>{
+  const {context,document}=harness();
+  const detail=Object.fromEntries(['opening','listening','offer'].map(key=>[key,{excerpt:'단계별 발화',why:'발화의 이유',evidence:[]}]));
+  context.records.renderDetail({title:'예시',date:'2026-10-11T00:00:00Z',profile,guide,conversation_detail:detail,log:[{who:'me',text:'<기록>'}]});
+  const html=document.getElementById('rdetail').innerHTML;
+  assert.match(html,/<details class="card conversation-history"><summary>대화 기록<\/summary>/);
+  assert.doesNotMatch(html,/<details[^>]*\bopen\b/);
+  for(const text of ['&lt;기록&gt;','단계별 발화','발화의 이유','class="card next"','class="two guide-actions"',...guide.care.tips,guide.next])assert.ok(html.includes(text),text);
+  assert.doesNotMatch(html,/id="scr"|id="cp"/);
+  context.result.open(profile,guide,true,analysis,detail);
+  const result=document.getElementById('rbody').innerHTML;
+  for(const text of ['단계별 발화','발화의 이유',...guide.care.tips,guide.next])assert.ok(result.includes(text),text);
+});
+
+test('copying still uses the complete speech when the visible guide has separate stages',async()=>{
+  const {context,document}=harness();let copied;
+  context.navigator.clipboard.writeText=async text=>{copied=text;};
+  const detail=Object.fromEntries(['opening','listening','offer'].map(key=>[key,{excerpt:'단계별 발화',why:'발화의 이유'}]));
+  context.result.open(profile,guide,true,analysis,detail);
+  await document.getElementById('cp').onclick();
+  assert.equal(copied,guide.script);assert.equal(document.getElementById('cp').textContent,'복사했어요');
+});
+
+test('clipboard failure opens the full speech before selecting it for manual copying',async()=>{
+  const {context,document}=harness(),full={open:false};let selected,selections=0;
+  context.navigator.clipboard.writeText=async()=>{throw new Error('clipboard unavailable');};
+  const script=document.getElementById('scr');script.closest=selector=>selector==='details'?full:null;
+  document.createRange=()=>({selectNodeContents:node=>{selected=node;}});
+  context.getSelection=()=>({removeAllRanges(){},addRange(){selections++;}});
+  context.result.open(profile,guide,true);
+  await document.getElementById('cp').onclick();
+  assert.equal(full.open,true);assert.equal(selected,script);assert.equal(selections,1);
 });

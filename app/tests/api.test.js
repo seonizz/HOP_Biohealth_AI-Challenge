@@ -1015,3 +1015,52 @@ test('an HTTP creation paused before persistence is rejected after whole-history
   await assertDeletedOwner(f, owner);
   assert.equal((await f.request(session, '/api/intakes', 'POST', {conversation_epoch:1})).status, 201);
 });
+
+test('generation progress is owner-only, shared by duplicate requests, and contains no draft text', {skip:!databaseUrl},async t=>{
+  let release,started,calls=0;
+  const entered=new Promise(resolve=>started=resolve),gate=new Promise(resolve=>release=resolve);
+  const detail={opening:{excerpt:'요즘',why:'설명',evidence:[]}};
+  const f=await fixture(t,{model:'future-31b',respond:async(_context,_memory,{onProgress})=>{
+    calls++;onProgress({stage:'speech_opening',status:'started',attempt:1});
+    onProgress({stage:'speech_opening',status:'completed',attempt:1});
+    onProgress({stage:'speech_write',status:'started',attempt:2});started();await gate;
+    return {patient_state:memory,guide,assessment:{safety:false},name_index:null,conversation_detail:detail};
+  }});
+  const a=await f.browser(),b=await f.browser(),owner=(await f.store.browser(a.cookie.slice(15))).id;
+  const row=await f.store.createIntake(owner,{...createIntake(),status:'ready'},0);
+  const path=`/api/intakes/${row.id}`;
+  const first=f.request(a,path+'/result','POST',{revision:0});await entered;
+  const status=await f.request(a,path+'/progress');
+  assert.equal(status.status,200);assert.equal(status.data.progress.completed.length,1);assert.equal(status.data.progress.attempt,2);
+  assert.equal(JSON.stringify(status.data).includes(guide.script),false);
+  assert.equal((await f.request(b,path+'/progress')).status,404);
+  const duplicate=f.request(a,path+'/result','POST',{revision:0});
+  release();const results=await Promise.all([first,duplicate]);
+  assert.equal(calls,1);assert.ok(results.every(result=>result.status===200));
+  assert.deepEqual(results[0].data.record.conversation_detail,detail);
+  assert.equal((await f.request(a,path+'/progress')).data.progress.status,'complete');
+});
+
+for (const deleted of [false,true]) test(`progress cannot survive a ${deleted?'deleted intake':'failed generation'} or restore its result`, {skip:!databaseUrl},async t=>{
+  let entered,release;
+  const started=new Promise(resolve=>entered=resolve),blocked=new Promise(resolve=>release=resolve);
+  const f=await fixture(t,{respond:async(_context,_memory,{onProgress})=>{
+    onProgress({stage:'guide_write',status:'started',attempt:1});entered();await blocked;
+    if(!deleted)throw new HttpError(502,'MODEL_INVALID_RESPONSE','다시 시도해 주세요.');
+    onProgress({stage:'guide_write',status:'completed',attempt:1});
+    return {patient_state:memory,guide,assessment:{safety:false},name_index:null};
+  }});
+  const session=await f.browser(),owner=(await f.store.browser(session.cookie.slice(15))).id;
+  const row=await f.store.createIntake(owner,{...createIntake(),status:'ready'},0),path=`/api/intakes/${row.id}`;
+  const pending=f.request(session,path+'/result','POST',{revision:0});await started;
+  try {
+    const progress=await f.request(session,path+'/progress');
+    assert.equal(progress.data.progress.status,'running');assert.deepEqual(progress.data.progress.completed,[]);
+    if(deleted)assert.equal((await f.request(session,'/api/conversations','DELETE')).status,200);
+  } finally {release();}
+  assert.equal((await pending).status,deleted?404:502);
+  const after=await f.request(session,path+'/progress');
+  if(deleted){assert.equal(after.status,404);await assertDeletedOwner(f,owner);}
+  else {assert.equal(after.data.progress.status,'idle');assert.deepEqual(after.data.progress.completed,[]);}
+  assert.deepEqual((await f.request(session,'/api/records')).data.records,[]);
+});

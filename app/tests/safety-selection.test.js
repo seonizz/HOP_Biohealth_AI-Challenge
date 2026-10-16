@@ -163,6 +163,14 @@ function pipeline(ctx, { repairAt, attackStage, attack = value => { value.safety
       if (analysisStages.has(stage)) {
         result = structuredClone(selected);
         if (stage === attackStage) attack(result);
+      } else if(stage.startsWith('card_')) {
+        const key=Object.keys(input.output_schema.properties)[0];result={[key]:guide().guide[key]};
+      } else if(/^speech_(opening|listening|offer)/u.test(stage)) result=Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'원문을 확인하며 이야기를 듣고 싶어.']));
+      else if(stage.startsWith('speech_write')) result={script:guide().guide.script};
+      else if(stage.startsWith('speech_detail')&&!stage.startsWith('speech_detail_review')) {
+        const text=data.script,n=Math.floor(text.length/3);
+        result=Object.fromEntries(['opening','listening','offer'].map((key,index)=>[key,{excerpt:text.slice(index*n,index===2?undefined:(index+1)*n),
+          why:'보고한 호칭으로 대화를 시작하는 제안이에요.',evidence:[{subject:'patient',question_id:'name',quote:'지민'}]}]));
       } else if (stage === 'analysis_review' && repairAt === 'early') result = { approved:false, issues:[issue] };
       else if (stage === 'guide_review' && repairAt === 'late') result = { approved:false, issues:[issue] };
       else if (stage.includes('review')) result = { approved:true, issues:[] };
@@ -170,6 +178,7 @@ function pipeline(ctx, { repairAt, attackStage, attack = value => { value.safety
       else if (stage.startsWith('guide_write')) result = guide();
       else if (stage.startsWith('guide_quality')) result = { improvements:[] };
       else throw new Error(`unexpected_test_stage:${stage}`);
+      if(input.output_schema.properties.audits)result.audits=data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'현재 원문 전체에 근거해요.'}));
       return new Response(JSON.stringify({ choices:[{ finish_reason:'stop', message:{ content:JSON.stringify(result) } }] }));
     } });
   return { requests, run:() => model.respond(ctx, memory()) };

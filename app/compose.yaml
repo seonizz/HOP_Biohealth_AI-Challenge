@@ -33,6 +33,8 @@ services:
       MODEL_NAME: ${MODEL_NAME:-gemma4:12b}
       MODEL_TIMEOUT_MS: ${MODEL_TIMEOUT_MS:-600000}
       MODEL_PROTOCOL: ${MODEL_PROTOCOL:-relationship_agent}
+      MODEL_AGENT_FORMAT: ${MODEL_AGENT_FORMAT:-json_schema}
+      MODEL_REASONING_EFFORT: ${MODEL_REASONING_EFFORT:-none}
     ports:
       - "127.0.0.1:${PORT:-9000}:9000"
     depends_on:

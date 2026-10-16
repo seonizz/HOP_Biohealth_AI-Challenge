@@ -11,7 +11,9 @@ const ChatScreen={
         <img class="th-img" data-m="ponder" alt="">
         <h3>말을 정리하고 있어요 <span class="dots" aria-hidden="true"><span></span><span></span><span></span></span></h3>
         <p class="th-sub">AI가 대화 내용을 처리하고 있어요. 서버 상황과 답변 길이에 따라 대기가 길어질 수 있어요.</p>
-        <ol class="th-steps"><li>들려주신 이야기를 다시 읽고 있어요</li><li>그분의 상황을 정리하고 있어요</li><li>마음이 잘 닿는 첫 문장을 고르고 있어요</li></ol>
+        <div class="th-segments" aria-hidden="true"></div>
+        <p class="th-count">완료한 단계 0개</p>
+        <ol class="th-steps"><li class="now">안내를 준비하고 있어요</li></ol>
         <div class="th-err" hidden><p>정리하는 중에 문제가 생겼어요. 답해 주신 내용은 그대로 있으니 다시 시도해 주세요.</p><button class="btn" id="thRetry">다시 시도</button></div>
       </div>
     </div>
@@ -60,12 +62,19 @@ const ChatScreen={
     $("leaveDlg").showModal();
   },
   clear(){$("log").innerHTML="";this.messages=[];this.think(false);},
-  think(on){const t=$("thinking");t.hidden=!on;if(on){t.querySelector(".th-err").hidden=true;this.thinkStep(0);}},
-  thinkStep(i){$("thinking").querySelectorAll("li").forEach((l,k)=>l.className=k<i?"done":k===i?"now":"");},
+  think(on){const t=$("thinking");t.hidden=!on;if(on){t.querySelector(".th-err").hidden=true;this.thinkProgress({completed:[],current:"안내를 준비하고 있어요",status:"running",attempt:1});}},
+  thinkProgress(p){
+    if(!p||!Array.isArray(p.completed))return;
+    const t=$("thinking"),done=p.completed,active=p.status!=="complete"&&p.status!=="failed";
+    t.querySelector(".th-segments").innerHTML=done.map(()=>'<i class="done"></i>').join("")+(active?'<i class="now"></i>':"");
+    t.querySelector(".th-count").textContent=`완료한 단계 ${done.length}개`;
+    t.querySelector(".th-steps").innerHTML=done.slice(-2).map(item=>`<li class="done">${esc(item.label)}</li>`).join("")+
+      `<li class="${p.status==="complete"?"done":active?"now":""}">${esc(p.current||"안내를 준비하고 있어요")}${active&&p.attempt>1?" · 다시 확인 중":""}</li>`;
+  },
   thinkError(retry,message="정리하는 중에 문제가 생겼어요. 답해 주신 내용은 그대로 있으니 다시 시도해 주세요."){
     const error=$("thinking").querySelector(".th-err");error.hidden=false;
     error.querySelector("p").textContent=message;
-    $("thinking").querySelectorAll("li").forEach(l=>l.className="");$("thRetry").onclick=retry;
+    $("thinking").querySelectorAll(".now").forEach(l=>l.className="");$("thRetry").onclick=retry;
   },
   // 이전 질문으로 돌아갈 때 그 뒤에 쌓인 말풍선을 지움
   count(){return $("log").children.length;},

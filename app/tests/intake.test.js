@@ -36,6 +36,21 @@ const modelOutput = (skip = [], nameIndex = null) => ({
   name_index:nameIndex, question_plan:{ skip },
 });
 
+test('urgent early completion preserves a short base report before cancelling its unanswered follow-up', () => {
+  const original=advanceTo('concern');
+  const report='죽고싶어';
+  const pending=prepareModelAnswer(original,{question_id:'concern',text:report},10);
+  assert.equal(pending.modelPending.prepared.pendingFollow.kind,'question');
+  assert.equal(buildContext(pending).patient.fields.concern.rawText,report);
+  const completed=completeModelAnswer(pending,{...modelOutput(),finish_early:true});
+  assert.equal(completed.status,'ready');assert.equal(completed.pendingFollow,null);
+  const context=buildContext(completed),field=context.patient.fields.concern;
+  assert.equal(field.status,'answered');assert.equal(field.rawText,report);
+  assert.equal(field.followUp,undefined);
+  assert.equal(context.payload.answers.find(answer=>answer.id==='concern').text,report);
+  assert.equal(completed.log.filter(row=>row.who==='me'&&row.text===report).length,1);
+});
+
 test('pending model answers preserve the current prompt while context holds the submitted evidence', () => {
   const original = createIntake();
   const input = { revision:0, question_id:'name', text:'내 동생 지수' };

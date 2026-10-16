@@ -12,6 +12,7 @@
 | `POST /api/intakes/:id/answers` | 원문 답변 저장 → 모델 상태 갱신 → 다음 질문 |
 | `POST /api/intakes/:id/back` | `{revision}`로 이전 질문 상태 복원; 첫 문항까지 반복 가능, 후속 질문에서는 본 질문 복원 |
 | `GET /api/intakes/:id/context` | `{id,revision,context}` 현재 서버 상태 |
+| `GET /api/intakes/:id/progress` | `{revision,progress}` 완료된 작성 단계 수·현재 단계·시도 번호; 소유자만 조회 |
 | `POST /api/intakes/:id/result` | `{revision}`로 실제 모델 결과 생성·저장; 완료 재시도는 기존 기록 반환 |
 | `GET /api/records` | `{records, incomplete_intakes, conversation_epoch}` 최신순 완료 기록 및 미완료 요약 |
 | `GET /api/records/:id` | `{record}` 상세 |
@@ -70,13 +71,17 @@
 
 ## 현재 관계 에이전트 프로토콜
 
-`MODEL_PROTOCOL=relationship_agent`의 상태 출력은 `patient_state`, `relationship_memory`, `name_index`, `question_plan:{skip:[]}`입니다. 모델 판단으로 질문을 자동 생략하거나 새 질문을 만들지 않습니다. 서버의 조건부 분기·후속 질문·허용된 사용자 건너뛰기는 유지합니다. 최종 결과는 기존 가이드에 `relationship_analysis`와 `provenance.agent`의 실행·검토·검색 정보를 더합니다. 단계별 출력, 근거와 저장 계약은 [관계 에이전트 계약](RELATIONSHIP_AGENT.md)을 기준으로 합니다.
+`MODEL_PROTOCOL=relationship_agent`는 원문 관찰 → 관계 메모리 → 주장별 근거 검토 → 질문 계획을 순서대로 수행합니다. 상태 출력의 `patient_state`, `relationship_memory`, `name_index`를 유지하며, 질문 계획은 같은 사람의 원문으로 이미 답한 후보만 생략하고 별도 검토를 거칩니다. 기본 문항 완료 뒤에는 서버가 정한 선택적 확인 질문 최대 3개 중 미응답 질문을 선택할 수 있습니다. 답변·모름·거절·건너뜀은 재질문하지 않으며 임의 질문을 생성하지 않습니다. 즉각적 위험에 따른 조기 종료에는 전체 원문 근거와 독립된 위험 검토를 요구합니다. 기존 조건부 분기·필수 입력·사용자 건너뛰기는 유지합니다. 최종 결과는 기존 가이드에 `relationship_analysis`, 선택적 `conversation_detail`, `provenance.agent`의 실행·검토·검색 정보를 더합니다. 단계별 출력, 근거와 저장 계약은 [관계 에이전트 계약](RELATIONSHIP_AGENT.md)을 기준으로 합니다.
 
 ## 이전 프로토콜 호환 계약
 
 아래는 현재 관계 에이전트가 아닌 `json_prompt`·`json_schema` 경로의 설명입니다. 상태 모델은 `{patient_state,name_index,question_plan:{skip:[]}}`를 JSON으로 반환하며 이 경로에서는 검증된 생략 항목을 허용합니다. 이름 인덱스는 `{alias,source_question_id:"name",quote}`이며 실제 이름 입력·후속 답변만 인용할 수 있습니다. `skip` 항목은 `{question_id,reason,explanation,evidence:[{subject,question_id,quote}]}`입니다. 현재 미응답 후보만 선택하고 `already_covered`는 이미 답한 원문 근거를 요구합니다. `not_needed`는 5개 이상 답변 이후의 선택 질문만 허용합니다. 이름·전하고 싶은 말·원인 분기 기준은 제외하고 필수 질문은 `already_covered`만 허용합니다. 결정은 `auto_skipped` 상태와 근거로 저장하며 `payload.answers`에 답변을 만들지 않습니다. 최종 내부 결과는 `{guide,patient_state,assessment,name_index}`입니다.
 
 `MODEL_PROTOCOL=json_prompt`인 학습 모델은 지원하는 텍스트 Chat Completions 필드만 사용합니다. 상태 정리는 출력 최대 2,048토큰으로 수행하고 `user_goal`은 서버 원문으로 채웁니다. 최종 가이드는 최대 4,096토큰을 예약하며, 모델 JSON의 `guide,assessment`에 검증된 상태·이름 인덱스를 결합한 뒤 동일 검증을 적용합니다. `script`는 5~8문장·약 300~500자, `doList,avoid,care.tips`는 각각 3~4개 항목을 목표로 요청하고 방법·이유·대안을 구체적으로 설명하게 합니다. 이는 생성 목표로 분량을 채우기 위한 사실 추가·반복은 금지하며, 응답 길이 자체를 새로운 실패 조건으로 삼지 않습니다. 현재 결과 화면과 저장 구조로 긴 가이드를 그대로 표시·보관합니다. 모델 입력에 전체 대화 로그를 중복 전송하지 않습니다. `json_schema`인 Ollama 경로도 최종 출력 최대 4,096토큰과 같은 상세 지침을 사용하며 JSON Schema 출력 제약을 유지합니다. 두 경로 모두 근거 없는 JSON을 저장하지 않습니다.
+
+## 생성 진행 조회
+
+최종 결과 요청과 같은 소유자·대화·revision의 실행을 조회합니다. `progress`는 `status`, `completed:[{label}]`, `current`, `attempt`만 공개하며 원문·초안·내부 추론은 보내지 않습니다. 실패한 시도에는 완료 칸을 추가하지 않습니다. 중복 결과 요청은 같은 실행과 진행 정보를 공유합니다. 완료 기록이 있으면 `complete`, 실행이 없으면 `idle`을 반환하며 서버 재시작 뒤에는 이전 실행의 진행 목록을 복원하지 않습니다. 삭제한 대화와 다른 소유자의 대화는 404입니다.
 
 ## 결과와 오류
 

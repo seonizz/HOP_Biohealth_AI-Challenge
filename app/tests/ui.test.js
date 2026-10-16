@@ -83,7 +83,7 @@ function deferred() {
 
 function conversationHarness(request, { realUI = false } = {}) {
   const document = documentWith(['start', 'chat', 'result', 'records', 'about', 'columns', 'rlist', 'rdetail', 'chatTitle', 'log', 'prog', 'sec', 'input', 'thinking', 'thRetry', 'leaveDlg', 'leaveGo', 'leaveStay', 'leaveDelete', 'leaveDeleteNotice', 'restart1']);
-  document.getElementById('thinking').innerHTML='<ol><li></li><li></li><li></li></ol><div class="th-err" hidden><p></p></div>';
+  document.getElementById('thinking').innerHTML='<div class="th-segments"></div><p class="th-count"></p><ol class="th-steps"></ol><div class="th-err" hidden><p></p></div>';
   const listeners={};
   const context = vm.createContext({
     document, window:{ scrollTo() {}, addEventListener(event,listener){listeners[event]=listener;} }, StartScreen: { updRecN() {} }, setTimeout, clearTimeout,
@@ -293,7 +293,7 @@ test('a record refresh started during deletion cannot restore the deleted record
   const records = [1, 2].map(id => ({ id, title: `기록 ${id}`, date: '2026-10-09T00:00:00Z', profile: { rel: '친구', safety: false }, guide: { top: '통합', script: '곁에 있을게요.', next: '연락해 주세요.' }, log: [] }));
   const context = vm.createContext({
     document, M: { basic: 'basic.png', hear: 'hear.png' },
-    GuideCards: { doAvoid: () => '' }, StartScreen: { updRecN() {} },
+    GuideCards: { doAvoid: () => '', speech: g => g.script, next: g => g.next }, StartScreen: { updRecN() {} },
     API: { request(path, options) { calls.push([path, options?.method || 'GET']); return options?.method === 'DELETE' ? removal.promise : refresh.promise; } },
   });
   vm.runInContext(script('core/utils.js') + script('core/store.js') + script('components/RecordsScreen.js') + '\nglobalThis.screen = RecordsScreen; globalThis.cache = { get: loadRecs, set: setRecs };', context);
@@ -748,7 +748,7 @@ for (const edit of [false, true]) {
 
 function historyHarness(request) {
   const document = documentWith(['start','chat','result','records','about','columns','rlist','rdetail']);
-  const context = vm.createContext({document,M:{basic:'basic.png',hear:'hear.png'},GuideCards:{doAvoid:()=>''},StartScreen:{updRecN(){}},API:{request}});
+  const context = vm.createContext({document,M:{basic:'basic.png',hear:'hear.png'},GuideCards:{doAvoid:()=>'',speech:g=>g.script,next:g=>g.next},StartScreen:{updRecN(){}},API:{request}});
   vm.runInContext(script('core/utils.js')+script('core/store.js')+script('components/RecordsScreen.js')+'\nglobalThis.screen=RecordsScreen;globalThis.cache={set:setHistory,records:loadRecs,incomplete:loadIncomplete};',context);
   return {document,context};
 }
@@ -919,5 +919,82 @@ for(const outcome of ['success','rejected','not-deleted']){
     await context.flow.begin();
     assert.equal(calls.at(-1)[1].conversation_epoch,outcome==='success'?3:2);
     assert.equal(context.flow.getState().id,'new-intake');
+  });
+}
+
+test('generation progress counts completed server stages without inventing retry progress',()=>{
+  const {document,context}=conversationHarness(async()=>{});
+  context.ui.think(true);
+  const root=document.getElementById('thinking');
+  assert.equal(root.querySelector('.th-count').textContent,'완료한 단계 0개');
+  assert.equal(root.querySelector('.th-segments').querySelectorAll('i').length,1);
+  context.ui.thinkProgress({status:'running',completed:[{label:'<완료>'}],current:'<검토>',attempt:2});
+  assert.equal(root.querySelector('.th-count').textContent,'완료한 단계 1개');
+  assert.equal(root.querySelector('.th-segments').querySelectorAll('i').length,2);
+  assert.equal(root.querySelector('.th-steps').querySelectorAll('검토,완료').length,0);
+  assert.match(root.querySelector('.th-steps').textContent,/&lt;검토&gt;.*다시 확인 중/);
+  context.ui.thinkProgress({status:'running',completed:[{label:'첫마디 작성'}],current:'다시 검토',attempt:3});
+  assert.equal(root.querySelector('.th-count').textContent,'완료한 단계 1개');
+  context.ui.thinkProgress({status:'complete',completed:[{label:'첫마디 작성'},{label:'근거 검토'}],current:'저장 완료'});
+  assert.equal(root.querySelector('.th-count').textContent,'완료한 단계 2개');
+  assert.equal(root.querySelector('.th-segments').querySelectorAll('i').length,2);
+  assert.equal(root.querySelectorAll('.now').length,0);
+});
+
+function controlProgressTimers(context){
+  let nextId=0;const timers=new Map();
+  context.setTimeout=(run,delay)=>{const id=++nextId;timers.set(id,{run,delay});return id;};
+  context.clearTimeout=id=>timers.delete(id);
+  return {timers,run(){const [id,timer]=timers.entries().next().value;timers.delete(id);return timer.run();}};
+}
+
+test('generation polling ignores other revisions, recovers after network errors and stops after the result',async()=>{
+  const result=deferred(),calls=[];let pollCount=0;
+  const {document,context}=conversationHarness(path=>{
+    calls.push(path);
+    if(path.endsWith('/result'))return result.promise;
+    if(++pollCount===1)return Promise.reject(new Error('temporary network failure'));
+    return Promise.resolve({revision:pollCount===2?99:1,progress:{status:'running',completed:[{label:'첫마디 작성'}],current:'다음 단계',attempt:1}});
+  });
+  const clock=controlProgressTimers(context);context.ResultScreen={open(){}};
+  context.flow.renderConversation(conversationView('친구'),0);
+  const finishing=context.flow.finish();
+  await clock.run();
+  assert.equal(document.getElementById('thinking').querySelector('.th-err').hidden,true);
+  await clock.run();
+  assert.equal(document.getElementById('thinking').querySelector('.th-count').textContent,'완료한 단계 0개');
+  await clock.run();
+  assert.equal(document.getElementById('thinking').querySelector('.th-count').textContent,'완료한 단계 1개');
+  result.resolve({revision:2,record:historyRecord});await finishing;
+  assert.equal(document.getElementById('thinking').hidden,true);assert.equal(clock.timers.size,0);
+  assert.equal(calls.filter(path=>path.endsWith('/progress')).length,3);
+  assert.equal(context.flow.loadRecs()[0],historyRecord);
+});
+
+for(const ending of ['complete','failure','leave','delete']){
+  test(`a progress response after ${ending} cannot update the guide loading state`,async()=>{
+    const result=deferred(),progress=deferred();
+    const {document,context}=conversationHarness((path,options)=>{
+      if(options?.method==='DELETE')return Promise.resolve({deleted:true,record_ids:[]});
+      return path.endsWith('/progress')?progress.promise:result.promise;
+    });
+    const clock=controlProgressTimers(context);context.ResultScreen={open(){}};
+    context.flow.renderConversation(conversationView('친구'),0);context.flow.show('chat');
+    const finishing=context.flow.finish(),polling=clock.run();
+    if(ending==='delete')await context.flow.deleteCurrentConversation();
+    else if(ending==='leave')context.flow.leaveConversation();
+    if(ending==='failure')result.reject(Object.assign(new Error('안내 준비 실패'),{status:502}));
+    else result.resolve({revision:2,record:historyRecord});
+    await finishing;
+    progress.resolve({revision:1,progress:{status:'running',completed:[{label:'늦게 도착한 단계'}],current:'늦게 도착한 진행',attempt:1}});
+    await polling;
+    assert.equal(document.getElementById('thinking').querySelector('.th-count').textContent,'완료한 단계 0개');
+    assert.doesNotMatch(document.getElementById('thinking').textContent,/늦게 도착한/);
+    assert.equal(clock.timers.size,0);
+    if(ending==='failure'){
+      assert.equal(document.getElementById('thinking').querySelector('.th-err').hidden,false);
+      assert.equal(document.getElementById('thinking').querySelectorAll('.now').length,0);
+    }
+    if(ending==='delete')assert.equal(context.flow.getState(),null);
   });
 }

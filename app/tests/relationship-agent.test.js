@@ -56,9 +56,70 @@ const assertUrgentSchema=(body,name)=>{
   assert.equal(Object.hasOwn(properties.top,'enum'),true); // Existing topic enum remains unchanged.
   assert.equal(Object.hasOwn(properties.care.properties.feel,'enum'),false);
 };
-function gateway(handler) {
-  return new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'test-only-secret',model:'gemma4:12b',protocol:'relationship_agent',diagnosticLogger:null,fetchImpl:async(_url,request)=>handler(JSON.parse(request.body))});
+function gateway(handler,{speechReview,planReview,speechWrite,supportReview,cardWrite,speechPart,detailWrite,detailReview,qualityCheck,raw=false}={}) {
+  let storedDraft,storedGuide;
+  const transportStages=[],transportInputs=[];
+  const model=new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'test-only-secret',model:'gemma4:12b',protocol:'relationship_agent',diagnosticLogger:null,fetchImpl:async(_url,request)=>{
+    const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);
+    transportStages.push(input.stage);transportInputs.push(structuredClone(input));
+    if(raw)return handler(body);
+    // Adapt historical combined-state fixtures at the transport boundary.
+    // Dedicated staged-state tests exercise the actual role contracts separately.
+    if(input.stage.startsWith('state_observations')) {
+      input.stage='state';body.messages.at(-1).content=JSON.stringify(input);
+      const response=await handler(body);if(!response.ok)return response;
+      const json=await response.clone().json();
+      storedDraft=JSON.parse(json.choices[0].message.content);
+      return envelope({patient_state:storedDraft.patient_state,name_index:storedDraft.name_index});
+    }
+    if(input.stage.startsWith('relationship_memory'))return envelope({relationship_memory:storedDraft.relationship_memory});
+    if(input.stage.startsWith('guide_quality_check'))return envelope(qualityCheck?qualityCheck(input):{improvements:[]});
+    if(input.stage.startsWith('card_')){
+      const key=Object.keys(input.output_schema.properties)[0];
+      return envelope(cardWrite?cardWrite(input):{[key]:storedGuide[key]});
+    }
+    if(/^speech_(opening|listening|offer)/u.test(input.stage))return envelope(speechPart?speechPart(input):Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'원문을 확인하고 이야기를 듣고 싶어.'])));
+    if(input.stage.startsWith('speech_detail_review'))return envelope(detailReview?detailReview(input):{approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'원문에 근거한 제안입니다.'}))});
+    if(input.stage.startsWith('speech_detail')){
+      const text=input.data.script,n=Math.floor(text.length/3);
+      return envelope(detailWrite?detailWrite(input):Object.fromEntries(['opening','listening','offer'].map((key,i)=>[key,{excerpt:text.slice(i*n,i===2?undefined:(i+1)*n),why:'보고한 행동을 되짚으며 듣고 싶다는 뜻을 전하는 제안이에요.',evidence:[ref()]}])));
+    }
+    if(input.stage.startsWith('speech_write'))return envelope(speechWrite?speechWrite(input):{script:storedGuide?.script||guide().guide.script});
+    if(input.stage.startsWith('plan_review'))return envelope(planReview?planReview(input):{approved:true,issues:[]});
+    if(input.stage.startsWith('support_review'))return envelope({...(supportReview?supportReview(input):{approved:true,issues:[]}),
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'이용자의 보고와 일치'}))});
+    if(input.stage.startsWith('speech_review'))return envelope({...(speechReview?speechReview(input):{approved:true,issues:[]}),
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'관찰과 열린 질문입니다.'}))});
+    if(input.stage.startsWith('state_review'))return envelope({approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:claim.certainty==='reported'?'supported':'plausible',reason:'합성 원문과 일치해요.'}))});
+    const response=await handler(body);
+    if(response.ok&&input.stage.startsWith('guide_repair')&&!input.output_schema.properties.guide){
+      const reply=await response.clone().json(),value=JSON.parse(reply.choices[0].message.content);
+      const key=Object.keys(input.output_schema.properties)[0];
+      return envelope(value.guide?{[key]:value.guide[key]}:value);
+    }
+    if(response.ok&&/^guide_(write|refine|repair)/u.test(input.stage)){
+      const json=await response.clone().json();storedGuide=JSON.parse(json.choices[0].message.content).guide;
+    }
+    if(input.stage.startsWith('analysis_review')&&response.ok){
+      const json=await response.clone().json(),review=JSON.parse(json.choices[0].message.content);
+      review.audits=input.data.claims.map(claim=>({id:claim.id,verdict:claim.certainty==='reported'?'supported':'plausible',reason:'합성 원문과 일치해요.'}));
+      return envelope(review);
+    }
+    return response;
+  }});
+  model.transportStages=transportStages;model.transportInputs=transportInputs;
+  return model;
 }
+
+// State-boundary tests exercise the separate observation and memory wire contracts.
+function stateGateway(handler) {
+  return gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('state_review'))return envelope({approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'합성 원문에 근거해요.'}))});
+    return handler(body,input);
+  },{raw:true});
+}
+const observationPayload=raw=>({patient_state:raw.patient_state,name_index:raw.name_index});
 
 test('final analysis, quality and critical reviews use the same current evidence and preserve the existing guide contract',async()=>{
   const stages=[];
@@ -78,7 +139,7 @@ test('final analysis, quality and critical reviews use the same current evidence
   assert.deepEqual(stages,['relationship_analysis','analysis_review','communication_plan','guide_write','guide_quality','guide_review']);
   assert.deepEqual(result.guide,guide().guide);assert.deepEqual(result.relationship_analysis,canonicalAnalysis(analysis()));
   assert.equal(result.agent.reviewed,true);assert.deepEqual(result.patient_state,canonicalPatientState(memory(),context()));
-  assert.deepEqual(result.agent.retrieval.stages.map(row=>row.stage),stages);
+  assert.deepEqual(result.agent.retrieval.stages.map(row=>row.stage),model.transportStages);
   assert.equal(JSON.stringify(result.agent.retrieval).includes('밤에 계획표'),false);
 });
 const requestContainsSecret=input=>JSON.stringify(input).includes('test-only-secret');
@@ -187,7 +248,8 @@ test('every state turn reads all current answers and the verified previous relat
   });
   const result=await model.updateState(ctx,memory());
   assert.ok(observed.patient.some(row=>row.question_id==='early'));
-  assert.deepEqual(observed.prior_relationship_memory,canonicalRelationshipMemory(relationshipMemory(),ctx));
+  assert.equal(Object.hasOwn(observed,'prior_relationship_memory'),false);
+  assert.deepEqual(model.transportInputs.find(input=>input.stage==='relationship_memory').data.prior_relationship_memory,canonicalRelationshipMemory(relationshipMemory(),ctx));
   assert.deepEqual(result.relationship_memory,canonicalRelationshipMemory(relationshipMemory(),ctx));
   ctx.patient.fields.mood.status='unknown';
   assert.equal(agentContext(ctx).prior_relationship_memory,null);
@@ -363,7 +425,7 @@ test('a late analysis problem rebuilds the plan, guide and reviewed memory from 
   const operations=[],complete=model.agentComplete.bind(model);
   model.agentComplete=(...args)=>{operations.push(args[5]);return complete(...args);};
   const result=await model.respond(ctx,memory());
-  assert.equal(operations.length,stages.length);
+  assert.equal(operations.length,model.transportStages.length);
   assert.ok(operations.every(operation=>operation===operations[0]));
   assert.deepEqual(stages,Object.keys(outputs));
   assert.deepEqual(result.guide,revisedGuide.guide);
@@ -478,20 +540,22 @@ test('state generation accepts only raw facts and reported evidence while the se
   const tentative={...finding(),evidence:[{subject:'patient',question_id:'mood',quote}]};
   raw.relationship_memory.patient.push(tentative);raw.relationship_memory.relationship=[tentative];
   let calls=0;
-  const model=gateway(body=>{
-    calls++;const schema=body.response_format.json_schema.schema;
-    assert.deepEqual(schema.properties.patient_state.required,['facts','unknowns']);
-    for(const variant of schema.properties.patient_state.properties.facts.items.anyOf) {
-      assert.equal(Object.hasOwn(variant.properties,'interpretation'),false);
+  const model=stateGateway((body,input)=>{
+    calls++;const schema=input.output_schema;
+    if(input.stage==='state_observations'){
+      assert.deepEqual(schema.properties.patient_state.required,['facts','unknowns']);
+      for(const variant of schema.properties.patient_state.properties.facts.items.anyOf)assert.equal(Object.hasOwn(variant.properties,'interpretation'),false);
+      return envelope(validateSchema(observationPayload(raw),schema));
     }
+    assert.equal(input.stage,'relationship_memory');
     const variants=schema.properties.relationship_memory.properties.patient.items.anyOf;
     assert.deepEqual(variants[0].required,['evidence','certainty']);
     assert.deepEqual(variants[1].required,['interpretation','evidence','certainty']);
-    assert.deepEqual(validateSchema(raw,schema),raw);
-    return envelope(raw);
+    return envelope(validateSchema({relationship_memory:raw.relationship_memory},schema));
   });
   const result=await model.updateState(ctx,null);
-  assert.equal(calls,1);
+  assert.equal(calls,2);
+  assert.deepEqual(result.state_agent.stages,['state_observations','relationship_memory','state_review']);
   const literal='이용자가 대상자에 관해 보고한 답변 원문:\n“'+quote+'”';
   assert.equal(result.patient_state.summary,literal);
   assert.equal(result.patient_state.facts[0].interpretation,literal);
@@ -503,18 +567,19 @@ test('state generation accepts only raw facts and reported evidence while the se
 });
 
 test('generated free summaries, fact interpretations and expanded reported findings cannot bypass the draft boundary',async()=>{
-  for(const mutate of [
-    raw=>{raw.patient_state.summary='불안 증세와 반복 확인이 관찰됐어요.';},
-    raw=>{raw.patient_state.facts[0].interpretation='불안 증세와 반복 확인이 관찰됐어요.';},
-    raw=>{raw.relationship_memory.patient[0].interpretation='불안 증세와 반복 확인이 관찰됐어요.';},
+  for(const [target,mutate] of [
+    ['state_observations',raw=>{raw.patient_state.summary='불안 증세와 반복 확인이 관찰됐어요.';}],
+    ['state_observations',raw=>{raw.patient_state.facts[0].interpretation='불안 증세와 반복 확인이 관찰됐어요.';}],
+    ['relationship_memory',raw=>{raw.relationship_memory.patient[0].interpretation='불안 증세와 반복 확인이 관찰됐어요.';}],
   ]) {
-    const raw=stateDraft();mutate(raw);let calls=0;
-    const model=gateway(body=>{
-      calls++;assert.throws(()=>validateSchema(raw,body.response_format.json_schema.schema),{modelReason:'agent_schema'});
-      return envelope(raw);
+    const raw=stateDraft();mutate(raw);let attempts=0;
+    const model=stateGateway((body,input)=>{
+      const value=input.stage==='state_observations'?observationPayload(raw):{relationship_memory:raw.relationship_memory};
+      if(input.stage===target){attempts++;assert.throws(()=>validateSchema(value,input.output_schema),{modelReason:'agent_schema'});}
+      return envelope(value);
     });
     await assert.rejects(model.updateState(context(),memory()),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema'});
-    assert.equal(calls,3);
+    assert.equal(attempts,3);
   }
 });
 
@@ -560,18 +625,17 @@ test('latest selected labels plus maximum custom text retain source without spli
 test('corrected current risk denial is retained literally and old affirmative state cannot survive source validation',async()=>{
   const ctx=context();ctx.latest_answer={subject:'patient',question_id:'mood'};
   const old=stateDraft(ctx),denial='과거에 자해 이야기를 했지만 지금은 그런 생각이 전혀 없다고 말했어요.';
-  ctx.patient.fields.mood=field('mood',denial);
-  ctx.relationship_state=null;
-  const fresh=stateDraft(ctx);
-  fresh.patient_state.facts[0].quote=denial;
-  fresh.relationship_memory.patient[0].evidence[0].quote=denial;
+  ctx.patient.fields.mood=field('mood',denial);ctx.relationship_state=null;
+  const fresh=stateDraft(ctx);fresh.patient_state.facts[0].quote=denial;fresh.relationship_memory.patient[0].evidence[0].quote=denial;
   let calls=0;
-  const model=gateway(body=>{
-    calls++;
-    const input=JSON.parse(body.messages[1].content);
-    assert.equal(input.data.prior_state,null);
+  const model=stateGateway((body,input)=>{
+    assert.equal(Object.hasOwn(input.data,'prior_state'),false);
     assert.deepEqual(input.data.latest_answer.answers.map(row=>row.text),[denial]);
-    return envelope(calls===1?old:fresh);
+    if(input.stage==='relationship_memory'){
+      assert.equal(input.data.prior_relationship_memory,null);
+      return envelope({relationship_memory:fresh.relationship_memory});
+    }
+    calls++;return envelope(observationPayload(calls===1?old:fresh));
   });
   const result=await model.updateState(ctx,memory());
   assert.equal(calls,2);
@@ -684,6 +748,7 @@ test('an explicitly selected consultation goal cannot disappear from the spoken 
     if(input.stage==='relationship_analysis')return fixtureEnvelope(analysis());
     if(input.stage==='analysis_review')return fixtureEnvelope({approved:true,issues:[]});
     if(input.stage==='communication_plan')return fixtureEnvelope(plan());
+    if(input.stage==='guide_quality')return envelope({improvements:[]});
     assert.equal(input.stage,'guide_write');return fixtureEnvelope(guide());
   });
   await assert.rejects(model.respond(ctx,memory()),{modelReason:'agent_goal_missing'});
@@ -705,29 +770,27 @@ test('an unreported clinical or personality label cannot replace a cited observa
 test('STATE retries unsupported labels with literal reports and keeps the failed attempt without narrowing later calls',async()=>{
   const ctx=context();ctx.latest_answer={subject:'supporter',question_id:'feeling'};
   let calls=0;const trace=[];
-  const model=gateway(body=>{
-    const input=JSON.parse(body.messages[1].content),raw=stateDraft(ctx);
-    const schema=body.response_format.json_schema.schema;
-    assert.deepEqual(input.output_schema,schema);
-    calls++;
-    if(calls===1) {
-      raw.relationship_memory.patient=[{...finding(),interpretation:'완벽주의 성향이 있어요.'}];
-    } else if(calls===2) {
+  const model=stateGateway((body,input)=>{
+    const raw=stateDraft(ctx),schema=input.output_schema;
+    if(input.stage==='state_observations')return envelope(observationPayload(raw));
+    assert.equal(input.stage,'relationship_memory');calls++;
+    if(calls===1)raw.relationship_memory.patient=[{...finding(),interpretation:'완벽주의 성향이 있어요.'}];
+    else if(calls===2){
       const memorySchema=schema.properties.relationship_memory.properties;
       assert.equal(memorySchema.relationship.maxItems,0);
       assert.deepEqual(memorySchema.patient.items.properties.certainty.enum,['reported']);
       assert.equal(Object.hasOwn(memorySchema.patient.items.properties,'interpretation'),false);
       assert.ok(body.messages[0].content.includes('이전 가설을 사실로 바꾸지'));
-    } else {
+    }else{
       assert.equal(schema.properties.relationship_memory.properties.relationship.maxItems,2);
       raw.relationship_memory.relationship=[finding()];
     }
-    return envelope(raw);
+    return envelope({relationship_memory:raw.relationship_memory});
   });
   model.diagnosticLogger=entry=>trace.push(entry);
   const recovered=await model.updateState(ctx);
   assert.equal(calls,2);
-  assert.deepEqual(trace.map(row=>row.reason),['agent_unreported_label','success']);
+  assert.deepEqual(trace.filter(row=>row.generation==='relationship_memory').map(row=>row.reason),['agent_unreported_label','success']);
   assert.equal(recovered.relationship_memory.relationship.length,0);
   assert.ok(recovered.patient_state.facts.some(fact=>fact.subject==='supporter'&&fact.quote==='무력하고 걱정돼요'));
   assert.equal(JSON.stringify(recovered).includes('완벽주의'),false);
@@ -736,14 +799,16 @@ test('STATE retries unsupported labels with literal reports and keeps the failed
 });
 
 test('literal STATE recovery still rejects ignored schema constraints and fabricated source quotes',async()=>{
-  for(const invalidRetry of ['hypothesis','quote']) {
+  for(const invalidRetry of ['hypothesis','quote']){
     let calls=0;
-    const model=gateway(()=>{
-      const raw=stateDraft();calls++;
+    const model=stateGateway((body,input)=>{
+      const raw=stateDraft();
+      if(input.stage==='state_observations')return envelope(observationPayload(raw));
+      calls++;
       if(calls===1)raw.relationship_memory.patient=[{...finding(),interpretation:'강박적인 행동이에요.'}];
       else if(invalidRetry==='hypothesis')raw.relationship_memory.relationship=[finding()];
       else raw.relationship_memory.patient[0].evidence[0].quote='원문에 없는 답변';
-      return envelope(raw);
+      return envelope({relationship_memory:raw.relationship_memory});
     });
     await assert.rejects(model.updateState(context()),{modelReason:'agent_schema'});
     assert.equal(calls,3);
@@ -753,22 +818,24 @@ test('literal STATE recovery still rejects ignored schema constraints and fabric
 test('a JSON failure during literal STATE recovery retains the reduced schema and empty evidence groups',async()=>{
   const ctx=context();ctx.supporter.fields={};
   let calls=0;const trace=[];
-  const model=gateway(body=>{
-    calls++;const raw=stateDraft(ctx);
+  const model=stateGateway((body,input)=>{
+    const raw=stateDraft(ctx);
+    if(input.stage==='state_observations')return envelope(observationPayload(raw));
+    calls++;
     if(calls===1)raw.relationship_memory.patient=[{...finding(),interpretation:'강박적인 행동이에요.'}];
-    else {
-      const memorySchema=body.response_format.json_schema.schema.properties.relationship_memory.properties;
+    else{
+      const memorySchema=input.output_schema.properties.relationship_memory.properties;
       assert.equal(memorySchema.supporter.maxItems,0);
       assert.equal(memorySchema.relationship.maxItems,0);
       assert.deepEqual(memorySchema.patient.items.properties.certainty.enum,['reported']);
       if(calls===2)return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:'{invalid'}}]}));
     }
-    return envelope(raw);
+    return envelope({relationship_memory:raw.relationship_memory});
   });
   model.diagnosticLogger=entry=>trace.push(entry);
   const result=await model.updateState(ctx);
   assert.equal(calls,3);
-  assert.deepEqual(trace.map(row=>row.reason),['agent_unreported_label','content_json','success']);
+  assert.deepEqual(trace.filter(row=>row.generation==='relationship_memory').map(row=>row.reason),['agent_unreported_label','content_json','success']);
   assert.deepEqual(result.relationship_memory.supporter,[]);
   assert.deepEqual(result.relationship_memory.relationship,[]);
 });
@@ -1089,4 +1156,264 @@ test('urgent quality refinement can change care feelings but cannot change the t
     return envelope(changed);
   });
   await assert.rejects(model.respond(ctx,memory()),{modelReason:'agent_schema'});
+});
+
+
+test('an unsupported label retry receives the exact rejected claim and source rather than a generic schema error',async()=>{
+  let attempts=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages[1].content),stage=input.stage;
+    if(stage==='relationship_analysis'){
+      attempts++;
+      if(attempts===1){const bad=analysis();bad.relationship.dynamics[0].interpretation='가능한 해석: 완벽주의일 수 있어요.';return fixtureEnvelope(bad);}
+      assert.match(input.validation_feedback,/완벽주의/);assert.match(input.validation_feedback,/밤에 계획표를 고쳐요/);
+      return fixtureEnvelope(analysis());
+    }
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:guide());
+  });
+  await model.respond(context(),memory());assert.equal(attempts,2);
+});
+
+test('speech is reviewed separately and rejected wording is repaired before the final review',async()=>{
+  const stages=[];
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages[1].content).stage;stages.push(stage);
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    if(stage.includes('review'))return envelope({approved:true,issues:[]});
+    return envelope(guide());
+  },{speechReview:input=>{
+    stages.push(input.stage);
+    assert.equal(input.data.script,guide().guide.script);
+    return input.stage==='speech_review'
+      ?{approved:false,issues:[{field:'script',reason:'발화문을 더 자연스럽게 해주세요.',repair:'직접 건넬 말을 쓰세요.'}]}
+      :{approved:true,issues:[]};
+  }});
+  await model.respond(context(),memory());
+  assert.deepEqual(stages.slice(-4),['speech_review','guide_repair','speech_review_after_repair','guide_review_after_repair']);
+});
+
+test('claim review covers action cards as well as the script and repairs preserve other validated cards',async()=>{
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages[1].content),stage=input.stage;
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    if(stage==='guide_repair'){
+      assert.deepEqual(Object.keys(body.response_format.json_schema.schema.properties),['doList']);
+      const repaired=guide();repaired.guide.doList=['어떤 도움이 필요한지 먼저 물어보세요.'];return envelope(repaired);
+    }
+    return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:guide());
+  },{speechReview:input=>{
+    assert.deepEqual(new Set(input.data.claims.map(claim=>claim.field)),new Set(['script','doList','avoid','next','care']));
+    return input.stage==='speech_review'?{approved:false,issues:[{field:'doList',reason:'마음을 아는 것처럼 말하지 마세요.',repair:'어떤 도움이 필요한지 물어보세요.'}]}:{approved:true,issues:[]};
+  }});
+  const result=await model.respond(context(),memory());
+  assert.equal(result.guide.script,guide().guide.script);
+  assert.deepEqual(result.guide.doList,['어떤 도움이 필요한지 먼저 물어보세요.']);
+});
+
+test('a model approval cannot override an observed mind-reading failure in an action card',async()=>{
+  for(const fixes of [true,false]){
+    const model=gateway(body=>{
+      const stage=JSON.parse(body.messages[1].content).stage;
+      if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+      if(stage==='communication_plan')return envelope(plan());
+      if(stage==='guide_quality')return envelope({improvements:[]});
+      if(stage.includes('review'))return envelope({approved:true,issues:[]});
+      const draft=guide();
+      if(!fixes||stage==='guide_write')draft.guide.doList=['“완벽하게 해내고 싶어서 애쓰고 있구나”라고 말해주세요.'];
+      return envelope(draft);
+    });
+    if(fixes)assert.ok((await model.respond(context(),memory())).agent.stages.includes('guide_repair'));
+    else await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_speech_specific'});
+  }
+});
+
+test('a verified name is optional but spoken text cannot refer to the listener as an unknown third person',async()=>{
+  for(const genericName of [null,'그분']){
+  const ctx=context();ctx.name_index=null;
+  if(genericName){ctx.patient.alias=genericName;ctx.patient.fields.name=field('name',genericName);ctx.name_index={alias:genericName,source_question_id:'name',quote:genericName};}
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages[1].content).stage;
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:guide());
+  },{speechWrite:input=>{assert.equal(input.data.alias,null);return {script:'저는 그분이 어떤지 알고 싶어서 연락했어요.'};}});
+  await assert.rejects(model.respond(ctx,memory()),{modelReason:'agent_speech_address'});
+  }
+});
+
+test('spoken text cannot repeat the same immediate conversation-permission question',async()=>{
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages[1].content).stage;
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:guide());
+  },{speechWrite:()=>({script:'지금 잠시 이야기 나눌 수 있을까요? 요즘 어떤지 듣고 싶어요. 혹시 지금 대화 나누기 괜찮으신가요?'})});
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_speech_repeat'});
+});
+
+test('known mind-reading wording cannot pass even when model reviewers would approve it',async()=>{
+  let attempts=0;
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages[1].content).stage;
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='analysis_review')return envelope({approved:true,issues:[]});
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    assert.equal(stage,'guide_write');return envelope(guide());
+  },{speechWrite:()=>{attempts++;return {script:'완벽하게 하고 싶은 마음 때문에 힘든 거야.'};}});
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_script_inference'});
+  assert.equal(attempts,3);
+});
+
+test('a flawed communication strategy is repaired and independently reviewed before writing',async()=>{
+  for(const acceptsRepair of [true,false]){
+    const stages=[];
+    const model=gateway(body=>{
+      const stage=JSON.parse(body.messages[1].content).stage;stages.push(stage);
+      if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+      if(stage.startsWith('communication_plan'))return envelope(plan());
+      if(stage==='guide_quality')return envelope({improvements:[]});
+      if(stage.includes('review'))return envelope({approved:true,issues:[]});
+      return envelope(guide());
+    },{planReview:input=>{
+      stages.push(input.stage);
+      return acceptsRepair&&input.stage==='plan_review_after_repair'?{approved:true,issues:[]}:
+        {approved:false,issues:[{field:'patient_choice',reason:'상대의 반응을 예측했어요.',repair:'선택 가능한 제안으로 쓰세요.'}]};
+    }});
+    if(acceptsRepair){
+      await model.respond(context(),memory());
+      assert.ok(stages.indexOf('plan_review_after_repair')<stages.indexOf('guide_write'));
+    }else{
+      await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_plan_review_rejected'});
+      assert.equal(stages.includes('guide_write'),false);
+    }
+    assert.equal(stages.filter(stage=>stage==='communication_plan_repair').length,1);
+  }
+});
+
+test('quality refinement is checked again and unresolved errors cannot become a saved guide',async()=>{
+  const stages=[];
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages[1].content).stage;stages.push(stage);
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='analysis_review')return envelope({approved:true,issues:[]});
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality'||stage==='guide_quality_check')return envelope({improvements:[{field:'doList',reason:'실행할 방법이 없어요.',repair:'구체적인 방법을 제시하세요.'}]});
+    return envelope(guide());
+  },{qualityCheck:input=>{stages.push(input.stage);return {improvements:[{field:'doList',reason:'실행할 방법이 없어요.',repair:'구체적인 방법을 제시하세요.'}]};}});
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_quality_review_rejected'});
+  assert.deepEqual(stages.slice(-2),['guide_refine','guide_quality_check']);
+  assert.equal(stages.includes('guide_review'),false);
+});
+
+test('dedicated support review catches caregiver facts missed by the full review and rechecks repaired cards',async()=>{
+  let reviews=0;
+  const draft=guide();draft.guide.care.feel='혼자 모두 돌보고 계시네요.';
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages[1].content),stage=input.stage;
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    if(stage==='guide_repair'){
+      assert.deepEqual(Object.keys(body.response_format.json_schema.schema.properties),['care']);
+      return envelope(guide());
+    }
+    return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:draft);
+  },{supportReview:input=>{
+    reviews++;
+    assert.deepEqual(new Set(input.data.claims.map(c=>c.field)),new Set(['next','care']));
+    assert.ok(input.data.answers.supporter.length>0);
+    return reviews===1?{approved:false,issues:[{field:'care',reason:'혼자 돌본다는 원문이 없습니다.',repair:'표현한 감정에만 공감하세요.'}]}:{approved:true,issues:[]};
+  }});
+  const result=await model.respond(context(),memory());
+  assert.equal(reviews,2);assert.equal(result.guide.care.feel,guide().guide.care.feel);
+  assert.ok(result.agent.stages.includes('support_review_after_repair'));
+});
+
+test('speech retry receives the rejected sentence and keeps the explicit speaker contract',async()=>{
+  let writes=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages[1].content),stage=input.stage;
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:guide());
+  },{speechWrite:input=>{
+    writes++;
+    assert.equal(input.data.speech_contract.speaker.startsWith('supporter'),true);
+    if(writes===1)return {script:'네 곁에 항상 있을게.'};
+    assert.ok(input.validation_feedback.includes('네 곁에 항상 있을게.'));
+    assert.ok(input.validation_feedback.includes('상시 지원'));
+    return {script:guide().guide.script};
+  }});
+  const result=await model.respond(context(),memory());
+  assert.equal(writes,2);assert.equal(result.guide.script,guide().guide.script);
+});
+
+test('dedicated card writers and speech parts reach integration before final grounded explanation',async()=>{
+  const seen=[],events=[];
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  const model=gateway(body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]),{
+    cardWrite:input=>{const key=Object.keys(input.output_schema.properties)[0];seen.push(key);return {[key]:guide().guide[key]};},
+    speechPart:input=>{seen.push(input.stage);assert.ok(input.data.answers.patient.length);return Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,key+' 발화']));},
+    speechWrite:input=>{assert.deepEqual(Object.keys(input.data.parts),['opening','listening','offer']);assert.ok(input.data.answers.supporter.length);return {script:guide().guide.script};},
+  });
+  const result=await model.respond(context(),memory(),{onProgress:event=>events.push(event)});
+  assert.deepEqual(seen,['care','doList','avoid','next','speech_opening','speech_listening','speech_offer']);
+  assert.equal(Object.values(result.conversation_detail).map(item=>item.excerpt).join(''),result.guide.script);
+  assert.ok(result.agent.stages.indexOf('speech_detail')>result.agent.stages.indexOf('guide_review'));
+  assert.equal(events.filter(event=>event.status==='completed').length,result.agent.stages.length);
+  assert.equal(events.at(-1).stage,'speech_detail_review');
+  assert.ok(events.every(event=>Object.keys(event).sort().join(',')==='attempt,stage,status'));
+});
+
+test('explanation cannot publish an invented excerpt or survive two rejected reviews',async()=>{
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  const handler=body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]);
+  const bad=gateway(handler,{detailWrite:()=>Object.fromEntries(['opening','listening','offer'].map(key=>[key,{excerpt:'원문에 없는 발화',why:'설명',evidence:[ref()]}]))});
+  await assert.rejects(bad.respond(context(),memory()),{modelReason:'agent_detail_excerpt'});
+  let reviews=0;
+  const rejected=gateway(handler,{detailReview:input=>{reviews++;return {approved:false,issues:['설명에 확인되지 않은 감정이 추가됐어요.'],audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'근거 밖 해석입니다.'}))};}});
+  await assert.rejects(rejected.respond(context(),memory()),{modelReason:'agent_detail_review_rejected'});
+  assert.equal(reviews,2);
+});
+
+test('a vague help offer retries with the exact rejected speech and the selected treatment intent',async()=>{
+  const c=context();c.user_goal.desired_outcomes={...field('goal','상담이나 진료를 권하고 싶어요'),selected:[{label:'상담이나 진료를 권하고 싶어요',meta:{t:'goal_treat'}}]};
+  let attempts=0;
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  const model=gateway(body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]),{speechWrite:input=>{
+    attempts++;
+    assert.match(input.data.task,/상담 또는 진료/);
+    if(attempts===1)return {script:'원하면 도움을 받을 곳을 같이 알아볼까?'};
+    assert.ok(input.validation_feedback.includes('원하면 도움을 받을 곳을 같이 알아볼까?'));
+    return {script:'요즘 어떤 점이 걱정되는지 듣고 싶어. 원하면 상담을 함께 알아볼까?'};
+  }});
+  const result=await model.respond(c,memory());assert.equal(attempts,2);assert.match(result.guide.script,/상담/);
+});
+
+
+test('analysis audits cannot omit claims or approve unsupported interpretations before planning',async()=>{
+  for(const [kind,reason] of [['missing','agent_schema'],['unsupported','agent_claim_audit']]){
+    const stages=[];
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages.at(-1).content);stages.push(input.stage);
+      if(input.stage==='relationship_analysis')return fixtureEnvelope(analysis());
+      assert.equal(input.stage,'analysis_review');
+      const review={approved:true,issues:[]};
+      if(kind==='unsupported')review.audits=input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'인용이 해석을 뒷받침하지 않아요.'}));
+      return envelope(review);
+    },{raw:true});
+    await assert.rejects(model.respond(context(),memory()),{modelReason:reason});
+    assert.equal(stages.filter(stage=>stage==='analysis_review').length,3);
+    assert.equal(stages.includes('communication_plan'),false);
+  }
 });
