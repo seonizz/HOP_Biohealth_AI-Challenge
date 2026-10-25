@@ -13,7 +13,8 @@ function loadOriginal(files, expression) {
   });
 }
 
-const original = loadOriginal(['utils.js'], '({ josa })');
+const original = loadOriginal(['utils.js'], '({ josa, hasAnswerContent })');
+export const hasAnswerContent = original.hasAnswerContent;
 // Used by isolated tests and pre-migration intakes. New HTTP intakes require a DB snapshot.
 export const questions = initialQuestionSet.questions;
 export const optLabel = option => Array.isArray(option) ? option[0] : option;

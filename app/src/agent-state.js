@@ -1,4 +1,5 @@
 import { HttpError } from './errors.js';
+import { hasAnswerContent } from './catalog.js';
 
 const invalid = () => { throw new HttpError(502, 'MODEL_INVALID_RESPONSE', '모델의 답변을 확인하지 못했어요. 다시 시도해 주세요.'); };
 
@@ -26,7 +27,7 @@ export function contextGoal(context) {
 function sourceTexts(field) {
   const values = [field.rawText, field.text, field.custom];
   if (field.followUp?.answer) values.push(field.followUp.answer.rawText, field.followUp.answer.text, field.followUp.answer.custom);
-  return values.filter(value => typeof value === 'string' && value.trim());
+  return values.filter(value => typeof value === 'string' && hasAnswerContent(value));
 }
 
 // Evidence is validated against current persisted answers, never against prior model memory.
@@ -62,7 +63,7 @@ export function validateStateResult(value, context) {
 
 export function nameSourceTexts(field) {
   return [field?.rawText, field?.followUp?.answer?.rawText, field?.followUp?.answer?.custom]
-    .filter(value => typeof value === 'string' && value.trim());
+    .filter(value => typeof value === 'string' && hasAnswerContent(value));
 }
 
 export function validateNameIndex(value, context) {

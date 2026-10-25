@@ -5,10 +5,37 @@ const GuideCards={
     <h3>대화보다 안전이 먼저예요</h3>
     <p>죽고 싶다거나 사라지고 싶다는 신호가 있었다고 알려 주셨어요. 말씀해 주셔서 정말 고마워요. 이건 혼자 감당하지 않으셔도 돼요.</p>
     <ul><li>자살예방 상담전화 <b>109</b> (24시간)</li><li>정신건강위기 상담전화 <b>1577-0199</b></li><li>지금 위험하다면 <b>112 / 119</b></li></ul></div></div>`,
-  list:items=>`<ul>${items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`,
+  list:items=>`<ul>${items.map(x=>`<li style="white-space:pre-wrap">${esc(x)}</li>`).join("")}</ul>`,
+  tips:items=>Array.isArray(items)&&items.length?`<p class="tips">${esc(items[0])}</p>`:"",
+  care(value){return `<div class="card care"><img src="${M.empathy}" alt=""><div><h3 style="margin-bottom:6px">당신의 마음도 소중해요</h3><p>${esc(value.feel)}</p>${this.tips(value.tips)}</div></div>`;},
+  action(id,value){return `<div class="card ${id==='doList'?'do':'avoid'}"><h3>${id==='doList'?'이렇게 해 보세요':'피하면 좋아요'}</h3>${this.list(value)}</div>`;},
+  partial(card,{care}={}){
+    if(card.id==='care')return this.care(card.value);
+    if(card.id==='doList'||card.id==='avoid')return this.action(card.id,card.value);
+    if(card.id==='next')return this.next({next:card.value,care});
+    if(card.id==='script')return this.speech({script:card.value},card.detail,{copy:true,ids:false});
+    if(card.id==='relationship')return this.relationship(card.value);
+    return "";
+  },
+  speech(g,detail,{copy=false,ids=true}={}){
+    return `<div class="card script"><h3>이렇게 시작해 보세요</h3>${copy?`<button class="copy"${ids?' id="cp"':""} type="button">⧉ 문장 복사</button>`:""}
+      <div class="speech-text"${copy&&ids?' id="scr"':""} style="white-space:pre-wrap">${esc(g.script)}</div></div>`;
+  },
+  bindCopy(root,script){
+    const button=root.querySelector(".copy"),text=root.querySelector(".speech-text");
+    if(!button||!text)return;
+    button.onclick=()=>Promise.resolve().then(()=>navigator.clipboard.writeText(script)).then(
+      ()=>{button.textContent="복사했어요";},
+      ()=>{const range=document.createRange();range.selectNodeContents(text);getSelection().removeAllRanges();getSelection().addRange(range);}
+    );
+  },
   doAvoid(g,{wrapStyle="",doStyle=""}={}){
-    return `<div class="two"${wrapStyle?` style="${wrapStyle}"`:""}><div class="card do"${doStyle?` style="${doStyle}"`:""}><h3>이렇게 해 보세요</h3>${this.list(g.doList)}</div>
+    return `<div class="two guide-actions"${wrapStyle?` style="${wrapStyle}"`:""}><div class="card do"${doStyle?` style="${doStyle}"`:""}><h3>이렇게 해 보세요</h3>${this.list(g.doList)}</div>
     <div class="card avoid"><h3>피하면 좋아요</h3>${this.list(g.avoid)}</div></div>`;
+  },
+  next(g){
+    const tips=Array.isArray(g.care?.tips)?g.care.tips.slice(1):[];
+    return `<div class="card next"><img src="${M.think}" alt=""><div><h3 style="margin-bottom:4px">다음 단계</h3><p style="margin:0;white-space:pre-wrap">${esc(g.next)}</p>${tips.length?`<p class="note" style="margin:8px 0 0">당신을 위해서도: ${esc(tips.join(" "))}</p>`:""}</div></div>`;
   },
   relationship(a,{style=""}={}){
     if(!a||typeof a!=="object")return "";

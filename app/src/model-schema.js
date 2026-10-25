@@ -1,4 +1,5 @@
 import { contextGoal, nameSourceTexts } from './agent-state.js';
+import { answerComponents } from './answer-sources.js';
 
 const string = maxLength => ({ type: 'string', minLength: 1, maxLength });
 const literal = value => ({ type: 'string', const: value });
@@ -7,39 +8,24 @@ const array = (items, maxItems, minItems = 0) => ({ type: 'array', items, minIte
 const nullable = value => ({ anyOf: [{ type: 'null' }, value] });
 
 function sourceTexts(field) {
-  return [field?.rawText, field?.text, field?.custom, field?.followUp?.answer?.rawText,
-    field?.followUp?.answer?.text, field?.followUp?.answer?.custom]
-    .filter(value => typeof value === 'string' && value.trim());
+  return answerComponents(field).map(component => component.text);
 }
 
-function aroundRisk(source, index, length) {
-  const boundary = /[\r\n.!?。！？]/u;
-  let start = index;
-  let end = index + length;
-  while (start > 0 && !boundary.test(source[start - 1])) start--;
-  while (end < source.length && !boundary.test(source[end])) end++;
-  if (end < source.length) end++;
-  if (end - start > 160) {
-    // Keep the original words on both sides, including nearby negation and attribution.
-    start = Math.max(start, index - 56);
-    end = Math.min(end, start + 160);
-    if (end < index + length) end = index + length;
-  }
-  if (start > 0 && /[\uDC00-\uDFFF]/u.test(source[start])) start--;
-  if (end - start > 160) end = start + 160;
-  if (end < source.length && /[\uD800-\uDBFF]/u.test(source[end - 1])) end--;
-  return source.slice(start, end).trim();
+const riskPattern = /죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|자해/u;
+
+// Safety references are complete answer components, never keyword windows or
+// selected labels. A following sentence or follow-up may correct the first one.
+export function safetyEvidenceQuotes(field) {
+  const sources = [...new Set(sourceTexts(field))];
+  return sources;
 }
 
 // These are exact reported words to preserve, not a new clinical assessment.
 export function riskEvidenceQuotes(field) {
-  const sources = sourceTexts(field);
-  const labels = (field?.selected || []).filter(option => option.meta?.s === 'suicidal')
-    .map(option => option.label).filter(label => typeof label === 'string' && label.trim() &&
-      label.length <= 160 && sources.some(source => source.includes(label)));
-  const quoted = sources.flatMap(source => [...source.matchAll(/죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|자해/gu)]
-    .map(match => aroundRisk(source, match.index, match[0].length)));
-  return [...new Set([...labels, ...quoted])].filter(Boolean).slice(0, 8);
+  const sources = safetyEvidenceQuotes(field);
+  const selected = (field?.selected || []).some(option => option.meta?.s === 'suicidal' &&
+    typeof option.label === 'string' && option.label.trim() && sources.some(source => source.includes(option.label)));
+  return selected || sources.some(source => riskPattern.test(source)) ? sources : [];
 }
 
 function sourceExcerpts(source) {
@@ -49,6 +35,16 @@ function sourceExcerpts(source) {
   for (const sentence of value.match(/[^\n.!?。！？]+[.!?。！？]*/gu) || [value]) {
     for (let start = 0; start < sentence.length;) {
       let end = Math.min(start + 160, sentence.length);
+      if(end<sentence.length) {
+        const window=sentence.slice(start,end);
+        const clauses=[...window.matchAll(/[,，;；]\s*/gu)];
+        const words=[...window.matchAll(/\s+/gu)];
+        const boundary=clauses.at(-1)||words.filter(match=>match.index>=80).at(-1);
+        // Prefer an existing clause or word boundary to an arbitrary cut in
+        // the middle of a word. Every excerpt remains an exact source slice;
+        // full answers still decide negation, attribution and corrections.
+        if(boundary)end=start+boundary.index+boundary[0].length;
+      }
       // Keep a surrogate pair together when a long passage contains emoji.
       if (end < sentence.length && /[\uD800-\uDBFF]/u.test(sentence[end - 1])) end--;
       const excerpt = sentence.slice(start, end).trim();
@@ -64,8 +60,12 @@ export function evidenceQuotes(field) {
   const excerpts = sources.map(sourceExcerpts);
   const labels = (field?.selected || []).map(option => option.label)
     .filter(label => typeof label === 'string' && label.trim() && label.length <= 160 && sources.some(source => source.includes(label)));
-  // Preserve reported danger words before filling remaining slots with other answer excerpts.
-  return [...new Set([...riskEvidenceQuotes(field), ...excerpts.map(parts => parts[0]), ...labels, ...excerpts.flat()])]
+  const riskLabels = (field?.selected || []).filter(option => option.meta?.s === 'suicidal')
+    .map(option => option.label).filter(label => labels.includes(label));
+  // Compact fact citations are not admissible safety references. The model's
+  // critical input and safety schema use the complete components above.
+  const riskExcerpts = excerpts.flat().filter(quote => riskPattern.test(quote));
+  return [...new Set([...riskLabels, ...riskExcerpts, ...excerpts.map(parts => parts[0]), ...labels, ...excerpts.flat()])]
     .filter(quote => typeof quote === 'string' && sources.some(source => source.includes(quote))).slice(0, 8);
 }
 

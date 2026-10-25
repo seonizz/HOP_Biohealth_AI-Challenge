@@ -1,5 +1,5 @@
 import { createIntake, currentView, answerIntake, buildContext } from '../src/intake.js';
-import { ModelGateway } from '../src/model.js';
+import { configuredModelGateway } from '../src/model-config.js';
 
 // Only synthetic content is sent. Never print prompts, generated counselling or credentials.
 let state = createIntake();
@@ -19,13 +19,10 @@ while (state.status === 'active') {
   state = answerIntake(state, input);
 }
 const context = buildContext(state);
-const gateway = new ModelGateway({
-  baseUrl:process.env.MODEL_BASE_URL, apiKey:process.env.MODEL_API_KEY, model:process.env.MODEL_NAME,
-  protocol:process.env.MODEL_PROTOCOL,
-  timeoutMs:process.env.MODEL_TIMEOUT_MS ? Number(process.env.MODEL_TIMEOUT_MS) : undefined,
-});
 const start = Date.now();
 try {
+  const gateway = configuredModelGateway({retryFailures:false});
+  if (!gateway) throw Object.assign(new Error('Missing model configuration'), {code:'MODEL_NOT_CONFIGURED'});
   const update = await gateway.updateState(context);
   console.log(JSON.stringify({ phase:'state', ok:true, grounded_facts:update.patient_state.facts.length, name_indexed:Boolean(update.name_index), skipped:update.question_plan.skip.length, elapsed_ms:Date.now() - start }));
   const result = await gateway.respond(context, update.patient_state);

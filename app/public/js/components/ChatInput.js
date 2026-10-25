@@ -2,14 +2,74 @@
 const SKIP="(건너뛰었어요)";
 const ChatInput={
   version:0,
-  clear(){this.version++;$("input").innerHTML="";$("input").dataset.busy="";},
-  busy(value){const box=$("input");box.dataset.busy=value?"true":"";box.querySelectorAll("button,input,textarea").forEach(el=>el.disabled=value);},
+  draftSequence:0,
+  draftContext:null,
+  draftDetail:null,
+  draftQuestion:null,
+  openDraftDetail:null,
+  nextText:"",
+  waitingNodes:[],
+  clear(){this.nextText="";this.waitingNodes=[];this.version++;this.draftContext=null;this.draftDetail=null;this.draftQuestion=null;this.openDraftDetail=null;$("input").innerHTML="";$("input").dataset.busy="";},
+  captureDraft(){
+    if(!this.draftQuestion)return null;
+    const box=$("input");
+    return {text:box.querySelector("#ta")?.value||"",own:box.querySelector("#own")?.value||"",
+      selected:[...box.querySelectorAll(".chip")].map((chip,index)=>chip.getAttribute("aria-pressed")==="true"?index:-1).filter(index=>index>=0),
+      detailOption:this.draftDetail,...(this.typeAhead()?{nextText:this.typeAhead()}: {})};
+  },
+  restoreDraft(draft){
+    if(!draft||!this.draftQuestion)return;
+    if(Number.isInteger(draft.detailOption)&&this.openDraftDetail)this.openDraftDetail(draft.detailOption);
+    this.nextText=typeof draft.nextText==="string"?draft.nextText:"";
+    const box=$("input"),ta=box.querySelector("#ta"),own=box.querySelector("#own");
+    if(ta&&typeof draft.text==="string")ta.value=draft.text;
+    if(own&&typeof draft.own==="string")own.value=draft.own;
+    if(this.draftQuestion.type==="one"){
+      const selected=Array.isArray(draft.selected)?draft.selected:[];
+      const index=selected.find(index=>Number.isInteger(index)&&index>=0&&index<this.draftQuestion.opts.length&&!optMeta(this.draftQuestion.opts[index]).input);
+      [...box.querySelectorAll(".chip")].forEach((chip,position)=>chip.setAttribute("aria-pressed",position===index?"true":"false"));
+    }
+    if(this.nextText)this.showTypeAhead();
+    // Only multiple-choice chips can be replayed without submitting an answer.
+    if(this.draftQuestion.type==="multi"){
+      const selected=new Set(Array.isArray(draft.selected)?draft.selected:[]);
+      [...box.querySelectorAll(".chip")].forEach((chip,index)=>{
+        if(selected.has(index)&&chip.getAttribute("aria-pressed")!=="true")chip.click();
+      });
+    }
+  },
+  typeAhead(){return $("input").querySelector("#next-answer")?.value??this.nextText;},
+  showTypeAhead(){
+    const box=$("input");
+    if(box.querySelector("#next-answer"))return;
+    const row=document.createElement("div");row.className="row type-ahead";
+    row.innerHTML='<textarea id="next-answer" rows="2" aria-label="미리 입력" placeholder="미리 입력해도 괜찮아요"></textarea>';
+    box.appendChild(row);row.querySelector("textarea").value=this.nextText;
+  },
+  waitForQuestion(){
+    const box=$("input");
+    this.waitingNodes=[...box.children].filter(node=>!node.classList.contains("type-ahead")&&!node.hidden);
+    this.waitingNodes.forEach(node=>node.hidden=true);
+    this.showTypeAhead();box.querySelector("#next-answer").disabled=false;box.querySelector("#next-answer").focus();
+  },
+  endWaiting(){
+    this.nextText=this.typeAhead();
+    this.waitingNodes.forEach(node=>node.hidden=false);this.waitingNodes=[];
+    if(!this.nextText)$("input").querySelector(".type-ahead")?.remove();
+  },
+  acceptTypeAhead(text){
+    if(!text)return;
+    const field=$("input").querySelector("#ta")||$("input").querySelector("#own");
+    if(field&&!field.value){field.value=text;field.focus();}
+    else {this.nextText=text;this.showTypeAhead();$("input").querySelector("#next-answer").value=text;}
+  },
+  busy(value){const box=$("input");box.dataset.busy=value?"true":"";box.querySelectorAll("button,input,textarea").forEach(el=>el.disabled=el.id==="next-answer"?false:value);},
   async run(operation){
     if($("input").dataset.busy)return;
     const version=this.version;$("input").querySelector(".api-error")?.remove();this.busy(true);
     try{await operation();}
     catch(error){if(version===this.version)this.error(error.message,operation);}
-    finally{if(version===this.version)this.busy(false);}
+    finally{if(version===this.version){this.endWaiting();this.busy(false);}}
   },
   error(message,retry){
     const box=$("input");box.querySelector(".api-error")?.remove();
@@ -18,12 +78,10 @@ const ChatInput={
     if(retry){const b=document.createElement("button");b.className="ghost";b.textContent="다시 시도";b.onclick=()=>this.run(retry);wrap.appendChild(b);}
     box.appendChild(wrap);
   },
-  render(q,onDone,onBack){
-    this.clear();const box=$("input");
-    const submit=(...args)=>this.run(()=>{
-      box.querySelectorAll("input,textarea").forEach(el=>el.value="");
-      return onDone(...args);
-    });
+  render(q,onDone,onBack,draftDetail=null,draftContext=null){
+    const context=draftContext??++this.draftSequence;
+    this.clear();this.draftContext=context;this.draftQuestion=q;this.draftDetail=draftDetail;const box=$("input");
+    const submit=(...args)=>this.run(()=>onDone(...args));
     const addBack=()=>{if(!onBack)return;const b=document.createElement("button");b.className="back";b.textContent="← 이전 질문으로";
       b.onclick=()=>this.run(onBack);box.prepend(b);};
     // 건너뛰기 (네/아니요 질문은 q.noSkip, 핵심 문항은 q.required로 숨김)
@@ -40,12 +98,30 @@ const ChatInput={
       box.innerHTML=`<div class="row"><textarea id="ta" rows="${q.short?1:2}" placeholder="${esc(q.ph||"")}"></textarea></div>`;
       box.querySelector(".row").appendChild(acts(mainBtn("send","보내기")));
       const ta=$("ta");ta.focus();
-      $("send").onclick=()=>{const v=ta.value.trim();if(!v&&q.required)return need(ta);submit(v||SKIP,[]);};
+      $("send").onclick=()=>{const v=ta.value;
+        if(!hasAnswerContent(v)){if(!canSkip&&!q.optionalDetail)return need(ta);return submit(SKIP,[],"",true);}
+        return submit(v,[]);};
       ta.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey&&!e.isComposing){e.preventDefault();$("send").click();}};addBack();return;
     }
     // 보기 버튼 (묶음 이름 g가 있으면 묶음별 제목을 붙임)
     const wrap=document.createElement("div");wrap.className="chipwrap";
     const btns=[];let chips=null,lastG;
+    const openDetail=k=>{
+      const option=q.opts[k],m=option&&optMeta(option);
+      if(q.type!=="one"||!m?.input)return;
+      const log=m.ask?ChatScreen.messages.map(message=>({...message})):null;
+      if(m.ask)ChatScreen.sync([...pendingConversationLog(),{who:"ai",text:m.ask,face:q.face||"ponder",fu:true}]);
+      // The selected option remains an answer even without extra detail.
+      const nextText=this.typeAhead();
+      ChatInput.render({type:"text",ph:m.ph,noSkip:!m.ask,optionalDetail:true},t=>onDone(t===SKIP?optLabel(option):`${optLabel(option)}, ${t}`,[k],""),()=>{
+        if(log)ChatScreen.sync(log);
+        const text=this.typeAhead()||$("input").querySelector("#ta")?.value||"";
+        ChatInput.render(q,onDone,onBack,null,context);
+        this.acceptTypeAhead(text);
+      },k,context);
+      this.acceptTypeAhead(nextText);
+    };
+    this.openDraftDetail=openDetail;
     q.opts.forEach((o,k)=>{
       const m=optMeta(o);
       if(!chips||m.g!==lastG){
@@ -60,18 +136,13 @@ const ChatInput={
         if(q.type==="one"){
           // 세부 설명은 옵션의 ask가 있으면 건너뛸 수 있고, 이전 질문은 원래 보기로 돌아가요.
           if(m.input){
-            const log=m.ask?ChatScreen.messages.map(message=>({...message})):null;
-            if(m.ask)ChatScreen.sync([...pendingConversationLog(),{who:"ai",text:m.ask,face:q.face||"ponder",fu:true}]);
-            return ChatInput.render({type:"text",ph:m.ph,noSkip:!m.ask},t=>onDone(t===SKIP?optLabel(o):`${optLabel(o)}, ${t}`,[k],""),()=>{
-              if(log)ChatScreen.sync(log);
-              ChatInput.render(q,onDone,onBack);
-            });
+            return openDetail(k);
           }
           btns.forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));
           return submit(optLabel(o),[k],"");
         }
         const on=b.getAttribute("aria-pressed")!=="true";
-        // "없어요"류 보기는 다른 보기와 함께 고를 수 없음
+        // "없어요/모름" 보기는 다른 보기와 함께 고를 수 없고, 직접 입력은 보존해요.
         if(on)btns.forEach((x,j)=>{if(j!==k&&(m.none||optMeta(q.opts[j]).none))x.setAttribute("aria-pressed","false");});
         b.setAttribute("aria-pressed",on?"true":"false");
       };
@@ -91,11 +162,11 @@ const ChatInput={
     const own=$("own");
     const pick=()=>btns.map((c,k)=>c.getAttribute("aria-pressed")==="true"?k:-1).filter(k=>k>=0);
     if(q.type==="one"){
-      const go=()=>{const v=own.value.trim();if(!v){own.focus();return;}submit(v,[],v);};
+      const go=()=>{const v=own.value;if(!hasAnswerContent(v)){own.focus();return;}submit(v,[],v);};
       $("ownSend").onclick=go;own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}};
     }else{
-      g.onclick=()=>{const sel=pick(),v=own?.value.trim()||"";
-        if((q.required||q.noOwn)&&!sel.length&&!v)return need();
+      g.onclick=()=>{const sel=pick(),raw=own?.value||"",v=hasAnswerContent(raw)?raw:"";
+        if((q.required||q.noSkip||q.noOwn)&&!sel.length&&!v)return need(own);
         const parts=sel.map(k=>optLabel(q.opts[k]));if(v)parts.push(v);
         submit(parts.length?parts.join(", "):"해당 없음",sel,v);};
       if(own)own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();g.click();}};

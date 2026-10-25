@@ -1,14 +1,17 @@
 /* 기록 (RecordsScreen) */
-#records .wrapk{flex:1;display:grid;grid-template-columns:420px minmax(0,1fr);gap:32px;margin-top:20px;min-height:0}
+#records .wrapk{flex:1;display:grid;grid-template-columns:minmax(280px,360px) minmax(0,1fr);gap:32px;margin-top:20px;min-height:0}
 .rlist{display:flex;flex-direction:column;gap:12px;overflow-y:auto;min-height:0;padding:4px}
-.rcard{display:flex;gap:14px;align-items:center;text-align:left;background:var(--card);border:2px solid transparent;border-radius:22px;padding:14px 18px;color:var(--ink)}
+.record-actions{padding:4px 8px}.record-actions .note{margin:8px 0}.record-heading{font-size:16px;margin:4px 8px;color:var(--muted)}
+.rcard>div{min-width:0;overflow-wrap:anywhere}.rcard .x{flex-shrink:0;min-height:44px}
+.rcard{display:flex;flex-wrap:wrap;gap:14px;align-items:center;min-width:0;text-align:left;background:var(--card);border:2px solid transparent;border-radius:22px;padding:14px 18px;color:var(--ink)}
+.rcard>div{flex:1 1 160px}
 .rcard:hover{border-color:var(--leaf-soft)}
 .rcard[aria-current="true"]{border-color:var(--leaf)}
 .rcard img{width:54px;flex:none}
 .rcard b{font-family:var(--display);font-weight:400;font-size:21px;display:block}
 .rcard small{color:var(--muted);font-size:14px}
 .rcard .x{margin-left:auto;font-size:13px;color:var(--muted);background:none;border:0;padding:6px}
-.rdetail{background:var(--card);border-radius:28px;padding:28px 32px;overflow-y:auto;min-height:0}
+.rdetail{background:var(--card);border-radius:28px;padding:28px 32px;overflow-y:auto;min-width:0;min-height:0}
 .rdetail h2{font-family:var(--display);font-weight:400;font-size:32px;margin:0}
 .tlog{display:flex;flex-direction:column;gap:10px;margin:18px 0 26px;padding:18px;background:var(--bg);border-radius:20px}
 .tlog .t{font-size:15px;max-width:80%;padding:8px 14px;border-radius:16px;white-space:pre-wrap}
@@ -17,4 +20,5 @@
 .tlog .me2{background:var(--leaf-soft);align-self:flex-end}
 .emptyr{display:grid;place-items:center;text-align:center;color:var(--muted);gap:10px}
 .emptyr img{width:150px}
-@media (max-width:900px){#records .wrapk{grid-template-columns:1fr}}
+@media (max-width:1100px){#records .wrapk{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:700px){.rdetail{padding:22px 20px}.rdetail .care,.rdetail .next{flex-direction:column;align-items:flex-start}}

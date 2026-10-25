@@ -1,5 +1,11 @@
 const $=id=>document.getElementById(id);
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+// Inspect a copy only: format/control characters can join real letters or emoji.
+// The original answer must retain those characters when it contains content.
+function hasAnswerContent(text){
+  const visible=String(text).replace(/[\p{Cc}\p{Cf}\p{Default_Ignorable_Code_Point}]/gu,"").trim();
+  return visible!==""&&visible!=="(건너뛰었어요)";
+}
 // 받침에 맞는 조사: josa("엄마","은") → "는", josa("지수","이") → "가". 한글이 아니면 "은(는)"처럼 둘 다 표시
 const JOSA={은:["은","는"],는:["은","는"],이:["이","가"],가:["이","가"],을:["을","를"],를:["을","를"],과:["과","와"],와:["과","와"]};
 function josa(word,j){
@@ -13,12 +19,18 @@ const fmt=d=>{const x=new Date(d);return `${x.getFullYear()}.${x.getMonth()+1}.$
 // 화면 전환: 한 번에 한 화면만 보임
 const SCREEN_IDS=["start","chat","result","records","about","columns"];
 function show(id){
+  if(typeof ConversationDrafts!=="undefined")ConversationDrafts.save();
+  if(id!=="chat"&&id!=="result"&&typeof cancelConversationRequest==="function")cancelConversationRequest();
+  if(id!=="columns"&&typeof ColumnsScreen!=="undefined"&&ColumnsScreen.cur!=null)ColumnsScreen.close({route:false});
+  if(id!=="chat")$("leaveDlg")?.close();
+  if(typeof ReferralGuide!=="undefined")ReferralGuide.navigate(id);
   SCREEN_IDS.forEach(s=>$(s).hidden=s!==id);
   if(id!=="chat"){
     document.title="말씨";
     if(typeof ChatScreen!=="undefined")ChatScreen.title("");
   }
   if(id==="start")StartScreen.updRecN();
+  if(typeof AppRouter!=="undefined")AppRouter.sync(id);
 }
 
 // ── 등장 애니메이션 (움직임 줄이기 설정이면 모두 건너뛰고 바로 보임) ──
