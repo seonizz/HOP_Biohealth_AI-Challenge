@@ -182,7 +182,7 @@ test('draft storage retains at most 32 recent questions',async()=>{
 
 function attachConversation(fixture,request){
   fixture.context.API.request=request;
-  vm.runInContext(source('core/conversation.js')+'\nglobalThis.flow={renderConversation,recoverConversation,pendingAnswerDraft,getState:()=>S};',fixture.context);
+  vm.runInContext(source('core/conversation.js')+'\nglobalThis.flow={renderConversation,recoverConversation,pendingAnswerDraft,answer,getState:()=>S};',fixture.context);
   return fixture.context.flow;
 }
 
@@ -210,6 +210,40 @@ test('an unchanged local pending draft automatically resumes without requiring a
   const flow=attachConversation(refreshed,(...args)=>{calls.push(args);return new Promise(()=>{});});
   flow.renderConversation(view({revision:2,model_pending:true,pending_answer:{revision:1,question_id:'concern',text:'이전에 전송한 말',selected:[],custom:'',follow_up:false}}),0);
   assert.equal(calls.length,1);assert.equal(calls[0][1].body.text,'이전에 전송한 말');
+});
+
+for(const scenario of [
+  {name:'text',question:{id:'concern',type:'text'},draft:{text:'전송되지 않은 합성 답변',own:'',selected:[],detailOption:null},text:'전송되지 않은 합성 답변',selected:[]},
+  {name:'detail',question:{id:'detail',type:'one',noOwn:true,opts:[['다른 이유',{input:true,ask:'자세히 알려 주세요'}]]},draft:{text:'합성 상세 답변',own:'',selected:[],detailOption:0},text:'다른 이유, 합성 상세 답변',selected:[0]},
+  {name:'multiple choice',question:{id:'choices',type:'multi',opts:['첫째','둘째']},draft:{text:'',own:'합성 직접 입력',selected:[1],detailOption:null},text:'둘째, 합성 직접 입력',selected:[1],custom:'합성 직접 입력'},
+])test(`an unreceived ${scenario.name} submission preserves its input and refresh draft until retry succeeds`,async()=>{
+  const fixture=await draftHarness(),current=view({question:scenario.question}),calls=[];
+  const advanced=view({revision:2,question:{id:'next',type:'text'}});
+  let accept=false;
+  const flow=attachConversation(fixture,async(path,options)=>{
+    calls.push({path,method:options?.method||'GET',body:options?.body&&plain(options.body)});
+    if(options?.method==='POST'){
+      if(!accept)throw Object.assign(new Error('network disconnected'),{status:0});
+      return advanced;
+    }
+    return current;
+  });
+  flow.renderConversation(current,0);fixture.input.restoreDraft(scenario.draft);fixture.drafts.save(true);
+  await fixture.input.run(()=>flow.answer(scenario.text,scenario.selected,scenario.custom||''));
+  assert.deepEqual(calls.map(call=>call.method),['POST','GET']);
+  assert.deepEqual(plain(fixture.input.captureDraft()),scenario.draft);
+  assert.equal(flow.getState().revision,1);
+  assert.equal(fixture.document.getElementById('input').dataset.busy,'');
+  const retry=fixture.document.getElementById('input').querySelector('.api-error')?.querySelector('button');
+  assert.ok(retry,'the unreceived answer must remain retryable');
+  const refreshed=await draftHarness({saved:fixture.saved});assert.equal(refreshed.render(current),true);
+  assert.deepEqual(plain(refreshed.input.captureDraft()),scenario.draft);
+  accept=true;await retry.click();
+  assert.deepEqual(calls.map(call=>call.method),['POST','GET','POST']);
+  assert.deepEqual(calls[2].body,calls[0].body);
+  assert.equal(flow.getState().revision,2);
+  assert.equal(fixture.drafts.entries[fixture.drafts.identity(current)],undefined);
+  assert.equal(fixture.document.getElementById('ta').value,'');
 });
 
 test('network-error recovery associates further edits with the fetched pending revision',async()=>{

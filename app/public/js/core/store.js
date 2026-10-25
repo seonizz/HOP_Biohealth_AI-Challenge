@@ -27,7 +27,7 @@ async function deleteIntake(id){
   setRecs(loadRecs().filter(record=>!(result.record_ids||[]).includes(String(record.id))));
   if(API.data)API.data.incomplete_intakes=incompleteCache;
   StartScreen.updRecN();
-  if(typeof forgetConversation==="function")forgetConversation(id);
+  return typeof forgetConversation==="function"?forgetConversation(id):false;
 }
 async function deleteConversations(deletionKey){
   if(deletingConversations)throw new Error("대화를 삭제하고 있어요. 삭제를 마친 뒤 다시 시도해 주세요.");

@@ -1054,6 +1054,38 @@ test('deleting from chat invalidates a history request started before navigating
   assert.equal(context.flow.loadIncomplete().length,0);assert.equal(context.flow.getState(),null);
 });
 
+for(const destination of ['new conversation','pending conversation','records','same chat','same result']){
+  test(`a delayed chat deletion respects navigation to ${destination}`,async()=>{
+    const removal=deferred(),creation=deferred(),refresh=deferred();
+    const next={...conversationView('새 대화'),id:'new-intake'};
+    const {document,context}=conversationHarness((path,options)=>path==='/api/records'?refresh.promise:options.method==='DELETE'?removal.promise:creation.promise);
+    context.flow.setHistory({records:[],incomplete_intakes:[incompleteSummary],conversation_epoch:0});
+    context.flow.renderConversation(conversationView('이전 대화'),0);context.flow.show('chat');
+    const deleting=context.flow.deleteCurrentConversation();
+    let starting,opening;
+    if(destination.includes('conversation')){
+      context.flow.show('start');starting=context.flow.begin();
+      if(destination==='new conversation'){creation.resolve(next);await starting;}
+    }else if(destination==='records'){
+      vm.runInContext(script('components/RecordsScreen.js')+'\nglobalThis.historyScreen=RecordsScreen;',context);
+      opening=context.historyScreen.open();
+    }
+    else if(destination==='same result')context.flow.show('result');
+    removal.resolve({deleted:true,record_ids:[]});await deleting;
+    assert.equal(context.flow.loadIncomplete().length,0,'the deleted conversation must still leave the cache');
+    if(destination.includes('conversation')){
+      assert.equal(document.getElementById('chat').hidden,false,'old deletion must not hide the newer conversation');
+      if(destination==='pending conversation'){assert.equal(context.flow.getState(),null);creation.resolve(next);await starting;}
+      assert.equal(context.flow.getState().id,'new-intake');
+    }else if(destination==='records'){
+      refresh.resolve({records:[],incomplete_intakes:[incompleteSummary],conversation_epoch:0});await opening;
+      assert.equal(document.getElementById('records').hidden,false);
+      assert.equal(document.getElementById('rlist').querySelector('[data-intake-resume]'),null,'the visible list must remove the deleted conversation');
+    }
+    else {assert.equal(document.getElementById('start').hidden,false);assert.equal(context.flow.getState(),null);}
+  });
+}
+
 test('a result received while deletion waits is removed with its completed cache entry',async()=>{
   const result=deferred(),removal=deferred();
   const {context}=conversationHarness((path,options)=>options.method==='DELETE'?removal.promise:result.promise);

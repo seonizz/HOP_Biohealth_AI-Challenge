@@ -25,17 +25,22 @@ function leaveConversation(){ChatScreen.leave(()=>{cancelConversationRequest();c
 function forgetConversation(id){
   // A history fetch may still be pending after navigating to the chat screen.
   if(typeof RecordsScreen!=="undefined")RecordsScreen._openSequence=(RecordsScreen._openSequence||0)+1;
-  if(id&&S?.id!==id&&resumingConversationId!==id)return;
+  if(id&&S?.id!==id&&resumingConversationId!==id)return false;
   cancelConversationRequest();
   if(typeof ReferralGuide!=="undefined")ReferralGuide.invalidate();
   resumingConversationId=null;
   conversationToken++;S=null;ChatScreen.clear();ChatInput.clear();ChatScreen.title("");
   if($("rbody"))$("rbody").innerHTML="";
+  return true;
 }
 async function deleteCurrentConversation(){
   if(!S?.id)return;
-  await deleteIntake(S.id);
-  show("start");window.scrollTo(0,0);
+  const cleared=await deleteIntake(S.id);
+  if(typeof RecordsScreen!=="undefined"&&!$("records").hidden)RecordsScreen.draw();
+  // A late deletion may clear its cache, but cannot navigate a newer screen.
+  if(cleared&&!S&&!resumingConversationId&&(!$("chat").hidden||!$("result").hidden)){
+    show("start");window.scrollTo(0,0);
+  }
 }
 async function begin(){
   // Wait for the deletion result before a new conversation can use its epoch.
@@ -151,7 +156,11 @@ async function recoverConversation(error,token,retry,present=(message,operation)
         if(typeof ConversationDrafts!=="undefined")ConversationDrafts.rebind(view);
         S=view;ChatScreen.sync(view.log);
       }else{
-        if(view.status==="ready"&&view.revision===S.revision){present(conversationErrorMessage(error),retry);return;}
+        // A request can fail before reaching the server. Keep the unsent input
+        // until the fetched state confirms a different turn or saved answer.
+        const unchanged=view.id===S.id&&view.revision===S.revision&&view.status===S.status&&
+          view.question?.id===S.question?.id&&!!view.question?.follow_up===!!S.question?.follow_up;
+        if(unchanged){present(conversationErrorMessage(error),retry);return;}
         const nextText=ChatInput.typeAhead?.()||"";
         if(typeof ConversationDrafts!=="undefined")ConversationDrafts.clear(S);
         renderConversation(view,token,nextText);return;
