@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0",
+  "institutions": [
+    {
+      "id": "kr-mental-health-15770199",
+      "name": "정신건강 상담전화",
+      "active": true,
+      "urgencies": [
+        "soon",
+        "planned",
+        "undetermined"
+      ],
+      "phone": "1577-0199",
+      "booking_url": null,
+      "last_verified_on": "2026-10-18"
+    },
+    {
+      "id": "kr-suicide-prevention-109",
+      "name": "자살예방상담전화",
+      "active": true,
+      "urgencies": [
+        "soon"
+      ],
+      "phone": "109",
+      "booking_url": null,
+      "last_verified_on": "2026-10-18"
+    },
+    {
+      "id": "kr-emergency-medical-119",
+      "name": "119 구조·구급",
+      "active": true,
+      "urgencies": [
+        "immediate"
+      ],
+      "phone": "119",
+      "booking_url": null,
+      "last_verified_on": "2026-10-18"
+    },
+    {
+      "id": "kr-police-112",
+      "name": "112 긴급신고",
+      "active": true,
+      "urgencies": [
+        "immediate"
+      ],
+      "phone": "112",
+      "booking_url": null,
+      "last_verified_on": "2026-10-18"
+    }
+  ]
+}

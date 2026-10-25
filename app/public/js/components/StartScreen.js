@@ -9,11 +9,13 @@ const StartScreen={
       <p class="lead">말씨가 몇 가지를 여쭤볼게요. 답해 주시면 그분의 상황을 함께 정리하고, 마음이 잘 닿는 말하기 방법을 알려드려요.</p>
       <button class="btn" id="go">말씨와 시작하기</button>
       <div class="steps">
-        <div class="step"><img data-m="listen" alt=""><span>질문에 답하기<i>약 10~15분</i></span></div>
-        <div class="step"><img data-m="ponder" alt=""><span>상황 정리<i>말씨가 생각해요</i></span></div>
+        <div class="step"><img data-m="listen" alt=""><span>질문에 답하기<i>내 속도에 맞춰 답해요</i></span></div>
+        <div class="step"><img data-m="ponder" alt=""><span>상황 정리<i>AI 응답을 기다려요</i></span></div>
         <div class="step"><img data-m="cheer" alt=""><span>말하는 방법<i>바로 쓸 수 있는 문장</i></span></div>
       </div>
-      <p class="note" style="margin-top:22px">말씨는 진단이나 치료를 대신하지 않아요.</p>
+      <p class="note" style="margin-top:22px">답변을 정리하는 데 시간이 걸릴 수 있어요. 전체 소요 시간은 답변과 서버 상황에 따라 달라져요.</p>
+      <p class="note">대화는 마지막 이용 후 ${typeof API!=="undefined"&&API.retentionDays?API.retentionDays():30}일 동안 보관해요. 「내 기록」에서 삭제 키를 따로 보관할 수 있어요. <button class="ghost" id="dataPolicy">보관·삭제 안내</button></p>
+      <p class="note">말씨는 진단이나 치료를 대신하지 않아요.</p>
     </div>
     <div class="stage">
       <div class="blob"></div>
@@ -27,6 +29,7 @@ const StartScreen={
 </section>`;},
   mount(){
     $("go").onclick=begin;
+    $("dataPolicy").onclick=()=>{AboutScreen.open();$("data-policy").open=true;$("data-policy").scrollIntoView({block:"center"});};
     this.updRecN();
   },
   // "내 기록 (n)" 개수 표시

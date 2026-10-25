@@ -1,0 +1,83 @@
+{
+  "kr-mental-health-15770199": {
+    "country": "KR",
+    "regions": [],
+    "nationwide": true,
+    "min_age": 0,
+    "max_age": null,
+    "accepts_supporter": true,
+    "valid_until": "2027-01-16",
+    "availability": "always",
+    "capabilities": [
+      "mental_health_counseling",
+      "crisis_assessment"
+    ],
+    "signal_codes": [
+      "mental_health_concern",
+      "substance_use_concern",
+      "severe_function_impairment",
+      "support_requested"
+    ],
+    "matches_unknown": true,
+    "official_source_url": "https://www.mohw.go.kr/menu.es?mid=a10706040100"
+  },
+  "kr-suicide-prevention-109": {
+    "country": "KR",
+    "regions": [],
+    "nationwide": true,
+    "min_age": 0,
+    "max_age": null,
+    "accepts_supporter": true,
+    "valid_until": "2027-01-16",
+    "availability": "always",
+    "capabilities": [
+      "crisis_assessment"
+    ],
+    "signal_codes": [
+      "current_suicidal_thoughts",
+      "self_harm_action",
+      "wish_to_die_or_self_harm_concern",
+      "self_harm_history"
+    ],
+    "matches_unknown": false,
+    "official_source_url": "https://www.129.go.kr/109"
+  },
+  "kr-emergency-medical-119": {
+    "country": "KR",
+    "regions": [],
+    "nationwide": true,
+    "min_age": 0,
+    "max_age": null,
+    "accepts_supporter": true,
+    "valid_until": "2027-01-16",
+    "availability": "always",
+    "capabilities": [
+      "emergency_response"
+    ],
+    "signal_codes": [
+      "current_suicidal_thoughts",
+      "self_harm_action",
+      "physical_emergency"
+    ],
+    "matches_unknown": true,
+    "official_source_url": "https://www.nfa.go.kr/nfa/news/pressrelease/press/?cntId=1851&mode=view"
+  },
+  "kr-police-112": {
+    "country": "KR",
+    "regions": [],
+    "nationwide": true,
+    "min_age": 0,
+    "max_age": null,
+    "accepts_supporter": true,
+    "valid_until": "2027-01-16",
+    "availability": "always",
+    "capabilities": [
+      "emergency_response"
+    ],
+    "signal_codes": [
+      "immediate_violence"
+    ],
+    "matches_unknown": true,
+    "official_source_url": "https://ecrm.police.go.kr/minwon/main"
+  }
+}
