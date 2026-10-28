@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelGateway } from '../src/model.js';
-import { validateRelationship, validateRelationshipDraft, canonicalRelationship, urgentGuideActions, validatePlan, validateReview, validateSchema, agentContext, validateRelationshipMemory, canonicalPatientState, canonicalRelationshipMemory, canonicalRelationshipState, relationshipStateRequest,groundedEvidenceSchema,relationshipSchema,relationshipDraftSchema,safetySources } from '../src/relationship-agent.js';
+import { generationProgress } from '../src/generation-progress.js';
+import { modelResponseFormat } from '../src/model-schema.js';
+import { auditSchema } from '../src/grounding-audit.js';
+import { validateRelationship, validateRelationshipDraft, canonicalRelationship, urgentGuideActions, validatePlan, validateReview, validateSchema, agentContext, validateRelationshipMemory, canonicalPatientState, canonicalRelationshipMemory, canonicalRelationshipState, relationshipStateRequest,groundedEvidenceSchema,relationshipSchema,relationshipDraftSchema,safetySources,speechPermissionQuestions,knownSpeechIssues,avoidCardDraftSchema,canonicalAvoidCard,validateClaimReview,reviewSchema } from '../src/relationship-agent.js';
 import { createIntake,answerIntake,applyModelUpdate,buildContext,backIntake,prepareModelAnswer } from '../src/intake.js';
+import { GUIDANCE_REVIEW_BOUNDARY, CARD_ROLES } from '../src/relationship-prompts.js';
 
 const field=(id,text,status='answered')=>({id,text,rawText:text,custom:'',status,question:id});
 const context=()=>({patient:{alias:'지민',fields:{name:field('name','지민'),rel:field('rel','자녀'),mood:field('mood','밤에 계획표를 고쳐요')}},
@@ -15,7 +19,26 @@ const analysis=()=>({patient_summary:'밤에 계획표를 고친다고 보고했
 const relationshipMemory=()=>({patient:[{interpretation:'밤에 계획표를 고친다는 관찰입니다.',evidence:[ref()],certainty:'reported'}],supporter:[],relationship:[],unknowns:[]});
 const memory=()=>({summary:'대상자와 이용자의 상황입니다.',facts:[{subject:'patient',question_id:'mood',quote:'밤에 계획표를 고쳐요',interpretation:'이용자가 관찰했습니다.',certainty:'reported'}],unknowns:[],user_goal:'이해하고 싶어요'});
 const plan=()=>({voice:'부모가 자녀에게 건네는 말',opening_evidence:[ref()],user_intent:'이해하고 싶어요',patient_choice:'원할 때 이야기해 주세요.',supporter_care:['자신의 휴식도 살펴보세요.'],avoid_patterns:['재촉 대신 허락 구하기'],next_step:'다음 대화 시간을 함께 정하기'});
-const guide=()=>({guide:{top:'통합',script:'지민아, 밤에 계획표를 고치는 모습을 봤어. 네 마음을 이해하고 싶어. 지금 이야기해도 괜찮을까?',doList:['편한 시간을 물어보세요.'],avoid:['재촉하기. 대신 편한 시간을 물어보세요.'],next:'다음 대화 시간을 함께 정하고 자신도 쉬어 보세요.',care:{feel:'무력하고 걱정된 마음을 들려주셨어요.',tips:['잠시 쉬어 보세요.']}},assessment:{safety:false}});
+const avoidExample={avoid_phrase:'재촉하는 말.',reason:'대답할 여유를 남겨야 합니다.',alternative:'편한 시간을 물어보세요.'};
+const avoidText='피할 말·행동: 재촉하는 말. 이유: 대답할 여유를 남겨야 합니다. 대신 편한 시간을 물어보세요.';
+const causalAvoidExample={avoid_phrase:'“참으려는 마음 때문에 연락을 피하는구나”라고 단정하기.',reason:'속마음을 대신 단정하지 마세요.',alternative:'편한 시간을 물어보세요.'};
+const causalAvoidText='피할 말·행동: “참으려는 마음 때문에 연락을 피하는구나”라고 단정하기. 이유: 속마음을 대신 단정하지 마세요. 대신 편한 시간을 물어보세요.';
+const avoidFixtures=new Map([[avoidText,avoidExample],[causalAvoidText,causalAvoidExample]]);
+// Adapt only explicitly declared valid legacy fixtures at the new wire boundary.
+// Arbitrary strings and malformed responses are not inferred into valid roles.
+const cardFixture=(value,key)=>key==='avoid'&&Array.isArray(value.avoid)&&value.avoid.every(text=>avoidFixtures.has(text))
+  ?{avoid:value.avoid.map(text=>structuredClone(avoidFixtures.get(text)))}:value;
+// Existing review scenarios declare canonical outcomes. Translate only their
+// known guidance labels at the valid mock wire boundary; malformed-wire
+// coverage exercises the production adapter directly in claim-review-roles.
+const reviewFixture=(review,claims)=>({...review,audits:review.audits.map(audit=>{
+  const claim=claims.find(claim=>claim.id===audit.id),labels=claim?.claim_kind==='avoidance_guidance'
+    ?{supported:'sound_avoidance',unsupported:'problem_in_recommended_content',plausible:'unclear'}
+    :claim?.claim_kind==='guidance'?{supported:'sound_guidance',unsupported:'problem_in_guidance',plausible:'unclear'}:null;
+  return labels&&Object.hasOwn(labels,audit.verdict)?{...audit,verdict:labels[audit.verdict]}:audit;
+})});
+const guide=()=>({guide:{top:'통합',script:'지민아, 밤에 계획표를 고치는 모습을 봤어. 네 마음을 이해하고 싶어. 지금 이야기해도 괜찮을까?',doList:['편한 시간을 물어보세요.'],avoid:[avoidText],next:'다음 대화 시간을 함께 정하고 자신도 쉬어 보세요.',care:{feel:'무력하고 걱정된 마음을 들려주셨어요.',tips:['잠시 쉬어 보세요.']}},assessment:{safety:false}});
+const avoidStoredSchema=()=>({type:'object',properties:{avoid:modelResponseFormat(context(),true).json_schema.schema.properties.guide.properties.avoid},required:['avoid'],additionalProperties:false});
 const envelope=payload=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
 const draftAnalysis=(value=analysis())=>{
   const {patient_summary,supporter_summary,...draft}=structuredClone(value);
@@ -56,12 +79,12 @@ const assertUrgentSchema=(body,name)=>{
   assert.equal(Object.hasOwn(properties.top,'enum'),true); // Existing topic enum remains unchanged.
   assert.equal(Object.hasOwn(properties.care.properties.feel,'enum'),false);
 };
-function gateway(handler,{speechReview,planReview,speechWrite,supportReview,cardWrite,speechPart,detailWrite,detailReview,qualityCheck,raw=false}={}) {
+function gateway(handler,{speechReview,planReview,speechWrite,supportReview,cardWrite,cardReview,speechPart,detailWrite,detailReview,qualityCheck,raw=false}={}) {
   let storedDraft,storedGuide;
-  const transportStages=[],transportInputs=[];
-  const model=new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'test-only-secret',model:'gemma4:12b',protocol:'relationship_agent',diagnosticLogger:null,fetchImpl:async(_url,request)=>{
+  const transportStages=[],transportInputs=[],transportPrompts=[];
+  const model=new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'test-only-secret',model:'gemma4:12b',protocol:'relationship_agent',stateMode:'staged',diagnosticLogger:null,fetchImpl:async(_url,request)=>{
     const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);
-    transportStages.push(input.stage);transportInputs.push(structuredClone(input));
+    transportStages.push(input.stage);transportInputs.push(structuredClone(input));transportPrompts.push(body.messages[0].content);
     if(raw)return handler(body);
     // Adapt historical combined-state fixtures at the transport boundary.
     // Dedicated staged-state tests exercise the actual role contracts separately.
@@ -76,26 +99,36 @@ function gateway(handler,{speechReview,planReview,speechWrite,supportReview,card
     if(input.stage.startsWith('guide_quality_check'))return envelope(qualityCheck?qualityCheck(input):{improvements:[]});
     if(input.stage.startsWith('card_')){
       const key=Object.keys(input.output_schema.properties)[0];
-      return envelope(cardWrite?cardWrite(input):{[key]:storedGuide[key]});
+      return envelope(cardFixture(cardWrite?await cardWrite(input,request):{[key]:storedGuide[key]},key));
     }
-    if(/^speech_(opening|listening|offer)/u.test(input.stage))return envelope(speechPart?speechPart(input):Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'원문을 확인하고 이야기를 듣고 싶어.'])));
+    if(/^speech_(opening|listening|offer)/u.test(input.stage))return envelope(speechPart?await speechPart(input,request):Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'원문을 확인하고 이야기를 듣고 싶어.'])));
     if(input.stage.startsWith('speech_detail_review'))return envelope(detailReview?detailReview(input):{approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'원문에 근거한 제안입니다.'}))});
     if(input.stage.startsWith('speech_detail')){
-      const text=input.data.script,n=Math.floor(text.length/3);
-      return envelope(detailWrite?detailWrite(input):Object.fromEntries(['opening','listening','offer'].map((key,i)=>[key,{excerpt:text.slice(i*n,i===2?undefined:(i+1)*n),why:'보고한 행동을 되짚으며 듣고 싶다는 뜻을 전하는 제안이에요.',evidence:[ref()]}])));
+      return envelope(detailWrite?detailWrite(input):{
+        opening_end:1,listening_end:input.data.script_units.length-1,
+        ...Object.fromEntries(['opening','listening','offer'].map(key=>[key,{why:'보고한 행동을 되짚으며 듣고 싶다는 뜻을 전하는 제안이에요.',evidence:[ref()]}])),
+      });
     }
     if(input.stage.startsWith('speech_write'))return envelope(speechWrite?speechWrite(input):{script:storedGuide?.script||guide().guide.script});
     if(input.stage.startsWith('plan_review'))return envelope(planReview?planReview(input):{approved:true,issues:[]});
-    if(input.stage.startsWith('support_review'))return envelope({...(supportReview?supportReview(input):{approved:true,issues:[]}),
-      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'이용자의 보고와 일치'}))});
-    if(input.stage.startsWith('speech_review'))return envelope({...(speechReview?speechReview(input):{approved:true,issues:[]}),
-      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'관찰과 열린 질문입니다.'}))});
+    if(/^(?:speech|support)_review_card_/u.test(input.stage)){
+      const review=cardReview?await cardReview(input,request):{approved:true,issues:[]};
+      return envelope(reviewFixture({...review,audits:review.audits??input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'현재 원문과 선택 가능한 제안입니다.'}))},input.data.claims));
+    }
+    if(input.stage.startsWith('support_review')){
+      const review=supportReview?supportReview(input):{approved:true,issues:[]};
+      return envelope(reviewFixture({...review,audits:review.audits??input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'이용자의 보고와 일치'}))},input.data.claims));
+    }
+    if(input.stage.startsWith('speech_review')){
+      const review=speechReview?speechReview(input,body):{approved:true,issues:[]};
+      return envelope(reviewFixture({...review,audits:review.audits??input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'관찰과 열린 질문입니다.'}))},input.data.claims));
+    }
     if(input.stage.startsWith('state_review'))return envelope({approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:claim.certainty==='reported'?'supported':'plausible',reason:'합성 원문과 일치해요.'}))});
     const response=await handler(body);
     if(response.ok&&input.stage.startsWith('guide_repair')&&!input.output_schema.properties.guide){
       const reply=await response.clone().json(),value=JSON.parse(reply.choices[0].message.content);
       const key=Object.keys(input.output_schema.properties)[0];
-      return envelope(value.guide?{[key]:value.guide[key]}:value);
+      return envelope(cardFixture(value.guide?{[key]:value.guide[key]}:value,key));
     }
     if(response.ok&&/^guide_(write|refine|repair)/u.test(input.stage)){
       const json=await response.clone().json();storedGuide=JSON.parse(json.choices[0].message.content).guide;
@@ -107,7 +140,7 @@ function gateway(handler,{speechReview,planReview,speechWrite,supportReview,card
     }
     return response;
   }});
-  model.transportStages=transportStages;model.transportInputs=transportInputs;
+  model.transportStages=transportStages;model.transportInputs=transportInputs;model.transportPrompts=transportPrompts;
   return model;
 }
 
@@ -139,7 +172,7 @@ test('final analysis, quality and critical reviews use the same current evidence
   assert.deepEqual(stages,['relationship_analysis','analysis_review','communication_plan','guide_write','guide_quality','guide_review']);
   assert.deepEqual(result.guide,guide().guide);assert.deepEqual(result.relationship_analysis,canonicalAnalysis(analysis()));
   assert.equal(result.agent.reviewed,true);assert.deepEqual(result.patient_state,canonicalPatientState(memory(),context()));
-  assert.deepEqual(result.agent.retrieval.stages.map(row=>row.stage),model.transportStages);
+  assert.deepEqual(result.agent.retrieval.stages.map(row=>row.stage).sort(),[...model.transportStages].sort());
   assert.equal(JSON.stringify(result.agent.retrieval).includes('밤에 계획표'),false);
 });
 const requestContainsSecret=input=>JSON.stringify(input).includes('test-only-secret');
@@ -336,7 +369,18 @@ test('a name alone cannot become an internal state or relationship finding',()=>
   for(const subject of ['patient','relationship']) {
     const value={patient:[],supporter:[],relationship:[],unknowns:[]};
     value[subject]=[{interpretation:'부모의 압박으로 대화를 피합니다.',certainty:'tentative',evidence:[{subject:'patient',question_id:'name',quote:'지민'}]}];
-    assert.throws(()=>validateRelationshipMemory(value,ctx),{modelReason:'agent_memory_name_only'});
+    const original=structuredClone(value);
+    assert.throws(()=>validateRelationshipMemory(value,ctx),error=>{
+      assert.equal(error.modelReason,'agent_memory_name_only');
+      const feedback=JSON.parse(error.modelFeedback);
+      assert.equal(feedback.path,`relationship_memory.${subject}[0].evidence`);
+      assert.equal(feedback.rule,'non_name_evidence_required');
+      assert.match(feedback.repair,/현재 전체 원문과 허용된 retrieval/u);
+      assert.match(feedback.repair,/기존 전체 검증과 독립 검토/u);
+      assert.doesNotMatch(error.modelFeedback,/지민|부모의 압박/u);
+      return true;
+    });
+    assert.deepEqual(value,original);
   }
   const value=relationshipMemory();value.relationship=value.patient;value.patient=[];
   assert.throws(()=>validateRelationshipMemory(value,context()),{modelReason:'agent_schema'});
@@ -372,6 +416,65 @@ test('quality refinement is checked again before an approved result is returned'
   const result=await model.respond(context(),memory());
   assert.ok(stages.indexOf('guide_refine')<stages.indexOf('guide_review'));
   assert.equal(result.agent.quality_reviewed,true);
+});
+
+test('quality reviews the final speech and preserves the exact refinement history through mandatory reviews',async()=>{
+  const provisional=guide();provisional.guide.script='아직 통합하지 않은 임시 발화입니다.';
+  const spoken='지민아, 밤에 계획표를 고치는 모습을 봤어. 네가 걱정되지만 네 마음을 이해하고 싶어. 지금 이야기해도 괜찮을까?';
+  const refined=guide();refined.guide.script=spoken.replace(' 네가 걱정되지만','\n\n네가 걱정되지만');
+  const quality={improvements:[{field:'script',reason:'전할 마음과 관찰을 읽기 쉽게 나누세요.',repair:'원래 걱정과 이해하고 싶은 마음을 유지하며 두 문단으로 다듬으세요.'}]};
+  const speechReviews=[],events=[],phases=[],progress=generationProgress();
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      guide_write:provisional,guide_quality:quality,guide_refine:refined,guide_review:{approved:true,issues:[]}}[input.stage]);
+  },{speechWrite:()=>({script:spoken}),speechReview:input=>{speechReviews.push(input.data.script);return {approved:true,issues:[]};}});
+  const result=await model.respond(context(),memory(),{onProgress:event=>{
+    events.push(event);progress.event(event);
+    if(event.status==='completed')phases.push([event.stage,progress.state.progress]);
+  }});
+  const inputFor=stage=>model.transportInputs.find(input=>input.stage===stage).data;
+  const before={...guide().guide,script:spoken};
+  assert.equal(inputFor('guide_quality').guide.script,spoken);
+  assert.deepEqual(inputFor('guide_refine').draft,before);
+  assert.deepEqual(inputFor('guide_quality_check').revision,{previous_quality:quality,before,after:refined.guide});
+  assert.deepEqual(inputFor('guide_quality_check').answers,agentContext(context()));
+  const qualityCheckPrompt=model.transportPrompts[model.transportStages.indexOf('guide_quality_check')];
+  assert.ok(!qualityCheckPrompt.includes(GUIDANCE_REVIEW_BOUNDARY));
+  assert.ok(qualityCheckPrompt.includes('선택적인 개선을 새 필수 조건으로 만들지 마세요'));
+  assert.ok(qualityCheckPrompt.includes('행동 방법이나 대안이 실제로 없거나 역할·안전·원문 근거의 오류가 남은 경우는 계속 지적하세요'));
+  assert.deepEqual(speechReviews,[refined.guide.script]);
+  assert.deepEqual(inputFor('guide_review').guide,refined.guide);
+  assert.deepEqual(result.guide,refined.guide);
+  const ordered=['speech_opening','speech_listening','speech_offer','speech_write','guide_quality','guide_refine','guide_quality_check',
+    'speech_review','support_review','guide_review','speech_detail','speech_detail_review'];
+  assert.deepEqual(model.transportStages.filter(stage=>ordered.includes(stage)),ordered);
+  assert.deepEqual(events.filter(event=>event.status==='completed').map(event=>event.stage),result.agent.stages);
+  assert.deepEqual(phases.filter(([stage])=>['speech_write','guide_quality','guide_refine','guide_quality_check','speech_review'].includes(stage)),
+    [['speech_write',40],['guide_quality',40],['guide_refine',40],['guide_quality_check',40],['speech_review',60]]);
+  assert.equal(progress.state.progress,60);
+  assert.equal(progress.state.steps.at(-1).status,'pending');
+});
+
+test('quality refinement cannot replace validated speech with an unsupported claim or unlimited support promise',async()=>{
+  for(const [script,reason] of [
+    ['완벽하게 하고 싶은 마음 때문에 힘든 거야.','agent_script_inference'],
+    ['네 곁에 항상 있을게.','agent_speech_specific'],
+  ]){
+    let refinements=0,checks=0;
+    const refined=guide();refined.guide.script=script;
+    const model=gateway(body=>{
+      const stage=JSON.parse(body.messages.at(-1).content).stage;
+      if(stage==='guide_refine'){refinements++;return fixtureEnvelope(refined);}
+      return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+        guide_write:guide(),guide_quality:{improvements:[{field:'script',reason:'의미를 명확하게 표현하세요.',repair:'원문에 있는 뜻을 유지하세요.'}]},
+        guide_review:{approved:true,issues:[]}}[stage]);
+    },{speechWrite:()=>({script:guide().guide.script}),qualityCheck:()=>{checks++;return {improvements:[]};}});
+    await assert.rejects(model.respond(context(),memory()),{code:'MODEL_INVALID_RESPONSE',modelReason:reason});
+    assert.equal(refinements,3);assert.equal(checks,0);
+    assert.equal(model.transportStages.filter(stage=>stage==='speech_write').length,1);
+    assert.equal(model.transportStages.includes('speech_review'),false);
+  }
 });
 
 test('analysis repair is rechecked before the plan is created',async()=>{
@@ -423,10 +526,11 @@ test('a late analysis problem rebuilds the plan, guide and reviewed memory from 
   });
   model.timeoutMs=600000;
   const operations=[],complete=model.agentComplete.bind(model);
-  model.agentComplete=(...args)=>{operations.push(args[5]);return complete(...args);};
+  model.agentComplete=(...args)=>{operations.push(args[4]);return complete(...args);};
   const result=await model.respond(ctx,memory());
   assert.equal(operations.length,model.transportStages.length);
-  assert.ok(operations.every(operation=>operation===operations[0]));
+  assert.ok(operations.every(operation=>operation.deadline===operations[0].deadline&&operation.recovery===operations[0].recovery));
+  assert.ok(operations.some(operation=>operation.controller!==operations[0].controller));
   assert.deepEqual(stages,Object.keys(outputs));
   assert.deepEqual(result.guide,revisedGuide.guide);
   assert.deepEqual(result.relationship_analysis,canonicalAnalysis(corrected,ctx));
@@ -841,19 +945,24 @@ test('a JSON failure during literal STATE recovery retains the reduced schema an
 });
 
 
-test('a generated line-break marker becomes an actual paragraph before review and storage',async()=>{
+for(const marker of ['(줄바꿈)','(빈 줄)'])test('a generated '+marker+' marker becomes an actual paragraph before review and storage',async()=>{
+  const draft=guide();draft.guide.script+=' '+marker+' 편한 때 말해 줘.';
+  draft.guide.next+=' '+marker+' 편한 시간을 함께 정해 보세요.';
+  const expected=Object.fromEntries(['script','next'].map(field=>[field,draft.guide[field].replace(' '+marker+' ','\n\n')]));
   const model=gateway(body=>{
-    const input=JSON.parse(body.messages[1].content),draft=guide();draft.guide.script+=' (줄바꿈) 편한 때 말해 줘.';
+    const input=JSON.parse(body.messages[1].content);
     if(input.stage==='relationship_analysis')return fixtureEnvelope(analysis());
     if(input.stage==='analysis_review')return fixtureEnvelope({approved:true,issues:[]});
     if(input.stage==='communication_plan')return fixtureEnvelope(plan());
     if(input.stage==='guide_write')return fixtureEnvelope(draft);
-    assert.ok(input.data.guide.script.includes('\n\n'));
-    assert.equal(input.data.guide.script.includes('(줄바꿈)'),false);
+    for(const field of ['script','next'])assert.equal(input.data.guide[field],expected[field]);
     return fixtureEnvelope(input.stage==='guide_quality'?{improvements:[]}:{approved:true,issues:[]});
   });
   const result=await model.respond(context(),memory());
-  assert.ok(result.guide.script.includes('\n\n'));
+  for(const field of ['script','next'])assert.equal(result.guide[field],expected[field]);
+  for(const input of model.transportInputs.filter(input=>/^(?:speech|support)_review/u.test(input.stage))) {
+    for(const field of ['script','next'])if(input.data.guide?.[field]!==undefined)assert.equal(input.data.guide[field],expected[field]);
+  }
 });
 
 test('canonical summaries contain only actor-labelled literal observations and retain their source references',()=>{
@@ -1216,6 +1325,112 @@ test('claim review covers action cards as well as the script and repairs preserv
   assert.deepEqual(result.guide.doList,['어떤 도움이 필요한지 먼저 물어보세요.']);
 });
 
+test('rejected claim audits must identify the matching repair field and retain their exact feedback',async()=>{
+  for(const reviewStage of ['speech_review','support_review']){
+    const target=reviewStage==='speech_review'?'doList':'care',wrong=reviewStage==='speech_review'?'script':'next';
+    const auditReason='특정 원문 근거를 수정 단계에서도 대조해야 합니다.';
+    const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]}};
+    let attempts=0,repairs=0;
+    const review=input=>{
+      if(input.stage===reviewStage){
+        attempts++;
+        if(attempts===2)assert.match(input.validation_feedback,/agent_review_targets|missing_issue_fields/u);
+        return {approved:false,issues:[{field:attempts===1?wrong:target,reason:'선택권을 확인해야 합니다.',repair:'먼저 원하는지 물어보세요.'}],
+          audits:input.data.claims.map(claim=>({id:claim.id,verdict:claim.id===target+'.0'?'unsupported':'supported',reason:claim.id===target+'.0'?auditReason:'현재 원문과 맞습니다.'}))};
+      }
+      assert.equal(input.data.revision.previous_review.audits[0].reason,auditReason);
+      assert.deepEqual(input.data.revision.changes.map(change=>change.field),[target]);
+      return {approved:true,issues:[]};
+    };
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages.at(-1).content);
+      if(input.stage.startsWith('guide_repair')){
+        repairs++;assert.equal(input.data.field,target);
+        assert.ok(input.data.review.claims.every(claim=>claim.field===target));
+        assert.equal(input.data.review.audits.find(audit=>audit.id===target+'.0').reason,auditReason);
+        return envelope({[target]:guide().guide[target]});
+      }
+      return fixtureEnvelope(input.stage.startsWith('guide_review')?{approved:true,issues:[]}:base[input.stage]);
+    },{[reviewStage==='speech_review'?'speechReview':'supportReview']:review});
+    const result=await model.respond(context(),memory());
+    assert.equal(attempts,2);assert.equal(repairs,1);assert.equal(result.agent.reviewed,true);
+  }
+});
+
+test('all five rejected guide fields can be repaired without exceeding the review schema',async()=>{
+  const fields=['script','doList','avoid','next','care'],repaired=[];
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]}};
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair')){repaired.push(input.data.field);return envelope({[input.data.field]:guide().guide[input.data.field]});}
+    return fixtureEnvelope(input.stage.startsWith('guide_review')?{approved:true,issues:[]}:base[input.stage]);
+  },{speechReview:input=>{
+    if(input.stage==='speech_review')return {approved:false,issues:fields.map(field=>({field,reason:'선택권이 빠졌습니다.',repair:'원하는지 먼저 확인하세요.'})),
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'원문에 맞춰 선택권을 확인하세요.'}))};
+    assert.deepEqual(input.data.revision.changes.map(change=>change.field),fields);
+    return {approved:true,issues:[]};
+  }});
+  assert.equal((await model.respond(context(),memory())).agent.reviewed,true);
+  assert.deepEqual(repaired,fields);
+});
+
+test('retained repair context cannot approve a still unsupported claim',async()=>{
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]}};
+  let rechecks=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair'))return envelope({doList:['원하는 도움이 무엇인지 먼저 물어보세요.']});
+    return fixtureEnvelope(input.stage.startsWith('guide_review')?{approved:true,issues:[]}:base[input.stage]);
+  },{speechReview:input=>{
+    const initial=input.stage==='speech_review';
+    if(!initial){
+      rechecks++;
+      assert.notDeepEqual(input.data.revision.changes[0].before,input.data.revision.changes[0].after);
+      assert.equal(input.data.claims.find(claim=>claim.id==='doList.0').claim,'원하는 도움이 무엇인지 먼저 물어보세요.');
+    }
+    return {approved:!initial,issues:initial?[{field:'doList',reason:'선택권이 빠졌습니다.',repair:'먼저 원하는 도움을 물어보세요.'}]:[],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:claim.id==='doList.0'?'unsupported':'supported',reason:'현재 원문을 독립적으로 대조한 결과입니다.'}))};
+  }});
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_claim_audit'});
+  assert.equal(rechecks,3);
+  assert.equal(model.transportStages.some(stage=>stage.startsWith('guide_review')),false);
+});
+
+test('guide repairs retain care sources and retrieve current-card and issue-specific evidence',async()=>{
+  for(const target of ['care','doList','avoid']){
+    const ctx=context();
+    ctx.supporter.fields.resource=field('resource','트럼펫 연주.');
+    ctx.patient.fields.current_scene=field('current_scene','첼로 연주.');
+    ctx.patient.fields.issue_scene=field('issue_scene','오보에 연주.');
+    for(let index=0;index<16;index++)ctx.supporter.fields['extra'+index]=field('extra'+index,'감정 마음 부담 무력 걱정 잠 갈등 변화 한계 방법 도움 대처 나누거나 기댈 지원 '+index);
+    const candidate=guide();candidate.guide.doList=['첼로 연주 이야기를 해도 괜찮을지 먼저 물어보세요.'];
+    const avoidDraft={...avoidExample,reason:'첼로 연주에 관한 대답도 재촉하지 마세요.'};
+    candidate.guide.avoid=canonicalAvoidCard({avoid:[avoidDraft]},avoidStoredSchema()).avoid;
+    candidate.guide.care.tips=['트럼펫을 불며 쉬어 보세요.'];
+    const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:candidate,guide_quality:{improvements:[]}};
+    let repairs=0;
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages.at(-1).content);
+      if(input.stage.startsWith('guide_repair')){
+        repairs++;
+        const ids=new Set(input.data.retrieval.documents.map(row=>row.question_id));
+        if(target==='care')assert.ok(ids.has('resource'));
+        else {assert.ok(ids.has('current_scene'));assert.ok(ids.has('issue_scene'));}
+        if(target==='avoid'){
+          assert.equal(Object.hasOwn(input.data,'current'),false);assert.equal(Object.hasOwn(input.data,'review'),false);
+          return envelope({avoid:[structuredClone(avoidExample)]});
+        }
+        return envelope({[target]:candidate.guide[target]});
+      }
+      return fixtureEnvelope(input.stage.startsWith('guide_review')?{approved:true,issues:[]}:base[input.stage]);
+    },{cardWrite:input=>{
+      const key=Object.keys(input.output_schema.properties)[0];
+      return key==='avoid'?{avoid:[structuredClone(avoidDraft)]}:{[key]:candidate.guide[key]};
+    },speechReview:input=>input.stage==='speech_review'?{approved:false,issues:[{field:target,reason:'오보에 연주 원문도 대조하세요.',repair:'현재 관찰을 조건부 제안으로 유지하세요.'}]}:{approved:true,issues:[]}});
+    await model.respond(ctx,memory());assert.equal(repairs,1);
+  }
+});
+
 test('a model approval cannot override an observed mind-reading failure in an action card',async()=>{
   for(const fixes of [true,false]){
     const model=gateway(body=>{
@@ -1228,9 +1443,264 @@ test('a model approval cannot override an observed mind-reading failure in an ac
       if(!fixes||stage==='guide_write')draft.guide.doList=['“완벽하게 해내고 싶어서 애쓰고 있구나”라고 말해주세요.'];
       return envelope(draft);
     });
-    if(fixes)assert.ok((await model.respond(context(),memory())).agent.stages.includes('guide_repair'));
+    if(fixes)assert.ok((await model.respond(context(),memory())).agent.stages.includes('guide_repair_card_doList_1'));
     else await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_speech_specific'});
   }
+});
+
+test('next narrator-promise detection preserves attributed supporter quotes and their original text',()=>{
+  for(const next of [
+    '원한다면 “제가 도와드릴 수 있는 일이 있을까요?”라고 물어보세요.',
+    '"제가 자료 정리를 도와드릴 수 있어요."라고 제안하세요.',
+    '‘저는 도와드릴 수 있는 부분을 함께 정하고 싶어요.’라고 말해보세요.',
+    '「제가 도와드릴 수 있을까요?」라고 질문하세요.',
+    '“제가 준비를 도와드릴 수 있을까요?” 또는 “제가 정리를 도와드릴 수 있을까요?”라고 물으며 필요한 일을 확인하세요.',
+    '“제가 도와드릴 수 있는 일이 있을까요?” 혹은 “도움이 필요한 부분을 말씀해 주실래요?”라고 물으며 답을 들어보세요.',
+  ]){
+    const value=guide().guide;value.next=next;const before=structuredClone(value);
+    const issues=knownSpeechIssues(value,context());
+    assert.equal(issues.some(issue=>issue.reason==='안내자가 직접 도움을 수행하겠다는 약속이 섞였습니다.'),false,next);
+    assert.deepEqual(value,before);
+  }
+});
+
+test('next narrator promises remain visible outside attributed quotes or when the quoted speaker is the app',()=>{
+  for(const next of [
+    '제가 대신 예약을 도와드릴 수 있습니다.',
+    '“제가 도와드릴 수 있을까요?”',
+    '“제가 도와드릴 수 있을까요?”라고 물어보세요. 앱이 예약을 도와드릴 수 있습니다.',
+    '“제가 도와드릴 수 있을까요?”라고 물어보세요. “제가 예약을 도와드릴 수 있습니다.”',
+    '“말씨 앱이 예약을 도와드릴 수 있습니다.”라고 말해보세요.',
+    '“제가 안내한 서비스가 예약을 도와드릴 수 있습니다.”라고 말해보세요.',
+    '앱이 “제가 예약을 도와드릴 수 있습니다.”라고 말하며 절차를 안내합니다.',
+    '“제가 도와드릴 수 있을까요?” 또는 “앱이 예약을 도와드릴 수 있습니다.”라고 물어보세요.',
+    '“도와드릴 수 있습니다.”라고 전했습니다.',
+    '“문제가 생기면 도와드릴 수 있습니다.”라고 말해보세요.',
+  ]){
+    const value=guide().guide;value.next=next;
+    assert.ok(knownSpeechIssues(value,context()).some(issue=>issue.reason==='안내자가 직접 도움을 수행하겠다는 약속이 섞였습니다.'),next);
+  }
+});
+
+test('attributed supporter speech remains subject to every other known content check',()=>{
+  const value=guide().guide;
+  value.next='“제가 도와드릴 수 있어요. 네 마음은 다 알고 있어요.”라고 말해보세요.';
+  const issues=knownSpeechIssues(value,context());
+  assert.equal(issues.some(issue=>issue.reason==='안내자가 직접 도움을 수행하겠다는 약속이 섞였습니다.'),false);
+  assert.ok(issues.some(issue=>issue.field==='next'&&issue.reason==='대상자의 마음이나 행동 원인을 아는 것처럼 말합니다.'));
+});
+
+test('next repair can retain an attributed supporter question only after new independent reviews',async()=>{
+  const next='상대가 원하면 “제가 도와드릴 수 있는 일이 있을까요?” 혹은 “필요한 준비를 함께 정해 볼까요?”라고 물어보세요.';
+  const initial=guide();initial.guide.next='제가 대신 필요한 준비를 도와드릴 수 있습니다.';
+  let repairs=0;const reviews=[],repairInputs=[];
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair_card_next')){repairs++;repairInputs.push(input.data);return envelope({next});}
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      guide_write:initial,guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[input.stage]);
+  },{cardReview:input=>{
+    if(Object.hasOwn(input.data.guide,'next'))reviews.push(structuredClone(input));
+    return {approved:true,issues:[]};
+  }});
+  const result=await model.respond(context(),memory());
+  assert.equal(result.guide.next,next);assert.equal(repairs,1);
+  const after=reviews.filter(input=>input.stage.endsWith('_after_repair_1'));
+  assert.deepEqual(after.map(input=>input.stage),['speech_review_card_next_after_repair_1','support_review_card_next_after_repair_1']);
+  assert.ok(after.every(input=>input.data.guide.next===next&&input.data.claims.some(claim=>claim.claim===next)));
+  assert.deepEqual(after[0].data.answers,repairInputs[0].answers);
+});
+
+for(const verdict of ['unsupported','plausible'])test('attributed next speech cannot bypass an independent source rejection: '+verdict,async()=>{
+  const next='원한다면 “제가 도와드릴 수 있는 일이 있을까요?”라고 물어보세요.';
+  const initial=guide();initial.guide.next=next;let reviews=0,repairs=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair_card_next')){repairs++;return envelope({next});}
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      guide_write:initial,guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[input.stage]);
+  },{cardReview:input=>{
+    if(!input.stage.startsWith('speech_review_card_next'))return {approved:true,issues:[]};
+    reviews++;assert.equal(input.data.guide.next,next);
+    return {approved:false,issues:[{field:'next',reason:'합성 독립 검토가 지원 범위의 근거를 승인하지 않았습니다.',repair:'원문으로 지원 범위를 다시 확인하여 고치세요.'}],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict,reason:'지원 범위를 현재 원문과 대조했습니다.'}))};
+  }});
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_review_rejected'});
+  assert.equal(reviews,3);assert.equal(repairs,2);assert.equal(model.transportStages.includes('guide_quality'),false);
+});
+
+test('avoid wire roles preserve original bounds and deterministically join all model-authored components',()=>{
+  const stored=avoidStoredSchema(),before=structuredClone(stored),wire=avoidCardDraftSchema(stored);
+  assert.deepEqual(wire.properties.avoid.items.required,['avoid_phrase','reason','alternative']);
+  assert.equal(wire.properties.avoid.items.additionalProperties,false);
+  for(const key of ['minItems','maxItems'])assert.equal(wire.properties.avoid[key],stored.properties.avoid[key]);
+  for(const value of Object.values(wire.properties.avoid.items.properties))assert.deepEqual(value,stored.properties.avoid.items);
+  const draft={avoid:[structuredClone(avoidExample)]},original=structuredClone(draft);
+  assert.deepEqual(canonicalAvoidCard(draft,stored),{avoid:[avoidText]});
+  assert.deepEqual(draft,original);assert.deepEqual(stored,before);
+});
+
+test('malformed avoid roles and flat wire arrays are rejected rather than inferred or silently repaired',()=>{
+  for(const draft of [{avoid:[avoidText]},{avoid:[]},{avoid:Array(5).fill(avoidExample)},
+    {avoid:[{avoid_phrase:'재촉하는 말.',alternative:'편한 시간을 물어보세요.'}]},
+    {avoid:[{...avoidExample,reason:' '}]},{avoid:[{...avoidExample,alternative:false}]},
+    {avoid:[{...avoidExample,approved:true}]},
+  ])assert.throws(()=>canonicalAvoidCard(draft,avoidStoredSchema()),{modelReason:'agent_schema'});
+});
+
+test('joined avoid items still obey the original whole-string maximum after valid wire roles',()=>{
+  const stored=avoidStoredSchema(),wire=avoidCardDraftSchema(stored);
+  const draft={avoid:[{avoid_phrase:'가'.repeat(1000),reason:'나'.repeat(1000),alternative:'다'.repeat(1000)}]};
+  validateSchema(draft,wire);
+  assert.throws(()=>canonicalAvoidCard(draft,stored),error=>error.modelReason==='agent_schema'&&
+    JSON.parse(error.modelFeedback).keyword==='maxLength'&&JSON.parse(error.modelFeedback).expected.max_length===2000);
+  assert.equal(draft.avoid[0].reason.length,1000);
+});
+
+test('the actual gateway rejects legacy flat avoid wire output on all three attempts',async()=>{
+  const stored=avoidStoredSchema(),requests=[];
+  const model=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'test-only',model:'synthetic-model',
+    protocol:'relationship_agent',diagnosticLogger:null,fetchImpl:async(_url,request)=>{
+      requests.push(JSON.parse(request.body));return envelope({avoid:[avoidText]});
+    }});
+  await assert.rejects(model.operation({},operation=>model.agentComplete('card_avoid','역할별 초안을 작성하세요.',
+    {answers:{source:'SYNTHETIC_COMPLETE_SOURCE'}},avoidCardDraftSchema(stored),operation,value=>canonicalAvoidCard(value,stored))),{modelReason:'agent_schema'});
+  assert.equal(requests.length,3);
+  assert.ok(requests.every(request=>JSON.parse(request.messages.at(-1).content).data.answers.source==='SYNTHETIC_COMPLETE_SOURCE'));
+});
+
+test('avoid repair wire omits rejected cards and old audits while preserving sources and fresh review history',async()=>{
+  const bad={avoid_phrase:'편한 시간을 먼저 물어보기.',reason:'대안을 별도 항목으로 작성했습니다.',alternative:'원할 때 답하도록 기다리세요.'};
+  const badText='피할 말·행동: 편한 시간을 먼저 물어보기. 이유: 대안을 별도 항목으로 작성했습니다. 대신 원할 때 답하도록 기다리세요.';
+  const reviews=[],writes=[];let repairs=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair_card_avoid')){
+      repairs++;writes.push(input);
+      assert.deepEqual(Object.keys(input.data),['answers','plan','field','task','issues','retrieval']);
+      assert.equal(input.data.task,input.data.issues.map(issue=>issue.repair).join('\n'));
+      assert.deepEqual(input.output_schema.properties.avoid.items.required,['avoid_phrase','reason','alternative']);
+      assert.match(body.messages[0].content,/역할 이름은 내용의 승인이나 사실 근거가 아닙니다/u);
+      return envelope({avoid:[structuredClone(avoidExample)]});
+    }
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[input.stage]);
+  },{cardWrite:input=>{
+    const key=Object.keys(input.output_schema.properties)[0];
+    if(key==='avoid'){writes.push(structuredClone(input));return {avoid:[bad]};}
+    return {[key]:guide().guide[key]};
+  },cardReview:input=>{
+    if(!input.stage.startsWith('speech_review_card_avoid'))return {approved:true,issues:[]};
+    reviews.push(structuredClone(input));assert.ok(input.data.guide.avoid.every(value=>typeof value==='string'));
+    assert.ok(input.data.claims.every(claim=>claim.claim_kind==='avoidance_guidance'));
+    assert.deepEqual(input.output_schema.properties.audits.items.properties.verdict.enum,['sound_avoidance','problem_in_recommended_content','unclear']);
+    return input.stage==='speech_review_card_avoid'?{approved:false,issues:[{field:'avoid',reason:'좋은 제안이 피할 행동 역할에 들어갔습니다.',repair:'실제로 피할 행동과 이유, 대안을 한 항목에 맞게 다시 작성하세요.'}],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'피할 행동의 역할이 맞지 않습니다.'}))}:{approved:true,issues:[]};
+  }});
+  const result=await model.respond(context(),memory());
+  assert.equal(repairs,1);assert.equal(reviews.length,2);assert.deepEqual(result.guide.avoid,[avoidText]);
+  assert.deepEqual(reviews[1].data.claims.map(claim=>claim.claim),[avoidText]);
+  assert.deepEqual(writes[0].data.answers,writes[1].data.answers);assert.deepEqual(writes[1].data.answers,reviews[1].data.answers);
+  assert.deepEqual(writes[1].data.plan,writes[0].data.plan);
+  assert.deepEqual(reviews[1].data.revision.changes,[{field:'avoid',before:[badText],after:[avoidText]}]);
+  assert.equal(reviews[1].data.revision.previous_review.audits[0].verdict,'unsupported');
+  assert.ok(result.guide.avoid.every(value=>typeof value==='string'));assert.deepEqual(JSON.parse(JSON.stringify(result)).guide.avoid,[avoidText]);
+});
+
+for(const verdict of ['unsupported','plausible'])test('structured avoid roles do not override a rejecting independent audit: '+verdict,async()=>{
+  let reviews=0,repairs=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair_card_avoid')){repairs++;return envelope({avoid:[structuredClone(avoidExample)]});}
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide()}[input.stage]);
+  },{cardReview:input=>{
+    if(!input.stage.startsWith('speech_review_card_avoid'))return {approved:true,issues:[]};
+    reviews++;assert.deepEqual(input.data.guide.avoid,[avoidText]);
+    return {approved:false,issues:[{field:'avoid',reason:'역할은 구분됐지만 대안의 원문 근거가 부족합니다.',repair:'원문 근거를 다시 확인해 대안을 수정하세요.'}],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict,reason:'내용의 원문 근거를 승인하지 않았습니다.'}))};
+  }});
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_review_rejected'});
+  assert.equal(repairs,2);assert.equal(reviews,3);
+});
+
+test('an approving typed avoid audit cannot publish an unbounded alternative caught by existing content checks',async()=>{
+  const bad={...avoidExample,alternative:'“나는 항상 네 곁에 있을게.”라고 말하세요.'};
+  const badText=canonicalAvoidCard({avoid:[bad]},avoidStoredSchema()).avoid[0];
+  let repairs=0,reviews=0;const events=[];
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair_card_avoid')){
+      repairs++;assert.equal(Object.hasOwn(input.data,'current'),false);assert.equal(Object.hasOwn(input.data,'review'),false);
+      assert.ok(input.data.issues.some(issue=>issue.reason==='이용자가 밝히지 않은 상시 지원을 약속합니다.'));
+      return envelope({avoid:[structuredClone(avoidExample)]});
+    }
+    return fixtureEnvelope(approvedCardOutputs()[input.stage]);
+  },{cardWrite:input=>{
+    const field=Object.keys(input.output_schema.properties)[0];return field==='avoid'?{avoid:[bad]}:{[field]:guide().guide[field]};
+  },cardReview:input=>{
+    if(input.stage.startsWith('speech_review_card_avoid')){
+      reviews++;assert.equal(input.data.claims[0].claim_kind,'avoidance_guidance');
+      if(reviews===2){
+        assert.deepEqual(input.data.revision.changes[0].before,[badText]);
+        assert.ok(input.data.revision.previous_review.audits.every(audit=>audit.verdict==='supported'),'the historical reviewer miss remains recorded');
+      }
+    }
+    return {approved:true,issues:[]};
+  }});
+  const result=await model.respond(context(),memory(),{onCard:event=>events.push(event)});
+  assert.equal(repairs,1);assert.equal(reviews,2);assert.deepEqual(result.guide.avoid,[avoidText]);
+  assert.ok(events.filter(event=>event.id==='avoid'&&event.type==='upsert').every(event=>!JSON.stringify(event.value).includes(bad.alternative)));
+});
+
+test('source-based avoid repair still rejects repeated unsupported premises before another independent review',async()=>{
+  const bad={...avoidExample,alternative:'책임감이 강하신 것 같은데, 요즘 어떤 도움이 필요하세요?'};
+  const requests=[],events=[];let reviews=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair_card_avoid')){
+      requests.push(input);
+      assert.equal(Object.hasOwn(input.data,'current'),false);assert.equal(Object.hasOwn(input.data,'review'),false);
+      assert.deepEqual(input.data.answers,requests[0].data.answers);
+      assert.deepEqual(input.data.retrieval,requests[0].data.retrieval);
+      if(requests.length>1)assert.match(input.validation_feedback,/확인되지 않은 대상자의 성품/u);
+      return envelope({avoid:[structuredClone(bad)]});
+    }
+    return fixtureEnvelope(approvedCardOutputs()[input.stage]);
+  },{cardWrite:input=>{
+    const key=Object.keys(input.output_schema.properties)[0];return key==='avoid'?{avoid:[structuredClone(bad)]}:{[key]:guide().guide[key]};
+  },cardReview:input=>{
+    if(input.stage.startsWith('speech_review_card_avoid'))reviews++;
+    return {approved:true,issues:[]};
+  }});
+  await assert.rejects(model.respond(context(),memory(),{onCard:event=>events.push(event)}),{modelReason:'agent_speech_specific'});
+  assert.equal(requests.length,3);assert.equal(reviews,1);
+  assert.equal(events.some(event=>event.id==='avoid'&&event.type==='upsert'),false);
+});
+
+test('whole-guide refinement retains its flat contract and rejected avoid content uses typed repair',async()=>{
+  const refined=guide();refined.guide.avoid=['재촉하는 말은 피하세요.','편한 시간을 물어보세요.'];let repairs=0,reviews=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(['guide_write','guide_refine'].includes(input.stage))assert.equal(input.output_schema.properties.guide.properties.avoid.items.type,'string');
+    if(input.stage==='guide_repair'){
+      repairs++;assert.equal(Object.hasOwn(input.data,'current'),false);assert.equal(Object.hasOwn(input.data,'review'),false);
+      assert.deepEqual(input.output_schema.properties.avoid.items.required,['avoid_phrase','reason','alternative']);
+      return envelope({avoid:[structuredClone(avoidExample)]});
+    }
+    if(input.stage.startsWith('guide_review'))return envelope({approved:true,issues:[]});
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),
+      guide_quality:{improvements:[{field:'avoid',reason:'항목의 연결을 다시 보세요.',repair:'피할 내용과 대안을 함께 작성하세요.'}]},guide_refine:refined}[input.stage]);
+  },{speechReview:input=>{
+    reviews++;const rejected=input.stage==='speech_review';
+    assert.ok(input.data.claims.filter(claim=>claim.field==='avoid').every(claim=>claim.claim_kind==='avoidance_guidance'));
+    assert.ok(input.data.claims.filter(claim=>claim.field!=='avoid').every(claim=>claim.claim_kind==='guidance'));
+    assert.ok(input.data.claims.every(claim=>!Object.hasOwn(claim,'certainty')));
+    assert.deepEqual(input.output_schema.properties.audits.items.anyOf[0].properties.id.enum,input.data.claims.filter(claim=>claim.field==='avoid').map(claim=>claim.id));
+    return {approved:!rejected,issues:rejected?[{field:'avoid',reason:'대안이 별도 피할 항목으로 떨어졌습니다.',repair:'역할을 구분해 한 항목으로 묶으세요.'}]:[],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:rejected&&claim.field==='avoid'?'unsupported':'supported',reason:'현재 카드 전체의 내용과 역할을 검토했습니다.'}))};
+  }});
+  const result=await model.respond(context(),memory());
+  assert.equal(repairs,1);assert.equal(reviews,2);assert.deepEqual(result.guide.avoid,[avoidText]);
 });
 
 test('a verified name is optional but spoken text cannot refer to the listener as an unknown third person',async()=>{
@@ -1248,6 +1718,33 @@ test('a verified name is optional but spoken text cannot refer to the listener a
   }
 });
 
+test('the first permission question belongs to the reviewed speech without bypassing its audit',async()=>{
+  const opening='지민아, 지금 잠깐 이야기할 수 있는 상황이야?';
+  const script=opening+' 밤에 계획표를 고치는 모습을 봤어. 네 마음을 이해하고 싶어.';
+  for(const verdict of ['supported','plausible']){
+    const reviews=[];
+    const model=gateway(body=>{
+      const stage=JSON.parse(body.messages.at(-1).content).stage;
+      return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+        guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[stage]);
+    },{speechWrite:()=>({script}),speechReview:(input,body)=>{
+      reviews.push({claims:input.data.claims,prompt:body.messages[0].content});
+      return {approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,
+        verdict:claim.id==='script.0'?verdict:'supported',reason:'현재 발화 전체를 독립적으로 검토했습니다.'}))};
+    }});
+    if(verdict==='supported'){
+      assert.equal((await model.respond(context(),memory())).guide.script,script);
+      assert.equal(reviews.length,1);assert.equal(model.transportStages.includes('guide_repair'),false);
+    }else{
+      await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_claim_audit'});
+      assert.equal(reviews.length,3);assert.equal(model.transportStages.includes('guide_review'),false);
+    }
+    assert.ok(reviews.every(review=>review.claims.find(claim=>claim.id==='script.0').claim===opening));
+    assert.match(reviews[0].prompt,/허락 질문[^\n]*script의 정식 일부/u);
+    assert.match(reviews[0].prompt,/대화 가능 여부를 먼저 확인한다는 이유만으로[^\n]*거절/u);
+  }
+});
+
 test('spoken text cannot repeat the same immediate conversation-permission question',async()=>{
   const model=gateway(body=>{
     const stage=JSON.parse(body.messages[1].content).stage;
@@ -1257,6 +1754,81 @@ test('spoken text cannot repeat the same immediate conversation-permission quest
     return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:guide());
   },{speechWrite:()=>({script:'지금 잠시 이야기 나눌 수 있을까요? 요즘 어떤지 듣고 싶어요. 혹시 지금 대화 나누기 괜찮으신가요?'})});
   await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_speech_repeat'});
+});
+
+test('permission counting distinguishes explicit decline choices without exempting real questions',()=>{
+  const opening='잠깐 이야기해도 괜찮을까?';
+  for(const choice of [
+    '지금 대화가 부담되면 다른 때 말해도 괜찮아.',
+    '지금 이야기하기 힘드시면 다음에 말씀하셔도 괜찮습니다.',
+    '지금은 이야기하지 않아도 괜찮아요.',
+    '지금은 대화를 안 해도 괜찮아요.',
+    '지금 대화를 미뤄도 괜찮습니다.',
+  ])assert.deepEqual(speechPermissionQuestions(opening+' '+choice),[opening]);
+  for(const question of [
+    '지금 이야기 나눌 수 있을까요?',
+    '지금 대화해도 괜찮으신가요.',
+    '지금 잠시 이야기해도 괜찮을까',
+    '나중에 대화하기 어려우면 지금 잠깐 이야기해도 괜찮을까요.',
+    '지금 대화가 어렵다면 다음에 잠깐 이야기해도 괜찮을까요?',
+    '지금 잠깐 대화해도 괜찮을까요, 힘들면 다음에 해도 괜찮아요.',
+    '지금 잠깐 이야기할 수 있을까, 어려우면 나중에 해도 괜찮아.',
+    '지금 이야기해도 괜찮아요.',
+  ])assert.equal(speechPermissionQuestions(opening+' '+question).length,2,question);
+  assert.equal(speechPermissionQuestions(opening+' 지금은 대화를 안 해도 괜찮아요. 지금 대화 나눌 수 있을까요.').length,2);
+});
+
+for(const choice of ['지금 대화가 부담되면 다른 때 말해도 괜찮아.','지금은 이야기하지 않아도 괜찮아.'])
+test('one permission plus an explicit choice reaches independent review with its original wording: '+choice,async()=>{
+  const opening='지민아, 잠깐 이야기해도 괜찮을까?';
+  const script=opening+' 밤에 계획표를 고치는 모습을 봤어. 네 마음을 이해하고 싶어. '+choice;
+  const reviews=[];
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages.at(-1).content).stage;
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[stage]);
+  },{speechWrite:()=>({script}),speechReview:input=>{
+    reviews.push(structuredClone(input.data));return {approved:true,issues:[]};
+  }});
+  assert.equal((await model.respond(context(),memory())).guide.script,script);
+  assert.equal(model.transportStages.filter(stage=>stage==='speech_write').length,1);
+  assert.equal(reviews.length,1);
+  for(const text of [opening,choice])assert.ok(reviews[0].claims.some(claim=>claim.claim===text));
+  assert.equal(reviews[0].guide.script,script);
+  assert.deepEqual(reviews[0].answers,model.transportInputs.find(input=>input.stage==='speech_write').data.answers);
+});
+
+for(const verdict of ['unsupported','plausible'])test('an explicit decline choice still fails a rejecting independent review: '+verdict,async()=>{
+  const choice='지금 대화가 부담되면 다른 때 말해도 괜찮아.';
+  const script='지민아, 잠깐 이야기해도 괜찮을까? 밤에 계획표를 고치는 모습을 봤어. 네 마음을 이해하고 싶어. '+choice;
+  const reviews=[];
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages.at(-1).content).stage;
+    if(stage.startsWith('guide_repair_card_script'))return envelope({script});
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[stage]);
+  },{speechWrite:()=>({script}),cardReview:input=>{
+    if(!Object.hasOwn(input.data.guide,'script'))return {approved:true,issues:[]};
+    reviews.push(structuredClone(input.data));
+    return {approved:false,issues:[{field:'script',reason:'합성 검토가 해당 문장의 근거를 승인하지 않았습니다.',repair:'원문 근거를 다시 확인해 해당 문장을 수정하세요.'}],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:claim.claim===choice?verdict:'supported',reason:'각 문장을 원문과 독립적으로 대조했습니다.'}))};
+  }});
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_review_rejected'});
+  assert.equal(reviews.length,3);assert.ok(reviews.every(input=>input.guide.script===script));
+  assert.equal(model.transportStages.includes('guide_quality'),false);
+});
+
+for(const script of [
+  '지금 잠깐 이야기할 수 있을까요. 지금 이야기하기 힘드시면 다음에 말씀하셔도 괜찮습니다. 잠시 대화해도 괜찮으신가요.',
+  '잠시 대화해도 괜찮으신가요. 지금 잠깐 이야기할 수 있을까, 어려우면 나중에 해도 괜찮아.',
+])test('a later-time choice does not hide two genuine permission questions before review: '+script,async()=>{
+  let speechReviews=0;
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages.at(-1).content).stage;
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide()}[stage]);
+  },{speechWrite:()=>({script}),speechReview:()=>{speechReviews++;return {approved:true,issues:[]};}});
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_speech_repeat'});
+  assert.equal(model.transportStages.filter(stage=>stage==='speech_write').length,3);assert.equal(speechReviews,0);
 });
 
 test('known mind-reading wording cannot pass even when model reviewers would approve it',async()=>{
@@ -1297,6 +1869,54 @@ test('a flawed communication strategy is repaired and independently reviewed bef
     }
     assert.equal(stages.filter(stage=>stage==='communication_plan_repair').length,1);
   }
+});
+
+test('plan rechecks retain the rejected strategy and review without treating its repair example as approval',async()=>{
+  for(const repairedCorrectly of [true,false]){
+    const original=plan();original.patient_choice='조금 쉬고 나면 이야기하고 싶어질 거예요.';
+    const suggested='조용히 있고 싶어 하는 것 같아. 혼자 쉬면 좋겠어.';
+    const review={approved:false,issues:[{field:'patient_choice',reason:'상대가 원하는 반응을 예측했습니다.',repair:suggested}]};
+    const repaired=plan();repaired.patient_choice=repairedCorrectly?'지금 이야기해도 괜찮을까, 아니면 다른 때가 편할까?':suggested;
+    let repairs=0;
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages.at(-1).content);
+      if(input.stage==='communication_plan_repair'){repairs++;return envelope(repaired);}
+      return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:original,
+        guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[input.stage]);
+    },{planReview:input=>input.stage==='plan_review'?review:repairedCorrectly?{approved:true,issues:[]}:
+      {approved:false,issues:[{field:'patient_choice',reason:'제안된 수정에도 상대의 마음을 추정하는 부분이 남았습니다.',repair:'마음을 예측하지 말고 지금 대화할지 선택을 물으세요.'}]}});
+    if(repairedCorrectly)assert.equal((await model.respond(context(),memory())).agent.reviewed,true);
+    else await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_plan_review_rejected'});
+    const inputFor=stage=>model.transportInputs.find(input=>input.stage===stage).data;
+    assert.deepEqual(inputFor('communication_plan_repair').draft,original);
+    assert.deepEqual(inputFor('communication_plan_repair').review,review);
+    assert.deepEqual(inputFor('plan_review_after_repair').revision,{previous_review:review,before:original,after:repaired});
+    assert.deepEqual(inputFor('plan_review_after_repair').plan,repaired);
+    assert.deepEqual(inputFor('plan_review_after_repair').answers,agentContext(context()));
+    assert.equal(repairs,1);
+    assert.equal(model.transportStages.includes('guide_write'),repairedCorrectly);
+  }
+});
+
+test('an overlong repetitive plan repair is corrected before it can reach the plan writer',async()=>{
+  const repeated='거절된 예문을 그대로 되풀이합니다. '.repeat(15);
+  const concise='상대의 예상 대사를 삭제하고 지금 대화할지 선택할 수 있는 질문을 제안하세요.';
+  let reviews=0;
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages.at(-1).content).stage;
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      communication_plan_repair:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}}[stage]);
+  },{planReview:input=>{
+    if(input.stage==='plan_review')return {approved:false,issues:[{field:'patient_choice',reason:'선택권을 명확히 하세요.',repair:++reviews===1?repeated:concise}]};
+    return {approved:true,issues:[]};
+  }});
+  assert.equal((await model.respond(context(),memory())).agent.reviewed,true);
+  assert.equal(reviews,2);
+  const attempts=model.transportInputs.filter(input=>input.stage==='plan_review');
+  assert.equal(attempts[1].rejected_output.issues[0].repair,repeated);
+  const repair=model.transportInputs.find(input=>input.stage==='communication_plan_repair');
+  assert.equal(repair.data.review.issues[0].repair,concise);
+  assert.equal(JSON.stringify(repair.data).includes(repeated),false);
 });
 
 test('quality refinement is checked again and unresolved errors cannot become a saved guide',async()=>{
@@ -1358,6 +1978,58 @@ test('speech retry receives the rejected sentence and keeps the explicit speaker
   assert.equal(writes,2);assert.equal(result.guide.script,guide().guide.script);
 });
 
+test('unsupported speech parts are repaired at their own stage before later writers receive them',async()=>{
+  const rejected='네가 얼마나 최선을 다하고 있는지 내가 다 알고 있어.';
+  for(const [part,field] of [['listening','open_question'],['offer','small_invitation']]){
+    let attempts=0;
+    const outputs=approvedCardOutputs(),model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]),{
+      speechPart:input=>{
+        const result=Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'요즘 어떤지 듣고 싶어.']));
+        if(input.stage!=='speech_'+part){assert.equal(JSON.stringify(input.data.earlier_parts).includes(rejected),false);return result;}
+        attempts++;
+        if(attempts===1)return {...result,[field]:rejected};
+        assert.equal(input.rejected_output[field],rejected);
+        assert.ok(input.validation_feedback.includes('speech_'+part+'.'+field));
+        assert.ok(input.validation_feedback.includes(rejected));
+        assert.ok(input.validation_feedback.includes('네가 얼마나 최선을 다하고 있는지 내가 다 알'));
+        return result;
+      },
+      speechWrite:input=>{assert.equal(JSON.stringify(input.data.parts).includes(rejected),false);return {script:guide().guide.script};},
+    });
+    const result=await model.respond(context(),memory());
+    assert.equal(attempts,2);assert.deepEqual(result.guide,guide().guide);
+  }
+});
+
+test('final inference retries identify the exact rejected script and offending expression',async()=>{
+  const rejected='네가 얼마나 최선을 다하고 있는지 내가 다 알고 있어.';
+  let attempts=0;
+  const outputs=approvedCardOutputs(),model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]),{
+    speechWrite:input=>{
+      if(++attempts===1)return {script:rejected};
+      assert.equal(input.rejected_output.script,rejected);
+      assert.ok(input.validation_feedback.includes('script'));
+      assert.ok(input.validation_feedback.includes(rejected));
+      return {script:guide().guide.script};
+    },
+  });
+  const result=await model.respond(context(),memory());
+  assert.equal(attempts,2);assert.equal(result.guide.script,guide().guide.script);
+});
+
+test('unrepaired unsafe speech parts exhaust the existing stage attempts before final speech can start',async()=>{
+  let attempts=0;
+  const outputs=approvedCardOutputs(),model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]),{
+    speechPart:input=>{
+      const result=Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'요즘 어떤지 듣고 싶어.']));
+      if(input.stage==='speech_offer'){attempts++;result.help_choice='네 곁에 항상 있을게.';}
+      return result;
+    },
+  });
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_speech_specific'});
+  assert.equal(attempts,3);assert.equal(model.transportStages.includes('speech_write'),false);
+});
+
 test('dedicated card writers and speech parts reach integration before final grounded explanation',async()=>{
   const seen=[],events=[];
   const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
@@ -1367,7 +2039,8 @@ test('dedicated card writers and speech parts reach integration before final gro
     speechWrite:input=>{assert.deepEqual(Object.keys(input.data.parts),['opening','listening','offer']);assert.ok(input.data.answers.supporter.length);return {script:guide().guide.script};},
   });
   const result=await model.respond(context(),memory(),{onProgress:event=>events.push(event)});
-  assert.deepEqual(seen,['care','doList','avoid','next','speech_opening','speech_listening','speech_offer']);
+  assert.deepEqual([...seen].sort(),['care','doList','avoid','next','speech_opening','speech_listening','speech_offer'].sort());
+  assert.deepEqual(seen.filter(stage=>stage.startsWith('speech_')),['speech_opening','speech_listening','speech_offer']);
   assert.equal(Object.values(result.conversation_detail).map(item=>item.excerpt).join(''),result.guide.script);
   assert.ok(result.agent.stages.indexOf('speech_detail')>result.agent.stages.indexOf('guide_review'));
   assert.equal(events.filter(event=>event.status==='completed').length,result.agent.stages.length);
@@ -1375,15 +2048,114 @@ test('dedicated card writers and speech parts reach integration before final gro
   assert.ok(events.every(event=>Object.keys(event).sort().join(',')==='attempt,stage,status'));
 });
 
+test('speech explanation accepts equivalent sections in a different JSON property order',async()=>{
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  let writes=0;
+  const model=gateway(body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]),{detailWrite:input=>{
+    writes++;
+    const sections=Object.fromEntries(['opening','listening','offer'].map(key=>[key,{
+      why:'보고한 행동을 되짚으며 듣고 싶다는 뜻을 전하는 제안이에요.',evidence:[ref()],
+    }]));
+    return {listening_end:input.data.script_units.length-1,offer:sections.offer,listening:sections.listening,opening_end:1,opening:sections.opening};
+  }});
+  const result=await model.respond(context(),memory());
+  assert.equal(writes,1);
+  assert.equal(['opening','listening','offer'].map(key=>result.conversation_detail[key].excerpt).join(''),result.guide.script);
+  assert.equal(result.agent.stages.at(-1),'speech_detail_review');
+});
+
 test('explanation cannot publish an invented excerpt or survive two rejected reviews',async()=>{
   const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
   const handler=body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]);
   const bad=gateway(handler,{detailWrite:()=>Object.fromEntries(['opening','listening','offer'].map(key=>[key,{excerpt:'원문에 없는 발화',why:'설명',evidence:[ref()]}]))});
-  await assert.rejects(bad.respond(context(),memory()),{modelReason:'agent_detail_excerpt'});
+  await assert.rejects(bad.respond(context(),memory()),{modelReason:'agent_schema'});
   let reviews=0;
   const rejected=gateway(handler,{detailReview:input=>{reviews++;return {approved:false,issues:['설명에 확인되지 않은 감정이 추가됐어요.'],audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'근거 밖 해석입니다.'}))};}});
   await assert.rejects(rejected.respond(context(),memory()),{modelReason:'agent_detail_review_rejected'});
   assert.equal(reviews,2);
+});
+
+for(const script of [
+  '지민아, 밤에 계획표를 고치는 모습을 봤어. 네 마음을 이해하고 싶어. 지금 이야기해도 괜찮을까?',
+  '지민아 😊, 밤에 계획표를 고치는 모습을 봤어.\r\n\r\n네 마음을 이해하고 싶어.\n지금 이야기해도 괜찮을까?  ',
+  '지민아, 밤에 계획표를 고치는 모습을 봤는데 네 마음을 이해하고 싶어서 지금 이야기해도 괜찮을까?',
+  '지민아밤에계획표를고치는모습을봤어네마음을이해하고싶어지금이야기해도괜찮을까?',
+])test('speech detail selects boundaries while every final source character is preserved: '+script.length,async()=>{
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  let detailInput,reviewedDetail;
+  const model=gateway(body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]),{
+    speechWrite:()=>({script}),
+    detailWrite:input=>{
+      detailInput=input;
+      assert.equal(input.data.script_units.map(unit=>unit.text).join(''),script);
+      assert.deepEqual(input.data.script_units.map(unit=>unit.id),input.data.script_units.map((_,index)=>index+1));
+      assert.ok(input.data.script_units.length>=3);
+      assert.ok(input.data.script_units.every(unit=>unit.text.trim()));
+      for(const key of ['opening','listening','offer'])assert.equal(Object.hasOwn(input.output_schema.properties[key].properties,'excerpt'),false);
+      return {opening_end:1,listening_end:input.data.script_units.length-1,
+        ...Object.fromEntries(['opening','listening','offer'].map(key=>[key,{why:'보고한 행동을 되짚으며 듣고 싶다는 뜻을 전하는 제안이에요.',evidence:[ref()]}]))};
+    },
+    detailReview:input=>{
+      reviewedDetail=structuredClone(input.data.detail);
+      return {approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'원문에 근거한 제안입니다.'}))};
+    },
+  });
+  const result=await model.respond(context(),memory());
+  assert.equal(detailInput.data.script,script);
+  assert.equal(['opening','listening','offer'].map(key=>result.conversation_detail[key].excerpt).join(''),script);
+  assert.deepEqual(Object.keys(result.conversation_detail),['opening','listening','offer']);
+  assert.deepEqual(result.conversation_detail,reviewedDetail);
+  assert.equal(result.conversation_detail.opening.excerpt,detailInput.data.script_units[0].text);
+  assert.equal(Object.hasOwn(result.conversation_detail,'opening_end'),false);
+});
+
+test('speech detail repairs crossed section boundaries without changing the final script or accepting copied excerpts',async()=>{
+  const script=guide().guide.script+' 원하면 천천히 이야기해 줘.';
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  const sources=[];let writes=0;
+  const model=gateway(body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]),{
+    speechWrite:()=>({script}),detailWrite:input=>{
+      sources.push(structuredClone(input.data));writes++;
+      if(writes===2){
+        assert.match(input.validation_feedback,/opening_end/u);
+        assert.equal(input.rejected_output.opening_end,input.rejected_output.listening_end);
+      }
+      return {opening_end:writes===1?2:1,listening_end:2,
+        ...Object.fromEntries(['opening','listening','offer'].map(key=>[key,{why:'보고한 행동을 되짚으며 듣고 싶다는 뜻을 전하는 제안이에요.',evidence:[ref()]}]))};
+    },
+  });
+  const result=await model.respond(context(),memory());
+  assert.equal(writes,2);assert.deepEqual(sources[1],sources[0]);
+  assert.equal(['opening','listening','offer'].map(key=>result.conversation_detail[key].excerpt).join(''),script);
+  assert.equal(result.agent.stages.at(-1),'speech_detail_review');
+});
+
+test('speech detail rejects copied full-script excerpts even alongside valid section boundaries',async()=>{
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  let writes=0,reviews=0;
+  const model=gateway(body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]),{
+    detailWrite:input=>{
+      writes++;
+      return {opening_end:1,listening_end:input.data.script_units.length-1,
+        ...Object.fromEntries(['opening','listening','offer'].map(key=>[key,{
+          excerpt:input.data.script,why:'보고한 행동을 되짚는 제안이에요.',evidence:[ref()],
+        }]))};
+    },detailReview:()=>{reviews++;assert.fail('Invalid model excerpts must not reach independent review.');},
+  });
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_schema'});
+  assert.equal(writes,3);assert.equal(reviews,0);
+});
+
+test('speech detail partitions the final refined script rather than the previous assembled speech',async()=>{
+  const refined=guide();refined.guide.script+=' 네가 원할 때 천천히 이야기해 줘.';
+  const base={relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),guide_write:guide(),
+    guide_quality:{improvements:[{field:'script',reason:'의미를 명확하게 표현하세요.',repair:'원문에 있는 뜻을 유지하세요.'}]},guide_refine:refined,guide_review:{approved:true,issues:[]}};
+  const model=gateway(body=>fixtureEnvelope(base[JSON.parse(body.messages.at(-1).content).stage]));
+  const result=await model.respond(context(),memory());
+  const input=model.transportInputs.find(row=>row.stage==='speech_detail');
+  assert.equal(input.data.script,refined.guide.script);
+  assert.equal(input.data.script_units.map(unit=>unit.text).join(''),refined.guide.script);
+  assert.equal(['opening','listening','offer'].map(key=>result.conversation_detail[key].excerpt).join(''),refined.guide.script);
 });
 
 test('a vague help offer retries with the exact rejected speech and the selected treatment intent',async()=>{
@@ -1416,4 +2188,519 @@ test('analysis audits cannot omit claims or approve unsupported interpretations 
     assert.equal(stages.filter(stage=>stage==='analysis_review').length,3);
     assert.equal(stages.includes('communication_plan'),false);
   }
+});
+
+// Synthetic source/guide pairs exercise routing and required review behavior.
+// A mocked reviewer passing these is not a model semantic-accuracy measurement.
+function causalReviewGateway(candidate,{speechReview,repair}={}) {
+  return gateway(body=>{
+    const input=JSON.parse(body.messages[1].content),stage=input.stage;
+    if(stage==='relationship_analysis')return fixtureEnvelope(analysis());
+    if(stage==='communication_plan')return envelope(plan());
+    if(stage==='guide_quality')return envelope({improvements:[]});
+    if(stage.startsWith('guide_repair'))return envelope(repair?.(input)??candidate);
+    return fixtureEnvelope(stage.includes('review')?{approved:true,issues:[]}:candidate);
+  },{speechReview});
+}
+
+test('causal selfcare wording receives complete claim review without a lexical rejection or extra stage',async()=>{
+  for(const sentence of [
+    '걱정되는 마음 때문에 약속을 더 늘릴 필요는 없어요. 지금 가능한 범위를 정해 보세요.',
+    '무력한 마음 때문에 모든 일을 맡으려 하지 말고 본인의 휴식 시간도 지켜 보세요.',
+  ]) {
+    const candidate=guide();candidate.guide.doList=[sentence];let reviewed=0;
+    const model=causalReviewGateway(candidate,{speechReview:input=>{
+      reviewed++;
+      assert.deepEqual(input.data.semantic_review_focus,['doList.0']);
+      assert.equal(input.data.claims.find(row=>row.id==='doList.0').claim,sentence);
+      assert.ok(input.data.answers.supporter.some(row=>row.question_id==='feeling'&&row.status==='answered'));
+      const audit=input.output_schema.properties.audits.items;
+      assert.deepEqual((audit.anyOf??[audit]).flatMap(branch=>branch.properties.id.enum).sort(),input.data.claims.map(row=>row.id).sort());
+      return {approved:true,issues:[]};
+    }});
+    const result=await model.respond(context(),memory());
+    assert.deepEqual(result.guide,candidate.guide);
+    assert.equal(reviewed,1);
+    assert.equal(model.transportStages.some(stage=>stage.startsWith('guide_repair')),false);
+    for(const stage of ['support_review','guide_review','speech_detail_review'])assert.ok(model.transportStages.includes(stage));
+  }
+});
+
+test('a causal focus is not an exemption for patient inference, mixed subjects or invented selfcare history',async()=>{
+  for(const sentence of [
+    '상대방은 무거운 마음 때문에 연락을 피하는 겁니다.',
+    '이용자는 걱정되는 마음 때문에 무리하지 말되 상대도 같은 마음 때문에 연락을 피한다고 이해하세요.',
+    '이용자님은 무력한 마음 때문에 이미 여러 약속을 취소하셨습니다.',
+  ]) {
+    const candidate=guide();candidate.guide.doList=[sentence];const reviews=[];
+    const model=causalReviewGateway(candidate,{speechReview:input=>{
+      reviews.push(input.stage);
+      const bad=input.data.claims.find(row=>row.claim===sentence);
+      return {approved:!bad,issues:bad?[{field:'doList',reason:'원문에 없는 주체나 인과·과거 행동을 덧붙였습니다.',repair:'원문에 없는 사실을 제거하고 가능한 시간을 먼저 물어보세요.'}]:[],
+        audits:input.data.claims.map(row=>({id:row.id,verdict:row===bad?'unsupported':'supported',reason:row===bad?'주장 전체를 뒷받침하는 원문이 없습니다.':'원문과 제안 범위를 유지했습니다.'}))};
+    },repair:()=>({doList:['편한 시간을 물어보세요.']})});
+    const result=await model.respond(context(),memory());
+    assert.deepEqual(result.guide,guide().guide);
+    assert.deepEqual(reviews,['speech_review','speech_review_after_repair']);
+    assert.ok(model.transportStages.includes('guide_repair'));
+  }
+});
+
+test('focused claims cannot be approved with unsupported, plausible, missing or duplicate audits',async()=>{
+  for(const corrupt of ['unsupported','plausible','missing','duplicate']) {
+    const candidate=guide();candidate.guide.doList=['걱정되는 마음 때문에 무리하지 말고 가능한 범위를 정해 보세요.'];
+    const model=causalReviewGateway(candidate,{speechReview:input=>{
+      const audits=input.data.claims.map(row=>({id:row.id,verdict:'supported',reason:'합성 감사 결과입니다.'}));
+      const index=audits.findIndex(row=>row.id==='doList.0');
+      if(corrupt==='missing')audits.splice(index,1);
+      else if(corrupt==='duplicate')audits[index]={...audits[0]};
+      else audits[index].verdict=corrupt;
+      return {approved:true,issues:[],audits};
+    }});
+    await assert.rejects(model.respond(context(),memory()),error=>error.code==='MODEL_INVALID_RESPONSE'&&
+      error.modelReason===(corrupt==='missing'?'agent_schema':'agent_claim_audit'));
+    assert.equal(model.transportStages.includes('guide_review'),false);
+  }
+});
+
+test('focus covers script, care, next and avoided quotes without dropping any other claim',async()=>{
+  const candidate=guide();
+  candidate.guide.script='나는 걱정되는 마음 때문에 연락했어. 지금 이야기해도 괜찮을까?';
+  candidate.guide.next='걱정되는 마음 때문에 약속을 늘리기 전에 가능한 범위를 먼저 정해 보세요.';
+  candidate.guide.care.tips=['무력한 마음 때문에 모든 일을 맡지는 마세요.'];
+  candidate.guide.avoid=[causalAvoidText];
+  const model=causalReviewGateway(candidate,{speechReview:input=>{
+    assert.deepEqual(input.data.semantic_review_focus,['script.0','avoid.0','next.0','care.1']);
+    assert.equal(input.data.claims.find(row=>row.id==='avoid.0').claim,candidate.guide.avoid[0]);
+    assert.ok(input.data.claims.some(row=>row.id==='doList.0'));
+    return {approved:true,issues:[]};
+  }});
+  const result=await model.respond(context(),memory());assert.deepEqual(result.guide,candidate.guide);
+});
+
+test('ordinary guides do not gain causal review metadata or extra full-guide reviews',async()=>{
+  const model=causalReviewGateway(guide(),{speechReview:input=>{
+    assert.equal(Object.hasOwn(input.data,'semantic_review_focus'),false);return {approved:true,issues:[]};
+  }});
+  const result=await model.respond(context(),memory());assert.deepEqual(result.guide,guide().guide);
+  assert.equal(model.transportStages.filter(stage=>stage==='speech_review').length,1);
+});
+
+const deferred=()=>{let resolve;const promise=new Promise(done=>{resolve=done;});return {promise,resolve};};
+const approvedCardOutputs=()=>({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+  guide_write:guide(),guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}});
+const applyCardEvent=(cards,event)=>{
+  if(event.type==='reset')cards.clear();
+  else if(event.type==='remove')cards.delete(event.id);
+  else {const {type,...card}=event;cards.set(card.id,card);}
+};
+
+test('actual card and complete-guide reviews share the final guidance boundary without changing sources or saved cards',async()=>{
+  const outputs=approvedCardOutputs(),model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]));
+  const result=await model.respond(context(),memory());
+  const expectedStages=['speech_review_card_script','speech_review_card_care','speech_review_card_doList',
+    'speech_review_card_avoid','speech_review_card_next','support_review_card_care','support_review_card_next',
+    'speech_review','support_review','guide_review'];
+  for(const stage of expectedStages){
+    const index=model.transportStages.indexOf(stage);assert.ok(index>=0,stage);
+    const prompt=model.transportPrompts[index],input=model.transportInputs[index];
+    assert.ok(prompt.endsWith(GUIDANCE_REVIEW_BOUNDARY),stage);
+    assert.equal(prompt.split(GUIDANCE_REVIEW_BOUNDARY).length-1,1,stage);
+    assert.deepEqual(input.data.answers,agentContext(context()),stage);
+    if(input.data.claims){
+      assert.ok(input.data.claims.every(claim=>!Object.hasOwn(claim,'certainty')),stage);
+      assert.ok(input.data.claims.every(claim=>claim.claim_kind===(claim.field==='avoid'?'avoidance_guidance':'guidance')),stage);
+      assert.deepEqual(Object.keys(input.output_schema.properties),['audits','issues','approved'],stage);
+      const audit=input.output_schema.properties.audits.items;
+      for(const branch of audit.anyOf||[audit]){
+        assert.deepEqual(Object.keys(branch.properties),['id','reason','verdict'],stage);
+        const avoidance=branch.properties.id.enum.every(id=>id.startsWith('avoid.'));
+        assert.deepEqual(branch.properties.verdict.enum,avoidance?['sound_avoidance','problem_in_recommended_content','unclear']:['sound_guidance','problem_in_guidance','unclear'],stage);
+      }
+    }
+    const field=input.data.review_scope?.guide_fields?.[0];
+    if(stage.includes('_card_'))assert.equal(prompt.split('이번 호출에서는 guide의 '+field+' 카드 하나만').length-1,1,stage);
+    else assert.ok(!prompt.includes('이번 호출에서는 guide의'),stage);
+  }
+  for(const stage of ['relationship_analysis','analysis_review','communication_plan','plan_review','guide_quality']){
+    const index=model.transportStages.indexOf(stage);assert.ok(index>=0,stage);
+    assert.ok(!model.transportPrompts[index].includes(GUIDANCE_REVIEW_BOUNDARY),stage);
+  }
+  const writer=model.transportStages.indexOf('card_care');assert.ok(writer>=0);
+  assert.ok(model.transportPrompts[writer].includes(CARD_ROLES.care));
+  assert.deepEqual(result.guide,guide().guide);
+  for(const stage of ['analysis_review','speech_detail_review']){
+    const input=model.transportInputs.find(input=>input.stage===stage);assert.ok(input,stage);
+    assert.ok(input.data.claims.length>0,stage);
+    assert.ok(input.data.claims.every(claim=>Object.hasOwn(claim,'certainty')&&!Object.hasOwn(claim,'claim_kind')),stage);
+  }
+});
+
+test('three independent branches overlap and only individually approved cards appear before all writers finish',async t=>{
+  const gates={script:deferred(),care:deferred(),doList:deferred()},allStarted=deferred(),careReviewStarted=deferred(),careReview=deferred();
+  const approvedDoList=deferred(),approvedCare=deferred(),started=new Set(),cards=new Map(),events=[];
+  const hold=async field=>{started.add(field);if(started.size===3)allStarted.resolve();await gates[field].promise;};
+  t.after(()=>{Object.values(gates).forEach(gate=>gate.resolve());careReview.resolve();});
+  const outputs=approvedCardOutputs(),model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]),{
+    cardWrite:async input=>{const field=Object.keys(input.output_schema.properties)[0];if(gates[field])await hold(field);return {[field]:guide().guide[field]};},
+    speechPart:async input=>{if(input.stage==='speech_opening')await hold('script');return Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'원문을 확인하고 이야기를 듣고 싶어.']));},
+    cardReview:async input=>{if(input.stage==='support_review_card_care'){careReviewStarted.resolve();await careReview.promise;}return {approved:true,issues:[]};},
+  });
+  let inFlight=0,maximum=0;const transport=model.fetchImpl;
+  model.fetchImpl=async(...args)=>{inFlight++;maximum=Math.max(maximum,inFlight);try{return await transport(...args);}finally{inFlight--;}};
+  const pending=model.respond(context(),memory(),{onCard:event=>{
+    events.push(event);applyCardEvent(cards,event);
+    if(event.type==='upsert'&&event.id==='doList')approvedDoList.resolve();
+    if(event.type==='upsert'&&event.id==='care')approvedCare.resolve();
+  }});
+  await allStarted.promise;
+  assert.deepEqual([...started].sort(),['care','doList','script']);assert.equal(maximum,3);
+  assert.deepEqual([...cards.keys()],['relationship']);
+  assert.deepEqual(cards.get('relationship').value,canonicalAnalysis(analysis()));
+  gates.doList.resolve();await approvedDoList.promise;
+  assert.equal(cards.has('script'),false);assert.equal(cards.has('care'),false);
+  assert.equal(model.transportStages.includes('guide_quality'),false);
+  gates.care.resolve();await careReviewStarted.promise;
+  assert.equal(cards.has('care'),false); // Speech audit alone is insufficient for this card.
+  careReview.resolve();await approvedCare.promise;gates.script.resolve();
+  const result=await pending;
+  assert.equal(maximum,3);assert.equal(inFlight,0);
+  for(const field of ['care','doList','avoid','next','script'])assert.deepEqual(cards.get(field).value,result.guide[field]);
+  assert.deepEqual(cards.get('script').detail,result.conversation_detail);
+  assert.deepEqual(cards.get('relationship').value,result.relationship_analysis);
+  assert.equal(events.filter(event=>event.type==='upsert'&&event.id==='script').length,2);
+  assert.equal(result.agent.reviewed,true);assert.equal(result.agent.quality_reviewed,true);
+});
+
+test('a rejected individual card retains its exact audits through repair and is never published before reapproval',async()=>{
+  const outputs=approvedCardOutputs(),events=[],repaired='어떤 도움이 필요한지 먼저 물어보세요.';
+  let repairs=0,reviews=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage==='guide_repair_card_doList_1'){
+      repairs++;assert.equal(events.some(event=>event.type==='upsert'&&event.id==='doList'),false);
+      assert.equal(input.data.review.audits[0].reason,'상대의 현재 선택을 확인해야 합니다.');
+      assert.deepEqual(input.data.current,guide().guide.doList);
+      return envelope({doList:[repaired]});
+    }
+    return fixtureEnvelope(outputs[input.stage]);
+  },{cardReview:input=>{
+    if(!input.stage.startsWith('speech_review_card_doList'))return {approved:true,issues:[]};
+    reviews++;
+    if(reviews===1)return {approved:false,issues:[{field:'doList',reason:'현재 선택을 확인하세요.',repair:'원하는 도움이 무엇인지 먼저 물으세요.'}],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'상대의 현재 선택을 확인해야 합니다.'}))};
+    assert.equal(input.data.revision.previous_review.audits[0].verdict,'unsupported');
+    assert.deepEqual(input.data.revision.changes,[{field:'doList',before:guide().guide.doList,after:[repaired]}]);
+    return {approved:true,issues:[]};
+  }});
+  const result=await model.respond(context(),memory(),{onCard:event=>events.push(event)});
+  assert.equal(repairs,1);assert.equal(reviews,2);assert.deepEqual(result.guide.doList,[repaired]);
+  assert.deepEqual(events.filter(event=>event.type==='upsert'&&event.id==='doList').map(event=>event.value),[[repaired]]);
+});
+
+test('card reviews distinguish action-purpose guidance from spoken script without exempting unsupported claims',async()=>{
+  const candidate=guide();candidate.guide.doList=['원하면 어떤 도움이 필요한지 먼저 물어보세요. 함께 알아볼 방법을 고를 수 있도록 돕는 것이 목적입니다.'];
+  for(const unsupported of [false,true]){
+    const outputs={...approvedCardOutputs(),guide_write:candidate};let reviews=0;
+    const model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]),{
+      cardReview:(input,request)=>{
+        if(input.stage!=='speech_review_card_doList')return {approved:true,issues:[]};
+        reviews++;
+        const prompt=JSON.parse(request.body).messages[0].content;
+        assert.ok(prompt.includes('script만 대상자에게 그대로 건넬 직접 발화입니다'));
+        assert.ok(prompt.includes('doList는 행동 방법·예문·제안 목적'));
+        assert.ok(prompt.includes('목적 설명 자체를 발화가 아니라는 이유로 거절하지 마세요'));
+        assert.ok(prompt.includes('효과 보장이나 원문에 없는 마음·사건·인과를 추가하면 계속 거절'));
+        assert.equal(input.data.claims[0].claim,candidate.guide.doList[0]);
+        return {approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:unsupported?'unsupported':'supported',reason:'합성 근거 판정입니다.'}))};
+      },
+    });
+    if(unsupported){await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_claim_audit'});assert.equal(reviews,3);}
+    else {const result=await model.respond(context(),memory());assert.deepEqual(result.guide.doList,candidate.guide.doList);assert.equal(reviews,1);}
+  }
+});
+
+test('care speech reviews retain the same complete supporter sources as care writing and support review',async()=>{
+  const ctx=context();ctx.supporter.fields.quiet_report=field('quiet_report','별빛과 밤하늘을 기록해요.');
+  for(let index=0;index<16;index++)ctx.supporter.fields['extra'+index]=field('extra'+index,'감정 마음 부담 무력 걱정 잠 갈등 변화 한계 방법 도움 대처 나누거나 기댈 지원 '+index);
+  const required=Object.keys(ctx.supporter.fields),seen=[];
+  const assertSources=input=>{
+    const sources=input.data.retrieval.documents.filter(row=>row.subject==='supporter').map(row=>row.question_id);
+    for(const id of required)assert.ok(sources.includes(id),input.stage+' omitted '+id);
+    seen.push(input.stage);
+  };
+  const outputs=approvedCardOutputs(),model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]),{
+    cardWrite:input=>{const field=Object.keys(input.output_schema.properties)[0];if(field==='care')assertSources(input);return {[field]:guide().guide[field]};},
+    cardReview:(input,request)=>{
+      if(input.stage.endsWith('_care')){
+        assertSources(input);
+        if(input.stage.startsWith('speech_review')){
+          const prompt=JSON.parse(request.body).messages[0].content;
+          assert.ok(prompt.includes('감정 보고가 없다'));
+          assert.ok(prompt.includes('새 감정·강도·원인을 덧붙인 부분'));
+        }
+      }
+      return {approved:true,issues:[]};
+    },
+    speechReview:input=>{assertSources(input);return {approved:true,issues:[]};},
+    supportReview:input=>{assertSources(input);return {approved:true,issues:[]};},
+  });
+  await model.respond(ctx,memory());
+  for(const stage of ['card_care','speech_review_card_care','support_review_card_care','speech_review','support_review'])assert.ok(seen.includes(stage));
+});
+
+test('current-presence attribution cannot exempt stale quotes by mentioning source evidence',()=>{
+  const removed='항상 마음이 편안할 것이라고 확신해요';
+  const linked='원하는 때에 말을 걸어도 돼요. 오래 고민할 필요는 없어요? 결정은 자유예요!';
+  const current='원할 때 필요한 도움을 물어보세요.';
+  const claims=[{id:'avoid.0',field:'avoid',claim:`${linked} ${current}`,certainty:'reported'}];
+  const schema=structuredClone(reviewSchema);schema.properties.audits=auditSchema(claims);schema.required.push('audits');
+  const revision={before:{avoid:[linked,removed,'무력하고 걱정돼요']}},answers=agentContext(context());
+  const review=reason=>({approved:false,issues:[{field:'avoid',reason,repair:'현재 문안의 선택 조건을 원문과 대조하세요.'}],
+    audits:[{id:'avoid.0',verdict:'unsupported',reason:'현재 선택 조건을 확인해야 합니다.'}]});
+  for(const reason of [
+    `현재 문안에 포함된 “${removed}”는 원문 근거가 없는 단정입니다.`,
+    `현재 카드에 남아 있는 ‘${removed}’는 자기보고와 다릅니다.`,
+    `현재 문안에 포함된 “${linked}”와 “${removed}”는 원문 근거가 없습니다.`,
+  ])assert.throws(()=>validateClaimReview(review(reason),schema,claims,revision,answers),error=>{
+    assert.equal(error.modelReason,'agent_review_stale');
+    assert.deepEqual(JSON.parse(error.modelFeedback).stale_quotes,[{field:'avoid',quote:removed}]);return true;
+  });
+  for(const reason of [
+    `원문에서 “${removed}”라고 했다는 해석과 현재의 제안은 다릅니다.`,
+    `“${removed}”라는 원문 표현과 현재 제안을 대조해야 합니다.`,
+    `현재 문안에 포함된 표현과 비교하면, 원문에서 “${removed}”라는 뜻은 확인되지 않습니다.`,
+    `이전 “${removed}” 표현은 삭제되었지만 현재 선택 조건은 확인해야 합니다.`,
+    `현재 문안에 포함된 “${removed}”는 제거되었지만 현재 선택 조건은 확인해야 합니다.`,
+    `현재 문안에 포함된 “무력하고 걱정돼요”는 원문 자기보고를 가리킵니다.`,
+    `현재 문안에 포함된 “${current}”는 원문 근거가 부족합니다.`,
+  ]){
+    const value=review(reason),before=structuredClone(value);
+    const result=validateClaimReview(value,schema,claims,revision,answers);
+    assert.equal(result.approved,false);assert.deepEqual(result.issues,before.issues);assert.deepEqual(result.audits,before.audits);
+  }
+});
+
+test('review retries stale historical quotations against current claims without spending another card repair',async()=>{
+  for(const staleIn of ['audit','issue','source_wording']){
+    const old=staleIn==='audit'?'네가 얼마나 노력하고 있는지 내가 잘 알아':'네가 용기 내줘서 고마워';
+    const current='원하면 어떤 도움이 필요한지 먼저 물어보세요.';
+    const candidate=guide();candidate.guide.next=old;
+    const outputs={...approvedCardOutputs(),guide_write:candidate};let repairs=0,rechecks=0;
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages.at(-1).content);
+      if(input.stage.startsWith('guide_repair_card_next')){
+        repairs++;assert.equal(input.stage,'guide_repair_card_next_1');return envelope({next:current});
+      }
+      return fixtureEnvelope(outputs[input.stage]);
+    },{cardReview:input=>{
+      if(!input.stage.startsWith('speech_review_card_next'))return {approved:true,issues:[]};
+      const stale=staleIn==='source_wording'?'현재 문안에 포함된 “'+old+'”는 원문 근거가 없는 단정입니다.':'“'+old+'”는 현재 카드에서 반응을 미리 단정하는 표현입니다.';
+      if(input.stage==='speech_review_card_next')return {approved:false,issues:[{field:'next',reason:stale,repair:'현재 의사를 묻는 제안으로 바꾸세요.'}],
+        audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:stale}))};
+      rechecks++;assert.equal(input.stage,'speech_review_card_next_after_repair_1');
+      assert.equal(input.data.claims[0].claim,current);
+      if(rechecks===1)return {approved:false,issues:[{field:'next',reason:staleIn!=='audit'?stale:'현재 제안의 근거를 확인하세요.',repair:'현재 의사를 확인하세요.'}],
+        audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:staleIn==='audit'?stale:'현재 제안의 근거를 확인하세요.'}))};
+      assert.ok(input.validation_feedback.includes('agent_review_stale'));
+      assert.equal(input.data.revision,undefined);assert.equal(input.rejected_output,undefined);
+      assert.ok(!JSON.stringify(input).includes(old));
+      return {approved:true,issues:[]};
+    }});
+    const result=await model.respond(context(),memory());
+    assert.equal(repairs,1);assert.equal(rechecks,2);assert.equal(result.guide.next,current);
+  }
+});
+
+test('review explanations may quote current source answers or explicitly resolved historical wording',async()=>{
+  for(const sourceQuote of [true,false]){
+    const old=sourceQuote?'무력하고 걱정돼요':'네가 용기 내줘서 고마워';
+    const candidate=guide();candidate.guide.next=old;
+    const outputs={...approvedCardOutputs(),guide_write:candidate};let repairs=0,rechecks=0;
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages.at(-1).content);
+      if(input.stage.startsWith('guide_repair_card_next')){repairs++;return envelope({next:repairs===1?'어떤 도움이 필요한지 물어보세요.':'원하면 어떤 도움이 필요한지 물어보세요.'});}
+      return fixtureEnvelope(outputs[input.stage]);
+    },{cardReview:input=>{
+      if(!input.stage.startsWith('speech_review_card_next'))return {approved:true,issues:[]};
+      if(input.stage.endsWith('_2'))return {approved:true,issues:[]};
+      if(input.stage.includes('after_repair')){rechecks++;assert.equal(input.validation_feedback,undefined);}
+      const reason=sourceQuote?'원문에서 “'+old+'”라고 보고했지만 현재 제안에는 선택권을 표시해야 합니다.':
+        '이전 “'+old+'” 표현은 삭제되었지만 현재 제안에는 선택권을 표시해야 합니다.';
+      return {approved:false,issues:[{field:'next',reason,repair:'원하면이라는 조건을 붙이세요.'}],
+        audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason}))};
+    }});
+    const result=await model.respond(context(),memory());
+    assert.equal(repairs,2);assert.equal(rechecks,1);assert.equal(result.guide.next,'원하면 어떤 도움이 필요한지 물어보세요.');
+  }
+});
+
+test('persistent stale review feedback exhausts three review requests without restarting generation',async()=>{
+  const old='네가 용기 내줘서 고마워',candidate=guide();candidate.guide.next=old;
+  const outputs={...approvedCardOutputs(),guide_write:candidate},controller=new AbortController();
+  let analyses=0,repairs=0,rechecks=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage==='relationship_analysis'&&++analyses===3)controller.abort();
+    if(input.stage.startsWith('guide_repair_card_next')){repairs++;return envelope({next:'원하면 필요한 도움이 있는지 물어보세요.'});}
+    return fixtureEnvelope(outputs[input.stage]);
+  },{cardReview:input=>{
+    if(!input.stage.startsWith('speech_review_card_next'))return {approved:true,issues:[]};
+    if(input.stage.includes('after_repair'))rechecks++;
+    const reason='“'+old+'”는 현재 카드에서 반응을 미리 단정하는 표현입니다.';
+    return {approved:false,issues:[{field:'next',reason,repair:'현재 선택을 물으세요.'}],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason}))};
+  }});
+  model.retryFailures=true;model.retryDelayMs=1;
+  await assert.rejects(model.respond(context(),memory(),{signal:controller.signal}),{modelReason:'agent_review_stale'});
+  assert.equal(analyses,1);assert.equal(repairs,1);assert.equal(rechecks,3);
+});
+
+test('quality refinement removes published cards before editing and republishes only the final approved values',async()=>{
+  const outputs=approvedCardOutputs(),cards=new Map(),events=[],refined=guide();
+  refined.guide.script='지민아, 지금 이야기해도 괜찮을까? 밤에 계획표를 고치는 모습을 봤어. 네 마음을 이해하고 싶어.';
+  outputs.guide_quality={improvements:[{field:'script',reason:'허락 질문을 앞에 두세요.',repair:'첫 문장으로 옮기세요.'}]};
+  outputs.guide_refine=refined;
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages.at(-1).content).stage;
+    if(stage==='guide_quality')assert.equal(cards.size,6);
+    if(['guide_refine','guide_review'].includes(stage))assert.deepEqual([...cards.keys()],['relationship']);
+    return fixtureEnvelope(outputs[stage]);
+  });
+  const result=await model.respond(context(),memory(),{onCard:event=>{events.push(event);applyCardEvent(cards,event);}});
+  assert.deepEqual(events.filter(event=>event.type==='remove').map(event=>event.id).sort(),['avoid','care','doList','next','script']);
+  assert.equal(cards.get('script').value,refined.guide.script);
+  assert.deepEqual(cards.get('script').detail,result.conversation_detail);
+  assert.deepEqual(result.guide,refined.guide);
+});
+
+test('a failed parallel branch aborts and settles siblings, resets approved previews, and ignores late results',async()=>{
+  const outputs=approvedCardOutputs(),events=[],started=deferred(),releaseFailure=deferred(),signals=[],settled=[];
+  let branches=0;
+  const waitForAbort=async(field,signal)=>{
+    signals.push(signal);if(++branches===2)started.resolve();
+    await new Promise(resolve=>{signal.addEventListener('abort',resolve,{once:true});if(signal.aborted)resolve();});
+    settled.push(field);
+  };
+  const model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]),{
+    cardWrite:async(input,{signal})=>{
+      const field=Object.keys(input.output_schema.properties)[0];
+      if(field==='care')await waitForAbort(field,signal);
+      if(field==='doList'){await releaseFailure.promise;return {doList:[]};} // Violates the existing nonempty card schema.
+      return {[field]:guide().guide[field]};
+    },
+    speechPart:async(input,{signal})=>{await waitForAbort('script',signal);return Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'늦게 도착한 문장']));},
+  });
+  const pending=model.respond(context(),memory(),{onCard:event=>events.push(event)});
+  const rejected=assert.rejects(pending,{code:'MODEL_INVALID_RESPONSE'});
+  await started.promise;assert.deepEqual(events.map(event=>event.id),['relationship']);
+  releaseFailure.resolve();await rejected;
+  assert.deepEqual(settled.sort(),['care','script']);assert.ok(signals.every(signal=>signal.aborted));
+  assert.deepEqual(events,[{type:'upsert',id:'relationship',value:canonicalAnalysis(analysis())},{type:'reset'}]);
+  assert.equal(model.transportStages.some(stage=>stage.includes('_review_card_')),false);
+  assert.equal(model.transportStages.includes('guide_quality'),false);
+});
+
+test('external cancellation settles all active card branches before returning and clears their previews',async()=>{
+  const outputs=approvedCardOutputs(),controller=new AbortController(),started=deferred(),signals=[],settled=[],events=[];
+  const hold=async(field,signal)=>{
+    signals.push(signal);if(signals.length===3)started.resolve();
+    await new Promise(resolve=>{signal.addEventListener('abort',resolve,{once:true});if(signal.aborted)resolve();});
+    settled.push(field);
+  };
+  const model=gateway(body=>fixtureEnvelope(outputs[JSON.parse(body.messages.at(-1).content).stage]),{
+    cardWrite:async(input,{signal})=>{const field=Object.keys(input.output_schema.properties)[0];await hold(field,signal);return {[field]:guide().guide[field]};},
+    speechPart:async(input,{signal})=>{await hold('script',signal);return Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'늦게 도착한 문장']));},
+  });
+  const pending=model.respond(context(),memory(),{signal:controller.signal,onCard:event=>events.push(event)});
+  const rejected=assert.rejects(pending,{code:'MODEL_CANCELLED'});
+  await started.promise;controller.abort();await rejected;
+  assert.deepEqual(settled.sort(),['care','doList','script']);assert.ok(signals.every(signal=>signal.aborted));
+  assert.deepEqual(events.map(event=>event.type),['upsert','reset']);
+  assert.equal(model.transportStages.some(stage=>stage.includes('_review_card_')),false);
+});
+
+test('exhausted card review repairs stay terminal and cannot restart the entire generation',async()=>{
+  const outputs=approvedCardOutputs(),events=[];let analyses=0,repairs=0,reviews=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage==='relationship_analysis')analyses++;
+    if(input.stage.startsWith('guide_repair_card_doList')){repairs++;return envelope({doList:guide().guide.doList});}
+    return fixtureEnvelope(outputs[input.stage]);
+  },{cardReview:input=>{
+    if(!input.stage.startsWith('speech_review_card_doList'))return {approved:true,issues:[]};
+    reviews++;return {approved:false,issues:[{field:'doList',reason:'선택권을 확인하세요.',repair:'먼저 원하는지 물어보세요.'}],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'합성 거절 근거입니다.'}))};
+  }});
+  model.retryFailures=true;model.retryDelayMs=1;
+  await assert.rejects(model.respond(context(),memory(),{onCard:event=>events.push(event)}),{modelReason:'agent_review_rejected'});
+  assert.equal(analyses,1);assert.equal(repairs,2);assert.equal(reviews,3);
+  assert.equal(events.some(event=>event.type==='upsert'&&event.id==='doList'),false);
+  assert.equal(events.at(-1).type,'reset');
+});
+
+test('urgent fixed cards are published only after the complete urgent review approves them',async()=>{
+  const ctx=riskContext(),events=[],cards=new Map(),draft=urgentGuide(ctx.name_index);
+  const outputs={relationship_analysis:riskAnalysis(ctx),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+    guide_write:draft,guide_quality:{improvements:[]},guide_review:{approved:true,issues:[]}};
+  const model=gateway(body=>{
+    const stage=JSON.parse(body.messages.at(-1).content).stage;
+    if(['guide_write','guide_quality','guide_review'].includes(stage))assert.deepEqual([...cards.keys()],['relationship']);
+    return fixtureEnvelope(outputs[stage]);
+  });
+  const result=await model.respond(ctx,memory(),{onCard:event=>{events.push(event);applyCardEvent(cards,event);}});
+  assert.equal(model.transportStages.some(stage=>stage.startsWith('card_')||stage.includes('_review_card_')),false);
+  for(const field of ['care','doList','avoid','next','script'])assert.deepEqual(cards.get(field).value,result.guide[field]);
+  assert.equal(events.length,6);assert.equal(cards.get('script').detail,undefined);
+});
+
+test('a reviewer must replace a rejected claim with an actionable repair before consuming a card repair',async()=>{
+  for(const stagePrefix of ['speech','support']){
+    const current='어떤 도움이 필요한지 물어보세요.',fixed='원하면 어떤 도움이 필요한지 물어보세요.';
+    const candidate=guide();candidate.guide.next=current;
+    const outputs={...approvedCardOutputs(),guide_write:candidate};let checks=0,repairs=0;
+    const model=gateway(body=>{
+      const input=JSON.parse(body.messages.at(-1).content);
+      if(input.stage.startsWith('guide_repair_card_next')){
+        repairs++;assert.equal(input.stage,'guide_repair_card_next_1');
+        assert.equal(input.data.task,'원하면이라는 조건을 붙이세요.');
+        return envelope({next:fixed});
+      }
+      return fixtureEnvelope(outputs[input.stage]);
+    },{cardReview:input=>{
+      if(!input.stage.startsWith(stagePrefix+'_review_card_next'))return {approved:true,issues:[]};
+      if(input.stage.includes('after_repair')){
+        assert.equal(input.data.claims[0].claim,fixed);
+        return {approved:true,issues:[]};
+      }
+      checks++;
+      if(checks===2){
+        assert.ok(input.validation_feedback.includes('unchanged_repair_claims'));
+        assert.equal(repairs,0);
+      }
+      return {approved:false,issues:[{field:'next',reason:'선택권을 명시해야 합니다.',
+        repair:checks===1?'  '+current+'  ':'원하면이라는 조건을 붙이세요.'}],
+        audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'현재 제안에 선택 조건이 필요합니다.'}))};
+    }});
+    const result=await model.respond(context(),memory());
+    assert.equal(checks,2);assert.equal(repairs,1);assert.equal(result.guide.next,fixed);
+  }
+});
+
+test('persistent unchanged reviewer repairs stop after bounded review attempts without approving or rewriting the guide',async()=>{
+  const candidate=guide(),outputs=approvedCardOutputs();let checks=0,repairs=0,analyses=0;
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage==='relationship_analysis')assert.equal(++analyses,1);
+    if(input.stage.startsWith('guide_repair_card_next'))repairs++;
+    return fixtureEnvelope(outputs[input.stage]);
+  },{cardReview:input=>{
+    if(input.stage!=='speech_review_card_next')return {approved:true,issues:[]};
+    checks++;
+    return {approved:false,issues:[{field:'next',reason:'현재 제안을 다시 확인해야 합니다.',repair:candidate.guide.next}],
+      audits:input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'원문 대조가 필요합니다.'}))};
+  }});
+  model.retryFailures=true;model.retryDelayMs=1;
+  await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_review_noop'});
+  assert.equal(checks,3);assert.equal(repairs,0);assert.equal(analyses,1);
 });

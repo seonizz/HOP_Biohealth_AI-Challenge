@@ -12,10 +12,14 @@ export function modelConfig(env, legacy = {}) {
     apiKey:explicit ? env.MODEL_API_KEY : (env.MODEL_API_KEY || legacy.api_key),
     model:env.MODEL_NAME || (!explicit && legacy.ollama_url ? 'gemma4:12b' : undefined),
     protocol:'relationship_agent',
+    agentFormat:env.MODEL_AGENT_FORMAT || 'json_schema',
+    reasoningEffort:env.MODEL_REASONING_EFFORT || 'none',
     timeoutMs:env.MODEL_TIMEOUT_MS === undefined ? 600000 : Number(env.MODEL_TIMEOUT_MS),
     deploymentId:env.MODEL_DEPLOYMENT_ID || null,
   };
   if (!Number.isSafeInteger(config.timeoutMs) || config.timeoutMs <= 0) throw new Error('invalid_model_timeout');
+  if (!['json_schema', 'json_object', 'prompt'].includes(config.agentFormat)) throw new Error('invalid_model_agent_format');
+  if (!['omit', 'none', 'low', 'medium', 'high'].includes(config.reasoningEffort)) throw new Error('invalid_model_reasoning_effort');
   if (env.MODEL_CHECKPOINT_SHA256 && !/^[a-f0-9]{64}$/.test(env.MODEL_CHECKPOINT_SHA256)) throw new Error('invalid_checkpoint_sha256');
   if (config.deploymentId && (typeof config.deploymentId !== 'string' || !config.deploymentId.trim() || config.deploymentId.length > 1024)) throw new Error('invalid_deployment_id');
   return config;
@@ -47,6 +51,7 @@ export function evaluationIdentity({ backend, fixtureBytes, questionsBytes, prom
     deployment_id_sha256_declared:config.deploymentId ? sha256(config.deploymentId) : null,
     runtime_model_identity_verified:false,
     protocol:config.protocol, timeout_ms:config.timeoutMs,
+    agent_format:config.agentFormat || 'json_schema', reasoning_effort:config.reasoningEffort || 'none',
     // Local source and evaluator identities do not verify a remote web deployment.
     deployment_verified:false, independent_test:false, human_review:'pending',
   };
@@ -193,7 +198,8 @@ export function summarizeRuns(reports) {
       row.identity.deployment_id_sha256_declared,
       row.identity.source.sha256, row.identity.evaluator?.sha256, row.identity.prompt_version,
       row.identity.questions_sha256, row.identity.context_source, row.identity.protocol, row.mode,
-      row.incremental, row.web_context, row.identity.timeout_ms]);
+      row.incremental, row.web_context, row.identity.timeout_ms,
+      row.identity.agent_format, row.identity.reasoning_effort]);
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key).push(row);
   }

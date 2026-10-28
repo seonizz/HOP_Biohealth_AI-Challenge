@@ -63,3 +63,32 @@ validation.npz
 test.npz
 source_dialogues.*
 /presentation/outputs/representative_training_data_*/representative_examples*.json
+
+# Evaluation inputs, requests and raw responses can contain counseling excerpts.
+# Keep the complete private run bundle locally, including older tracked copies.
+/ai/outputs/**/private/
+
+# Keep opaque collection/archive bundles local; publish reviewed source files.
+*.zip
+*.tar
+*.tgz
+*.tbz
+*.tbz2
+*.txz
+*.7z
+*.rar
+*.bz2
+*.xz
+
+# Synthetic questionnaire answers for local testing only.
+/테스트용_답변_예시_20261018/
+
+# Source-dialogue examples and rendered training excerpts stay local.
+/presentation/outputs/processing_*/example_data.json
+/presentation/outputs/processing_*/numeric_evidence.json
+/presentation/outputs/processing_*/*.png
+/presentation/outputs/processing_*/*.html
+/presentation/outputs/processing_idiom_examples_20261010/build_idiom_examples.py
+
+# Local UI verification captures can include private conversation answers.
+/output/

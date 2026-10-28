@@ -154,6 +154,47 @@ class AgentDatasetTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "extended dialogue prefix"):
             d.validate_inputs(cases, [review(e) for e in cases])
 
+    def test_whitespace_or_unicode_cannot_disguise_a_renamed_dialogue(self):
+        for split in ("train", "validation"):
+            for transform in (lambda text: " \n" + text + "  ",
+                              lambda text: text.replace("A", "Ａ")):
+                first = episode("A", "train")
+                renamed = copy.deepcopy(first)
+                renamed.update(episode_id="renamed", split=split,
+                               source_root_ids=["synthetic:renamed"],
+                               source_group_ids=["synthetic:group:renamed"])
+                for message in renamed["messages"]:
+                    if message["role"] == "user":
+                        message["content"] = transform(message["content"])
+                with self.subTest(split=split, transform=transform), self.assertRaisesRegex(ValueError, "duplicate dialogue"):
+                    d.validate_inputs([first, renamed], [review(first), review(renamed)])
+
+    def test_normalized_shared_prefix_is_rejected_even_with_a_different_answer(self):
+        first = episode("A", "train")
+        renamed = copy.deepcopy(first)
+        renamed.update(episode_id="renamed", split="validation",
+                       source_root_ids=["synthetic:renamed"],
+                       source_group_ids=["synthetic:group:renamed"])
+        renamed["messages"][0]["content"] = "  " + renamed["messages"][0]["content"].replace("A", "Ａ")
+        segment = renamed["annotations"][0]["segments"][0]
+        segment["text"] = "친구의 요청에 답하려는 상황이군요."
+        renamed["messages"][1]["content"] = " ".join(s["text"] for s in renamed["annotations"][0]["segments"])
+        with self.assertRaisesRegex(ValueError, "extended dialogue prefix"):
+            d.validate_inputs([first, renamed], [review(first), review(renamed)])
+
+    def test_unresolved_speaker_is_preserved_as_unknown_in_word_targets(self):
+        span = self.episodes[0]["annotations"][0]["focus_spans"][0]
+        span.update(subject="unknown", temporal_scope="unknown", contextual_role="speaker_unresolved")
+        self.build()
+        rows, _ = d.load_dataset(self.output, "word", "train", allow_ai_draft=True)
+        target = json.loads(rows[0]["messages"][-1]["content"])
+        self.assertEqual(target["subject"], "unknown")
+        self.assertEqual(target["temporal_scope"], "unknown")
+        for unsupported in (None, "anyone", True):
+            span["subject"] = unsupported
+            with self.subTest(subject=unsupported), self.assertRaisesRegex(ValueError, "span subject"):
+                d.validate_episode(self.episodes[0])
+
     def test_unsafe_or_source_adapted_episode_rejected(self):
         for field, value in [("safety_scope", "acute"), ("risk_tags", ["crisis"]),
                              ("origin_type", "adapted_from_source"), ("source_refs", [{"id": "raw"}]),
@@ -254,6 +295,39 @@ class AgentDatasetTests(unittest.TestCase):
         (self.output / "manifest.json").write_text(canonical(manifest), encoding="utf-8")
         with self.assertRaisesRegex(ValueError, "metadata/row binding"):
             d.audit_release(self.output, allow_ai_draft=True)
+
+    def test_hr2_release_manifest_root_must_be_object(self):
+        original = self.build()
+        for value in ([], None, True, 7, "SYNTHETIC_PRIVATE_MARKER"):
+            with self.subTest(value_type=type(value).__name__):
+                (self.output / "manifest.json").write_text(canonical(value), encoding="utf-8")
+                with self.assertRaisesRegex(ValueError, "manifest must be an object"):
+                    d.audit_release(self.output, allow_ai_draft=True)
+        (self.output / "manifest.json").write_text(canonical(original), encoding="utf-8")
+        self.assertEqual(d.audit_release(self.output, allow_ai_draft=True)[1], original)
+
+    def test_hr2_each_release_file_metadata_must_be_object(self):
+        original = self.build()
+        for name in original["files"]:
+            for value in ([], None, "SYNTHETIC_PRIVATE_MARKER", True, 7):
+                with self.subTest(name=name, value_type=type(value).__name__):
+                    manifest = copy.deepcopy(original)
+                    manifest["files"][name] = value
+                    (self.output / "manifest.json").write_text(canonical(manifest), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "file metadata must be an object"):
+                        d.audit_release(self.output, allow_ai_draft=True)
+
+    def test_hr2_release_file_metadata_fields_remain_typed_and_content_bound(self):
+        original = self.build()
+        for field, values in (("sha256", [None, [], 7, "a" * 63, "0" * 64]),
+                              ("rows", [None, [], True, -1, "2", 2.0, 999])):
+            for value in values:
+                with self.subTest(field=field, value_type=type(value).__name__):
+                    manifest = copy.deepcopy(original)
+                    manifest["files"]["episodes.jsonl"][field] = value
+                    (self.output / "manifest.json").write_text(canonical(manifest), encoding="utf-8")
+                    with self.assertRaises(ValueError):
+                        d.audit_release(self.output, allow_ai_draft=True)
 
     def test_existing_output_and_empty_auxiliary_split_rejected(self):
         self.build()

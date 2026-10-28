@@ -7,16 +7,19 @@ an explicitly separate run over caller-selected longest rows, not training proof
 """
 
 from contextlib import contextmanager
+from copy import deepcopy
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
 import random
+import shutil
 import time
 import uuid
 
 from .gemma4_token_validation import collate_examples
+from . import supporter_weighted_loss
 
 
 class TrainingLoopError(ValueError):
@@ -47,11 +50,14 @@ def _file_sha(path):
 
 def _atomic_json(path, value):
     temporary = path.with_name(f".{path.name}.{uuid.uuid4().hex}.tmp")
-    with temporary.open("xb") as handle:
-        handle.write(_json_bytes(value) + b"\n")
-        handle.flush()
-        os.fsync(handle.fileno())
-    os.replace(temporary, path)
+    try:
+        with temporary.open("xb") as handle:
+            handle.write(_json_bytes(value) + b"\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 @contextmanager
@@ -95,6 +101,16 @@ def window_weights(rows, indices):
     _require(all(count > 0 for count in counts), "Zero-target microbatch")
     total = sum(counts)
     return counts, [count / total for count in counts]
+
+
+def _weighted_plan(rows, entries, *, task, bindings, **settings):
+    """Bind the complete, single-task train policy to the existing row API."""
+    _require(isinstance(entries, (list, tuple)) and len(entries) == len(rows),
+             "Weighted entries must match every training row")
+    weighted = supporter_weighted_loss.make_plan(entries, task=task, bindings=bindings, **settings)
+    _require(all(_json_bytes(row) == _json_bytes(entry["encoded"])
+                 for row, entry in zip(rows, entries)), "Weighted entries/encoded rows differ")
+    return weighted
 
 
 def _trainable(model):
@@ -159,21 +175,38 @@ def _save_checkpoint(model, optimizer, scheduler, directory, run, step, cursor):
     _require(not destination.exists(), "Checkpoint exists; refusing to overwrite")
     temporary = checkpoint_root / f".writing-{uuid.uuid4().hex}"
     temporary.mkdir()
-    model.save_pretrained(temporary, safe_serialization=True)
-    adapter_sha = _parameter_sha(model)
-    state = {"step": step, "cursor": cursor, "order": run["plan"]["order"],
-             "run_sha256": _sha(run), "optimizer": optimizer.state_dict(),
-             "scheduler": scheduler.state_dict() if scheduler is not None else None,
-             "rng": _rng_state()}
-    torch.save(state, temporary / "training_state.pt")
-    files = {str(path.relative_to(temporary)): _file_sha(path)
-             for path in temporary.rglob("*") if path.is_file()}
-    _require(any(name.startswith("adapter_model.") for name in files),
-             "save_pretrained did not produce adapter_model weights")
-    _atomic_json(temporary / "CHECKPOINT.json", {
-        "schema_version": 1, "run_sha256": _sha(run), "step": step, "cursor": cursor,
-        "adapter_parameters_sha256": adapter_sha, "files": files})
-    os.rename(temporary, destination)
+    try:
+        model.save_pretrained(temporary, safe_serialization=True)
+        adapter_sha = _parameter_sha(model)
+        state = {"step": step, "cursor": cursor, "order": run["plan"]["order"],
+                 "run_sha256": _sha(run), "optimizer": optimizer.state_dict(),
+                 "scheduler": scheduler.state_dict() if scheduler is not None else None,
+                 "rng": _rng_state()}
+        weighted = run.get("weighted_loss_plan")
+        if weighted is not None:
+            state.update(weighted_loss_plan=weighted, writer_pid=os.getpid())
+        torch.save(state, temporary / "training_state.pt")
+        _require(not any(path.is_symlink() for path in temporary.rglob("*")),
+                 "Checkpoint symlinks are forbidden")
+        files = {str(path.relative_to(temporary)): _file_sha(path)
+                 for path in temporary.rglob("*") if path.is_file()}
+        _require(any(name.startswith("adapter_model.") for name in files),
+                 "save_pretrained did not produce adapter_model weights")
+        manifest = {"schema_version": 1, "run_sha256": _sha(run), "step": step, "cursor": cursor,
+                    "adapter_parameters_sha256": adapter_sha, "files": files}
+        if weighted is not None:
+            manifest.update(weighted_plan_sha256=weighted["plan_sha256"], writer_pid=os.getpid())
+        _atomic_json(temporary / "CHECKPOINT.json", manifest)
+        for path in temporary.rglob("*"):
+            if path.is_file():
+                with path.open("rb") as handle:
+                    os.fsync(handle.fileno())
+        os.rename(temporary, destination)
+    finally:
+        # Only this invocation's unpublished directory is disposable. A rename
+        # commits the checkpoint even if updating latest.json subsequently fails.
+        if temporary.exists():
+            shutil.rmtree(temporary)
     _atomic_json(directory / "latest.json", {"checkpoint": str(destination.relative_to(directory))})
     return destination
 
@@ -233,6 +266,13 @@ def _load_checkpoint(model, optimizer, scheduler, directory, run, resume_from, r
     _require(state["run_sha256"] == _sha(run) and state["order"] == run["plan"]["order"]
              and cursor == manifest["cursor"] and step == manifest["step"],
              "Checkpoint cursor/order binding mismatch")
+    weighted = run.get("weighted_loss_plan")
+    if weighted is not None:
+        _require(state.get("weighted_loss_plan") == weighted
+                 and manifest.get("weighted_plan_sha256") == weighted["plan_sha256"]
+                 and type(state.get("writer_pid")) is int
+                 and state["writer_pid"] == manifest.get("writer_pid"),
+                 "Checkpoint weighted policy binding mismatch")
     (restore_adapter or _peft_restore)(model, checkpoint)
     _require(_parameter_sha(model) == manifest["adapter_parameters_sha256"],
              "Restored adapter parameters differ from saved parameters")
@@ -245,35 +285,144 @@ def _load_checkpoint(model, optimizer, scheduler, directory, run, resume_from, r
         _require(_state_equal(scheduler.state_dict(), state["scheduler"]),
                  "Restored scheduler state differs from saved state")
     _restore_rng(state["rng"])
+    _require(_state_equal(_rng_state(), state["rng"]), "Restored RNG state differs from saved state")
+    if weighted is not None:
+        record = {"checkpoint": str(checkpoint), "step": step, "next_row_cursor": cursor,
+                  "checkpoint_writer_pid": state["writer_pid"], "resume_pid": os.getpid(),
+                  "different_process": state["writer_pid"] != os.getpid(),
+                  "adapter_equal": True, "optimizer_equal": True, "scheduler_equal": True,
+                  "rng_equal": True, "weighted_plan_sha256": weighted["plan_sha256"]}
+        with (directory / "resume.jsonl").open("a") as handle:
+            handle.write(_json_bytes(record).decode() + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
     return step, cursor, checkpoint
+
+
+def _loss_for_row(model, row, pad_id, max_length, device, callback):
+    """A callback may select output logits, but may not edit its full input."""
+    if callback is None:
+        return model(**_batch(row, pad_id, max_length, device)).loss
+    snapshot = deepcopy(row)
+    loss = callback(snapshot)
+    _require(_json_bytes(snapshot) == _json_bytes(row), "Loss callback mutated its encoded input")
+    return loss
+
+
+def _weighted_backward(model, rows, entries, plan, window_index, *, pad_id, max_length,
+                       device, loss_callback):
+    import torch
+    coefficients = []
+    indices = plan["windows"][window_index]
+
+    def callback(row):
+        index = indices[len(coefficients)]
+        _require(_json_bytes(row) == _json_bytes(rows[index]), "Weighted callback row changed")
+        loss = _loss_for_row(model, row, pad_id, max_length, device, loss_callback)
+        ratio = plan["row_coefficients"][index]
+        expected = ratio["numerator"] / ratio["denominator"]
+        evidence = {"row_id": entries[index]["row_id"], "row_index": index,
+                    "target_tokens": row["target_length"], "coefficient": ratio,
+                    "observed_upstream_gradient": None}
+        coefficients.append(evidence)
+
+        def observe(gradient):
+            actual = float(gradient.detach().item())
+            _require(evidence["observed_upstream_gradient"] is None,
+                     "Mean loss was backpropagated more than once")
+            expected_tensor = torch.tensor(expected, dtype=gradient.dtype, device=gradient.device)
+            _require(math.isfinite(actual) and torch.equal(gradient, expected_tensor),
+                "Actual loss gradient differs from fixed policy coefficient")
+            evidence["observed_upstream_gradient"] = actual
+            evidence["upstream_gradient_dtype"] = str(gradient.dtype)
+
+        loss.register_hook(observe)
+        return loss
+
+    result = supporter_weighted_loss.backward_window(callback, entries, plan, window_index)
+    _require(len(coefficients) == len(indices)
+             and all(row["observed_upstream_gradient"] is not None for row in coefficients),
+             "Missing actual weighted backward evidence")
+    return result, coefficients
+
+
+def _gradient_evidence(parameters, required_devices):
+    import torch
+    grouped = {}
+    for parameter in parameters:
+        grouped.setdefault(str(parameter.device), []).append(parameter)
+    if required_devices is not None:
+        _require(set(grouped) == set(required_devices), "Trainable gradient devices changed")
+    evidence = {}
+    for device, group in sorted(grouped.items()):
+        finite = bool(torch.stack([torch.isfinite(p.grad).all() for p in group]).all().item())
+        nonzero = bool(torch.stack([p.grad.ne(0).any() for p in group]).any().item())
+        _require(finite and nonzero, f"Nonfinite or zero trainable gradients on {device}")
+        evidence[device] = {"parameters": len(group), "elements": sum(p.numel() for p in group),
+                            "finite": finite, "nonzero": nonzero}
+    return evidence
 
 
 def run_training(model, optimizer, rows, output_dir, *, pad_id, bindings, max_length=4096,
                  accumulation_steps=8, seed=3407, checkpoint_every=100, max_steps=None,
                  scheduler=None, resume_from=None, mode="train", shuffle=True,
-                 restore_adapter=None, device=None):
+                 restore_adapter=None, device=None, weighted_entries=None, task=None,
+                 loss_callback=None, loss_callback_id=None, required_gradient_devices=None):
     """Run at most one epoch, resuming only at committed optimizer boundaries.
 
     ``max_steps`` caps the *total* step number, including restored steps. Every
     microbatch has size one. The model must return the mean causal target loss;
     the caller must validate that numerical contract before running this loop.
     ``restore_adapter(model, checkpoint_path)`` may replace the default PEFT load.
+
+    ``weighted_entries`` opts into the frozen v11 consumer. Supply the complete
+    single-task train split, with encoded values identical to ``rows``. Its full
+    epoch K/Z divisor is retained when ``max_steps`` pauses an epoch. The caller
+    authenticates source/policy manifests in ``bindings`` before this function.
+    ``loss_callback(encoded_row)`` may replace forward for memory-efficient CE;
+    it must preserve the full input and return an unweighted scalar mean target
+    CE. Its stable ``loss_callback_id`` is part of the immutable run binding.
+    Required gradient devices, if supplied, must exactly match trainable devices.
     """
     import torch
     _require(mode in {"train", "canary"}, "Unknown run mode")
     _require(isinstance(bindings, dict) and bool(bindings), "Missing immutable input bindings")
     _require(type(checkpoint_every) is int and checkpoint_every > 0, "Invalid checkpoint interval")
     _require(max_steps is None or (type(max_steps) is int and max_steps > 0), "Invalid step cap")
+    _require((loss_callback is None and loss_callback_id is None)
+             or (callable(loss_callback) and isinstance(loss_callback_id, str)
+                 and bool(loss_callback_id.strip())), "Custom loss requires a stable callback ID")
+    _require(weighted_entries is not None or task is None, "Task requires weighted entries")
+    if required_gradient_devices is not None:
+        _require(isinstance(required_gradient_devices, (list, tuple))
+                 and bool(required_gradient_devices)
+                 and all(isinstance(value, str) and bool(value) for value in required_gradient_devices)
+                 and len(set(required_gradient_devices)) == len(required_gradient_devices),
+                 "Invalid required gradient devices")
     directory = Path(output_dir).absolute()
     _require(directory == directory.resolve(), "Output directory cannot traverse symlinks")
     plan = make_plan(rows, pad_id=pad_id, max_length=max_length,
                      accumulation_steps=accumulation_steps, seed=seed, shuffle=shuffle)
+    weighted = None
+    if weighted_entries is not None:
+        _require(task is not None, "Weighted entries require an explicit task")
+        weighted = _weighted_plan(rows, weighted_entries, task=task, bindings=bindings,
+                                  pad_id=pad_id, max_length=max_length,
+                                  accumulation_steps=accumulation_steps, seed=seed, shuffle=shuffle)
+        _require(weighted["order"] == plan["order"], "Weighted plan order mismatch")
     run = {"schema_version": 1, "output_directory": str(directory), "mode": mode,
            "bindings": bindings, "plan": plan, "optimizer": _optimizer_signature(model, optimizer),
            "scheduler_class": type(scheduler).__qualname__ if scheduler is not None else None,
            "settings": {"pad_id": pad_id, "max_length": max_length,
                         "accumulation_steps": accumulation_steps, "seed": seed, "shuffle": shuffle,
                         "epochs": 1, "microbatch_size": 1, "clip_grad_norm": 1.0}}
+    if weighted is not None:
+        run.update(schema_version=2, weighted_loss_plan=weighted,
+                   weighted_row_ids=[entry["row_id"] for entry in weighted_entries])
+    if loss_callback is not None:
+        run["settings"]["loss_callback_id"] = loss_callback_id
+    if required_gradient_devices is not None:
+        run["settings"]["required_gradient_devices"] = sorted(required_gradient_devices)
     run = json.loads(_json_bytes(run))  # Canonical JSON also normalizes optimizer tuples.
     device = device or next(model.parameters()).device
     with _run_lock(directory):
@@ -298,18 +447,28 @@ def run_training(model, optimizer, rows, output_dir, *, pad_id, bindings, max_le
         while cursor < len(rows) and (max_steps is None or step < max_steps):
             started = time.monotonic()
             indices = plan["order"][cursor:cursor + accumulation_steps]
-            counts, weights = window_weights(rows, indices)
-            token_loss = 0.0
-            for index, count, weight in zip(indices, counts, weights):
-                result = model(**_batch(rows[index], pad_id, max_length, device))
-                loss = result.loss
-                _require(loss.ndim == 0 and bool(torch.isfinite(loss).item()), "Nonfinite/scalar loss")
-                token_loss += float(loss.detach().float().item()) * count
-                (loss * weight).backward()
-                del loss, result
+            if weighted is not None:
+                _require(indices == weighted["windows"][step], "Weighted window cursor mismatch")
+                weighted_result, coefficients = _weighted_backward(
+                    model, rows, weighted_entries, weighted, step, pad_id=pad_id,
+                    max_length=max_length, device=device, loss_callback=loss_callback)
+                counts = [rows[index]["target_length"] for index in indices]
+                target_mean_loss = weighted_result["primary_unweighted_target_token_mean_loss"]
+            else:
+                counts, weights = window_weights(rows, indices)
+                token_loss = 0.0
+                for index, count, weight in zip(indices, counts, weights):
+                    loss = _loss_for_row(model, rows[index], pad_id, max_length, device, loss_callback)
+                    _require(loss.ndim == 0 and bool(torch.isfinite(loss).item()), "Nonfinite/scalar loss")
+                    token_loss += float(loss.detach().float().item()) * count
+                    (loss * weight).backward()
+                    del loss
+                target_mean_loss = token_loss / sum(counts)
             parameters = [parameter for _, parameter in _trainable(model)]
             _require(all(parameter.grad is not None for parameter in parameters),
                      "A trainable adapter received no gradient")
+            gradient_devices = (_gradient_evidence(parameters, required_gradient_devices)
+                                if weighted is not None or required_gradient_devices is not None else None)
             norm = torch.nn.utils.clip_grad_norm_(parameters, 1.0, error_if_nonfinite=True)
             _require(bool(torch.isfinite(norm).item()), "Nonfinite gradient norm")
             optimizer.step()
@@ -321,10 +480,16 @@ def run_training(model, optimizer, rows, output_dir, *, pad_id, bindings, max_le
             step += 1
             cursor += len(indices)
             record = {"step": step, "next_row_cursor": cursor, "microbatches": len(indices),
-                      "supervised_tokens": sum(counts), "target_mean_loss": token_loss / sum(counts),
+                      "supervised_tokens": sum(counts), "target_mean_loss": target_mean_loss,
                       "gradient_norm_before_clip": float(norm.item()),
                       "learning_rates": [group["lr"] for group in optimizer.param_groups],
                       "elapsed_seconds": time.monotonic() - started, "mode": mode}
+            if weighted is not None:
+                record.update(weighted_loss=weighted_result, coefficient_evidence=coefficients,
+                              target_mean_loss_kind="primary_unweighted_target_token_mean",
+                              process_pid=os.getpid())
+            if gradient_devices is not None:
+                record["gradient_devices"] = gradient_devices
             with (directory / "train.jsonl").open("a") as handle:
                 handle.write(_json_bytes(record).decode() + "\n")
                 handle.flush()
@@ -337,11 +502,18 @@ def run_training(model, optimizer, rows, output_dir, *, pad_id, bindings, max_le
                   "total_rows": len(rows), "epoch_completed": cursor == len(rows),
                   "checkpoint": str(checkpoint) if checkpoint is not None else None,
                   "run_sha256": _sha(run), "hop_readiness": False}
+        if weighted is not None:
+            report.update(weighted_plan_sha256=weighted["plan_sha256"], task=task,
+                          planned_optimizer_steps=weighted["optimizer_windows"],
+                          raw_target_tokens=weighted["raw_target_tokens"],
+                          weighted_target_tokens=weighted["weighted_target_tokens"],
+                          process_pid=os.getpid(),
+                          complete_weighted_epoch_verified=cursor == len(rows))
         _atomic_json(directory / "TRAINING_RESULT.json", report)
         return report
 
 
-def evaluate(model, rows, *, pad_id, max_length=4096, device=None):
+def evaluate(model, rows, *, pad_id, max_length=4096, device=None, loss_callback=None):
     """Compute token-weighted held-out loss; this is not a behavioral quality test."""
     import torch
     make_plan(rows, pad_id=pad_id, max_length=max_length, shuffle=False)
@@ -352,7 +524,7 @@ def evaluate(model, rows, *, pad_id, max_length=4096, device=None):
     try:
         with torch.no_grad():
             for row in rows:
-                loss = model(**_batch(row, pad_id, max_length, device)).loss
+                loss = _loss_for_row(model, row, pad_id, max_length, device, loss_callback)
                 _require(loss.ndim == 0 and bool(torch.isfinite(loss).item()), "Nonfinite validation loss")
                 count = row["target_length"]
                 total_loss += float(loss.float().item()) * count

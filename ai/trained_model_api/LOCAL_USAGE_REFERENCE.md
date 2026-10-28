@@ -1,5 +1,9 @@
 # 학습 모델 로컬 API 이용 레퍼런스
 
+2026-10-17의 **v11 로컬 시연 실행 경로**는 [현재 입출력 한도와 검증](LIVE_TOKEN_BUDGET.md)을 따른다. 입력 최대 65,536·출력 예약 최대 8,192·합산 69,632이며, 아래 step100의 과거 출력 4,096 기록과 구분한다.
+
+2026-10-18부터 Python 클라이언트는 `--model` 또는 `MALSSI_MODEL`로 모델을 선택한다. 현재 v11 API를 호출할 때는 `--model malssi-gemma4-31b-v11-epoch3`를 지정한다. Python 함수에서도 `chat(messages, model="malssi-gemma4-31b-v11-epoch3", ...)`로 선택한다. 명시 인자, `MALSSI_MODEL`, 기존 step100 기본값 순서로 적용한다. 이 선택은 실행 중인 모델·체크포인트를 교체하지 않는다. 연결 주소와 인증은 해당 실행의 설정을 사용하며, 클라이언트는 HTTP 리다이렉트로 인증 키나 대화 내용을 다른 주소에 보내지 않는다.
+
 Mac의 로컬 프로그램에서 **100 step 학습한 Gemma 4 31B 모델**을 호출하는 방법입니다. 모델 계산은 원격 서버의 두 RTX 4090에서 실행하고, Mac은 SSH 터널을 통해 `localhost` API를 사용합니다. Mac에 모델이나 CUDA를 설치할 필요는 없습니다.
 
 ```text
@@ -50,7 +54,7 @@ export MALSSI_BASE_URL="http://127.0.0.1:18080/v1"
 export MALSSI_API_KEY="$(cat /Volumes/Dev/HOP_Projet/말씨/ai/trained_model_api/runtime/api_key)"
 ```
 
-`client.py` CLI는 `MALSSI_BASE_URL`과 `MALSSI_API_KEY`를 읽습니다. 아래 Python `chat()` 함수에서는 다른 주소가 필요할 때 `base_url=`을 직접 지정합니다. 제공된 CLI의 모델 ID는 100 step 모델로 고정되어 있습니다.
+`client.py` CLI는 `MALSSI_BASE_URL`, `MALSSI_API_KEY`, `MALSSI_MODEL`을 읽습니다. 아래 Python `chat()` 함수에서는 다른 주소가 필요할 때 `base_url=`을 직접 지정합니다. 모델을 지정하지 않은 기존 호출은 100 step 모델을 유지합니다.
 
 ### 토큰 예산
 

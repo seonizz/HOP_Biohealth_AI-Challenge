@@ -1,0 +1,30 @@
+/* 자동 안전 안내: 대화 입력을 가리지 않고 현재 대화와 결과에 함께 표시해요. */
+.referral-guide{flex:none;min-width:0;max-width:100%;margin:8px 0 12px;padding:16px 20px;border:2px solid var(--leaf);border-radius:22px;background:var(--card);color:var(--ink);max-height:32dvh;overflow:auto;overscroll-behavior:contain;overflow-wrap:anywhere}
+.referral-guide[hidden]{display:none}
+.referral-guide[data-urgency="immediate"]{border-color:var(--cheek);background:var(--cheek-soft)}
+.referral-guide[data-urgency="soon"],.referral-guide[data-urgency="unavailable"]{border:1px solid var(--leaf);padding:12px 16px;background:var(--card)}
+.referral-guide[data-urgency="planned"],.referral-guide[data-urgency="undetermined"]{border:1px solid var(--leaf);padding:12px 16px;background:var(--card)}
+.referral-identity{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0}
+.referral-avatar{width:64px;height:64px;object-fit:contain;flex:none}
+.referral-name{font-family:var(--display);font-size:19px}
+.referral-title{font-size:15px}
+.referral-subject{font-size:14px;font-weight:600;margin:7px 0}
+.referral-message{white-space:pre-wrap;font-size:17px;line-height:1.6;margin:10px 0}
+.referral-contacts{display:flex;gap:9px;flex-wrap:wrap}
+.referral-contact{display:inline-block;max-width:100%;padding:9px 12px;background:var(--card);border:1px solid currentColor;border-radius:14px;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.referral-contact:focus-visible,.referral-retry:focus-visible{outline:3px solid var(--stem);outline-offset:3px}
+.referral-privacy,.referral-unavailable{font-size:14px;line-height:1.5;margin:9px 0 0}
+.referral-retry{margin-top:10px}
+.referral-options-label{width:fit-content;cursor:pointer;font-size:15px;text-decoration:underline;text-underline-offset:3px}
+.referral-options-label:focus-visible{outline:3px solid var(--stem);outline-offset:3px}
+.referral-options[open] .referral-contacts{margin-top:10px}
+.referral-guide[data-urgency="soon"] .referral-message{font-size:16px;margin:6px 0 10px}
+#result>.referral-guide{width:min(960px,calc(100% - 48px));margin:16px auto 0;max-height:none}
+.referral-guide[data-mode="result"]{max-height:none;min-width:0;margin:0;padding:22px;overflow:visible}
+.referral-guide[data-mode="result"] .referral-avatar{width:112px;height:112px}
+.referral-heading{font-size:19px;margin:10px 0}
+.referral-intro,.referral-reason,.referral-recommendation{font-size:15px;line-height:1.7}
+.referral-concern{margin:16px 0}
+.referral-quote{margin:8px 0;padding:12px 16px;border-left:3px solid var(--leaf);background:var(--bg);border-radius:0 12px 12px 0;white-space:pre-wrap;font-size:15px;line-height:1.7}
+.referral-recommendation{font-weight:600;margin:14px 0}
+@media(max-width:600px){.referral-guide{padding:12px;max-height:30dvh}.referral-message{font-size:16px}.referral-title{width:100%}.referral-avatar{width:48px;height:48px}.referral-guide[data-mode="result"]{padding:18px}.referral-guide[data-mode="result"] .referral-avatar{width:80px;height:80px}}

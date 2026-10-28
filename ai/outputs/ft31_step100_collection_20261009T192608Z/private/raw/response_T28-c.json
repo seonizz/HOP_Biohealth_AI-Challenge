@@ -1,7 +1,0 @@
-{
-  "transport_error": {
-    "completion_state": "unknown",
-    "message": "Remote end closed connection without response",
-    "type": "RemoteDisconnected"
-  }
-}

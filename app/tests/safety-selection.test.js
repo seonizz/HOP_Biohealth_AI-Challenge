@@ -164,13 +164,15 @@ function pipeline(ctx, { repairAt, attackStage, attack = value => { value.safety
         result = structuredClone(selected);
         if (stage === attackStage) attack(result);
       } else if(stage.startsWith('card_')) {
-        const key=Object.keys(input.output_schema.properties)[0];result={[key]:guide().guide[key]};
+        const key=Object.keys(input.output_schema.properties)[0];result=key==='avoid'
+          ?{avoid:[{avoid_phrase:'답을 재촉하는 말.',reason:'대답할 여유를 남겨야 합니다.',alternative:'편한 시간을 물어보세요.'}]}
+          :{[key]:guide().guide[key]};
       } else if(/^speech_(opening|listening|offer)/u.test(stage)) result=Object.fromEntries(Object.keys(input.output_schema.properties).map(key=>[key,'원문을 확인하며 이야기를 듣고 싶어.']));
       else if(stage.startsWith('speech_write')) result={script:guide().guide.script};
       else if(stage.startsWith('speech_detail')&&!stage.startsWith('speech_detail_review')) {
-        const text=data.script,n=Math.floor(text.length/3);
-        result=Object.fromEntries(['opening','listening','offer'].map((key,index)=>[key,{excerpt:text.slice(index*n,index===2?undefined:(index+1)*n),
-          why:'보고한 호칭으로 대화를 시작하는 제안이에요.',evidence:[{subject:'patient',question_id:'name',quote:'지민'}]}]));
+        result={opening_end:1,listening_end:data.script_units.length-1,
+          ...Object.fromEntries(['opening','listening','offer'].map(key=>[key,{
+            why:'보고한 호칭으로 대화를 시작하는 제안이에요.',evidence:[{subject:'patient',question_id:'name',quote:'지민'}]}]))};
       } else if (stage === 'analysis_review' && repairAt === 'early') result = { approved:false, issues:[issue] };
       else if (stage === 'guide_review' && repairAt === 'late') result = { approved:false, issues:[issue] };
       else if (stage.includes('review')) result = { approved:true, issues:[] };
@@ -178,7 +180,7 @@ function pipeline(ctx, { repairAt, attackStage, attack = value => { value.safety
       else if (stage.startsWith('guide_write')) result = guide();
       else if (stage.startsWith('guide_quality')) result = { improvements:[] };
       else throw new Error(`unexpected_test_stage:${stage}`);
-      if(input.output_schema.properties.audits)result.audits=data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'현재 원문 전체에 근거해요.'}));
+      if(input.output_schema.properties.audits)result.audits=data.claims.map(claim=>({id:claim.id,verdict:claim.claim_kind==='avoidance_guidance'?'sound_avoidance':claim.claim_kind==='guidance'?'sound_guidance':'supported',reason:'현재 원문 전체에 근거해요.'}));
       return new Response(JSON.stringify({ choices:[{ finish_reason:'stop', message:{ content:JSON.stringify(result) } }] }));
     } });
   return { requests, run:() => model.respond(ctx, memory()) };
@@ -194,7 +196,7 @@ test('the complete pipeline and both analysis repair paths receive short selecti
     assert.deepEqual(result.relationship_analysis.safety.evidence.map(ref => ref.quote), [text, follow]);
     assert.equal(result.agent.reviewed, true);
     for (const request of requests.filter(row => analysisStages.has(row.stage))) {
-      assert.equal(request.maxTokens, 2400);
+      assert.equal(request.maxTokens, undefined);
       assert.deepEqual(request.schema.properties.safety.required, ['urgent', 'evidence_ids']);
       assert.equal(Object.hasOwn(request.schema.properties.safety.properties, 'evidence'), false);
     }

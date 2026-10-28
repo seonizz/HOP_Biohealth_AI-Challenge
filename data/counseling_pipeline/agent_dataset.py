@@ -18,6 +18,7 @@ from .agent_training import (
     COMPONENTS, SYSTEM_TEXT, detected_question_bank_usage, nonempty,
     read_jsonl, require, string_list, valid_timestamp,
 )
+from .source_selection_audit import normalize
 
 
 EPISODE_SCHEMA = "malssi-episode-draft-v1"
@@ -59,7 +60,7 @@ def _span(content, span):
     return start, end
 
 
-def validate_episode(episode):
+def validate_episode(episode, *, question_bank_bytes=None):
     require(isinstance(episode, dict), "episode must be an object")
     require(episode.get("schema_version") == EPISODE_SCHEMA, "unsupported episode schema")
     for field in ("episode_id", "author_id", "relationship", "domain", "goal"):
@@ -134,7 +135,7 @@ def validate_episode(episode):
             key = (span["message_id"], start, end)
             require(key not in seen_spans, "duplicate focus span within one target")
             seen_spans.add(key)
-            require(span.get("subject") in {"user", "subject", "other"}, "invalid span subject")
+            require(span.get("subject") in {"user", "subject", "other", "unknown"}, "invalid span subject")
             require(span.get("temporal_scope") in {"current", "past", "future", "unknown"},
                     "invalid temporal scope")
             require(span.get("assertion_status") in {"reported", "unknown", "refused", "negated", "corrected"},
@@ -145,12 +146,12 @@ def validate_episode(episode):
         borrowed = detected_question_bank_usage({
             "prefix": {"messages": messages[:index]}, "target_response": message["content"],
             "decision": {"primary_action": action},
-        })
+        }, question_bank_bytes=question_bank_bytes)
         require(not borrowed, "known question-bank text requires the source-use gate outside this pilot")
     return episode
 
 
-def validate_inputs(episodes, reviews):
+def validate_inputs(episodes, reviews, *, question_bank_bytes=None):
     require(isinstance(episodes, list) and episodes, "no episodes")
     require(isinstance(reviews, list), "reviews must be a list")
     episode_ids, roots, groups, prefixes, dialogues = set(), {}, {}, {}, set()
@@ -160,7 +161,7 @@ def validate_inputs(episodes, reviews):
         require(review["episode_id"] not in review_by_id, "ambiguous/duplicate episode review")
         review_by_id[review["episode_id"]] = review
     for episode in episodes:
-        validate_episode(episode)
+        validate_episode(episode, question_bank_bytes=question_bank_bytes)
         eid, split = episode["episode_id"], episode["split"]
         require(eid not in episode_ids, "duplicate episode ID")
         episode_ids.add(eid)
@@ -168,7 +169,10 @@ def validate_inputs(episodes, reviews):
             for key in episode[field]:
                 require(key not in index or index[key] == split, f"{field} cross-split leakage")
                 index[key] = split
-        dialogue = [(m["role"], m["content"]) for m in episode["messages"]]
+        # Renaming lineage or changing Unicode/whitespace does not make a new
+        # dialogue. Normalize only identity checks; preserve all source text
+        # and character offsets in the exported examples.
+        dialogue = [(m["role"], normalize(m["content"])) for m in episode["messages"]]
         dialogue_hash = digest(dialogue)
         require(dialogue_hash not in dialogues, "duplicate dialogue under renamed episode")
         dialogues.add(dialogue_hash)
@@ -292,16 +296,19 @@ def build_dataset(episodes, reviews, output):
     return manifest
 
 
-def audit_release(output, *, allow_ai_draft=False):
+def audit_release(output, *, allow_ai_draft=False, read_bytes=None, question_bank_bytes=None):
     """Verify bytes, reviews, lineage and exact reconstruction before loading.
 
     Local hashes detect changes relative to the ledger, not a malicious rewrite
     of every file and ledger together. Preserve the manifest hash externally if
-    authenticity across transfers is required.
+    authenticity across transfers is required. A caller may supply captured
+    bytes so the audit uses the same snapshot as its enclosing handoff.
     """
     require(allow_ai_draft is True, "experimental AI drafts require allow_ai_draft=True")
     output = Path(output)
-    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    read_bytes = Path.read_bytes if read_bytes is None else read_bytes
+    manifest = json.loads(read_bytes(output / "manifest.json").decode("utf-8"))
+    require(isinstance(manifest, dict), "release manifest must be an object")
     expected_names = {"episodes.jsonl", "reviews.jsonl"} | {f"{u}/{s}.jsonl" for u in UNITS for s in SPLITS}
     require(isinstance(manifest.get("files"), dict) and set(manifest["files"]) == expected_names,
             "release file inventory mismatch")
@@ -310,11 +317,16 @@ def audit_release(output, *, allow_ai_draft=False):
         path = output / name
         require(path.is_file() and not path.is_symlink(), "release payload missing or symlinked")
         info = manifest["files"][name]
-        require(info.get("sha256") == _sha(path), "release file hash mismatch")
-        payloads[name] = read_jsonl(path)
-        require(type(info.get("rows")) is int and info["rows"] == len(payloads[name]), "release file row count mismatch")
+        require(isinstance(info, dict), "release file metadata must be an object")
+        require(type(info.get("rows")) is int and info["rows"] >= 0,
+                "release file row count must be a nonnegative integer")
+        content = read_bytes(path)
+        require(isinstance(info.get("sha256"), str) and info["sha256"] == hashlib.sha256(content).hexdigest(),
+                "release file hash mismatch")
+        payloads[name] = [json.loads(line) for line in content.decode("utf-8").split("\n") if line.strip()]
+        require(info["rows"] == len(payloads[name]), "release file row count mismatch")
     episodes, reviews = payloads["episodes.jsonl"], payloads["reviews.jsonl"]
-    validate_inputs(episodes, reviews)
+    validate_inputs(episodes, reviews, question_bank_bytes=question_bank_bytes)
     rows = derive_rows(episodes)
     for unit in UNITS:
         for split in SPLITS:

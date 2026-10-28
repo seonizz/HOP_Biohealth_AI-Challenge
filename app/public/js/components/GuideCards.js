@@ -6,26 +6,36 @@ const GuideCards={
     <p>죽고 싶다거나 사라지고 싶다는 신호가 있었다고 알려 주셨어요. 말씀해 주셔서 정말 고마워요. 이건 혼자 감당하지 않으셔도 돼요.</p>
     <ul><li>자살예방 상담전화 <b>109</b> (24시간)</li><li>정신건강위기 상담전화 <b>1577-0199</b></li><li>지금 위험하다면 <b>112 / 119</b></li></ul></div></div>`,
   list:items=>`<ul>${items.map(x=>`<li style="white-space:pre-wrap">${esc(x)}</li>`).join("")}</ul>`,
-  speech(g,detail,{copy=false}={}){
-    const titles={opening:"1. 첫마디와 관찰한 장면",listening:"2. 마음을 전하고 이야기 듣기",offer:"3. 작은 제안과 선택권"};
-    const sections=detail&&Object.keys(titles).every(key=>typeof detail[key]?.excerpt==="string"&&detail[key].excerpt.trim()&&typeof detail[key]?.why==="string"&&detail[key].why.trim());
-    const full=`<div${copy?' id="scr"':""} style="white-space:pre-wrap">${esc(g.script)}</div>`;
-    return `<div class="card script"><h3>이렇게 시작해 보세요</h3>${copy?'<button class="copy" id="cp" type="button">⧉ 문장 복사</button>':""}
-      ${sections?`<p class="note">한 번에 모두 말하기보다, 각 단계에서 상대의 답을 듣고 이어가 보세요.</p>
-      ${Object.entries(titles).map(([key,title])=>{
-        const section=detail[key],evidence=Array.isArray(section.evidence)?section.evidence.filter(ref=>typeof ref?.quote==="string"&&ref.quote.trim()):[];
-        return `<section class="speech-step"><h4>${title}</h4><p class="speech-line">${esc(section.excerpt)}</p>
-          <div class="speech-why"><b>왜 이렇게 말하나요?</b><p>${esc(section.why)}</p>
-          ${evidence.length?`<details><summary>이 말에 반영한 답변</summary>${evidence.map(ref=>`<blockquote>${esc(ref.quote)}</blockquote>`).join("")}</details>`:""}</div></section>`;
-      }).join("")}
-      <details class="speech-full"><summary>전체 발화 이어서 읽기</summary>${full}</details>`:full}</div>`;
+  tips:items=>Array.isArray(items)&&items.length?`<p class="tips">${esc(items[0])}</p>`:"",
+  care(value){return `<div class="card care"><img src="${M.empathy}" alt=""><div><h3 style="margin-bottom:6px">당신의 마음도 소중해요</h3><p>${esc(value.feel)}</p>${this.tips(value.tips)}</div></div>`;},
+  action(id,value){return `<div class="card ${id==='doList'?'do':'avoid'}"><h3>${id==='doList'?'이렇게 해 보세요':'피하면 좋아요'}</h3>${this.list(value)}</div>`;},
+  partial(card,{care}={}){
+    if(card.id==='care')return this.care(card.value);
+    if(card.id==='doList'||card.id==='avoid')return this.action(card.id,card.value);
+    if(card.id==='next')return this.next({next:card.value,care});
+    if(card.id==='script')return this.speech({script:card.value},card.detail,{copy:true,ids:false});
+    if(card.id==='relationship')return this.relationship(card.value);
+    return "";
+  },
+  speech(g,detail,{copy=false,ids=true}={}){
+    return `<div class="card script"><h3>이렇게 시작해 보세요</h3>${copy?`<button class="copy"${ids?' id="cp"':""} type="button">⧉ 문장 복사</button>`:""}
+      <div class="speech-text"${copy&&ids?' id="scr"':""} style="white-space:pre-wrap">${esc(g.script)}</div></div>`;
+  },
+  bindCopy(root,script){
+    const button=root.querySelector(".copy"),text=root.querySelector(".speech-text");
+    if(!button||!text)return;
+    button.onclick=()=>Promise.resolve().then(()=>navigator.clipboard.writeText(script)).then(
+      ()=>{button.textContent="복사했어요";},
+      ()=>{const range=document.createRange();range.selectNodeContents(text);getSelection().removeAllRanges();getSelection().addRange(range);}
+    );
   },
   doAvoid(g,{wrapStyle="",doStyle=""}={}){
     return `<div class="two guide-actions"${wrapStyle?` style="${wrapStyle}"`:""}><div class="card do"${doStyle?` style="${doStyle}"`:""}><h3>이렇게 해 보세요</h3>${this.list(g.doList)}</div>
     <div class="card avoid"><h3>피하면 좋아요</h3>${this.list(g.avoid)}</div></div>`;
   },
   next(g){
-    return `<div class="card next"><img src="${M.think}" alt=""><div><h3>다음 단계</h3><p>${esc(g.next)}</p></div></div>`;
+    const tips=Array.isArray(g.care?.tips)?g.care.tips.slice(1):[];
+    return `<div class="card next"><img src="${M.think}" alt=""><div><h3 style="margin-bottom:4px">다음 단계</h3><p style="margin:0;white-space:pre-wrap">${esc(g.next)}</p>${tips.length?`<p class="note" style="margin:8px 0 0">당신을 위해서도: ${esc(tips.join(" "))}</p>`:""}</div></div>`;
   },
   relationship(a,{style=""}={}){
     if(!a||typeof a!=="object")return "";

@@ -1,0 +1,654 @@
+{
+  "version": "finals-v4",
+  "app_source_sha256": "958d818e514f187794e6d04e7221f5c0792c9eed1d6f8ee5fbf0f055ad458e62",
+  "synthetic_ui_examples": true,
+  "slides": [
+    {
+      "id": "sl/y90nupkv",
+      "index": 0,
+      "title": "말씨",
+      "elements": [
+        {
+          "id": "sh/ts7md4r2",
+          "kind": "textbox",
+          "text": "말씨"
+        },
+        {
+          "id": "sh/547294r6",
+          "kind": "textbox",
+          "text": "소중한 사람에게 건넬\n첫마디를 함께 준비합니다"
+        },
+        {
+          "id": "sh/k3yl0zql",
+          "kind": "textbox",
+          "text": "HOP Biohealth AI Challenge · 결선"
+        },
+        {
+          "id": "im/qh0jmhw7",
+          "kind": "image"
+        },
+        {
+          "id": "sh/65g3298r",
+          "kind": "textbox",
+          "text": "01"
+        }
+      ],
+      "notes": {
+        "text": "말씨는 어려움을 겪는 사람의 가족과 친구가 대화를 준비하도록 돕는 서비스입니다. 관찰한 상황과 돕는 사람의 마음을 구분해 정리하고, 건넬 말과 행동을 제안합니다. 오늘은 완성된 사용자 흐름, 데이터의 선별 근거, 기록 관리와 검증 범위를 보여드리겠습니다. 질환 진단이나 치료 효과를 입증한 서비스라고 소개하지 않습니다.\n\n근거:\n/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/StartScreen.js"
+      }
+    },
+    {
+      "id": "sl/hwbqtkby",
+      "index": 1,
+      "title": "말을 꺼내기 어려운 주변인",
+      "elements": [
+        {
+          "id": "sh/w3i1sfa9",
+          "kind": "textbox",
+          "text": "말을 꺼내기 어려운 주변인"
+        },
+        {
+          "id": "sh/9072xkry",
+          "kind": "textbox",
+          "text": "“친구가 연락을 피합니다.\n무슨 말을 해야 할지 모르겠습니다.”"
+        },
+        {
+          "id": "sh/ozy1ofad",
+          "kind": "textbox",
+          "text": "이용자: 당사자를 걱정하는 가족·친구\n\n필요한 도움: 관찰한 사실을 정리하고\n부담 없이 대화를 시작할 문장"
+        },
+        {
+          "id": "im/6d8jed0r",
+          "kind": "image"
+        },
+        {
+          "id": "sh/a10jqpsj",
+          "kind": "textbox",
+          "text": "서비스 설명을 위한 합성 상황입니다. 실제 상담 인용이 아닙니다."
+        },
+        {
+          "id": "sh/x4r21kru",
+          "kind": "textbox",
+          "text": "02"
+        }
+      ],
+      "notes": {
+        "text": "기술을 소개하기 전에 사용 장면을 먼저 말씀드리겠습니다. 이 상황은 설명을 위해 만든 합성 사례입니다. 이용자는 걱정하는 친구입니다. 상대방의 실제 마음을 이미 안다고 가정하지 않습니다. 말씨는 이용자가 관찰한 내용과 자신의 부담을 따로 묻고, 무엇이 확인됐고 무엇이 아직 모르는 부분인지 구분합니다. 사용자 효용을 실제 참여자에게 확인한 결과로 제시하지는 않습니다.\n\n근거:\n/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/core/questions.js"
+      }
+    },
+    {
+      "id": "sl/ofy9wn61",
+      "index": 2,
+      "title": "질문부터 기록 관리까지",
+      "elements": [
+        {
+          "id": "sh/x8nml0ra",
+          "kind": "textbox",
+          "text": "질문부터 기록 관리까지"
+        },
+        {
+          "id": "sh/cza94vmx",
+          "kind": "textbox",
+          "text": "01"
+        },
+        {
+          "id": "sh/d0jax03i",
+          "kind": "textbox",
+          "text": "상황을 듣습니다"
+        },
+        {
+          "id": "sh/298ryl4v",
+          "kind": "textbox",
+          "text": "그분의 변화와 나의 감정을 구분해 답합니다."
+        },
+        {
+          "id": "sh/3ah8rqlg",
+          "kind": "textbox",
+          "text": "02"
+        },
+        {
+          "id": "sh/obq90bml",
+          "kind": "textbox",
+          "text": "근거를 살펴봅니다"
+        },
+        {
+          "id": "sh/pcjqtg36",
+          "kind": "textbox",
+          "text": "안내에 쓰인 답변 원문과 확인하지 못한 부분을 봅니다."
+        },
+        {
+          "id": "sh/m5cra54z",
+          "kind": "textbox",
+          "text": "03"
+        },
+        {
+          "id": "sh/n6ls3alk",
+          "kind": "textbox",
+          "text": "첫마디를 준비합니다"
+        },
+        {
+          "id": "sh/n2l4fq98",
+          "kind": "textbox",
+          "text": "건넬 문장과 행동, 나를 돌보는 안내를 확인합니다."
+        },
+        {
+          "id": "sh/m1c3mlsn",
+          "kind": "textbox",
+          "text": "04"
+        },
+        {
+          "id": "sh/943mhgre",
+          "kind": "textbox",
+          "text": "기록을 관리합니다"
+        },
+        {
+          "id": "sh/83ulovat",
+          "kind": "textbox",
+          "text": "완료한 기록과 중단한 대화를 확인하고 삭제합니다."
+        },
+        {
+          "id": "sh/v6l4jq94",
+          "kind": "textbox",
+          "text": "실제 앱의 흐름입니다. 시연 응답이 합성인 경우 화면 설명에서 그 사실을 밝힙니다."
+        },
+        {
+          "id": "sh/a5c3ql8z",
+          "kind": "textbox",
+          "text": "03"
+        }
+      ],
+      "notes": {
+        "text": "시연은 네 구간으로 진행합니다. 먼저 질문에 답하고, 다음으로 원문 근거를 확인합니다. 그 뒤 복사할 수 있는 첫마디와 행동 안내를 봅니다. 마지막으로 기록의 재조회와 삭제를 보여드립니다. 질문 도중 이전 답변으로 돌아가면 이후 상태와 근거를 다시 구성합니다. 완료된 결과에서 임의의 과거 질문으로 바로 정정하는 기능까지 제공한다고 설명하지 않습니다.\n\n근거:\n/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/ChatInput.js\n/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/ResultScreen.js\n/Users/chihun/Documents/ChatGPT/HOP-Final/app/public/js/components/RecordsScreen.js"
+      }
+    },
+    {
+      "id": "sl/gmfafy",
+      "index": 3,
+      "title": "첫마디·행동·내 마음을 함께 준비합니다",
+      "elements": [
+        {
+          "id": "sh/epgj6hw7",
+          "kind": "textbox",
+          "text": "첫마디·행동·내 마음을 함께 준비합니다"
+        },
+        {
+          "id": "im/w7m1wbi9",
+          "kind": "image"
+        },
+        {
+          "id": "im/xsv25gzu",
+          "kind": "image"
+        },
+        {
+          "id": "sh/rmp0v2xg",
+          "kind": "textbox",
+          "text": "친구가 연락을 줄였어요.\n부담 없이 말을 꺼내고 싶어요."
+        },
+        {
+          "id": "sh/qlgj2xwv",
+          "kind": "textbox",
+          "text": "상대에게 이야기할 여유를 묻고,\n선택할 수 있게 말합니다.\n\n돕는 사람의 부담도\n같은 결과에서 살펴봅니다."
+        },
+        {
+          "id": "sh/do72xcfm",
+          "kind": "textbox",
+          "text": "실제 UI · 새로 작성한 합성 화면 예시 · 모델 생성 품질이나 사용자 효용의 실증이 아닙니다."
+        },
+        {
+          "id": "sh/sny147e1",
+          "kind": "textbox",
+          "text": "04"
+        }
+      ],
+      "notes": {
+        "text": "연락이 줄어든 친구에게 말을 꺼내려는 합성 상황입니다. 상단에는 복사할 첫마디, 아래에는 돕는 사람의 돌봄이 있습니다. 화면 설명을 위해 작성한 합성 fixture를 실제 ResultScreen에 넣어 캡처했습니다. 실제 상담 원문과 모델 호출은 사용하지 않았습니다.\n근거: app/public/js/components/ResultScreen.js, runtime/remediation-v7/result-capture.json"
+      }
+    },
+    {
+      "id": "sl/yy7xlm",
+      "index": 4,
+      "title": "알고 있는 사실과 모르는 부분을 구분합니다",
+      "elements": [
+        {
+          "id": "sh/cry9obal",
+          "kind": "textbox",
+          "text": "알고 있는 사실과 모르는 부분을 구분합니다"
+        },
+        {
+          "id": "im/q1cfit8b",
+          "kind": "image"
+        },
+        {
+          "id": "sh/qpgr21sf",
+          "kind": "textbox",
+          "text": "“모름”을 골라도 적어 둔 사실은\n검색·안전 출처·인용에 남습니다."
+        },
+        {
+          "id": "sh/lgra1gr2",
+          "kind": "textbox",
+          "text": "답변 원문과 확인하지 못한 부분"
+        },
+        {
+          "id": "im/p03epo7q",
+          "kind": "image"
+        },
+        {
+          "id": "sh/zepsz6tw",
+          "kind": "textbox",
+          "text": "합성 UI 예시입니다. 혼합 입력의 저장·재조회·근거 계약은 별도 회귀검사로 확인했습니다."
+        },
+        {
+          "id": "sh/ydgrq1sb",
+          "kind": "textbox",
+          "text": "05"
+        }
+      ],
+      "notes": {
+        "text": "약 이름은 모른다고 선택했더라도 친구와 산책했다는 직접입력은 별도의 사실로 보존합니다. unknown 선택 정보는 selection_status에 남기고 유의미한 custom 답변은 answered로 처리합니다. 과거 암호화 snapshot은 읽을 때 정규화하며 기존 생성 안내를 자동 재생성한 것은 아닙니다. 오른쪽은 실제 UI의 관계 근거와 모르는 부분을 펼친 모습입니다. 합성 예시는 임상 판단을 검증하지 않습니다.\n근거: app/tests/mixed-answer.test.js, app/docs/RELATIONSHIP_AGENT.md, runtime/remediation-v7/result-capture.json"
+      }
+    },
+    {
+      "id": "sl/jyx0ra1s",
+      "index": 5,
+      "title": "같은 과업의 대안 비교",
+      "elements": [
+        {
+          "id": "sh/ql8jytsj",
+          "kind": "textbox",
+          "text": "같은 과업의 대안 비교"
+        },
+        {
+          "id": "tb/sred0vuh",
+          "kind": "table",
+          "text": "같은 과업\t텍스트 메모·체크시트\t말씨\n관점·모름 기록\t직접 항목을 나누어 작성\t질문과 저장 필드로 구분\n근거 연결\t작성자가 원문을 대조\t주체·질문·원문 일치 검사\n정정·삭제\t관련 내용과 사본을 직접 관리\t후속 상태 재구성·소유자별 삭제"
+        },
+        {
+          "id": "sh/0ba143al",
+          "kind": "textbox",
+          "text": "같은 합성 상황으로 만든 로컬 자료 비교입니다. 실제 사용자 선호·상용 서비스 우열은 미검증입니다."
+        },
+        {
+          "id": "sh/rm1k7yt4",
+          "kind": "textbox",
+          "text": "06"
+        }
+      ],
+      "notes": {
+        "text": "비구조화 텍스트 메모, 관점 구분 체크시트와 말씨에 같은 합성 상황을 적용했습니다. 현재 원문 인용 수락, 다른 주체 문장 및 미입력 사실 거절의 3사례를 실행했습니다. 메모와 체크시트도 작성자가 정확히 대조할 수 있으며 입력 부담이 적고 자유롭게 바꿀 수 있습니다. 차이는 앱이 출처·정정·삭제 계약을 검사한다는 것입니다. 이름을 특정한 상용 서비스 비교나 사람의 이해도 관찰은 수행하지 않았습니다.\n근거: docs/competition/결선_대안비교와_현장검증_v1.md, runtime/remediation-v7/workflow-comparison.json"
+      }
+    },
+    {
+      "id": "sl/i107q5of",
+      "index": 6,
+      "title": "답변과 근거를 함께 검증합니다",
+      "elements": [
+        {
+          "id": "sh/v2twb6dw",
+          "kind": "textbox",
+          "text": "답변과 근거를 함께 검증합니다"
+        },
+        {
+          "id": "sh/dgbulwnm",
+          "kind": "textbox",
+          "text": "입력"
+        },
+        {
+          "id": "sh/cf2tcr61",
+          "kind": "textbox",
+          "text": "내용 없는 답변은 필수 항목을 통과하지 못합니다"
+        },
+        {
+          "id": "sh/z2tcnm5s",
+          "kind": "textbox",
+          "text": "정상 이모지·결합문자·사용자가 쓴 문장은 보존합니다."
+        },
+        {
+          "id": "sh/yhkbe1o7",
+          "kind": "textbox",
+          "text": "모름"
+        },
+        {
+          "id": "sh/l4bupwny",
+          "kind": "textbox",
+          "text": "모름 선택과 직접입력 사실을 분리합니다"
+        },
+        {
+          "id": "sh/032tgr6d",
+          "kind": "textbox",
+          "text": "선택의 불확실성을 남기고 직접입력을 근거로 보존합니다."
+        },
+        {
+          "id": "sh/n6dcr65o",
+          "kind": "textbox",
+          "text": "인용"
+        },
+        {
+          "id": "sh/m5kbi1oj",
+          "kind": "textbox",
+          "text": "검색·안전 인용이 같은 원문 단위를 사용합니다"
+        },
+        {
+          "id": "sh/w32dkbuh",
+          "kind": "textbox",
+          "text": "정정 문장과 출처를 빠뜨린 결과는 저장 전에 거절합니다."
+        },
+        {
+          "id": "sh/x4vedgvm",
+          "kind": "textbox",
+          "text": "입력·검색·저장 경계를 함께 검사합니다. 모델 자체와 처리시간은 내부 평가에서 제외합니다."
+        },
+        {
+          "id": "sh/ahkvi1cb",
+          "kind": "textbox",
+          "text": "07"
+        }
+      ],
+      "notes": {
+        "text": "정상 사례만 확인하지 않았습니다. 보이지 않는 문자만으로 필수 답변을 통과시키는 입력을 막았고, 선택형 직접 입력까지 같은 경계를 적용했습니다. 이후 독립 검토에서 근거 후보 필터의 불일치를 다시 발견했습니다. 추가 회귀검사로 실패를 재현한 뒤 검색과 안전 인용이 동일한 답변 구성 요소를 사용하도록 수정했습니다. 기존 294개 통과만으로 끝내지 않았고 최종 v6에서는 295개를 통과했습니다. 이 수치는 앱 계약 회귀검사이며 실제 상담 성공률이 아닙니다.\n\n근거:\n/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v6.md\n/Users/chihun/Documents/ChatGPT/HOP-Final/app/src/answer-sources.js"
+      }
+    },
+    {
+      "id": "sl/x8f69ofe",
+      "index": 7,
+      "title": "학습 데이터의 단위와 선별",
+      "elements": [
+        {
+          "id": "sh/98rqt4r6",
+          "kind": "textbox",
+          "text": "학습 데이터의 단위와 선별"
+        },
+        {
+          "id": "tb/ri14rud0",
+          "kind": "table",
+          "text": "단계\t행 수\t의미\n원본 대화 SFT\t45,974\t한 상담에서 여러 학습 행 생성\n내용 기준 허용\t44,704\ttrain 40,415 / validation 4,289\n내용 기준 보류\t1,270\t기존 보류 + 긴 부분 노출 9행\n4,096 길이 조건 후보\t17,236\ttrain 15,512 / validation 1,724"
+        },
+        {
+          "id": "sh/zi98nu94",
+          "kind": "textbox",
+          "text": "전반부 편중 54.18% → 99.16%를 확인했습니다. 사람 검토와 주변인 과업 정답 작성이 남아 있습니다."
+        },
+        {
+          "id": "sh/87ipkzal",
+          "kind": "textbox",
+          "text": "08"
+        }
+      ],
+      "notes": {
+        "text": "행 수를 상담 수나 인물 수와 구분합니다. 내용 허용 44,704행 중 상담 전반부 비율은 54.18%였으나 4,096 후보 17,236행에서는 99.16%입니다. 상담 마지막 1/4은 9,266행에서 1행으로 줄었습니다. 이를 숨기거나 임의 재분할하지 않고 391개 층화 검토 요청과 6개 주변인 과업 작성 요청을 준비했습니다. 실제 사람 판단과 새 정답은 아직 0건입니다. 이번 원천 대조 노출을 이력에 추가하여 후보 17,236행, 199그룹 전체를 development_exposed로 기록했습니다. 후보 자체를 독립 평가 집합이나 주변인 과업 정답으로 부르지 않습니다. 원천·후보 내용은 변경하지 않았습니다.\n근거: data/docs/support_agent/결선_데이터_대표성_2026-10-16.md, data/docs/support_agent/결선_데이터_검토계약_2026-10-16.md"
+      }
+    },
+    {
+      "id": "sl/gnmp4jqx",
+      "index": 8,
+      "title": "긴 정답 부분 노출 9행을 보류했습니다",
+      "elements": [
+        {
+          "id": "sh/zedcfa9g",
+          "kind": "textbox",
+          "text": "긴 정답 부분 노출 9행을 보류했습니다"
+        },
+        {
+          "id": "tb/9gbqtcv2",
+          "kind": "table",
+          "text": "검사·후보\t이전\t추가 보류 후\n허용 validation\t4,298행\t4,289행\n200자 이상 연속 부분 노출\t9행\t0행\n4,096 후보 validation\t1,724행\t1,724행"
+        },
+        {
+          "id": "sh/dcbud0ra",
+          "kind": "textbox",
+          "text": "정규화한 연속 문자 일치 검사입니다. 짧은·의미상·불연속 중복 및 인물 독립성은 미확인입니다."
+        },
+        {
+          "id": "sh/ydkbm5sv",
+          "kind": "textbox",
+          "text": "09"
+        }
+      ],
+      "notes": {
+        "text": "validation 정답의 긴 일부가 train의 assistant 메시지에 있는지 독립 검사했습니다. 기존 9행은 의미 검토 전 보수적으로 보류했고 새 admission에서 같은 검색의 잔존은 0행이었습니다. 9행은 3개 원천 그룹, 5개 상담에서 파생한 행입니다. 그 모두가 기존 길이 조건으로도 이미 제외돼 있었으므로 4,096 후보의 선택과 압축 해제 내용은 전후 동일합니다. 실제 후보 내용이 개선됐다는 주장은 하지 않습니다. 정답이 반복 양식인지 실질 내용인지는 사람 검토가 필요합니다.\n\n근거:\n/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v6.md\n/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v6_근거.json"
+      }
+    },
+    {
+      "id": "sl/fu1gfa1s",
+      "index": 9,
+      "title": "개발에 사용한 검증셋은 이력을 남깁니다",
+      "elements": [
+        {
+          "id": "sh/n6pwfmd8",
+          "kind": "textbox",
+          "text": "개발에 사용한 검증셋은 이력을 남깁니다"
+        },
+        {
+          "id": "sh/18byd4zy",
+          "kind": "textbox",
+          "text": "대조"
+        },
+        {
+          "id": "sh/g72x4zyd",
+          "kind": "textbox",
+          "text": "실제 원천부터 선별 장부와 후보까지 확인"
+        },
+        {
+          "id": "sh/ri9g7uhw",
+          "kind": "textbox",
+          "text": "선별 규칙을 재계산하고 후보의 원문을 원천과 비교합니다."
+        },
+        {
+          "id": "sh/6h0fypgb",
+          "kind": "textbox",
+          "text": "판정"
+        },
+        {
+          "id": "sh/tkby9kzm",
+          "kind": "textbox",
+          "text": "개발 노출과 이력 미확인을 구분"
+        },
+        {
+          "id": "sh/sjix0zy1",
+          "kind": "textbox",
+          "text": "기록이 없다는 이유로 미사용 평가셋이라고 인정하지 않습니다."
+        },
+        {
+          "id": "sh/je9g3ahk",
+          "kind": "textbox",
+          "text": "차단"
+        },
+        {
+          "id": "sh/id0fu50z",
+          "kind": "textbox",
+          "text": "독립 test 주장에 검사 결과를 적용"
+        },
+        {
+          "id": "sh/o7ydoret",
+          "kind": "textbox",
+          "text": "기존 validation을 test로 이름만 바꾸는 승격을 막습니다."
+        },
+        {
+          "id": "sh/98rehwve",
+          "kind": "textbox",
+          "text": "이번 대조 노출을 기록했습니다. 후보 17,236행·199그룹 전체가 개발 노출이며 독립 test가 아닙니다."
+        },
+        {
+          "id": "sh/m5gvmhwn",
+          "kind": "textbox",
+          "text": "10"
+        }
+      ],
+      "notes": {
+        "text": "같은 validation을 보고 정책을 고친 뒤 다시 검증했습니다. 따라서 그 집합은 미사용 최종 test가 아닙니다. 평가 이력 검사기는 원천·장부·후보와 과거 사용 근거를 연결하고, 개발 노출 또는 이력 미확인 상태에서는 independent_test 용도의 사용을 거절합니다. 새로운 독립 평가셋이나 사람 검토 결과를 만들어내는 도구가 아닙니다. 데이터와 증거가 실제로 연결되는지 검사해 잘못된 성능 주장을 예방하는 장치입니다. 독립 검토에서 장부와 export를 함께 바꾸어 해시를 맞추는 우회를 재현했습니다. 실제 원천 release, 선별 근거와 정책, 저장된 길이 장부를 다시 대조하도록 보강해 그룹 재지정·행 누락·보류 해제·원문 변경을 거절합니다. 로컬 파일 해시가 작성자 신뢰성이나 기록되지 않은 과거 이력을 인증하는 것은 아닙니다.\n\n근거:\n/Users/chihun/Documents/ChatGPT/HOP-Final/data/counseling_pipeline/evaluation_history.py\n/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_고도화_v1_근거.json\n2026-10-16 갱신: 선별 검토 준비를 위한 원천 대조 노출을 기존 이벤트에 추가했습니다. train을 포함한 후보 17,236행·199그룹 전체가 development_exposed입니다. 기존 이벤트 파일과 후보 내용은 보존했습니다. 근거: data/docs/support_agent/결선_데이터_대표성_2026-10-16.md"
+      }
+    },
+    {
+      "id": "sl/udsvah03",
+      "index": 10,
+      "title": "시연 가능한 검증 범위",
+      "elements": [
+        {
+          "id": "sh/mdonql4z",
+          "kind": "textbox",
+          "text": "시연 가능한 검증 범위"
+        },
+        {
+          "id": "tb/s3uh8bqx",
+          "kind": "table",
+          "text": "범위\t확인한 결과\t설명할 때의 한계\n앱 전체 회귀\t391 통과 / 실패·제외 0\t일회용 DB · 합성 응답\n평가 근거 도구\t24 통과 / 실패·제외 0\t집계·검증 계약\n데이터 집중 회귀\t162 통과 / 실패·제외 0\t선별·분할·이력 경계\nGit 원문 대조\t174 → 0 파일\t80자 이상 완전 일치 범위"
+        },
+        {
+          "id": "sh/0b65obm9",
+          "kind": "textbox",
+          "text": "2026-10-16 수정본 · 앱 소스 958d818e514f · 검사 수는 사용자 성공률이 아닙니다."
+        },
+        {
+          "id": "sh/nex4jq5k",
+          "kind": "textbox",
+          "text": "11"
+        }
+      ],
+      "notes": {
+        "text": "2026-10-16 수정본의 소스 fingerprint와 검증 근거를 연결했습니다. 앱 391개, 평가 도구 24개, 데이터 집중 162개가 실패·제외 없이 통과했습니다. 범위가 겹치므로 합산하지 않습니다. Git 상담 원문 완전 일치는 현재 추적 집합에서 174파일에서 0파일로 줄었습니다. private 1,221파일과 불투명 압축 묶음 2개는 로컬 보존 후 추적 해제했습니다. 원격 공개/과거 Git 이력/짧거나 변형된 원문은 이 검사로 해결됐다고 주장하지 않습니다.\n근거: docs/competition/결선_재평가_지적_수정_v7_근거.json, runtime/remediation-v7/verification-summary.json"
+      }
+    },
+    {
+      "id": "sl/m90b6t0r",
+      "index": 11,
+      "title": "내 대화를 직접 관리합니다",
+      "elements": [
+        {
+          "id": "sh/0bit8b2d",
+          "kind": "textbox",
+          "text": "내 대화를 직접 관리합니다"
+        },
+        {
+          "id": "sh/xc3mho32",
+          "kind": "textbox",
+          "text": "중단 대화"
+        },
+        {
+          "id": "sh/cbu58j2h",
+          "kind": "textbox",
+          "text": "완료하지 않은 대화도 목록에서 삭제"
+        },
+        {
+          "id": "sh/zelojyl8",
+          "kind": "textbox",
+          "text": "완료 기록이 없어도 내 대화를 관리합니다."
+        },
+        {
+          "id": "sh/ydcnatkn",
+          "kind": "textbox",
+          "text": "전체 삭제"
+        },
+        {
+          "id": "sh/l036l83y",
+          "kind": "textbox",
+          "text": "완료·미완료 대화를 한 번에 삭제"
+        },
+        {
+          "id": "sh/kzu5c32t",
+          "kind": "textbox",
+          "text": "범위를 확인한 뒤 실행하고, 실패하면 내용을 유지합니다."
+        },
+        {
+          "id": "sh/725onyl4",
+          "kind": "textbox",
+          "text": "접근 상실과 보유기간"
+        },
+        {
+          "id": "sh/m1cnetkj",
+          "kind": "textbox",
+          "text": "삭제 키로 삭제 · 미이용 30일 보유"
+        },
+        {
+          "id": "sh/s7yt4b21",
+          "kind": "textbox",
+          "text": "개발 기본 정책이며 운영·백업 책임 확정은 남아 있습니다."
+        },
+        {
+          "id": "im/uhgz6tkr",
+          "kind": "image"
+        },
+        {
+          "id": "sh/q5gb21kb",
+          "kind": "textbox",
+          "text": "합성 대화로 확인한 실제 앱 화면입니다. 실제 상담 원문과 모델 품질 검증을 사용하지 않았습니다."
+        },
+        {
+          "id": "sh/r6pcv6lw",
+          "kind": "textbox",
+          "text": "12"
+        }
+      ],
+      "notes": {
+        "text": "같은 세션의 개별/전체 대화 삭제에 더해, 따로 보관한 삭제 키로 쿠키 상실 후에도 해당 소유자의 대화를 삭제합니다. 키는 조회 권한을 주지 않으며 해시만 저장합니다. 기본 30일 비활동 보유기간, 시작 및 시간 단위 cleanup, 만료 후 접근과 늦은 저장 차단을 격리 DB에서 시험했습니다. 운영 반영이나 백업/WAL 물리 삭제를 완료했다는 뜻이 아닙니다. 운영 책임자·백업 만료·외부 모델 로그 정책은 별도 확인합니다.\n근거: app/docs/DATA_RETENTION.md, app/tests/retention.test.js"
+      }
+    },
+    {
+      "id": "sl/jetc3ut0",
+      "index": 12,
+      "title": "현장 도입에서 확인할 과업",
+      "elements": [
+        {
+          "id": "sh/250zy18b",
+          "kind": "textbox",
+          "text": "현장 도입에서 확인할 과업"
+        },
+        {
+          "id": "tb/8n2hk3u5",
+          "kind": "table",
+          "text": "검증할 과업\t남길 근거\t현재 상태\n적절한 첫마디 고르기\t완료 여부·이용자가 고른 이유\t사람 관찰 필요\n근거와 불확실성 구분하기\t출처를 찾는지·단정으로 오해하는지\t사람 관찰 필요\n중단 대화와 기록 삭제하기\t목록·재조회·연결 이력 확인\t앱 회귀검사로 확인\n기관의 운영 역할 정하기\t안내 책임·보관 범위·도입 창구\t협약·책임자 확정 필요"
+        },
+        {
+          "id": "sh/wbih4b6d",
+          "kind": "textbox",
+          "text": "도입 후보: 가족·친구의 대화 준비를 지원하는 상담·교육 현장. 실제 채택·효과를 주장하지 않습니다."
+        },
+        {
+          "id": "sh/n69grmpw",
+          "kind": "textbox",
+          "text": "13"
+        }
+      ],
+      "notes": {
+        "text": "사업화는 확인되지 않은 시장 숫자를 크게 제시하는 대신 구체적인 사용 과업과 운영 단위를 제안합니다. 상담·교육 현장의 주변인이 첫마디를 준비하는 보조 도구라는 도입 가설입니다. 실제 이용자가 문장을 고르고 근거와 불확실성을 이해하는지 관찰해야 합니다. 기록 삭제는 코드와 저장 경계로 검증할 수 있지만 사용자 이해도는 사람 관찰이 필요합니다. 기관 도입을 위해서는 운영 책임자와 보유 정책, 대응 창구가 합의돼야 합니다. 이번 결과를 도입 확약이나 임상 효과로 소개하지 않습니다.\n\n근거:\n/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_실전_검증팩_v1.md"
+      }
+    },
+    {
+      "id": "sl/8f2psfyx",
+      "index": 13,
+      "title": "주변인의 대화 준비를 돕는 말씨",
+      "elements": [
+        {
+          "id": "sh/sb2lcnmd",
+          "kind": "textbox",
+          "text": "주변인의 대화 준비를 돕는 말씨"
+        },
+        {
+          "id": "sh/1gbm9s3a",
+          "kind": "textbox",
+          "text": "말씨"
+        },
+        {
+          "id": "sh/0f2lgnmp",
+          "kind": "textbox",
+          "text": "주변인이 건넬 말과 행동을 준비하는 서비스\n\n질문·원문 근거·안내·기록 관리의 흐름과\n데이터 선별·검증 이력을 함께 제시합니다."
+        },
+        {
+          "id": "im/m1sb6pgf",
+          "kind": "image"
+        },
+        {
+          "id": "sh/q903ad4n",
+          "kind": "textbox",
+          "text": "질의응답: 원문 보존 · 데이터 노출 · 기록 삭제 · 실제 활용"
+        },
+        {
+          "id": "sh/dcbm583y",
+          "kind": "textbox",
+          "text": "14"
+        }
+      ],
+      "notes": {
+        "text": "마지막으로 말씨가 오늘 제공하는 결과를 정리합니다. 주변인이 대화를 준비하는 흐름, 원문에 연결된 설명, 사용자가 관리할 수 있는 기록, 그리고 데이터 검증 이력을 보여드렸습니다. 사람의 의미 검토와 실제 현장 과업 검증은 다음 확인 대상입니다. 질의응답에서는 화면과 근거 파일을 열어 관찰된 사실과 미확인 사항을 구분해 설명하겠습니다.\n질문: 데이터가 독립적입니까? 답: 현재 validation은 개발에 노출됐고 독립 test로 부르지 않습니다.\n질문: 테스트 통과가 상담 품질을 뜻합니까? 답: 앱 계약 검사이며 상담 품질과 임상 효과는 별도입니다.\n질문: 쿠키를 지우면 삭제됩니까? 답: 접근과 삭제는 다르며 쿠키 상실 직후 자동 삭제는 아니며, 따로 보관한 삭제 키나 보유기간 만료로 삭제합니다.\n\n근거:\n/Users/chihun/Documents/ChatGPT/HOP-Final/docs/competition/결선_적대적_재평가_v6.md"
+      }
+    }
+  ]
+}

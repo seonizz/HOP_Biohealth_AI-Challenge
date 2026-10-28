@@ -40,9 +40,16 @@ def validate_canary(work, bound):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('command', choices=['verify', 'prepare', 'verify-cache', 'qualify', 'canary', 'canary-resume', 'train', 'resume', 'evaluate'])
+    parser.add_argument('command', choices=['verify', 'prepare', 'verify-cache', 'qualify', 'canary', 'canary-resume', 'train', 'resume', 'evaluate', 'train-v11', 'resume-v11'])
     parser.add_argument('--kit', type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument('--v11-entries', type=Path)
+    parser.add_argument('--v11-model', type=Path)
+    parser.add_argument('--v11-run-root', type=Path)
+    parser.add_argument('--v11-max-steps', type=int)
     args = parser.parse_args(); kit = args.kit.resolve()
+    if args.command in ('train-v11', 'resume-v11'):
+        from counseling_pipeline.supporter_stage1 import run_cli
+        return run_cli(args)
     verify_bundle(kit); config = load_config(kit); bound = bindings(kit, config)
     if args.command == 'verify':
         rows, _ = read_rows(kit)

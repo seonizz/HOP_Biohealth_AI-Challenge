@@ -44,6 +44,23 @@ const trainedState = () => {
   const value = stateResult(); delete value.patient_state.user_goal; return value;
 };
 
+test('JSON-schema state and final requests honor configured reasoning without changing their source or schema',async()=>{
+  for(const reasoningEffort of ['omit','none','low','medium','high']){
+    const calls=[],model=new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'synthetic-test-only',
+      protocol:'json_schema',reasoningEffort,fetchImpl:async(_url,request)=>{
+        const body=JSON.parse(request.body),final=body.response_format.json_schema.name==='malssi_guide';calls.push(body);
+        if(reasoningEffort==='omit')assert.equal(Object.hasOwn(body,'reasoning_effort'),false);
+        else assert.equal(body.reasoning_effort,reasoningEffort);
+        assert.deepEqual(body.response_format,modelResponseFormat(context(),final));
+        assert.equal(JSON.parse(body.messages.at(-1).content).current_context.patient.fields.mood.rawText,context().patient.fields.mood.rawText);
+        return envelope(JSON.stringify(final?result():stateResult()));
+      }});
+    assert.deepEqual(await model.updateState(context()),stateResult());
+    assert.deepEqual(await model.respond(context(),patientState()),result());
+    assert.equal(calls.length,2);
+  }
+});
+
 test('final response uses a strict JSON schema, bearer auth and grounded context with prior memory', async () => {
   const memory = patientState();
   let calls = 0;
@@ -55,7 +72,7 @@ test('final response uses a strict JSON schema, bearer auth and grounded context
     assert.equal(body.model, 'gemma4:12b');
     assert.equal(body.stream, false);
     assert.equal(body.reasoning_effort, 'none');
-    assert.equal(body.max_tokens, 4096);
+    assert.equal(Object.hasOwn(body, 'max_tokens'), false);
     assert.deepEqual(body.response_format, modelResponseFormat(context(), true));
     assert.equal(body.temperature, 0);
     assert.match(body.messages[0].content, /정보 제공자/);
@@ -83,7 +100,7 @@ test('state update returns validated JSON memory, name index and question plan',
   output.question_plan.skip.push(skip('describe'));
   const model = gateway(async (_url, request) => {
     const body = JSON.parse(request.body);
-    assert.equal(body.max_tokens, 2200);
+    assert.equal(Object.hasOwn(body, 'max_tokens'), false);
     assert.deepEqual(body.response_format, modelResponseFormat(context()));
     assert.match(body.messages[0].content, /상태 메모리/);
     assert.match(body.messages[0].content, /already_covered/);
@@ -400,8 +417,21 @@ test('model timeout aborts the request and reports 504', async () => {
   await assert.rejects(model.updateState(context()), { status: 504, code: 'MODEL_TIMEOUT' });
 });
 
+test('zero timeout keeps the operation unbounded while a delayed model response completes',async()=>{
+  let signal;
+  const model=new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'test-only-secret',timeoutMs:0,diagnosticLogger:()=>{},
+    fetchImpl:async(_url,request)=>{
+      signal=request.signal;await new Promise(resolve=>setTimeout(resolve,35));return envelope(JSON.stringify(result()));
+    }});
+  assert.equal(model.configured,true);
+  await model.operation({},async operation=>{assert.equal(operation.deadline,Infinity);});
+  assert.deepEqual(await model.respond(context()),result());assert.equal(signal.aborted,false);
+});
+
 test('missing credentials or malformed configuration fail before fetching', async () => {
-  for (const options of [{}, { baseUrl: 'https://example.test/v1', apiKey: '' }, { baseUrl: 'https://user:password@example.test/v1', apiKey: 'key' }, { baseUrl: 'https://example.test/v1', apiKey: 'key', timeoutMs: 0 }]) {
+  for (const options of [{}, { baseUrl: 'https://example.test/v1', apiKey: '' }, { baseUrl: 'https://user:password@example.test/v1', apiKey: 'key' },
+    {baseUrl:'https://example.test/v1',apiKey:'key',timeoutMs:-1},{baseUrl:'https://example.test/v1',apiKey:'key',retryFailures:'true'},
+    {baseUrl:'https://example.test/v1',apiKey:'key',retryDelayMs:0}]) {
     const model = new ModelGateway({ ...options, fetchImpl: () => { throw new Error('Must not call'); } });
     assert.equal(model.configured, false);
     await assert.rejects(model.respond(context()), { status: 503, code: 'MODEL_NOT_CONFIGURED' });
@@ -412,8 +442,8 @@ test('trained profile only sends supported request fields and assembles the orig
   const ctx = context(); ctx.user_goal.message = field('want', '전하고 싶은 진심 '.repeat(600));
   const model = trainedGateway(async (_url, request) => {
     const body = JSON.parse(request.body);
-    assert.deepEqual(Object.keys(body).sort(), ['max_tokens', 'messages', 'model', 'n', 'stream', 'temperature']);
-    assert.equal(body.max_tokens, 2048); assert.equal(body.n, 1); assert.equal(body.stream, false);
+    assert.deepEqual(Object.keys(body).sort(), ['messages', 'model', 'n', 'stream', 'temperature']);
+    assert.equal(Object.hasOwn(body, 'max_tokens'), false); assert.equal(body.n, 1); assert.equal(body.stream, false);
     assert.equal(body.temperature, 0); assert.equal(body.model, 'malssi-gemma4-31b-step100');
     assert.deepEqual(body.messages.map(message => message.role), ['system', 'user', 'assistant', 'user']);
     assert.deepEqual(Object.keys(JSON.parse(body.messages[2].content)), ['patient_state', 'name_index', 'question_plan']);
@@ -421,8 +451,8 @@ test('trained profile only sends supported request fields and assembles the orig
     assert.match(body.messages[0].content, /일상 기능 저하/);
     assert.equal(request.body.includes('test-only-secret'), false);
     const projected = JSON.parse(body.messages.at(-1).content);
-    assert.equal(projected.partial, true); assert.ok(projected.goal.length <= 160);
-    assert.equal(request.body.includes(ctx.user_goal.message.text), false);
+    assert.equal(projected.partial, false); assert.equal(projected.goal, ctx.user_goal.message.text);
+    assert.equal(request.body.includes(ctx.user_goal.message.text), true);
     return envelope(JSON.stringify(trainedState()));
   });
   assert.equal(model.protocol, 'json_prompt'); assert.equal(model.timeoutMs, 1800000);
@@ -437,7 +467,7 @@ test('trained final output reuses validated state and name while receiving guide
   const model = trainedGateway(async (_url, request) => {
     calls++;
     const body = JSON.parse(request.body);
-    assert.equal(body.max_tokens, 4096);
+    assert.equal(Object.hasOwn(body, 'max_tokens'), false);
     const input = JSON.parse(body.messages.at(-1).content);
     assert.ok(input.patient.some(row => row[0] === 'mood'));
     assert.ok(input.supporter.some(row => row[0] === 'feeling'));
@@ -460,7 +490,7 @@ for (const protocol of ['json_prompt','json_schema']) {
     value.guide.care={feel:'지치고 걱정하는 마음으로 누군가를 돕는 일은 부담이 될 수 있어요. 어떤 말을 해야 할지 바로 정하지 못해도 괜찮아요. 상대의 반응을 전부 책임지려 하기보다 지금 할 수 있는 만큼 함께할 방법을 찾아 보세요.',tips:['대화를 시작하기 전에 자신의 여유도 살펴보세요. 집중해서 들을 시간과 쉬어야 할 시간을 나누어 무리하지 않는 범위를 정해 두세요.', '대화 뒤 잠시 긴장을 내려놓는 시간을 가져 보세요. 답을 기다리는 동안에도 일상과 휴식을 유지해도 괜찮아요.', '도울 수 있는 범위를 솔직하게 정하세요. 모든 문제를 혼자 해결하려 하지 않아도 되고 부담이 커지면 자신의 마음도 나눠 보세요.']};
     const model=new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'test-only-secret',model:protocol==='json_prompt'?'malssi-gemma4-31b-step100':'gemma4:12b',protocol,fetchImpl:async (_url,request)=>{
       const body=JSON.parse(request.body);
-      assert.equal(body.max_tokens,4096);
+      assert.equal(Object.hasOwn(body, 'max_tokens'), false);
       if(protocol==='json_prompt'){
         const sample=JSON.parse(body.messages[2].content).guide;
         assert.ok(sample.script.length>=300);
@@ -489,7 +519,7 @@ test('trained final builds a validated state first when no usable memory exists'
   assert.equal(prompts.length, 2);
 });
 
-test('trained final projection retains core patient and supporter evidence within bounded input', () => {
+test('trained context preserves every full answer, goal, memory and candidate without a smaller projection', () => {
   const ctx = context();
   const patientIds = ['dur', 'freq', 'describe', 'concern', 'events', 'need'];
   const supporterIds = ['feeling', 'cgchange', 'mycoping'];
@@ -498,37 +528,37 @@ test('trained final projection retains core patient and supporter evidence withi
   ctx.log = [{ who: 'me', text: '별도 전체 로그를 넣으면 안 됨' }];
   const normal = trainedContext(ctx, patientState(), { final: true });
   const tight = trainedContext(ctx, patientState(), { final: true, tighter: true });
-  assert.ok(JSON.stringify(normal).length <= 3000); assert.ok(JSON.stringify(tight).length <= 1900);
+  assert.ok(JSON.stringify(normal).length > 3000); assert.deepEqual(tight, normal);
   for (const id of ['name', 'mood', ...patientIds]) assert.ok(normal.patient.some(row => row[0] === id));
   for (const id of supporterIds) assert.ok(normal.supporter.some(row => row[0] === id));
   assert.equal('payload' in normal, false); assert.equal('log' in normal, false);
   for (const subject of ['patient', 'supporter']) for (const row of normal[subject]) {
     const source = ctx[subject].fields[row[0]];
-    assert.ok(row[3].every(quote => source.rawText.includes(quote) || source.text.includes(quote)));
+    assert.ok(row[3].includes(source.rawText));
+    assert.equal(row[1], source.question);
   }
 });
 
-for (const limit of [4096, 131072]) test(`trained profile retries the ${limit}-token context-budget 400 once with a smaller projection`, async () => {
+for (const limit of [4096, 131072]) test(`trained profile reports the ${limit}-token server budget without shrinking input or retrying`, async () => {
   const bodies = [];
   const model = trainedGateway(async (_url, request) => {
     bodies.push(JSON.parse(request.body));
-    if (bodies.length === 1) return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: `Prompt (${limit}) plus max_tokens (2048) exceeds the ${limit}-token context budget; no text was truncated` } }), { status: 400 });
-    return envelope(JSON.stringify(trainedState()));
+    return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: `Prompt (${limit}) plus max_tokens (2048) exceeds the ${limit}-token context budget; no text was truncated` } }), { status: 400 });
   });
-  assert.deepEqual(await model.updateState(context()), stateResult());
-  assert.equal(bodies.length, 2);
-  assert.ok(bodies[1].messages.at(-1).content.length < bodies[0].messages.at(-1).content.length);
-  assert.equal(bodies[1].max_tokens, 2048);
+  await assert.rejects(model.updateState(context()), { code: 'MODEL_CONTEXT_TOO_LONG', status: 502 });
+  assert.equal(bodies.length, 1);
+  assert.deepEqual(JSON.parse(bodies[0].messages.at(-1).content), trainedContext(context(), null));
+  assert.equal(Object.hasOwn(bodies[0], 'max_tokens'), false);
 });
 
-test('trained retry stops after two budget errors, rejects unsupported fields and caps malformed repairs', async () => {
+test('trained server budget errors and unsupported fields fail immediately while malformed repairs stay bounded', async () => {
   let calls = 0;
   const model = trainedGateway(async () => {
     calls++;
     return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: 'Prompt (4097) plus max_tokens (2048) exceeds the 4096-token context budget; no text was truncated' } }), { status: 400 });
   });
   await assert.rejects(model.updateState(context()), { code: 'MODEL_CONTEXT_TOO_LONG', status: 502 });
-  assert.equal(calls, 2);
+  assert.equal(calls, 1);
   for (const [response, expectedAttempts] of [
     [() => new Response(JSON.stringify({ error: { type: 'invalid_request_error', message: 'Unsupported request fields: private-detail' } }), { status: 400 }), 1],
     [() => envelope('{'), 3], [() => envelope(JSON.stringify(trainedState()), 'length'), 3],
@@ -579,7 +609,7 @@ test('actual mood choices 0 through 8 preserve the suicidal choice before the ev
   }
 });
 
-test('long raw, custom and follow-up danger excerpts keep negation and attribution when context is reduced', () => {
+test('long raw, custom and follow-up danger excerpts keep negation and attribution without context reduction', () => {
   const ctx = context();
   const phrase = '그분은 죽고 싶지는 않다고 말했어요.';
   const long = '평소의 모습을 전해 들었어요 '.repeat(50) + phrase + ' 일상 이야기입니다'.repeat(50);
@@ -615,7 +645,7 @@ test('risk excerpts preserve unknown status and never read skipped or unasked fi
   }
 });
 
-test('a long user-goal report preserves its original danger clause beside the shortened goal', () => {
+test('a long user-goal report preserves its original danger clause alongside the complete goal', () => {
   const ctx = context();
   const source = '전하고 싶은 마음 '.repeat(100) + '사라지고 싶다는 뜻은 아니라고 말하고 싶어요.';
   ctx.user_goal.message = field('want', source);
@@ -627,7 +657,7 @@ test('a long user-goal report preserves its original danger clause beside the sh
   }
 });
 
-test('reported and unknown memory certainty remain distinct in normal and reduced state or final context', () => {
+test('reported and unknown memory certainty remain distinct in state and final context', () => {
   const ctx = context();
   const reported = patientState(); reported.facts = [reported.facts[0]];
   const unknown = structuredClone(reported); unknown.facts[0].certainty = 'unknown';

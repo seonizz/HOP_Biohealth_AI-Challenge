@@ -1,4 +1,8 @@
 """Compute global Gemma attention in KV-head groups to bound temporary memory."""
+from inference_attention import folded_decode_attention
+from inference_scope import FOLDED_DECODE
+
+
 def install_grouped_attention():
     import torch
     from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS
@@ -16,6 +20,10 @@ def install_grouped_attention():
             return original(module, query, key, value, attention_mask, dropout=dropout,
                             scaling=scaling, is_causal=is_causal, **kwargs)
         qlen, klen = query.shape[2], key.shape[2]
+        if FOLDED_DECODE.get() and qlen == 1:
+            folded = folded_decode_attention(query, key, value, attention_mask, scale=scaling)
+            if folded is not None:
+                return folded, None
         if qlen > 1 and klen > qlen and attention_mask is None:
             raise ValueError("Cached prefill requires an explicit causal mask")
         causal = is_causal if is_causal is not None else getattr(module, "is_causal", True)

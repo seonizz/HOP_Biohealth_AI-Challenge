@@ -72,7 +72,7 @@ test('JSON and source validation failures repair the system prompt while preserv
   assert.equal(bodies.length, 3);
   assert.equal(new Set(bodies.map(body => body.messages[0].content)).size, 3);
   assert.equal(new Set(bodies.map(body => body.messages.at(-1).content)).size, 1);
-  assert.ok(bodies.every(body => body.temperature === 0 && body.max_tokens === 2048));
+  assert.ok(bodies.every(body => body.temperature === 0 && !Object.hasOwn(body, 'max_tokens')));
   assert.match(bodies[2].messages[0].content, /정확히 복사한 인용/);
   assert.equal(bodies[2].messages[0].content.includes('사실에 없는 내용'), false);
   assert.deepEqual(records.map(entry => entry.reason), ['content_json', 'patient_state_validation', 'success']);
@@ -146,7 +146,7 @@ test('authentication, arbitrary errors and unrelated 422 do not retry', async ()
   assert.equal(attempts, 0);
 });
 
-test('current 422 context budget tightens once and uses the same three-attempt recovery allowance', async () => {
+test('a 422 server context budget stops recovery without shrinking the original input', async () => {
   const bodies = [];
   const budget = () => new Response(JSON.stringify({ error: {
     code: 'context_budget_exceeded', message: 'Rendered input or total token budget exceeded.', type: 'request_error',
@@ -158,13 +158,43 @@ test('current 422 context budget tightens once and uses the same three-attempt r
     return envelope(state());
   });
   const ctx = context(); ctx.user_goal.message = field('want', '전하고 싶은 마음 '.repeat(30));
-  await gateway.updateState(ctx);
-  assert.equal(bodies.length, 3);
+  await assert.rejects(gateway.updateState(ctx), { code: 'MODEL_CONTEXT_TOO_LONG' });
+  assert.equal(bodies.length, 2);
   assert.equal(bodies[0].messages.at(-1).content, bodies[1].messages.at(-1).content);
-  assert.notEqual(bodies[1].messages.at(-1).content, bodies[2].messages.at(-1).content);
+  assert.equal(JSON.parse(bodies[0].messages.at(-1).content).goal, ctx.user_goal.message.text);
   let attempts = 0;
   await assert.rejects(makeGateway(async () => { attempts++; return budget(); }).updateState(context()), { code: 'MODEL_CONTEXT_TOO_LONG' });
-  assert.equal(attempts, 2);
+  assert.equal(attempts, 1);
+});
+
+test('relationship memory input-budget rejections keep their cause without retrying or truncating source', async () => {
+  for (const message of [
+    'Prompt (65537) exceeds the 65536-token input budget; no text was truncated',
+    'Prompt (61441) plus max_tokens (8192) exceeds the 69632-token context budget; no text was truncated',
+    'Prompt (8193) exceeds the 8192-token input budget; no text was truncated',
+    'Prompt (8192) plus max_tokens (4097) exceeds the 12288-token context budget; no text was truncated',
+    'Prompt exceeds the input budget; no text was truncated',
+    'Prompt exceeds the v11 input budget; no text was truncated',
+    'unrecognized private upstream detail',
+    'Prompt (8193) exceeds the 8192-token input budget; no text was truncated\nprivate source',
+  ]) {
+    const bodies = [], logs = [];
+    const gateway = makeGateway(async (_url, request) => {
+      bodies.push(JSON.parse(request.body));
+      return new Response(JSON.stringify({ error: { type: 'invalid_request_error', message } }), { status: 400 });
+    }, { protocol: 'relationship_agent', agentFormat: 'prompt', diagnosticLogger: entry => logs.push(entry) });
+    const source = { answers: ['원문과 정정은 그대로 보존합니다.'] };
+    const known = !message.includes('private');
+    await assert.rejects(gateway.operation({}, operation => gateway.agentComplete(
+      'relationship_memory', 'synthetic system prompt', source,
+      { type: 'object', properties: {}, additionalProperties: false },operation, value => value,
+    )), { code: known ? 'MODEL_CONTEXT_TOO_LONG' : 'MODEL_UPSTREAM_ERROR' });
+    assert.equal(bodies.length, 1);
+    assert.deepEqual(JSON.parse(bodies[0].messages.at(-1).content).data, source);
+    assert.equal(logs[0].reason, known ? 'context_budget' : 'http_rejected');
+    assert.equal(JSON.stringify(logs).includes(message), false);
+    assert.equal(JSON.stringify(logs).includes(source.answers[0]), false);
+  }
 });
 
 test('Retry-After is respected and unreasonable waits are not retried early', async () => {
@@ -320,7 +350,7 @@ test('progress counts only validated calls while retry feedback stays out of dia
   const schema={type:'object',properties:{ok:{type:'boolean'}},required:['ok'],additionalProperties:false};
   let validations=0;
   await gateway.operation({onProgress:event=>events.push(event)},operation=>
-    gateway.agentComplete('guide_repair','검토 지침',{},schema,100,operation,value=>{
+    gateway.agentComplete('guide_repair','검토 지침',{},schema,operation,value=>{
       if(++validations===1){
         const error=new HttpError(502,'MODEL_INVALID_RESPONSE','검증 실패');
         error.modelReason='agent_speech_goal';error.modelFeedback='private repair feedback';throw error;
@@ -332,4 +362,135 @@ test('progress counts only validated calls while retry feedback stays out of dia
   assert.equal(JSON.stringify(records).includes('private repair feedback'),false);
   assert.equal(new Set(records.map(entry=>entry.generation_id)).size,1);
   assert.equal(new Set(records.map(entry=>entry.attempt_id)).size,2);
+});
+
+test('internal operation recovery restarts exhausted validation with a fresh controller and preserves sources',async()=>{
+  const records=[],events=[],signals=[],bodies=[];
+  const gateway=makeGateway(async(_url,request)=>{
+    signals.push(request.signal);bodies.push(JSON.parse(request.body));return envelope(bodies.length<=3?'{':state());
+  },{timeoutMs:0,retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>records.push(entry)});
+  const output=await gateway.updateState(context(),null,{requestId:REQUEST_ID,onProgress:event=>events.push(event)});
+  assert.deepEqual(output.patient_state,memory());assert.equal(bodies.length,4);
+  assert.equal(signals[0],signals[2]);assert.notEqual(signals[2],signals[3]);
+  assert.equal(new Set(bodies.map(body=>body.messages.at(-1).content)).size,1);
+  const retries=records.filter(entry=>entry.event==='model_operation_retry');assert.equal(retries.length,1);
+  assert.deepEqual(retries[0],{event:'model_operation_retry',request_id:REQUEST_ID,attempt:1,code:'MODEL_INVALID_RESPONSE',reason:'content_json',delay_ms:1});
+  assert.ok(events.some(event=>event.stage==='retry'&&event.status==='started'));
+  assert.equal(JSON.stringify(retries).includes(context().patient.fields.mood.text),false);
+});
+
+test('internal recovery retries unavailable and transient upstream failures without returning them to callers',async()=>{
+  for(const status of [503,500,408,425]){
+    let calls=0;
+    const failures=status===503?3:1;
+    const gateway=makeGateway(async()=>++calls<=failures?new Response('',{status}):envelope(state()),
+      {timeoutMs:0,retryFailures:true,retryDelayMs:1});
+    assert.deepEqual((await gateway.updateState(context())).patient_state,memory());assert.equal(calls,failures+1,status);
+  }
+});
+
+test('exhausted content reviews cannot restart the whole guide with recovery enabled',async()=>{
+  for(const reason of ['agent_analysis_review_rejected','agent_plan_review_rejected',
+    'agent_quality_review_rejected','agent_review_rejected','agent_detail_review_rejected','agent_review_stale','agent_review_noop']){
+    const records=[],events=[];let operations=0,calls=0;
+    const gateway=makeGateway(async()=>{calls++;return envelope(state());},
+      {timeoutMs:0,retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>records.push(entry)});
+    await assert.rejects(gateway.operation({requestId:REQUEST_ID,onProgress:event=>events.push(event)},async operation=>{
+      // An unexpected second operation fails immediately, so a regression
+      // cannot leave this test stuck in the old unbounded loop.
+      assert.equal(++operations,1,'The reviewed guide must not restart');
+      await gateway.request(()=>({messages:[]}),operation,value=>value);
+      throw Object.assign(new HttpError(502,'MODEL_INVALID_RESPONSE','Synthetic review rejected'),{modelReason:reason});
+    }),{code:'MODEL_INVALID_RESPONSE',modelReason:reason,modelRequestId:REQUEST_ID});
+    assert.equal(calls,1);assert.equal(operations,1);
+    assert.equal(records.some(entry=>entry.event==='model_operation_retry'),false);
+    assert.equal(events.some(event=>event.stage==='retry'),false);
+  }
+});
+
+test('internal recovery cannot bypass an excessive Retry-After limit',async()=>{
+  for(const status of [429,503])for(const retryAfter of ['60',new Date(Date.now()+60000).toUTCString(),'9'.repeat(400)]){
+    let calls=0;
+    const records=[];
+    const gateway=makeGateway(async()=>++calls===1?new Response('',{status,headers:{'Retry-After':retryAfter}}):envelope(state()),
+      {timeoutMs:0,retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>records.push(entry)});
+    await assert.rejects(gateway.updateState(context(),null,{requestId:REQUEST_ID}),
+      {code:'MODEL_UNAVAILABLE',modelReason:'retry_after_limit',modelRequestId:REQUEST_ID});
+    assert.equal(calls,1);
+    assert.equal(records.some(entry=>entry.event==='model_operation_retry'),false);
+  }
+});
+
+test('internal recovery preserves default backoff for malformed Retry-After headers',async()=>{
+  for(const status of [429,503]){
+    let calls=0;
+    const records=[];
+    const gateway=makeGateway(async()=>++calls===1?new Response('',{status,headers:{'Retry-After':'not-a-valid-delay'}}):envelope(state()),
+      {timeoutMs:0,retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>records.push(entry)});
+    assert.deepEqual((await gateway.updateState(context())).patient_state,memory());
+    assert.equal(calls,2);
+    assert.equal(records.find(entry=>entry.event==='model_retry_wait').delay_ms,250);
+    assert.equal(records.some(entry=>entry.event==='model_operation_retry'),false);
+  }
+});
+
+test('internal recovery renews an explicit expired deadline rather than reusing an aborted controller',async()=>{
+  const signals=[];
+  const gateway=makeGateway((_url,request)=>{
+    signals.push(request.signal);
+    if(signals.length===1)return new Promise((resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true}));
+    return Promise.resolve(envelope(state()));
+  },{timeoutMs:20,retryFailures:true,retryDelayMs:1});
+  assert.deepEqual((await gateway.updateState(context())).patient_state,memory());
+  assert.equal(signals.length,2);assert.equal(signals[0].aborted,true);assert.equal(signals[1].aborted,false);
+});
+
+test('authentication, configuration and input-budget errors remain terminal with internal recovery enabled',async()=>{
+  for(const [status,body,code] of [
+    [401,'private authentication error','MODEL_AUTH_FAILED'],[403,'private authentication error','MODEL_AUTH_FAILED'],
+    [400,'private request error','MODEL_UPSTREAM_ERROR'],
+    [422,JSON.stringify({error:{code:'context_budget_exceeded'}}),'MODEL_CONTEXT_TOO_LONG'],
+  ]){
+    let calls=0;
+    const gateway=makeGateway(async()=>{calls++;return new Response(body,{status});},{timeoutMs:0,retryFailures:true,retryDelayMs:1});
+    await assert.rejects(gateway.updateState(context()),{code});assert.equal(calls,1);
+  }
+  let calls=0;
+  const gateway=makeGateway(async()=>{calls++;},{apiKey:'',timeoutMs:0,retryFailures:true});
+  await assert.rejects(gateway.updateState(context()),{code:'MODEL_NOT_CONFIGURED'});assert.equal(calls,0);
+});
+
+test('external cancellation aborts an in-flight model request without retrying or reporting a timeout',async()=>{
+  const controller=new AbortController();let calls=0,started;
+  const waiting=new Promise(resolve=>{started=resolve;});
+  const gateway=makeGateway((_url,request)=>{
+    calls++;started();return new Promise((resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new Error('private abort reason')),{once:true}));
+  },{timeoutMs:0,retryFailures:true,retryDelayMs:1});
+  const work=gateway.updateState(context(),null,{signal:controller.signal,requestId:REQUEST_ID});
+  await waiting;controller.abort('private external reason');
+  await assert.rejects(work,error=>error.code==='MODEL_CANCELLED'&&error.status===499&&error.modelRequestId===REQUEST_ID&&!error.message.includes('private'));
+  assert.equal(calls,1);
+});
+
+test('external cancellation ends request and operation retry waits before another model call',{timeout:1000},async()=>{
+  for(const operationWait of [false,true]){
+    const controller=new AbortController(),records=[];let calls=0,waiting;
+    const ready=new Promise(resolve=>{waiting=resolve;});
+    const gateway=makeGateway(async()=>{
+      calls++;return operationWait?envelope('{'):new Response('',{status:503,headers:{'Retry-After':'1'}});
+    },{timeoutMs:0,retryFailures:true,retryDelayMs:60000,diagnosticLogger:entry=>{
+      records.push(entry);if(entry.event===(operationWait?'model_operation_retry':'model_attempt'))waiting();
+    }});
+    const work=gateway.updateState(context(),null,{signal:controller.signal});
+    await ready;await new Promise(resolve=>setImmediate(resolve));controller.abort();
+    await assert.rejects(work,{code:'MODEL_CANCELLED',status:499});assert.equal(calls,operationWait?3:1);
+    if(operationWait)assert.equal(records.find(entry=>entry.event==='model_operation_retry').delay_ms,30000);
+    else assert.equal(records.at(-1).reason,'cancelled');
+  }
+});
+
+test('an already cancelled call performs no discovery, generation or internal retries',async()=>{
+  const controller=new AbortController();controller.abort();let calls=0;
+  const gateway=makeGateway(async()=>{calls++;return envelope(state());},{timeoutMs:0,retryFailures:true,discoverTokenLimits:true});
+  await assert.rejects(gateway.updateState(context(),null,{signal:controller.signal}),{code:'MODEL_CANCELLED',status:499});assert.equal(calls,0);
 });

@@ -1,0 +1,157 @@
+{
+  "schema": "malssi-v8-g2-remediation-v1",
+  "date": "2026-10-16",
+  "base_commit": "531522f9d621d5a8b5f08409fd127fd0866c5595",
+  "scope": "Git privacy scanner encoding boundary; product, training data, index and presentation unchanged",
+  "json_policy": {
+    "extensions": [
+      ".json",
+      ".jsonl",
+      ".ndjson"
+    ],
+    "encoding": "UTF-8 with optional UTF-8 BOM",
+    "unsupported_or_malformed": "audit error and nonzero CLI exit",
+    "applies_after_gzip_and_to_office_attachments": true
+  },
+  "regression": {
+    "before": {
+      "tests": 1,
+      "failed": 1,
+      "reason": "UTF-16 JSON wrongly passed"
+    },
+    "after": {
+      "tests": 22,
+      "passed": 22,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "independent_v8_reproduction": {
+    "utf8_control_passed": false,
+    "utf8_control_exact_source_files": 1,
+    "utf16_json_decodes_to_same_payload": true,
+    "staged_bytes": 454,
+    "worktree_sanitized": true,
+    "attack_passed": false,
+    "coverage": {},
+    "finding_files": 0,
+    "parse_errors": 1,
+    "false_negative_confirmed": false
+  },
+  "current_index": {
+    "schema": "malssi-git-privacy-v1",
+    "scope": "tracked",
+    "content": "git-index-blobs",
+    "minimum_characters": 80,
+    "files_examined": 1142,
+    "coverage": {
+      "text": 547,
+      "json": 467,
+      "jsonl": 28,
+      "document_xml": 38,
+      "binary_not_scanned": 62
+    },
+    "source_text_units_examined": 106583,
+    "unique_source_text_hashes": 53884,
+    "exact_source_text_files": 0,
+    "passed": true,
+    "source_text_exported": false,
+    "limitations": [
+      "Exact whole JSON strings / text lines / paragraphs / XML text nodes >=80 characters only.",
+      "Short, modified and partial excerpts, image text and historical commits are not ruled out."
+    ]
+  },
+  "staged": {
+    "files_examined": 1,
+    "passed": true
+  },
+  "preservation": {
+    "head_unchanged": true,
+    "index_bytes_unchanged": true,
+    "index_entries_unchanged": true,
+    "original_v7_and_v8_reports_unchanged": true,
+    "local_preserved_files": 1223,
+    "local_hash_mismatches": 0,
+    "remaining_tracked_private_copies": 0,
+    "index_entries_sha256": "42a5eaa5a9692ede5faf36c833529229bf38938f53592aa838d5f528ba3322ae"
+  },
+  "app_source_sha256": "958d818e514f187794e6d04e7221f5c0792c9eed1d6f8ee5fbf0f055ad458e62",
+  "syntax_check": "AST passed",
+  "new_score": null,
+  "prior_v8_tests_not_rerun_here": {
+    "app": 391,
+    "data": 225,
+    "evidence": 24
+  },
+  "remaining": [
+    "non-JSON binary/image text, short or modified excerpts",
+    "historical Git and remote scope",
+    "human caregiver targets and review",
+    "later-conversation representativeness and source-use evidence",
+    "actual user and institution evidence",
+    "operations and backup deletion",
+    "final submission rules and rehearsal"
+  ],
+  "files": [
+    {
+      "path": "tools/audit_git_privacy.py",
+      "sha256": "794826d529ad03b085fe658a72c92ec25403a8fc166fd1d3cb8c14d3ea34be07",
+      "bytes": 10839
+    },
+    {
+      "path": "tools/test_audit_git_privacy.py",
+      "sha256": "5e78fc25ebdd854f17a37ff50c7bed33825e930742271065a060d4a3915ea6a3",
+      "bytes": 12597
+    },
+    {
+      "path": "tools/README.md",
+      "sha256": "728491657e53459f4d94785a51e90e016947bb0a2c5930205c7ca188cdef2670",
+      "bytes": 3378
+    },
+    {
+      "path": "runtime/remediation-v8/before.json",
+      "sha256": "6b33a426a57159108e129a71180a753b3c9369ae60976e3c9400b5678e7f1529",
+      "bytes": 601
+    },
+    {
+      "path": "runtime/remediation-v8/preservation.json",
+      "sha256": "36f4e4838c6f4505dfa5add0d7b7ef93471c50942d85e6ea86e1f59eb2a281ca",
+      "bytes": 343
+    },
+    {
+      "path": "runtime/remediation-v8/encoding-before.log",
+      "sha256": "f4826a8cf01163873799fb9b330c079a5467cd21235e6febeded67a7956bfb36",
+      "bytes": 807
+    },
+    {
+      "path": "runtime/remediation-v8/privacy-tests.log",
+      "sha256": "da548656823383f1b83040f958398af824146b8b2560c85c7f54a69986e8a06b",
+      "bytes": 3427
+    },
+    {
+      "path": "runtime/remediation-v8/independent_attacks.py",
+      "sha256": "908f99306bc2e529bd817d4667d36717aba26e2a7ca2451c6a7fef930387ce1b",
+      "bytes": 3444
+    },
+    {
+      "path": "runtime/remediation-v8/independent-attacks.json",
+      "sha256": "59d2e71f42c66c830600f1c782ce3d5eabc67552392508ad973805e94cda317b",
+      "bytes": 823
+    },
+    {
+      "path": "runtime/remediation-v8/privacy-tracked.json",
+      "sha256": "af0198d0d34505bf74c762a37c7d7cbd7c15eb6c884caa4f66e433a19bb6006f",
+      "bytes": 686
+    },
+    {
+      "path": "runtime/remediation-v8/privacy-staged.json",
+      "sha256": "f6830f10fa7afc2d1280b8fdc283ce896c396cf67ddf81936f5246a4bf053690",
+      "bytes": 592
+    },
+    {
+      "path": "runtime/remediation-v8/app-source.json",
+      "sha256": "5229c70f83b19457d85cb172451a3957dde254f6c8d5a4ef8972846b9072ad87",
+      "bytes": 7851
+    }
+  ]
+}

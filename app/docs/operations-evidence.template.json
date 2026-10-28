@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "evidence_kind": "actual",
+  "service_id": null,
+  "reviewed_at": null,
+  "policy": {
+    "status": "pending",
+    "inactivity_days": null,
+    "basis": "last_valid_api_access",
+    "approved_by": null,
+    "approved_at": null,
+    "evidence": {"path": null, "sha256": null}
+  },
+  "deployment": {
+    "status": "pending",
+    "environment": "production",
+    "deployment_id": null,
+    "verified_by": null,
+    "verified_at": null,
+    "inactivity_days": null,
+    "source_sha256": null,
+    "migration": "006_data_retention.sql",
+    "cleanup_healthy": false,
+    "evidence": {"path": null, "sha256": null}
+  },
+  "storage_areas": [
+    {"area": "database", "status": "pending", "owner": null, "inventory_evidence": {"path": null, "sha256": null}, "absence_reason": null, "locations": []},
+    {"area": "wal", "status": "pending", "owner": null, "inventory_evidence": {"path": null, "sha256": null}, "absence_reason": null, "locations": []},
+    {"area": "replicas", "status": "pending", "owner": null, "inventory_evidence": {"path": null, "sha256": null}, "absence_reason": null, "locations": []},
+    {"area": "backups", "status": "pending", "owner": null, "inventory_evidence": {"path": null, "sha256": null}, "absence_reason": null, "locations": []},
+    {"area": "exports", "status": "pending", "owner": null, "inventory_evidence": {"path": null, "sha256": null}, "absence_reason": null, "locations": []},
+    {"area": "external_copies", "status": "pending", "owner": null, "inventory_evidence": {"path": null, "sha256": null}, "absence_reason": null, "locations": []}
+  ],
+  "restore_verification": {
+    "status": "pending",
+    "verified_by": null,
+    "verified_at": null,
+    "deletions_reapplied": false,
+    "expired_access_blocked": false,
+    "evidence": {"path": null, "sha256": null}
+  },
+  "failure_response": {
+    "status": "pending",
+    "owner": null,
+    "evidence": {"path": null, "sha256": null}
+  }
+}

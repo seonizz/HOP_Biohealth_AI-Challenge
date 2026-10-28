@@ -1,0 +1,82 @@
+--- a/local_live.py
++++ b/local_live.py
+@@ -25,6 +25,8 @@
+ from server import make_server
+ from inference_budget import (safe_budget_error_message, MAX_INPUT_TOKENS,
+                               MAX_OUTPUT_TOKENS, MAX_CONTEXT_TOKENS)
++from inference_deadline import (DEFAULT_REQUEST_TIMEOUT_SECONDS, FINAL_REQUEST_TIMEOUT_SECONDS,
++                                REPLY_GRACE_SECONDS, request_timeout_seconds)
+ 
+ def save(name, value):
+     target = HERE / name
+@@ -119,6 +121,8 @@
+             assert ready['max_input_tokens'] == MAX_INPUT_TOKENS
+             assert ready['max_output_tokens'] == MAX_OUTPUT_TOKENS
+             assert ready['max_context_tokens'] == MAX_CONTEXT_TOKENS
++            assert ready['request_timeout_seconds'] == DEFAULT_REQUEST_TIMEOUT_SECONDS
++            assert ready['final_request_timeout_seconds'] == FINAL_REQUEST_TIMEOUT_SECONDS
+             self.ready = ready
+             self.verified_ssh_pid = self.process.pid
+         except BaseException:
+@@ -131,7 +135,8 @@
+         ident = uuid.uuid4().hex
+         self.send({'id': ident, 'op': 'generate', 'payload': {'messages': messages,
+             'max_tokens': max_tokens, 'temperature': temperature, 'top_p': top_p}})
+-        reply = self.wait('reply', ident, 620, getattr(self.context, 'connection', None))
++        reply = self.wait('reply', ident, request_timeout_seconds(messages) + REPLY_GRACE_SECONDS,
++                          getattr(self.context, 'connection', None))
+         self.calls += 1
+         save('worker-status.json', {'state': 'ready', 'at': time.time(), 'remote_identity': self.ready, 'requests': self.calls})
+         if not reply.get('ok'):
+@@ -194,7 +199,7 @@
+             'DATABASE_URL': 'postgresql://malssi:' + private['database_password'] + '@127.0.0.1:5434/malssi',
+             'CONTENT_KEY': private['content_key'], 'MODEL_BASE_URL': 'http://127.0.0.1:18080/v1',
+             'MODEL_API_KEY': key, 'MODEL_NAME': config['model_id'], 'MODEL_PROTOCOL': 'relationship_agent',
+-            'MODEL_AGENT_FORMAT': 'prompt', 'MODEL_REASONING_EFFORT': 'omit', 'MODEL_TIMEOUT_MS': '3600000',
++            'MODEL_AGENT_FORMAT': 'prompt', 'MODEL_REASONING_EFFORT': 'omit', 'MODEL_TIMEOUT_MS': '7200000',
+             'MODEL_STATE_MODE': os.environ.get('MODEL_STATE_MODE', 'combined'),
+             'SESSION_TTL_DAYS': '30', 'DATA_RETENTION_DAYS': '30', 'NODE_ENV': 'development'}
+         env.pop('ALLOWED_ORIGINS', None)
+--- a/live_worker.py
++++ b/live_worker.py
+@@ -26,7 +26,9 @@
+ MAX_LINE_BYTES = 8 * 1024 * 1024
+ from inference_budget import (MAX_INPUT_TOKENS, MAX_OUTPUT_TOKENS, MAX_CONTEXT_TOKENS,
+                               validate_inference_budget)
+-REQUEST_TIMEOUT = 600
++from inference_deadline import (DEFAULT_REQUEST_TIMEOUT_SECONDS, FINAL_REQUEST_TIMEOUT_SECONDS,
++                                request_timeout_seconds)
++REQUEST_TIMEOUT = DEFAULT_REQUEST_TIMEOUT_SECONDS
+ IDLE_TIMEOUT = 900
+ CANCEL_GRACE = 15
+ ID_PATTERN = re.compile(r"[A-Za-z0-9_.:-]{1,80}\Z")
+@@ -131,7 +133,7 @@
+ 
+ class Controller:
+     """One admitted request; cancellation is processed independently of CUDA."""
+-    def __init__(self, emit, timeout=REQUEST_TIMEOUT):
++    def __init__(self, emit, timeout=None):
+         self.emit = emit
+         self.timeout = timeout
+         self.lock = threading.RLock()
+@@ -188,7 +190,8 @@
+                     require(self.ready and not self.stopping.is_set(), "Worker is not ready")
+                     require(self.active is None, "Worker is busy")
+                     values = validate_request(body["payload"])
+-                    self.active = GenerationRequest(request_id, values, time.monotonic() + self.timeout)
++                    timeout = request_timeout_seconds(values[0]) if self.timeout is None else self.timeout
++                    self.active = GenerationRequest(request_id, values, time.monotonic() + timeout)
+                     self.request_count += 1
+                     self.requests.put_nowait(self.active)
+             if reply is not None:
+@@ -477,7 +480,9 @@
+             receipt.write("ready", 0)
+             emit("ready", pid=os.getpid(), startticks=startticks, config=backend.metadata,
+                  **backend.metadata, idle_timeout_seconds=IDLE_TIMEOUT,
+-                 request_timeout_seconds=REQUEST_TIMEOUT, cancellation_grace_seconds=CANCEL_GRACE)
++                 request_timeout_seconds=REQUEST_TIMEOUT,
++                 final_request_timeout_seconds=FINAL_REQUEST_TIMEOUT_SECONDS,
++                 cancellation_grace_seconds=CANCEL_GRACE)
+             serve(controller, backend, receipt)
+         status = "stopped" if controller.stop_reason != "generation_failed" else "failed"
+     except BaseException:

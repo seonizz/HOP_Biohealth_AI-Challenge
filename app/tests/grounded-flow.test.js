@@ -1,3 +1,4 @@
+import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelGateway, inferenceSchema } from '../src/model.js';
@@ -13,7 +14,7 @@ const ctx=()=>({patient:{fields:{mood:field('mood','계획을 여러 번 고치�
 const observation=()=>({patient_state:{facts:[{subject:'patient',question_id:'mood',quote:'계획을 여러 번 고치고 괜찮은지 물어봐요.',certainty:'reported'}],unknowns:[]},name_index:null});
 const emptyMemory=()=>({patient:[],supporter:[],relationship:[],unknowns:[]});
 const envelope=value=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}]}));
-const model=handler=>new ModelGateway({baseUrl:'http://example.test/v1',apiKey:'synthetic',protocol:'relationship_agent',diagnosticLogger:null,
+const model=handler=>new ModelGateway({baseUrl:'http://example.test/v1',apiKey:'synthetic',protocol:'relationship_agent',stateMode:'staged',diagnosticLogger:null,
   fetchImpl:async(_url,request)=>handler(JSON.parse(request.body))});
 
 test('state responsibilities are separate sequential calls sharing one deadline, followed by question planning',async()=>{
@@ -36,12 +37,13 @@ test('state responsibilities are separate sequential calls sharing one deadline,
       return envelope({approved:true,issues:[],audits:input.data.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'원문 인용입니다.'}))});
     }
     if(input.stage==='question_plan')return envelope({skip:[],clarify:['clarify_help'],safety:{urgent:false,evidence_ids:[]}});
+    if(input.stage==='safety_review')return envelope(safetyReviewFixture(input.data));
     assert.equal(input.stage,'question_review');
     return envelope({audits:input.data.claims.map(c=>({id:c.id,verdict:'supported',reason:'아직 원하는 도움은 답하지 않았어요.'}))});
   });
-  const call=gateway.agentComplete.bind(gateway);gateway.agentComplete=(...args)=>{operations.push(args[5]);return call(...args);};
+  const call=gateway.agentComplete.bind(gateway);gateway.agentComplete=(...args)=>{operations.push(args[4]);return call(...args);};
   const result=await gateway.updateState(context);
-  assert.deepEqual(stages,['state_observations','relationship_memory','state_review','question_plan','question_review']);
+  assert.deepEqual(stages,['state_observations','relationship_memory','state_review','question_plan','safety_review','question_review']);
   assert.ok(operations.every(operation=>operation===operations[0]));
   assert.deepEqual(result.state_agent.stages,stages);assert.equal(result.clarification,'clarify_help');
 });
@@ -76,7 +78,7 @@ test('a proposed urgent handoff requires an independent review of current physic
       if(input.stage==='relationship_memory')return envelope({relationship_memory:emptyMemory()});
       if(input.stage==='state_review')return envelope({approved:true,issues:[],audits:input.data.claims.map(c=>({id:c.id,verdict:'supported',reason:'원문 보고입니다.'}))});
       if(input.stage==='question_plan')return envelope({skip:[],clarify:[],safety:{urgent:true,evidence_ids:[safetySources(context).find(source=>source.question_id==='mood').id]}});
-      assert.equal(input.stage,'safety_review');return envelope({basis,reason:'현재 시점과 명시된 신체 위험을 원문에 대조했어요.'});
+      assert.equal(input.stage,'safety_review');return envelope(safetyReviewFixture(input.data,basis));
     });
     const result=await gateway.updateState(context);
     assert.equal(result.finish_early,urgent);assert.equal(result.safety_signal.urgent,urgent);
@@ -230,7 +232,7 @@ test('replacement models keep agent stages and validators across all wire format
   for(const agentFormat of ['json_schema','json_object','prompt']) {
     let calls=0;
     const gateway=new ModelGateway({baseUrl:'http://example.test/v1',apiKey:'synthetic',model:'our-finetuned-model',
-      protocol:'relationship_agent',agentFormat,reasoningEffort:'omit',diagnosticLogger:null,
+      protocol:'relationship_agent',stateMode:'staged',agentFormat,reasoningEffort:'omit',diagnosticLogger:null,
       fetchImpl:async(_url,request)=>{
         const body=JSON.parse(request.body);calls++;
         assert.equal(body.model,'our-finetuned-model');assert.equal('reasoning_effort' in body,false);
@@ -242,19 +244,20 @@ test('replacement models keep agent stages and validators across all wire format
         if(input.stage==='relationship_memory')return envelope({relationship_memory:emptyMemory()});
         if(input.stage==='state_review')return envelope({approved:true,issues:[],audits:input.data.claims.map(c=>({id:c.id,verdict:'supported',reason:'직접 보고된 원문'}))});
         if(input.stage==='question_plan')return envelope({skip:[],clarify:[],safety:{urgent:false,evidence_ids:[]}});
+        if(input.stage==='safety_review')return envelope(safetyReviewFixture(input.data));
         throw new Error('unexpected_stage');
       }});
     const context=ctx();context.adaptive_questions=true;
     const result=await gateway.updateState(context);
-    assert.deepEqual(result.state_agent.stages,['state_observations','relationship_memory','state_review','question_plan']);
-    assert.equal(calls,4);
+    assert.deepEqual(result.state_agent.stages,['state_observations','relationship_memory','state_review','question_plan','safety_review']);
+    assert.equal(calls,5);
   }
 });
 
-test('prompt wire mode still rejects invented evidence and exhausts bounded retries',async()=>{
+test('staged prompt wire mode still rejects invented evidence and exhausts bounded request retries',async()=>{
   let calls=0;
   const gateway=new ModelGateway({baseUrl:'http://example.test/v1',apiKey:'synthetic',model:'our-finetuned-model',
-    protocol:'relationship_agent',agentFormat:'prompt',reasoningEffort:'omit',diagnosticLogger:null,
+    protocol:'relationship_agent',stateMode:'staged',agentFormat:'prompt',reasoningEffort:'omit',diagnosticLogger:null,
     fetchImpl:async()=>{calls++;const result=observation();result.patient_state.facts[0].quote='원문에 없는 진단';return envelope(result);}});
   await assert.rejects(()=>gateway.updateState(ctx()),error=>error.code==='MODEL_INVALID_RESPONSE');
   assert.equal(calls,3);

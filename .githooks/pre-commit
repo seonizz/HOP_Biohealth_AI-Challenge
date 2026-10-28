@@ -1,0 +1,5 @@
+#!/bin/sh
+# Scan the actual staged blobs; source data and findings are never printed.
+set -eu
+repo_root=$(git rev-parse --show-toplevel)
+exec "${MALSSI_PYTHON:-python3}" -B "$repo_root/tools/audit_git_privacy.py" --root "$repo_root" --scope staged

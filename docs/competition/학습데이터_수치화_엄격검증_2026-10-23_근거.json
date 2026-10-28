@@ -1,0 +1,357 @@
+{
+  "schema": "malssi-strict-numericalization-review-v1",
+  "date": "2026-10-23",
+  "bundle": "training_data/two_stage_training_20261022",
+  "bundle_manifest_sha256": "1e35389c6efd5ac51645fda583bf597b4af69864e3a1dfd777372efafa9871d1",
+  "verdicts": {
+    "input_token_numericalization": "passed_full_corpus",
+    "same_length_wrong_token_detection": "passed_new_independent_auditor",
+    "original_source_preservation": "passed_full_corpus",
+    "weighted_objective_numerics": "passed_reference_calculation_only",
+    "independent_service_generalization": "not_established",
+    "clinical_risk_score_validity": "not_established",
+    "actual_training": "not_run"
+  },
+  "counts": {
+    "rows": 41276,
+    "sequence_tokens": 232414341,
+    "target_tokens": 3443613,
+    "rows_over_4096": 24454,
+    "target_boundary_trimmed_rows": 175,
+    "trimmed_message_occurrences": 24080,
+    "message_occurrences": 5463317,
+    "first_assistant_rows": 34011,
+    "native_template_parity_rows": 52
+  },
+  "numeric_mismatches": {},
+  "phase_statistics": {
+    "01_original": {
+      "counts": {
+        "train": 37083,
+        "validation": 3618
+      },
+      "splits": {
+        "train": {
+          "rows": 37083,
+          "sequence_tokens": 212414285,
+          "target_tokens": 3037660,
+          "weighted_target_tokens": {
+            "numerator": 3037660,
+            "denominator": 1
+          },
+          "max_prefix_length": 25290,
+          "max_target_length": 3922,
+          "max_sequence_length": 25316
+        },
+        "validation": {
+          "rows": 3618,
+          "sequence_tokens": 19082472,
+          "target_tokens": 304418,
+          "weighted_target_tokens": {
+            "numerator": 304418,
+            "denominator": 1
+          },
+          "max_prefix_length": 13940,
+          "max_target_length": 1198,
+          "max_sequence_length": 14014
+        }
+      }
+    },
+    "02a_supporter": {
+      "counts": {
+        "train": 43,
+        "validation": 29
+      },
+      "splits": {
+        "train": {
+          "rows": 43,
+          "sequence_tokens": 16032,
+          "target_tokens": 3830,
+          "weighted_target_tokens": {
+            "numerator": 3830,
+            "denominator": 1
+          },
+          "max_prefix_length": 381,
+          "max_target_length": 136,
+          "max_sequence_length": 479
+        },
+        "validation": {
+          "rows": 29,
+          "sequence_tokens": 11283,
+          "target_tokens": 2750,
+          "weighted_target_tokens": {
+            "numerator": 2750,
+            "denominator": 1
+          },
+          "max_prefix_length": 397,
+          "max_target_length": 145,
+          "max_sequence_length": 494
+        }
+      }
+    },
+    "02b_service_wire": {
+      "counts": {
+        "train": 123,
+        "validation": 33
+      },
+      "splits": {
+        "train": {
+          "rows": 123,
+          "sequence_tokens": 593038,
+          "target_tokens": 67480,
+          "weighted_target_tokens": {
+            "numerator": 67480,
+            "denominator": 1
+          },
+          "max_prefix_length": 5672,
+          "max_target_length": 1012,
+          "max_sequence_length": 6587
+        },
+        "validation": {
+          "rows": 33,
+          "sequence_tokens": 149658,
+          "target_tokens": 16835,
+          "weighted_target_tokens": {
+            "numerator": 16835,
+            "denominator": 1
+          },
+          "max_prefix_length": 5373,
+          "max_target_length": 907,
+          "max_sequence_length": 6280
+        }
+      }
+    },
+    "aux_sentence": {
+      "counts": {
+        "train": 86,
+        "validation": 59
+      },
+      "splits": {
+        "train": {
+          "rows": 86,
+          "sequence_tokens": 17657,
+          "target_tokens": 818,
+          "weighted_target_tokens": {
+            "numerator": 818,
+            "denominator": 1
+          },
+          "max_prefix_length": 306,
+          "max_target_length": 10,
+          "max_sequence_length": 316
+        },
+        "validation": {
+          "rows": 59,
+          "sequence_tokens": 12723,
+          "target_tokens": 561,
+          "weighted_target_tokens": {
+            "numerator": 561,
+            "denominator": 1
+          },
+          "max_prefix_length": 318,
+          "max_target_length": 10,
+          "max_sequence_length": 328
+        }
+      }
+    },
+    "aux_word": {
+      "counts": {
+        "train": 102,
+        "validation": 76
+      },
+      "splits": {
+        "train": {
+          "rows": 102,
+          "sequence_tokens": 26277,
+          "target_tokens": 4004,
+          "weighted_target_tokens": {
+            "numerator": 4004,
+            "denominator": 1
+          },
+          "max_prefix_length": 320,
+          "max_target_length": 45,
+          "max_sequence_length": 365
+        },
+        "validation": {
+          "rows": 76,
+          "sequence_tokens": 20136,
+          "target_tokens": 3018,
+          "weighted_target_tokens": {
+            "numerator": 3018,
+            "denominator": 1
+          },
+          "max_prefix_length": 338,
+          "max_target_length": 43,
+          "max_sequence_length": 378
+        }
+      }
+    },
+    "aux_state_observations": {
+      "counts": {
+        "train": 6,
+        "validation": 6
+      },
+      "splits": {
+        "train": {
+          "rows": 6,
+          "sequence_tokens": 14658,
+          "target_tokens": 519,
+          "weighted_target_tokens": {
+            "numerator": 519,
+            "denominator": 1
+          },
+          "max_prefix_length": 2644,
+          "max_target_length": 95,
+          "max_sequence_length": 2738
+        },
+        "validation": {
+          "rows": 6,
+          "sequence_tokens": 14998,
+          "target_tokens": 563,
+          "weighted_target_tokens": {
+            "numerator": 563,
+            "denominator": 1
+          },
+          "max_prefix_length": 2643,
+          "max_target_length": 111,
+          "max_sequence_length": 2739
+        }
+      }
+    },
+    "aux_relationship_memory": {
+      "counts": {
+        "train": 6,
+        "validation": 6
+      },
+      "splits": {
+        "train": {
+          "rows": 6,
+          "sequence_tokens": 20274,
+          "target_tokens": 555,
+          "weighted_target_tokens": {
+            "numerator": 555,
+            "denominator": 1
+          },
+          "max_prefix_length": 3643,
+          "max_target_length": 102,
+          "max_sequence_length": 3744
+        },
+        "validation": {
+          "rows": 6,
+          "sequence_tokens": 20850,
+          "target_tokens": 602,
+          "weighted_target_tokens": {
+            "numerator": 602,
+            "denominator": 1
+          },
+          "max_prefix_length": 3806,
+          "max_target_length": 118,
+          "max_sequence_length": 3909
+        }
+      }
+    }
+  },
+  "source_bindings": {
+    "original_rows_bound_to_raw_source": 40701,
+    "service_rows_bound_to_previous_bundle": 575,
+    "original_source_sha256": {
+      "train": "a9e8b2a0c8bb4b2fa6f863dcd2897f3f0a7bb7a3797ea4b437aace7bf5ca56a7",
+      "validation": "078ab0bf8f45c6bf327d73565233d3040b28807f2cc93739c39eaf96e507ad8d"
+    }
+  },
+  "exposure": {
+    "original_validation_rows": 3618,
+    "original_long_overlap_rows": 0,
+    "threshold_normalized_characters": 200,
+    "service_validation_rows": 33,
+    "service_validation_groups": 6,
+    "service_long_overlap_rows": 28,
+    "service_whole_normalized_target_duplicates": 0,
+    "service_max_shared_span_coverage_range": [
+      0.47107438016528924,
+      0.881572714353387
+    ],
+    "shared_string_leaf_rows_ge20": 29,
+    "shared_string_leaf_rows_ge200": 0,
+    "longest_shared_string_leaf_characters": 140,
+    "interpretation": "Repeated JSON structure and text values are confirmed; this does not establish same-person leakage, and service generalization is not independently demonstrated."
+  },
+  "weighting": {
+    "partitions": 14,
+    "exact_rational_target_mass_conservation": true,
+    "max_float32_mass_relative_error": 1.2194836413586414e-07,
+    "max_reference_objective_absolute_error": 4.440892098500626e-16,
+    "scope": "Frozen-epoch math with synthetic loss values and actual row weights; no optimizer execution."
+  },
+  "source_train_groups": 177,
+  "source_train_conversations": 943,
+  "source_validation_groups": 21,
+  "risk_grade_fields_in_target_schemas": 0,
+  "tests": {
+    "existing": 21,
+    "new_adversarial": 10,
+    "passed": 31,
+    "failed": 0,
+    "command": "runtime/data-composition-supporter-tokens-20261016/.venv/bin/python -B -m unittest discover -s ai/scripts -p 'test_*staged*.py' -v"
+  },
+  "review": {
+    "model": "gemma4:12b",
+    "endpoint": "http://192.168.123.175:11434/",
+    "source_text_sent": false,
+    "decisions": [
+      {
+        "finding": 1,
+        "decision": "rejected",
+        "reason": "check_encoded compares expected == observed[input_ids] for every row, outside the template-sample condition. The binary-corruption regression changes a non-template-sample row after recomputing all file hashes; the independent auditor detects exactly one token/label mismatch."
+      },
+      {
+        "finding": 2,
+        "decision": "partly_rejected_scope_limit_retained",
+        "reason": "run invokes staged_dataset.verify before and after, which parses both original provenance ledgers and binds all eligible originals. Clinical risk label validity is explicitly outside this numerical audit and remains unverified."
+      },
+      {
+        "finding": 3,
+        "decision": "confirmed",
+        "reason": "The structural verifier alone has no independent retokenization. Rehashed in-vocabulary wrong token IDs pass it. The new separate numeric auditor detects this case."
+      }
+    ],
+    "tests": "31 passed: 21 existing loader/provenance tests and 10 adversarial numeric tests.",
+    "status": "adjudicated_against_code_and_tests"
+  },
+  "source_code_sha256": {
+    "ai/scripts/audit_staged_numeric.py": "dbbcfbb3c07541cf10a1697a1295f961b3a247ab5e944bf7964740734b75df74",
+    "ai/scripts/test_audit_staged_numeric.py": "2f3ea80e4798d85869a473decf379e412b60d69e79fdd23ff33ce40cea62d99d",
+    "ai/scripts/staged_dataset.py": "33e4ac4683a39f23b01bea6f1dca7edd44e3c693a017d8ebbf768fdb327fd01b",
+    "ai/scripts/test_staged_dataset.py": "3e18da7d8f654033807f9c3655ac554cddcd9ec2b7f0210e094e3a51a95edd53",
+    "runtime/two-stage-numeric-audit-20261022/check_context.py": "47d7dcc1e8a8f599fe770d1efed9e4525975def827169e0d41a2b066226422fe"
+  },
+  "limitations": [
+    "Pinned tokenizer engine is shared; serialization and IO audit are independent.",
+    "Native Jinja rendering is cross-checked on boundary/longest rows per partition; the narrow renderer covers every row.",
+    "No evidence of model quality, clinical label validity, or optimizer/checkpoint continuity.",
+    "No semantic, discontinuous or train-user-message overlap search.",
+    "Shared text does not establish participant identity or distinguish templates from substantive answers.",
+    "Validation was used for selection and is not an untouched final test.",
+    "Final targets in 175 rows have boundary whitespace stripped by the pinned template; raw messages are preserved.",
+    "No model loading, backward pass, memory fit or checkpoint continuation is verified.",
+    "No human-adjudicated risk severity or calibrated probability target is present in this bundle.",
+    "The tokenizer engine is pinned and shared. The independent renderer is verified against native Jinja for 52 real rows and eight synthetic role/whitespace combinations."
+  ],
+  "gpu_used": false,
+  "model_loaded": false,
+  "original_bundle_changed": false,
+  "detailed_evidence_sha256": {
+    "NUMERIC_AUDIT.json": "6ec1e514ec2a433f2d5aa2d98aa40bf6a326b6b3ac5e5a320ce05cab3f94efde",
+    "SOURCE_AND_OBJECTIVE.json": "05fc876550e7884681373b73c98d3513650e6738acc03e77b1b0a65608e1ecfa",
+    "EXPOSURE_original.json": "a164d757c6bbb55e2914d4e74da4372d9e898312fd8b8f1f5ef751574e8c8545",
+    "EXPOSURE_all_primary.json": "357b9849aa43c6eeba23bb09bcb22a21bf0da0f1cfef367f81833e7ece1b7b74",
+    "EXPOSURE_ADJUDICATION_INPUT.json": "ddb3181b73b9df42ee9ab541ae498b4a5f076736fd6edf798c6b88469f06cb41",
+    "SERVICE_LEAF_OVERLAP.json": "84a26dc74b37302a84c4e4d43c58bbd2f32e083cd5cb1741ade1c9d76605a57a",
+    "RISK_TARGET_FIELD_SCAN.json": "6b450812e5a707c23cee90dd5629f09db3563a5ce075a01e8a793665f7cb362c",
+    "review/ADJUDICATION.json": "079d22a1ece5edee978c9010488176073b711f0330ea5a650497ead4d94ab616"
+  },
+  "explicit_risk_field_scan": {
+    "json_target_rows": 575,
+    "matching_risk_related_fields": {},
+    "method": "Recursive object/list key inventory; approved/verdict are not interpreted as risk grades."
+  }
+}

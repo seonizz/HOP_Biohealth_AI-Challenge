@@ -3,7 +3,8 @@ import { initialQuestionSet, conditionMatches, followMatches, mergeFollow, branc
 import { HttpError } from './errors.js';
 import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { clarificationQuestions, clarificationCandidates } from './clarifications.js';
-import { validateRelationshipMemory } from './relationship-agent.js';
+import { validateRelationshipMemory, validateSafetyEvidence, safetySnapshotFingerprint, currentApprovedSafety } from './relationship-agent.js';
+import { normalizeAnswerField } from './answer-sources.js';
 
 const SKIP = '(건너뛰었어요)';
 const WELCOME = '안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.';
@@ -307,7 +308,16 @@ export function applyModelUpdate(originalState, output) {
   state.history = structuredClone(historyOf(originalState));
   state.agentMemory = structuredClone(output.patient_state);
   if (output.state_agent) state.agentStateExecution=structuredClone(output.state_agent);
-  if (output.safety_signal) state.safetySignal=structuredClone(output.safety_signal);
+  if (output.safety_signal) {
+    const signal=structuredClone(output.safety_signal);
+    validateSafetyEvidence({urgent:signal.urgent,evidence:signal.evidence},context);
+    const fingerprint=safetySnapshotFingerprint(context);
+    if(signal.source_snapshot!==undefined&&signal.source_snapshot!==fingerprint)
+      invalid('MODEL_INVALID_RESPONSE','안전 판단의 근거가 변경됐어요. 현재 답변으로 다시 확인해 주세요.',502);
+    signal.source_snapshot=fingerprint;
+    if(signal.urgent)currentApprovedSafety({...context,safety_signal:signal});
+    state.safetySignal=signal;
+  }
   if (output.relationship_memory) state.agentRelationshipMemory=validateRelationshipMemory(output.relationship_memory,context);
   else delete state.agentRelationshipMemory;
   state.modelStatus = 'connected';
@@ -365,13 +375,11 @@ function evidenceField(question, state) {
     status: state.modelSkipped?.[question.id] ? 'auto_skipped' : 'not_asked', source: 'app_user_report',
     ...(state.modelSkipped?.[question.id] ? { skip_decision: structuredClone(state.modelSkipped[question.id]) } : {}) };
   const payload = payloadAnswer(question, answer, state);
-  // Unknown status only reflects an explicit UI option; short free text is retained as reported.
-  const explicitlyUnknown = payload.selected.some(option => option.label.includes('잘 모르겠어요'));
-  return {
-    ...payload, status: answer.skipped ? 'skipped' : explicitlyUnknown ? 'unknown' : 'answered',
+  return normalizeAnswerField({
+    ...payload, status: answer.skipped ? 'skipped' : 'answered',
     source: 'app_user_report', rawText: answer.rawText ?? answer.text,
     ...(answer.followUp ? { followUp: structuredClone(answer.followUp) } : {}),
-  };
+  });
 }
 
 export function buildContext(state) {
@@ -399,7 +407,7 @@ export function buildContext(state) {
   const extraFields=Object.fromEntries(clarificationQuestions.filter(q=>state.clarificationAnswers?.[q.id]).map(q=>[q.id,
     evidenceField(q,{...state,ans:state.clarificationAnswers})]));
   const value = id => state.ans[id]?.skipped ? '' : state.ans[id]?.text || '';
-  return {
+  const context = {
     schema_version: '1.0',
     adaptive_questions:true,
     clarification_candidates:clarificationCandidates(state).map(q=>({...q,question:renderQuestion(q,state).q})),
@@ -438,4 +446,14 @@ export function buildContext(state) {
     relationship_state: state.agentRelationshipMemory || null,
     log: structuredClone(state.log), followUps: state.fuCount, model_status: state.modelStatus || 'not_connected',
   };
+  if(state.safetySignal?.urgent===true) {
+    try {context.safety_signal=currentApprovedSafety({...context,safety_signal:state.safetySignal});}
+    catch(error) {
+      if(!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE')throw error;
+      // Old records remain readable. Their unbound/stale approval must be
+      // independently rechecked before another final guide can use it.
+      context.safety_review_required=true;
+    }
+  }
+  return context;
 }

@@ -4,7 +4,9 @@
 
 ## 모델과 앱 연결
 
-Docker·Compose가 설치된 대상 장비에 소스와 비공개 `.env`를 옮깁니다. 기존 DB 암호와 `CONTENT_KEY`를 보존하고, 대상 컨테이너에서 실제 접근할 수 있는 모델 주소를 `MODEL_DOCKER_BASE_URL`에 지정합니다. `MODEL_BASE_URL`은 대상 호스트의 Node.js 실행용 주소입니다. Mac의 `host.docker.internal` 주소가 다른 장비에서도 같은 모델을 가리키지는 않습니다. Linux에서는 호스트 게이트웨이와 모델 바인딩을 대상 환경에 맞게 구성합니다.
+Docker·Compose가 설치된 대상 장비에 소스와 비공개 `.env`를 옮깁니다. 기존 DB 암호와 `CONTENT_KEY`를 보존합니다. `MODEL_BASE_URL`은 호스트의 Node.js 실행용 주소이며, Docker는 loopback 주소를 `host.docker.internal`로 변환합니다. Compose의 `host-gateway` 매핑은 Linux도 지원합니다. 대상 컨테이너에서 다른 주소를 써야 할 때만 `MODEL_DOCKER_BASE_URL`을 지정합니다. 검토와 별도 기관 안내 API도 각각 `MODEL_REVIEW_DOCKER_BASE_URL`, `REFERRAL_MODEL_DOCKER_BASE_URL`로 재정의할 수 있습니다. 호스트의 모델 API는 컨테이너에서 접근 가능하게 실행되어 있어야 하며, 앱은 모델 서비스나 방화벽을 자동 변경하지 않습니다.
+
+새 로컬 설치의 `MODEL_STREAM_COMPLETE_JSON=true`는 `MODEL_STREAM_JSON=true`인 로컬 API에서 완성된 JSON을 수신한 뒤 전송을 끝내고 기존 전체 검증·독립 검토를 수행합니다. 일반 API나 비스트리밍 설정으로 옮길 때는 두 옵션을 `false`로 설정합니다. Compose에서 생략한 완료 옵션은 `false`이며, 별도 검토·기관 안내 API는 `MODEL_REVIEW_STREAM_COMPLETE_JSON`, `REFERRAL_MODEL_STREAM_COMPLETE_JSON`을 각각 명시해야 합니다. 기존 `.env`를 사용하는 plain setup은 이 옵션을 자동으로 추가하지 않습니다.
 
 목표 31B로 전환할 때는 사용할 모델 API와 필요한 SSH 터널을 준비합니다. 과거 Mac 터널의 `127.0.0.1:18080`·`host.docker.internal:18080`은 현재 12B 기본 주소가 아닙니다. 학습 경로는 [데이터와 연구](../../docs/current/데이터와_연구.md)에 구분합니다.
 

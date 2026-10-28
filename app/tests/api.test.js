@@ -21,7 +21,7 @@ async function fixture(t, gateway = { model:'gemma4:12b', updateState:async () =
   const schema = 'api_test_' + randomBytes(8).toString('hex');
   const admin = new pg.Pool({ connectionString:databaseUrl });
   await admin.query(`CREATE SCHEMA ${schema}`);
-  const app = await createApp({ databaseUrl, schema, key:randomBytes(32), gateway, ...options });
+  const app = await createApp({ databaseUrl, schema, key:randomBytes(32), gateway, referralProvider:null, ...options });
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${app.server.address().port}`;
   t.after(async () => {

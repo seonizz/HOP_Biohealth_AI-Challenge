@@ -62,7 +62,22 @@ def validate_config(config):
         raise ValueError("Invalid token budgets")
     if not isinstance(config.get("model_id"), str) or not config["model_id"]:
         raise ValueError("Invalid model_id")
+    profile = config.get("training_profile")
+    if profile is not None:
+        if profile != "supporter-v11":
+            raise ValueError("Unsupported training_profile")
+        from supporter_backend import validate_profile_config
+        validate_profile_config(config)
     return config
+
+
+def load_backend(config, runtime):
+    if config.get("training_profile") == "supporter-v11":
+        from supporter_backend import SupporterV11Backend
+        return SupporterV11Backend(config, runtime)
+    if config.get("training_profile") is not None:
+        raise ValueError("Unsupported training_profile")
+    return ModelBackend(config, runtime)
 
 
 def validate_request(payload, config):
@@ -299,7 +314,7 @@ def main():
     backend = None
     server = None
     try:
-        backend = ModelBackend(config, runtime)
+        backend = load_backend(config, runtime)
         if args.verify_chunking:
             from verify_prefill import verify_prefill
             verify_prefill(backend, HERE / "prefill_verification.json")

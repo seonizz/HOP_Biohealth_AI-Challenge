@@ -1,0 +1,190 @@
+{
+  "scope": "relationship_memory input budget repair",
+  "date": "2026-10-17",
+  "token_contract": {
+    "max_input_tokens": 65536,
+    "max_output_tokens": 8192,
+    "max_context_tokens": 69632,
+    "input_with_full_output_reservation": 61440,
+    "prefill_chunk_size": 1024,
+    "truncation": false
+  },
+  "cpu_tests": {
+    "app_model_and_recovery": 59,
+    "budget_and_safe_errors": 13,
+    "live_worker": 22
+  },
+  "failed_request_minimum_prompt_tokens": 4606,
+  "retry": {
+    "status": 200,
+    "code": null,
+    "previous_question": "rel",
+    "next_question": "contact",
+    "pending": false,
+    "clone_revision": 1,
+    "original_unchanged": true
+  },
+  "preservation": {
+    "test_clone_deleted": true,
+    "test_browser_deleted": true,
+    "original_count": 3,
+    "all_original_contents_and_revisions_unchanged": true
+  },
+  "runtime_hashes": {
+    "bounded_live.py": "8490fcfd834652d2fc912c6a155b33c13298ff3439367dbf29b9d04a92385911",
+    "live_worker.py": "db4d98166078df7aebbc1e6f506af36eb655e9ec374db735da91fb8a64f4b7fd",
+    "inference_budget.py": "a41ac63e72373dfe8ee3ca6de7648fe8caeb676d94dc54d6dbf8030e4ae5949d",
+    "grouped_attention.py": "fcb1d5d7aeb46a4bf02b28e53d91272d2eb0c93adbc3c23a125592f05e477a13"
+  },
+  "checkpoint_sha256": "11c976512809ab5d6d025d28c75374fa0a828fc6b6f1d1b3e47d4f87b9eaabe6",
+  "independent_static_review_actionable_findings": 0,
+  "private_source_in_evidence": false,
+  "final_result_journey_retested": false,
+  "capacity_first_attempt": [
+    {
+      "case": "maximum_input",
+      "expected_input_tokens": 65536,
+      "requested_output_tokens": 1,
+      "status": 400,
+      "elapsed_seconds": 102.25,
+      "usage": null,
+      "error_type": "invalid_request_error",
+      "budget_error": "GPU worker rejected the request: generation_failed"
+    }
+  ],
+  "capacity_final": [
+    {
+      "case": "maximum_input",
+      "expected_input_tokens": 65536,
+      "requested_output_tokens": 1,
+      "status": 200,
+      "elapsed_seconds": 156.45,
+      "usage": {
+        "prompt_tokens": 65536,
+        "completion_tokens": 1,
+        "total_tokens": 65537
+      },
+      "error_type": null
+    },
+    {
+      "case": "one_over_input",
+      "expected_input_tokens": 65537,
+      "requested_output_tokens": 1,
+      "status": 400,
+      "elapsed_seconds": 0.15,
+      "usage": null,
+      "error_type": "invalid_request_error",
+      "budget_error": "Prompt (65537) exceeds the 65536-token input budget; no text was truncated"
+    },
+    {
+      "case": "one_over_context",
+      "expected_input_tokens": 61441,
+      "requested_output_tokens": 8192,
+      "status": 400,
+      "elapsed_seconds": 0.15,
+      "usage": null,
+      "error_type": "invalid_request_error",
+      "budget_error": "Prompt (61441) plus max_tokens (8192) exceeds the 69632-token context budget; no text was truncated"
+    },
+    {
+      "case": "maximum_output_reservation",
+      "expected_input_tokens": null,
+      "requested_output_tokens": 8192,
+      "status": 200,
+      "elapsed_seconds": 0.55,
+      "usage": {
+        "prompt_tokens": 23,
+        "completion_tokens": 2,
+        "total_tokens": 25
+      },
+      "error_type": null
+    },
+    {
+      "case": "short_after_long",
+      "expected_input_tokens": null,
+      "requested_output_tokens": 16,
+      "status": 200,
+      "elapsed_seconds": 0.45,
+      "usage": {
+        "prompt_tokens": 23,
+        "completion_tokens": 2,
+        "total_tokens": 25
+      },
+      "error_type": null
+    }
+  ],
+  "changed_code_sha256": {
+    "app/src/model.js": "38a9edff176a2e05fb76304e21328b40d21eac457618a440211b0dd6aa9524ce",
+    "app/tests/model-recovery.test.js": "37e43e156e84a21ca5faf55db5ba1c660fbcbd10bf14785329d85cdeb454a148",
+    "ai/trained_model_api/inference_budget.py": "a41ac63e72373dfe8ee3ca6de7648fe8caeb676d94dc54d6dbf8030e4ae5949d",
+    "ai/trained_model_api/test_inference_budget.py": "d03937955a660c4806ef780d8513a86b151784c9e271cd9a4c88062d81a73b57",
+    "ai/trained_model_api/live_input_budget.patch": "e98f90dcbbb053a2dc1c719dd6ef556ccc5a7d0f5bda66df54e6c247cf20ab70"
+  },
+  "runtime_profile": "malssi-gemma4-31b-v11-epoch3",
+  "final_relation_stages": [
+    {
+      "generation": "state_observations",
+      "status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 3322,
+        "completion_tokens": 126,
+        "total_tokens": 3448
+      },
+      "reason": "success"
+    },
+    {
+      "generation": "relationship_memory",
+      "status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4714,
+        "completion_tokens": 271,
+        "total_tokens": 4985
+      },
+      "reason": "success"
+    },
+    {
+      "generation": "state_review",
+      "status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4272,
+        "completion_tokens": 159,
+        "total_tokens": 4431
+      },
+      "reason": "success"
+    },
+    {
+      "generation": "question_plan",
+      "status": 200,
+      "finish_reason": "stop",
+      "usage": {
+        "prompt_tokens": 4321,
+        "completion_tokens": 46,
+        "total_tokens": 4367
+      },
+      "reason": "success"
+    }
+  ],
+  "gpu_release": {
+    "released_owned_pid": 3004990,
+    "owned_pid_absent": true,
+    "remaining_gpu_compute": "",
+    "memory_after": "0, 11\n1, 30\n",
+    "memory_before": "0, 11\n1, 30\n",
+    "returned_to_before": true,
+    "global_reset_performed": false
+  },
+  "local_service": {
+    "web_status": 200,
+    "api_health_status": 200,
+    "gpu_load_on_next_generation": true,
+    "health": {
+      "status": "ready",
+      "model": "malssi-gemma4-31b-v11-epoch3",
+      "max_context_tokens": 69632,
+      "max_output_tokens": 8192
+    }
+  }
+}

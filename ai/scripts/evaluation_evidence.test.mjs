@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { modelConfig, evaluationIdentity, assertWebSessionIdentity, sha256, attemptMetrics, summarizeRuns } from './evaluation_evidence.mjs';
+import { ModelGateway } from '../../app/src/model.js';
 
 test('explicit 31B endpoint never inherits legacy 12B identity or credential', () => {
   const config = modelConfig({ MODEL_BASE_URL:'http://localhost:9999/v1', MODEL_NAME:'31b' }, { ollama_url:'http://localhost:11434', api_key:'legacy' });
@@ -13,6 +14,24 @@ test('explicit 31B endpoint never inherits legacy 12B identity or credential', (
   assert.throws(() => modelConfig({ MODEL_CHECKPOINT_SHA256:'not-a-hash' }), /invalid_checkpoint/);
   assert.equal(modelConfig({ MODEL_DEPLOYMENT_ID:'instance-one' }).deploymentId, 'instance-one');
   assert.throws(() => modelConfig({ MODEL_DEPLOYMENT_ID:' ' }), /invalid_deployment_id/);
+});
+
+test('evaluator forwards prompt/omit settings into the actual agent request contract', async () => {
+  const config=modelConfig({MODEL_BASE_URL:'http://localhost:9999/v1',MODEL_API_KEY:'test-key',
+    MODEL_NAME:'v11',MODEL_AGENT_FORMAT:'prompt',MODEL_REASONING_EFFORT:'omit'});
+  assert.equal(config.agentFormat,'prompt');
+  assert.equal(config.reasoningEffort,'omit');
+  const gateway=new ModelGateway(config);
+  gateway.request=makeBody=>makeBody({});
+  const body=await gateway.agentComplete('synthetic','synthetic prompt',{}, {type:'object'},{},value=>value);
+  assert.equal(Object.hasOwn(body,'max_tokens'),false);
+  assert.equal(Object.hasOwn(body,'response_format'),false);
+  assert.equal(Object.hasOwn(body,'reasoning_effort'),false);
+  assert.equal(body.model,'v11');
+  assert.equal(modelConfig({}).agentFormat,'json_schema');
+  assert.equal(modelConfig({}).reasoningEffort,'none');
+  assert.throws(()=>modelConfig({MODEL_AGENT_FORMAT:'unknown'}),/invalid_model_agent_format/);
+  assert.throws(()=>modelConfig({MODEL_REASONING_EFFORT:'unknown'}),/invalid_model_reasoning_effort/);
 });
 
 const identity = { model_requested:'31b', source:{sha256:'a'}, evaluator:{sha256:'e1'}, prompt_version:'v1',
@@ -42,6 +61,13 @@ test('different models, source, mode and checkpoint are never merged', () => {
   assert.equal(summarizeRuns([run('1','passed',1),run('2','passed',1,{identity:{...identity,model_requested:'12b'}}),
     run('3','passed',1,{identity:{...identity,source:{sha256:'b'}}}),run('4','passed',1,{mode:'final'}),
     run('5','passed',1,{identity:{...identity,checkpoint_sha256_declared:'new'}})]).length,5);
+});
+test('different agent wire formats and reasoning settings never share a result group',()=>{
+  const configured={...identity,agent_format:'prompt',reasoning_effort:'omit'};
+  assert.equal(summarizeRuns([run('1','passed',1,{identity:configured}),
+    run('2','passed',1,{identity:{...configured,agent_format:'json_schema'}}),
+    run('3','passed',1,{identity:{...configured,reasoning_effort:'none'}}),
+    run('4','passed',1)]).length,4);
 });
 test('different evaluator implementations and protocols do not share a result group, including legacy reports',()=>{
   const legacy={...identity};delete legacy.evaluator;
@@ -81,6 +107,8 @@ test('evaluation identity hashes actual context and evaluator files without incl
   assert.notEqual(first.context_sha256,second.context_sha256);
   assert.equal(first.fixture_sha256,second.fixture_sha256);
   assert.equal(first.evaluator.sha256,second.evaluator.sha256);
+  assert.equal(first.agent_format,'json_schema');
+  assert.equal(first.reasoning_effort,'none');
   for(const file of first.evaluator.files)assert.equal(file.sha256,sha256(readFileSync(new URL(file.path,import.meta.url))));
   assert.equal(JSON.stringify(first).includes('private'),false);
   assert.equal(evaluationIdentity({...args,context:null}).context_sha256,null);

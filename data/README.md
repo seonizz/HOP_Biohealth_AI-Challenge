@@ -64,6 +64,8 @@ python3 -B -m counseling_pipeline.token_admission \
 
 ## 평가 데이터의 과거 사용 이력
 
+원상담을 보존한 최신 주변인 과업 구성은 [v9](../docs/competition/학습데이터_주변인지원_과업정합성_개선_재검증_v9.md)이며, 원상담 구성은 [입력 총량·절차성 문맥 개선·재검증 v8](../docs/competition/학습데이터_입력총량과_절차문맥_개선_재검증_v8.md)다. [입력 집중도 개선 v7](../docs/competition/학습데이터_입력접두부_집중도개선_재검증_v7.md)과 이전 v6·v5·v4·v3, 주변인 합성 초안·v2는 보존한다. 원상담 후보와 주변인 서비스용 합성 초안은 목적·승인 상태가 다르므로 하나의 학습 행 수로 합산하지 않는다.
+
 `evaluation_history` v2는 실제 원천 release·허용 정책·선별 근거·저장된 토큰 검사와 길이 장부를 명시 입력으로 받는다. `token_admission.validate_and_summarize`로 입력·선별 결정을 검증하고, `source_admission.build_admission`의 기존 규칙을 임시 로컬 경로에서 재계산해 허용 정책·전체 장부와 비교한다. 원천 conversation JSONL의 모든 행 ID·그룹·split을 장부와 대조하고 export 각 행의 원래 JSONL 바이트까지 확인하므로, 장부와 export의 그룹·행 수·보류 사유·원문을 함께 바꾸고 해시를 맞춰도 원천과 다른 후보는 거절한다. 현재 v2 허용 정책을 검증하며 원천과 기존 산출물은 변경하지 않는다.
 
 과거 개발 검토, 데이터 선별, 학습, 튜닝, 프롬프트 설계, 주석 검토를 수행한 행은 **같은 원천 그룹 전체**에 `development_exposed`를 남긴다. 토큰 길이 때문에 제외된 행의 이력도 남은 같은 그룹의 후보에 적용한다. 후보 파일의 이름·압축을 바꾸어도 원래 manifest·입력 해시·그룹 연결을 사용하며, 연결이 끊긴 이력은 무시하지 않고 실패한다.
@@ -81,6 +83,8 @@ python3 -B -m counseling_pipeline.token_admission \
 
 빈 이력과 개발 노출이 기록되지 않은 후보는 `history_unverified`다. `custody_record`나 `independent_evaluation` 이벤트도 과거 개발 노출을 지우거나 이력 완전성을 입증하지 않는다. 이 검사기는 독립 평가셋을 인증하는 기능을 제공하지 않으므로 `--intended-use independent_test`는 두 상태 모두 차단하고 종료 코드 2를 반환한다. 해시는 로컬 근거의 연결·변조 검사용이며, 기록되지 않은 과거 사용이나 작성자 신뢰성을 증명하지 않는다. 목적 적합성·라벨 정확도·사람 검토 완료의 대체 근거도 아니다.
 
+원천 전체와 선별 단계별 대화 위치·코호트·기존 휴리스틱 태그를 비교하고 검토 대기열을 준비하는 명령은 `python3 -B -m counseling_pipeline.source_review`다. 새 출력 폴더에만 쓰며 `source_sft.load_inputs`, `evaluation_history.audit_history`, `annotations.context`의 기존 원천·선별·검토 계약을 재사용한다. 원문이 있는 큐는 `outputs/private/`에만 저장한다. [주변인 정답 작성·검토 계약](docs/support_agent/결선_데이터_검토계약_2026-10-16.md)과 [선별 전후 집계·재현 명령](docs/support_agent/결선_데이터_대표성_2026-10-16.md)을 따른다. 대기열 준비는 사람 검토·정답 생성·학습 승인이 아니다.
+
 ```sh
 "$COUNSELING_PYTHON" -B -m counseling_pipeline.evaluation_history \
   --export-manifest outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows/export_manifest.json \
@@ -96,6 +100,231 @@ python3 -B -m counseling_pipeline.token_admission \
 ```
 
 기본 토큰 정책·장부 위치는 export 디렉터리의 상위 폴더이며 이동한 경우 `--token-policy`, `--token-ledger`로 지정한다. 출력과 표준 출력에는 행·그룹·대화·이벤트 ID나 원문이 없는 집계와 파일 해시만 남긴다. `independent_test` 검사도 차단 결과를 집계 파일로 남기며, 기존 출력·심볼릭 링크는 덮어쓰지 않는다. 잘못된 JSON 구조는 원문을 포함할 수 있는 traceback 대신 `status: invalid`와 종료 코드 2로 처리한다. 원천, split, 기존 장부, 라벨과 사람 검토 상태는 수정하지 않는다.
+
+## 주변인 가중 집중도 정책 v11
+
+**최신 가중 집중도 재검증 v11:** [대안 비교·정책 적용·실제 토큰 재검증](../docs/competition/학습데이터_가중집중도_개선_재검증_v11.md). 2026-10-17, 사용자 선택에 따라 **419행 전부**를 보존하고 양수 가중 정책을 적용했다. train은 입력·정답 균형 성분을 절반씩 섞고 validation은 보조 가중 집계로 사용한다. **정규화 HHI 1항목·CV 5항목 악화는 가중 지표에서 해소**됐으며, 원행 지표와 무가중 primary validation은 그대로 공개한다. **정답 17,220토큰과 과업×split별 총량**, 원문·전체 맥락·기존 대표·분할을 보존했다. 실제 tokenizer에서 출력 **8,192** 및 실제 시퀀스 **4,096 이하** 조건 419/419, 관련 회귀 **125개**를 통과했다. 실제 입력 **157,668토큰**은 그대로이고 가중 입력 질량 **155,184.651**은 토큰 절감량이 아니다. 신규 사례의 상대 영향량 감소와 작은 합성 집합·사람 검토·독립 test·앱 전체 정답 부족도 기록했다. 별도 가중 손실 소비 경로를 추가했으며 모델 학습·점수 상향은 수행하지 않았다.
+
+`supporter_group_weighting build`는 원본을 바꾸지 않고 새 Git 제외 경로에 실제 토큰 장부·정확 분수 가중치·원천/구현 해시를 묶는다. `verify --policy`는 실제 tokenizer로 419행을 재검증한다. [최종 정책](outputs/private/composition_v11_supporter_weighted_20261016/final/manifest.json)과 [실제 명령](../runtime/data-composition-supporter-balance-20261016/commands.json)을 사용한다.
+
+`prepare_view(policy, tokenizer, task=..., split="train")`가 반환한 entries와 bindings를 `supporter_weighted_loss.make_plan()`에 전달하고 `backward_window()`로 고정 epoch 분모의 계수를 소비한다. 기존 stage-1 trainer는 이 가중치를 자동으로 읽지 않는다. `evaluate_losses()`는 무가중 primary와 가중 auxiliary를 함께 반환한다. 과업을 자동 혼합하지 않으며 optimizer·중단/재개·전체 epoch 완료 판정은 호출자 책임이다.
+
+## 실제 주변인 토큰·집중도 재검증 v10
+
+**보존한 실제 토큰 재검증 v10:** [토크나이저 복구·실측·집중도·적대적 검증](../docs/competition/학습데이터_실제토큰_집중도_재검증_v10.md). 기존 서버와 SHA-256이 같은 고정 토크나이저를 로컬에 복구해 **419파생행 전부**를 새로 인코딩했다. 출력 **8,192** 예약과 실제 시퀀스 **4,096 이하** 조건 모두 통과했으며 최장 시퀀스는 **3,909토큰**이다. 전체 입력 **157,668**·정답 **17,220토큰**, 그중 신규 279행은 입력 **129,065**·정답 **12,014토큰**이다. 원문·맥락·split과 원상담 v8은 보존했다. raw HHI 18개 비교는 모두 감소했지만 정규화 HHI 1개·CV 5개 악화는 남는다. 과업별 파생 행의 재고 합계이며 자동 혼합·사람 승인·독립 test나 학습 완료를 뜻하지 않는다.
+
+`supporter_token_audit`는 보존된 v9 manifest·내용 해시를 확인하고 5개 과업을 별도로 실측한다. 최종 판정은 [v10 토큰 sidecar](outputs/private/composition_v10_supporter_tokens_20261016/audit/manifest.json), 재현은 [실제 명령](../runtime/data-composition-supporter-tokens-20261016/measure-command.json)을 따른다. 저장소 루트에서 격리 Python과 `PYTHONPATH=data`를 사용하며, 재실행의 `--output`에는 존재하지 않는 Git 제외 폴더를 지정한다. 토큰 길이 측정에 원격 SSH 비밀번호나 모델 가중치가 필요하지 않다.
+
+## 주변인 과업 구성 v9
+
+[대안 비교·적용·적대적 재검증](../docs/competition/학습데이터_주변인지원_과업정합성_개선_재검증_v9.md). 원상담 v8과 기존 주변인 20대화는 그대로 보존하고, 신규 합성 24대화·48응답을 추가해 주변인 후보를 **44대화·72응답**으로 구성했다. validation 다중턴은 **0→12대화**, 동료 관계는 **0→4대화**다. 현재 앱의 원문 관찰·reported 관계 기억 단계도 합성 12맥락에서 **24정답쌍**을 별도로 만들었다. 신규 정답은 다른 AI 검토자가 교정 후 확인했으며 사람·전문가 승인이나 독립 test가 아니다. v9 작성 당시 출력 **8,192**·유효 입력 **61,440** 계약만 적용하고 실제 토큰 길이는 미검증으로 남겼다. 해당 공백은 후속 v10의 동일 tokenizer 실측으로 해소했으며 v9 원본·manifest는 당시 상태로 보존한다. 기존 원상담의 토큰 집중도·총량·맥락·분할은 그대로이고 전체 앱 단계의 목적 정답·실제 주변인 검토는 남는다.
+
+`supporter_task_composition`은 기존 주변인 v2 릴리스와 새로 저작·AI 검토한 독립 합성 사례를 함께 검사한다. 실제 원상담 각색을 synthetic으로 넣지 않는다. 대화·문장·span을 별도 과업으로 저장하고, 원상담 v8은 원문·분할이 고정된 보조 참조로 연결한다. 자동 혼합·상향 표집은 하지 않는다. 새 앱 후보는 현재 앱 두 단계의 실제 요청·응답 형식을 사용하며 전체 대화 prefix와는 다른 현재 답변 기반 계약임을 기록한다.
+
+```sh
+python -B -m counseling_pipeline.supporter_task_composition \
+  --baseline outputs/private/composition_v2_20261016/supporter/release \
+  --source outputs/private/composition_v8_volume_context_20261016/source \
+  --additions outputs/private/composition_v9_supporter_task_20261016/authored/revision_2/new_episodes.jsonl \
+  --reviews outputs/private/composition_v9_supporter_task_20261016/authored/revision_2/independent_ai_reviews.jsonl \
+  --output outputs/private/composition_v9_supporter_task_20261016/supporter \
+  --verify
+```
+
+위 명령은 `data/`에서 최종본을 검증한다. 새로 생성하려면 `--verify`를 빼고 존재하지 않는 Git 제외 경로를 지정한다. 앱 후보는 저장소 루트에서 `node data/scripts/supporter_app_stage.mjs verify --input data/outputs/private/composition_v9_supporter_task_20261016/app_authored/contexts.jsonl --output data/outputs/private/composition_v9_supporter_task_20261016/app_stages_r2`로 재검증한다. 과거 초안과 최종본을 덮어쓰지 않는다.
+
+기본 Python 로딩은 AI 초안 opt-in 없이 차단된다. `token_batch`는 현재 행을 고정 template으로 새로 인코딩하고 정답 8,192·입력+예약 출력 69,632와 선택적인 실제 합산 4,096 조건을 검사한다. 기존 길이 장부·문자 수·가짜 승인 필드를 토큰화나 사람 검토의 대체 근거로 사용하지 않는다. [최종 구성 장부](outputs/private/composition_v9_supporter_task_20261016/composition-index.json).
+
+## 입력·정답 집중도를 유지하는 입력 총량·절차성 문맥 개선 v8
+
+`source_volume_context_composition`은 v7의 선택 셀·정답 길이·후기 ID를 고정한다. 같은 원래 상담·구간·split의 동일 정답 길이인 적격 전기 원행만 비교한다. 입력 집중도 상한은 v7, 입력·절차성 플래그 수 상한은 split별로 짧은 후보 v5·긴 후보 v6이며, v6에서 없던 셀의 신규 절차성 플래그를 금지한다. v6 대표에서 시작하는 정확한 분수의 결정적 탐색으로 최종 조건을 모두 충족한 첫 구성을 내보낸다. 중간의 지표 단조 감소나 v7의 ±0.2% 입력 조건은 v8 조건이 아니다. 전역 최소 교체 수·의미적 동등성은 보증하지 않는다.
+
+출력 **8,192**·합산 **69,632**·유효 입력 **61,440**에서 짧은 후보 **1,052행·1,036상담·후기 50셀**, 긴 후보 **2,376행·1,038상담·후기 1,293셀**을 유지했다. 동일 정답 길이의 전기 원행 **5·4개** 교체로 입력 집중도 **18지표 모두 v7보다 개선**됐고, 입력은 **2,094,059→2,089,385 / 14,190,420→14,183,561토큰**, 절차성 플래그는 **389→387 / 1,199→1,198**로 줄었다. 정답 총량 **75,231·213,050토큰**, 정답 집중도·셀별 길이·그룹별 합·행 집중도는 그대로다. 짧은 split은 v5 입력·플래그 상한, 긴 split은 v6 상한을 충족하고 v6 대비 신규 플래그 셀은 0이다. 긴 validation 입력은 v5보다 **1,456토큰 많고**, 짧은 후보에는 v5 대비 신규 플래그 셀 **1개**가 남는다. 원문·새 정답까지의 전체 맥락·보류·split·후기 ID와 후기 패널 105행의 압축 바이트는 보존했다. 전기 정답의 의미적 동등성·사람 검토·목적 적합성·독립 test는 미검증이며, 짧은 validation 후기 2셀·마지막 ¼ 0행의 부족은 남는다.
+
+현재 선택은 **`selection_v8`**이다. `profiles`, `chosen`, `selection_v5`, `selection_v6`, `selection_v7`는 이력으로 보존한다. 원행 JSONL 바이트·새 정답까지의 전체 접두부·정수 정답 전용 손실 마스크를 유지하며 새 문장을 합성하지 않는다. 두 후보와 패널은 겹치고 사람 검토·학습 승인·독립 test로 승격하지 않는다.
+
+```sh
+"$COUNSELING_PYTHON" -B -m counseling_pipeline.source_volume_context_composition \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --frozen 데이터셋/학습용_3종_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --admission-rows outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --previous-candidate outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows \
+  --events outputs/private/finals_source_review_20261016/evaluation_history_events.jsonl \
+  --runtime-budget-evidence ../ai/trained_model_api/inference_optimization_verification.json \
+  --output outputs/private/composition_v8_volume_context_20261016/source \
+  --output-budget 8192 \
+  --baseline outputs/private/composition_v3_output8192_20261016/source \
+  --balanced-baseline outputs/private/composition_v4_balanced_20261016/source \
+  --stratified-baseline outputs/private/composition_v5_stratified_20261016/source \
+  --token-balanced-baseline outputs/private/composition_v6_token_balanced_20261016/source \
+  --prefix-balanced-baseline outputs/private/composition_v7_prefix_balanced_20261016/source --verify
+```
+
+명령은 `data/`에서 실행한다. 새로 만들 때만 `--verify`를 빼고 아직 없는 Git 제외 경로를 지정한다. 기존 출력·심볼릭 링크는 덮어쓰지 않는다. 원천과 v3–v7을 재검증해 해시로 연결하고 설정·전체 장부·선택·원행·요약·이력을 다시 계산한다. 검증을 마친 임시 출력을 새 경로에 한 번에 게시한다. 토큰은 기존 근거를 재사용하며 새 토크나이저·모델·서버 실행은 하지 않는다. [대안 비교·적대적 재검증](../docs/competition/학습데이터_입력총량과_절차문맥_개선_재검증_v8.md) · [실제 생성 명령](../runtime/data-composition-volume-context-20261016/build-command.json).
+
+## 정답 노출량을 유지하는 입력 접두부 집중도 개선 v7 — 보존본
+
+`source_prefix_balanced_composition`은 v6의 상담×구간 셀과 후기 ID를 고정하고, 같은 원래 상담·구간·split의 **정답 길이가 같은 적격 전기 원행**만 교체한다. 각 split 입력 총량 변화는 v6 대비 ±0.2% 이내이며, 매 단계 입력 9지표가 직전보다 커지지 않고 최종 `min(v5,v6)` 이하가 된 첫 지점에서 멈춘다. 정확한 분수와 고정 seed로 재현한다. 전역 최소 교체 수·의미적 동등성은 보증하지 않는다.
+
+출력 **8,192**·합산 **69,632**·유효 입력 **61,440** 조건에서 짧은 후보 **1,052행·1,036상담·후기 50셀**, 긴 후보 **2,376행·1,038상담·후기 1,293셀**을 유지했다. 정답 길이가 같은 전기 원행 **1·2개** 교체로 입력 접두부 18지표가 모두 **min(v5,v6) 이하**이며, v6 대비 **15개 개선·3개 동일**이다. v6의 정답 집중도 18지표와 split·그룹별 정답 합·길이 분포·행 집중도는 정확히 유지된다. 정답 총량은 **75,231·213,050토큰**이다. 입력 총량은 split별 최대 **0.126578%** 증가하며 상위 그룹의 절대 입력량은 그대로여서 비중 감소에는 분모 증가가 작용한다. 원문·새 정답까지의 전체 맥락·보류·원래 split·후기 대표는 보존하지만 전기 정답 시점·내용의 의미적 동등성은 미검증이다. 후기 validation 패널 **105행(짧은 2·긴 103)**은 v6와 압축 바이트까지 같고, 짧은 validation 후기 **2셀·마지막 ¼ 0행**, 사람 검토·목적 적합성·독립 test의 한계는 남는다.
+
+v7 선택은 **`selection_v7`**에서 읽는다. 과거 `profiles`, `chosen`, `selection_v5`, `selection_v6`는 이력으로 보존한다. 원문 JSONL 바이트·새 정답까지의 전체 접두부·정수 정답 전용 손실 마스크를 유지하며 새 행이나 문장을 합성하지 않는다. 두 프로파일과 후기 패널은 겹친다. 사람 검토·학습 승인·독립 test로 자동 승격하지 않는다.
+
+```sh
+"$COUNSELING_PYTHON" -B -m counseling_pipeline.source_prefix_balanced_composition \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --frozen 데이터셋/학습용_3종_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --admission-rows outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --previous-candidate outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows \
+  --events outputs/private/finals_source_review_20261016/evaluation_history_events.jsonl \
+  --runtime-budget-evidence ../ai/trained_model_api/inference_optimization_verification.json \
+  --output outputs/private/composition_v7_prefix_balanced_20261016/source \
+  --output-budget 8192 \
+  --baseline outputs/private/composition_v3_output8192_20261016/source \
+  --balanced-baseline outputs/private/composition_v4_balanced_20261016/source \
+  --stratified-baseline outputs/private/composition_v5_stratified_20261016/source \
+  --token-balanced-baseline outputs/private/composition_v6_token_balanced_20261016/source --verify
+```
+
+명령은 `data/`에서 실행한다. 새로 생성할 때만 `--verify`를 빼고 아직 없는 Git 제외 경로를 지정한다. 기존 출력·심볼릭 링크를 덮어쓰지 않는다. 원천과 v3·v4·v5·v6를 재검증해 해시로 연결하고 v7의 장부·선택·원행·설정·요약·이력을 재계산한다. 토큰 길이는 기존 근거를 사용하며 모델·토크나이저·현재 서버를 새로 실행하거나 변경하지 않는다. [대안 비교·적대적 재검증](../docs/competition/학습데이터_입력접두부_집중도개선_재검증_v7.md)과 [실제 생성 명령](../runtime/data-composition-prefix-balance-20261016/build-command.json)에 근거를 연결한다.
+
+## 정답 토큰 총량과 후기 대표를 유지하는 집중도 개선 v6 — 보존본
+
+`source_token_balanced_composition`은 검증된 v5의 선택 셀을 고정하고, 같은 상담×구간의 적격 전기 원행만 짝지어 교체한다. 같은 split의 큰 그룹에서 줄인 정답 토큰량을 작은 그룹에 정확히 더하므로 split별 정답 총량·행 수·그룹별 구간 수·상담·모든 후기 ID가 그대로다. 매번 현재 그룹 합으로 `0 < 2d <= 큰 그룹 합 - 작은 그룹 합`을 확인하며 9개 정답 토큰 지표가 v5와 이전 기준 모두 이하가 된 첫 지점에서 멈춘다. 정확한 분수와 고정 순서로 재현하며 전역 최소 교체 수를 주장하지 않는다.
+
+출력 8,192·합산 69,632·유효 입력 61,440 조건에서 `strict_4096/`는 1,052행(train 955·validation 97), `runtime_capped/`는 2,376행(train 2,138·validation 238)을 유지한다. 각각 전기 10개·6개를 교체했고, 전체 정답 토큰의 상위 5그룹 비중은 8.7251%→7.7654%, 8.6656%→8.4384%다. 정답 총량 75,231·213,050과 행 집중도는 그대로다. 과거 `profiles`, `chosen`, `selection_v5` 결정은 유지하고 **v6 선택은 `selection_v6`**에서 읽는다. 원문 JSONL 바이트·새 정답까지의 전체 원래 접두부·정답 전용 손실 마스크·기존 보류·원래 split을 보존한다. 전기 정답 시점·내용·접두부 길이와 일부 입력 토큰 집중도는 달라지며 의미적 동등성을 보증하지 않는다.
+
+`validation_late_stratified.jsonl.gz`는 v5와 압축 바이트까지 같은 105행(짧은 2·긴 103)이다. 짧은 validation 후기 2셀·마지막 ¼ 0행, 개발 노출·사람 미검토·학습 미승인 상태는 그대로다. 전기 validation 대표는 각 후보에서 2개 교체됐지만 원래 validation 밖으로 이동하지 않았다. 모델·토크나이저·서버 설정 변경은 수행하지 않는다.
+
+```sh
+"$COUNSELING_PYTHON" -B -m counseling_pipeline.source_token_balanced_composition \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --frozen 데이터셋/학습용_3종_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --admission-rows outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --previous-candidate outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows \
+  --events outputs/private/finals_source_review_20261016/evaluation_history_events.jsonl \
+  --runtime-budget-evidence ../ai/trained_model_api/inference_optimization_verification.json \
+  --baseline outputs/private/composition_v3_output8192_20261016/source \
+  --balanced-baseline outputs/private/composition_v4_balanced_20261016/source \
+  --stratified-baseline outputs/private/composition_v5_stratified_20261016/source \
+  --output-budget 8192 \
+  --output outputs/private/composition_v6_token_balanced_20261016/source --verify
+```
+
+명령은 `data/`에서 실행한다. 새로 생성할 때만 `--verify`를 빼고 아직 없는 Git 제외 출력 경로를 지정한다. 기존 출력·심볼릭 링크는 덮어쓰지 않는다. v3·v4·v5를 재검증해 해시로 연결하며, v6의 선택·원행·설정·요약·이력을 다시 계산해 검증한다. 실제 실행 명령과 집계·공격 결과는 [v6 보고서](../docs/competition/학습데이터_정답토큰_집중도개선_재검증_v6.md)에 있다.
+
+## 상담·후기 대표를 유지하는 집중도 완화 v5 — 보존본
+
+`source_stratified_composition`은 v3·v4를 재검증한 뒤 전기 대표 일부만 새 후보에서 제외한다. 원문 JSONL 바이트·전체 접두부·정답 전용 손실 마스크·보류·원래 split과 모든 기존 상담·후기 대표·그룹×구간을 유지한다. 출력 예약은 8,192, 합산은 69,632, 유효 입력은 61,440이다. 모델·토크나이저 실행이나 실제 서버 설정 변경은 아니다.
+
+`strict_4096/`는 1,052행(train 955·validation 97), `runtime_capped/`는 2,376행(train 2,138·validation 238)이다. 각 디렉터리의 `train.jsonl.gz`와 `validation.jsonl.gz`가 해당 후보이며 두 후보는 서로 겹친다. 짧은 후보는 전기 95.25%·후기 50셀, 긴 후보는 전기 45.58%·후기 1,293셀이다. 관측 그룹 최대는 각각 10·19행이다. 긴 후보의 기본 상한 16에 대해 필수 후기·그룹 구간을 보존하는 6그룹만 17–19행 예외를 갖는다. 행 기준 상위 5·10그룹 점유율과 HHI는 train·validation·전체에서 모두 이전 기준보다 커지지 않아야 하며, 정답 토큰 기준 집중도는 별도 통계다.
+
+`validation_late_stratified.jsonl.gz`는 짧은 후기 대표 2행과 긴 후기 대표 103행이다. 같은 셀에서는 짧은 대표를 우선해 중복 셀을 제거하므로 긴 후보와 정확히 같은 ID의 부분집합은 아니다. 새 상담·독립 test로 합산하지 않는다. 짧은 validation의 마지막 ¼은 여전히 0행이다. 기존 ledger의 `profiles`와 `chosen`은 v3·v4의 결정이고, 현재 선택은 `selection_v5`에서 읽는다.
+
+```sh
+"$COUNSELING_PYTHON" -B -m counseling_pipeline.source_stratified_composition \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --frozen 데이터셋/학습용_3종_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --admission-rows outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --previous-candidate outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows \
+  --events outputs/private/finals_source_review_20261016/evaluation_history_events.jsonl \
+  --runtime-budget-evidence ../ai/trained_model_api/inference_optimization_verification.json \
+  --baseline outputs/private/composition_v3_output8192_20261016/source \
+  --balanced-baseline outputs/private/composition_v4_balanced_20261016/source \
+  --output-budget 8192 \
+  --output outputs/private/composition_v5_stratified_20261016/source --verify
+```
+
+새로 생성할 때만 `--verify`를 빼고 아직 없는 Git 제외 출력 경로를 지정한다. 이미 있는 출력이나 심볼릭 링크는 덮어쓰지 않는다. 선택과 산출물 검증의 성공은 사람 검토·학습 승인이나 의미적 완전성 판정이 아니다.
+
+## 원문을 추가하는 후기 보강 v4
+
+`source_balanced_composition`은 출력 8,192 조건의 기존 v3 주 후보를 재검증한 뒤 모든 행을 유지하고, 아직 선택되지 않은 후기 상담×구간에서 한 행씩 추가한다. 대표는 고정 seed·ID 해시로 선택하며 원문·전체 접두부·기존 보류·split을 유지한다. 기존 v3 코드·설정·산출물은 수정하지 않는다.
+
+주 후보는 `train.jsonl.gz`와 `validation.jsonl.gz`다. `validation_late_audit.jsonl.gz`는 같은 validation의 후기만 모은 부분집합으로, 독립 test나 추가 사례 수로 합산하지 않는다. v3의 전체 4,096 이하 후보는 해시로 연결한 별도 보존본이다. 새 보강본의 긴 문맥을 자르거나 4,096 이하로 표시하지 않는다.
+
+```sh
+"$COUNSELING_PYTHON" -B -m counseling_pipeline.source_balanced_composition \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --frozen 데이터셋/학습용_3종_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --admission-rows outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --previous-candidate outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows \
+  --events outputs/private/finals_source_review_20261016/evaluation_history_events.jsonl \
+  --runtime-budget-evidence ../ai/trained_model_api/inference_optimization_verification.json \
+  --baseline outputs/private/composition_v3_output8192_20261016/source \
+  --output-budget 8192 \
+  --output outputs/private/composition_v4_balanced_20261016/source --verify
+```
+
+새로 생성할 때는 `--verify`를 빼고 아직 없는 출력 경로를 지정한다. 입력·정답·합산 예약은 각각 검사하며 유효 입력 상한은 61,440이다. 기존 그룹당 16행 상한은 v3 핵심 후보에 적용된 값이고, v4 최종본은 해당 그룹의 빠진 후기 셀 수만큼 늘어날 수 있다. 최종 집중도와 행 수·정답 토큰량을 구분해 집계한다. 학습·사람 검토 승인 상태를 바꾸지 않는다.
+
+## 입출력 예산과 4,096 이하 후반부 구성 v3
+
+`source_budget_composition`은 두 RTX 4090 환경의 저장된 실행 근거 `/live/health`를 해시로 연결한다. 당시 입력 65,536·출력 4,096·합산 69,632는 `recorded_runtime_budget`에 보존하고, 사용자 요청으로 출력을 두 배 늘린 **8,192 평가 조건**은 `evaluation_budget`으로 구분한다. 합산 69,632를 유지하므로 이 조건의 유효 입력 상한은 **61,440**이다. 과거 로컬 기본 config의 128K 값이나 학습 kit의 `max_length`와 혼동하지 않는다. 현재 서버 설정을 변경하거나 라이브 운영 상태를 확인하는 명령은 아니다.
+
+`runtime_budget`은 입력·정답 한도와 `prefix_length + 8192 <= 69632`를 검사한다. `strict_4096`은 추가로 `prefix_length + target_length <= 4096`인 풀을 **선택 전에** 만든다. 큰 후보의 선택 결과를 사후 필터링하지 않는다. 두 풀에서 각각 구간을 확보하고 그룹당 최대 16행·상담×구간당 최대 1행을 선택한다. 작은 후보는 후반부의 모든 적격 상담×구간 셀을 우선 보존한다. 필수 셀과 구간 보장이 그룹 상한을 초과하면 누락시키지 않고 실패한다. 전체 4,096인 학습 행과 최대 8,192 출력 예약은 별개의 조건이다.
+
+```sh
+"$COUNSELING_PYTHON" -B -m counseling_pipeline.source_budget_composition \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --frozen 데이터셋/학습용_3종_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --admission-rows outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --previous-candidate outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows \
+  --events outputs/private/finals_source_review_20261016/evaluation_history_events.jsonl \
+  --runtime-budget-evidence ../ai/trained_model_api/inference_optimization_verification.json \
+  --output-budget 8192 \
+  --output outputs/private/composition_v3_output8192_20261016/source --verify
+```
+
+새로 생성하려면 `--verify`를 빼고 존재하지 않는 새 출력 경로를 지정한다. 같은 시각으로 재현하려면 생성 시에만 `--occurred-at`에 시간대가 있는 ISO 시각을 지정할 수 있다. 기존 경로는 덮어쓰지 않는다.
+
+새 출력 경로로 생성할 때는 `--verify`를 뺀다. 출력 한도 기본값은 기록된 4,096이므로 이번 8,192 결과를 검증할 때도 `--output-budget 8192`를 명시한다. 각 프로파일의 `train.jsonl.gz`·`validation.jsonl.gz`는 원래 JSONL 바이트를 보존한다. 루트 장부 `selection_ledger.jsonl.gz`의 `profiles.<name>`에 선택·보류 이유가 있고, `summary.json`에 위치·입출력 길이·후기 셀 보존·프로파일 간 중첩 수가 있다. 두 후보는 같은 원천을 사용하므로 독립 사례 수로 합산하지 않는다. 원문 전체 접두부·원래 split·기존 내용/의료 문맥 보류·사람 미검토 상태를 유지하며, 모든 후보는 개발 노출·학습 미승인 상태다.
+
+## 구성 v2의 재검증과 재생성
+
+`source_composition`은 기존 원천·부분 노출 보류·사용 이력을 다시 검증하고, 전체 접두부를 보존한 32,768 이하 풀에서 출처 그룹당 최대 16행, 상담별 위치 1/4 구간당 최대 1행을 선택한다. 이 상한은 실험용 구성 규칙이며 모집단 대표성 기준이 아니다. 과거 assistant 문맥의 의학 관련 검토 표현은 추가 보류하고, 절차 관련 표현은 별도 검토 표시를 남긴다. 정규식이 임상적 위해를 판정한 것은 아니다. 모든 후보는 사람 미검토 상태를 유지한다.
+
+```sh
+"$COUNSELING_PYTHON" -B -m counseling_pipeline.source_composition \
+  --release 데이터셋/말씨_원본상담_SFT_v1_20261009 \
+  --frozen 데이터셋/학습용_3종_v1_20261009 \
+  --admission-policy outputs/private/malssi_partial_exposure_20261015/admission/admission_policy.json \
+  --admission-rows outputs/private/malssi_partial_exposure_20261015/admission/admission_rows.jsonl.gz \
+  --selection-audit outputs/private/malssi_round4_20261009/selection_audit.json \
+  --tokenizer-audit outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/audit.json \
+  --row-lengths outputs/private/malssi_round3_20261009/remote/tokenizer_training_env/row_lengths.jsonl.gz \
+  --previous-candidate outputs/private/malssi_partial_exposure_20261015/candidate_4096/source_rows \
+  --events outputs/private/finals_source_review_20261016/evaluation_history_events.jsonl \
+  --output outputs/private/composition_v2_20261016/source --verify
+```
+
+새로 생성하려면 `--verify`를 빼고 **아직 없는 새 출력 경로**를 지정한다. 기존 결과는 덮어쓰지 않는다. `train.jsonl.gz`·`validation.jsonl.gz`는 원본 JSONL 바이트를 보존한 전체 길이 후보이고, `*.compatible_4096.jsonl.gz`는 그중 기존 4,096 조건도 만족한 부분집합이다. 두 구성의 분포는 다르다. 길이 장부를 사용한 선별이며 모델 실행·토크나이저 재실행·학습 승인은 하지 않는다. `selection_ledger.jsonl.gz`에는 전체 원본 행의 선택·보류 사유, 위치·출처·문맥 검토 표시를 남긴다.
+
+주변인 합성 실험은 `agent_dataset`의 기존 `experimental_ai_draft` 경로를 사용한다. 실제 별도 AI 검토와 내용 해시를 요구하고, 로딩에는 `allow_ai_draft=True`가 필요하다. 동일 대화·접두부의 공백·NFKC 유니코드 차이는 중복 검사에서 무시하며, 실제 문장과 문자 위치는 변경하지 않는다. 단어·구절의 주체를 확인할 수 없을 때는 `subject:unknown`을 사용해 `user`·`subject`·`other`와 구분한다. `ASK_CFI`·`SAFETY_SUPPORT` 및 사람 승인용 사례는 기존 `agent_training`의 출처·사람·전문가 승인 조건을 그대로 따른다.
 
 ## 파일과 사용 단위
 

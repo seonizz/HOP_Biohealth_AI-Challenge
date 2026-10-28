@@ -10,6 +10,8 @@
     "app:start": "npm --prefix app start",
     "ai:test": "cd ai && python3 -B -m unittest discover -s local_api -p 'test_*.py'",
     "test:evidence": "node --test ai/scripts/*evidence.test.mjs",
+    "audit:git": "python3 -B tools/audit_git_privacy.py",
+    "test:privacy": "python3 -B -m unittest discover -s tools -p 'test_audit_git_privacy.py' -v",
     "data:test": "cd data && \"${MALSSI_PYTHON:-python3}\" -B -m unittest discover -s tests",
     "test:paths": "cd ai && python3 -B -m unittest discover -s scripts -p test_project_paths.py"
   },

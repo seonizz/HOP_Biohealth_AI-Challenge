@@ -14,7 +14,7 @@ const StartScreen={
         <div class="step"><img data-m="cheer" alt=""><span>말하는 방법<i>바로 쓸 수 있는 문장</i></span></div>
       </div>
       <p class="note" style="margin-top:22px">답변을 정리하는 데 시간이 걸릴 수 있어요. 전체 소요 시간은 답변과 서버 상황에 따라 달라져요.</p>
-      <p class="note">입력한 내용은 서버에 저장돼요. 보관·삭제 안내는 <button class="ghost" id="dataPolicy">서비스 소개에서 확인하기</button></p>
+      <p class="note">대화는 마지막 이용 후 ${typeof API!=="undefined"&&API.retentionDays?API.retentionDays():30}일 동안 보관해요. 「내 기록」에서 삭제 키를 따로 보관할 수 있어요. <button class="ghost" id="dataPolicy">보관·삭제 안내</button></p>
       <p class="note">말씨는 진단이나 치료를 대신하지 않아요.</p>
     </div>
     <div class="stage">

@@ -19,12 +19,18 @@ const fmt=d=>{const x=new Date(d);return `${x.getFullYear()}.${x.getMonth()+1}.$
 // 화면 전환: 한 번에 한 화면만 보임
 const SCREEN_IDS=["start","chat","result","records","about","columns"];
 function show(id){
+  if(typeof ConversationDrafts!=="undefined")ConversationDrafts.save();
+  if(id!=="chat"&&id!=="result"&&typeof cancelConversationRequest==="function")cancelConversationRequest();
+  if(id!=="columns"&&typeof ColumnsScreen!=="undefined"&&ColumnsScreen.cur!=null)ColumnsScreen.close({route:false});
+  if(id!=="chat")$("leaveDlg")?.close();
+  if(typeof ReferralGuide!=="undefined")ReferralGuide.navigate(id);
   SCREEN_IDS.forEach(s=>$(s).hidden=s!==id);
   if(id!=="chat"){
     document.title="말씨";
     if(typeof ChatScreen!=="undefined")ChatScreen.title("");
   }
   if(id==="start")StartScreen.updRecN();
+  if(typeof AppRouter!=="undefined")AppRouter.sync(id);
 }
 
 // ── 등장 애니메이션 (움직임 줄이기 설정이면 모두 건너뛰고 바로 보임) ──

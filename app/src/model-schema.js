@@ -35,6 +35,16 @@ function sourceExcerpts(source) {
   for (const sentence of value.match(/[^\n.!?。！？]+[.!?。！？]*/gu) || [value]) {
     for (let start = 0; start < sentence.length;) {
       let end = Math.min(start + 160, sentence.length);
+      if(end<sentence.length) {
+        const window=sentence.slice(start,end);
+        const clauses=[...window.matchAll(/[,，;；]\s*/gu)];
+        const words=[...window.matchAll(/\s+/gu)];
+        const boundary=clauses.at(-1)||words.filter(match=>match.index>=80).at(-1);
+        // Prefer an existing clause or word boundary to an arbitrary cut in
+        // the middle of a word. Every excerpt remains an exact source slice;
+        // full answers still decide negation, attribution and corrections.
+        if(boundary)end=start+boundary.index+boundary[0].length;
+      }
       // Keep a surrogate pair together when a long passage contains emoji.
       if (end < sentence.length && /[\uD800-\uDBFF]/u.test(sentence[end - 1])) end--;
       const excerpt = sentence.slice(start, end).trim();

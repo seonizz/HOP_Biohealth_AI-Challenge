@@ -1,0 +1,9 @@
+{
+  "schema_version": "1.0",
+  "messages": {
+    "immediate": {"id": "immediate_help", "text": "지금 안전을 확보하고 긴급 도움을 요청해 주세요. 상담 예약이나 기관의 답변을 기다리지 마세요."},
+    "soon": {"id": "prompt_counseling", "text": "혼자 감당하지 않아도 괜찮아요. 가까운 시일 안에 도움을 받을 수 있도록, 상담할 곳을 함께 살펴볼까요?"},
+    "planned": {"id": "planned_counseling", "text": "혼자 감당하지 않아도 괜찮아요. 가까운 시일 안에 도움을 받을 수 있도록, 상담할 곳을 함께 살펴볼까요?"},
+    "undetermined": {"id": "assessment_pending", "text": "혼자 감당하지 않아도 괜찮아요. 가까운 시일 안에 도움을 받을 수 있도록, 상담할 곳을 함께 살펴볼까요?"}
+  }
+}

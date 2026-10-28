@@ -1,0 +1,300 @@
+{
+  "schema": "malssi-v7-remediation-evidence-v1",
+  "date": "2026-10-16",
+  "base_commit": "531522f",
+  "scope": "current working tree; synthetic isolated tests; no production DB migration, model call, remote change or commit",
+  "tests": {
+    "date": "2026-10-16",
+    "base_commit": "531522f",
+    "app_source_sha256": "958d818e514f187794e6d04e7221f5c0792c9eed1d6f8ee5fbf0f055ad458e62",
+    "scope": "isolated PostgreSQL 16 and synthetic inputs; no production DB/model call",
+    "app": {
+      "pass": 391,
+      "fail": 0,
+      "skipped": 0,
+      "log": "runtime/remediation-v7/app-tests.log",
+      "sha256": "b24b3be893a060910f9ebfdde4f510237670f8932719d8484abd88971c74b91a"
+    },
+    "evidence": {
+      "pass": 24,
+      "fail": 0,
+      "skipped": 0,
+      "log": "runtime/remediation-v7/evidence-tests.log",
+      "sha256": "5966701f363bcacaa586bb2b6ad90db7aed26ea4e23a77c8616c571ca2edf038"
+    },
+    "data": {
+      "pass": 162,
+      "fail": 0,
+      "skipped": 0,
+      "log": "runtime/remediation-v7/data-tests.log",
+      "sha256": "bb9ab095de0b5d1ebf47e7d725fecaa9cec8b85be190647373ea8789d7793d49"
+    },
+    "privacy": {
+      "pass": 14,
+      "fail": 0,
+      "skipped": 0,
+      "log": "runtime/remediation-v7/privacy-tests.log",
+      "sha256": "b86a03f113d78592def0b4662905b6fc202958d7e44e9c218c374b1bbad745b6"
+    },
+    "data_review": {
+      "pass": 106,
+      "fail": 0,
+      "skipped": 0,
+      "overlaps_existing_data_suite": true,
+      "log": "runtime/remediation-v7/data-review-tests.log",
+      "sha256": "71db4e2224eeab1df0fdd2b39b342cbdd234f7d8065194f17c1d70a284596c7f"
+    }
+  },
+  "privacy": {
+    "schema": "malssi-git-privacy-v1",
+    "scope": "tracked",
+    "content": "git-index-blobs",
+    "minimum_characters": 80,
+    "files_examined": 1142,
+    "coverage": {
+      "text": 547,
+      "json": 467,
+      "jsonl": 28,
+      "document_xml": 38,
+      "binary_not_scanned": 62
+    },
+    "source_text_units_examined": 106583,
+    "unique_source_text_hashes": 53884,
+    "exact_source_text_files": 0,
+    "passed": true,
+    "source_text_exported": false,
+    "limitations": [
+      "Exact whole JSON strings / text lines / paragraphs / XML text nodes >=80 characters only.",
+      "Short, modified and partial excerpts, image text and historical commits are not ruled out."
+    ]
+  },
+  "local_preservation": {
+    "files_checked": 1223,
+    "mismatched_files": 0,
+    "remaining_tracked": 0,
+    "passed": true
+  },
+  "changed_worktree_audit": {
+    "changed_and_new_files_checked": 45,
+    "exact_source_or_size_findings": [],
+    "parse_errors": [],
+    "changed_document_links_checked": 117,
+    "broken_links": [],
+    "staged_status_counts": {
+      "M": 1,
+      "D": 1223
+    },
+    "source_text_exported": false,
+    "passed": true
+  },
+  "browser": {
+    "synthetic": true,
+    "real_browser": true,
+    "model_called": false,
+    "cookie_loss_key_deletion": {
+      "old_conversations": 5,
+      "remaining_old": 0,
+      "other_owner_preserved": 1,
+      "confirmation_preserves_data": true
+    },
+    "cookie_loss_without_reload": {
+      "deleted_old": 1,
+      "remaining_cached": 0,
+      "new_session": true
+    },
+    "mixed_answer": {
+      "real_chip_and_text_input": true,
+      "http_saved": true,
+      "reloaded_status": "answered",
+      "selection_status": "unknown",
+      "retrieval": true,
+      "safety_source": true,
+      "citation": true
+    },
+    "page_errors": [],
+    "test_schema_removed": true
+  },
+  "source_review": {
+    "status": "verified",
+    "queue_rows_checked": 391,
+    "source_prefix_target_and_split_matches": 391,
+    "annotation_context_matches": 391,
+    "pending_authoring_requests": 6,
+    "new_human_decisions": 0,
+    "new_caregiver_targets": 0,
+    "file_hashes_verified": 6,
+    "implementation_sha256": "3b846d00e5e69345a17e1f38be28cf664f99d9177aa8723206593f877234cf86",
+    "test_sha256": "6b236b69f57717e04149f6b2d85ff9a874a33869bcca1261be5cd43f6cee2b27"
+  },
+  "presentation": {
+    "path": "presentation/final/말씨_결선_실전발표_v4.pptx",
+    "slides": 14,
+    "sha256": "675e8b41e9c21d595724a8663979b1f150f62529b10bec04f95d55b932124c56",
+    "bytes": 1452242,
+    "editable_tables": 5,
+    "package_integrity": "pass",
+    "layout_findings": 0,
+    "layout_warnings": 0,
+    "first_party_import": "pass",
+    "rendered_slides": 14,
+    "visual_review": "each slide inspected; no unintended clipping or overlap; reference design retained",
+    "native_powerpoint_execution_verified": false,
+    "synthetic_examples": true
+  },
+  "cleanup": {
+    "test_schemas_remaining_before_container_removal": 0,
+    "disposable_container_and_volume_removed": true,
+    "production_database_changed": false
+  },
+  "remaining_external_evidence": [
+    "human caregiver-target authoring and review",
+    "expert and source-use approval",
+    "actual user tasks and institution adoption",
+    "operating owner and backup deletion",
+    "historical Git and remote exposure scope",
+    "presentation rehearsal and latest submission rules"
+  ],
+  "new_score": null,
+  "files": [
+    {
+      "path": "runtime/remediation-v7/verification-summary.json",
+      "bytes": 1043,
+      "sha256": "9c4b24bc905dada3978d07146fed5da36897740c1d09d07d7313aab7f40c437a"
+    },
+    {
+      "path": "runtime/remediation-v7/app-tests.log",
+      "bytes": 60168,
+      "sha256": "b24b3be893a060910f9ebfdde4f510237670f8932719d8484abd88971c74b91a"
+    },
+    {
+      "path": "runtime/remediation-v7/data-tests.log",
+      "bytes": 27994,
+      "sha256": "bb9ab095de0b5d1ebf47e7d725fecaa9cec8b85be190647373ea8789d7793d49"
+    },
+    {
+      "path": "runtime/remediation-v7/data-review-tests.log",
+      "bytes": 99,
+      "sha256": "71db4e2224eeab1df0fdd2b39b342cbdd234f7d8065194f17c1d70a284596c7f"
+    },
+    {
+      "path": "runtime/remediation-v7/evidence-tests.log",
+      "bytes": 2591,
+      "sha256": "5966701f363bcacaa586bb2b6ad90db7aed26ea4e23a77c8616c571ca2edf038"
+    },
+    {
+      "path": "runtime/remediation-v7/privacy-tests.log",
+      "bytes": 2388,
+      "sha256": "b86a03f113d78592def0b4662905b6fc202958d7e44e9c218c374b1bbad745b6"
+    },
+    {
+      "path": "runtime/remediation-v7/check.log",
+      "bytes": 96,
+      "sha256": "467634ab3b6c3f9e5b2e744092c42804fa9820060d5b732eeb908262bd7644a7"
+    },
+    {
+      "path": "runtime/remediation-v7/browser-regression.json",
+      "bytes": 626,
+      "sha256": "4d0beb407fa38028bdf04a23cf5552b536f5204ab2b733d3fc439062efbc4929"
+    },
+    {
+      "path": "runtime/remediation-v7/browser-regression.mjs",
+      "bytes": 6699,
+      "sha256": "b0595d4adcff831f2ac3ce73205a731ed4f06ee18045e76de324e468e138c970"
+    },
+    {
+      "path": "runtime/remediation-v7/privacy-after.json",
+      "bytes": 686,
+      "sha256": "af0198d0d34505bf74c762a37c7d7cbd7c15eb6c884caa4f66e433a19bb6006f"
+    },
+    {
+      "path": "runtime/remediation-v7/local-preservation-check.json",
+      "bytes": 97,
+      "sha256": "48ae730091d9b76e38ba6131765127fbd75b678362ff7ae567d87f7fc091afa8"
+    },
+    {
+      "path": "runtime/remediation-v7/final-worktree-check.json",
+      "bytes": 276,
+      "sha256": "1cff0a8861cfc62808a28bb8801be8fe557685e8f23a9472068d50b2a3e070aa"
+    },
+    {
+      "path": "runtime/remediation-v7/workflow-comparison.json",
+      "bytes": 1012,
+      "sha256": "cc9f45fbfe08dcc39fafc2ef7b43340a2f012e3346e1aa8ce62e5ab3ed222580"
+    },
+    {
+      "path": "runtime/remediation-v7/compare-workflow.mjs",
+      "bytes": 2395,
+      "sha256": "ee427e6571181699afd2ef02bfa50061267d706f6fda3f6c8aeaddd9fc52fc90"
+    },
+    {
+      "path": "runtime/remediation-v7/result-capture.json",
+      "bytes": 926,
+      "sha256": "82f24d6ee895ddf9e00ce3262d4ea81fb3d2b2a3868311e9fe391855e1bcaeb0"
+    },
+    {
+      "path": "runtime/remediation-v7/result-fixture.json",
+      "bytes": 1898,
+      "sha256": "6b538064c9e16e16b81c367a1a48c9c712ba2ebb802753f61946893a18ac4e0e"
+    },
+    {
+      "path": "runtime/remediation-v7/presentation-build/final-validation-r2.json",
+      "bytes": 4479,
+      "sha256": "ed6d769e837f22651597fa856812f3801f6d8ee00b53899f8c55b01997c407f4"
+    },
+    {
+      "path": "data/outputs/private/finals_source_review_20261016_verification.json",
+      "bytes": 444,
+      "sha256": "83647843c3984750455d3e88b23ae301b946b97efe38708403a6b9e0660bb0cc"
+    },
+    {
+      "path": "data/outputs/private/finals_source_review_20261016/summary.json",
+      "bytes": 10640,
+      "sha256": "3176968d1912ea3c103ae927903da27bab3d7f5baf6dc75b1ad6d13bfc0a9b2a"
+    },
+    {
+      "path": "data/outputs/private/finals_source_review_20261016/manifest.json",
+      "bytes": 2474,
+      "sha256": "a314e64db2b3fd5b41ede288d56db8e6c86f92e32a092301e0fa1a326132ee90"
+    },
+    {
+      "path": "data/counseling_pipeline/source_review.py",
+      "bytes": 19688,
+      "sha256": "3b846d00e5e69345a17e1f38be28cf664f99d9177aa8723206593f877234cf86"
+    },
+    {
+      "path": "data/tests/test_source_review.py",
+      "bytes": 3574,
+      "sha256": "6b236b69f57717e04149f6b2d85ff9a874a33869bcca1261be5cd43f6cee2b27"
+    },
+    {
+      "path": "tools/audit_git_privacy.py",
+      "bytes": 10629,
+      "sha256": "aa3895c99c93e5b3c63e2fc60eceaa6625bc3af21e80ab262b2b05ef43fc80e8"
+    },
+    {
+      "path": "tools/test_audit_git_privacy.py",
+      "bytes": 6904,
+      "sha256": "a1cdf5ed690cdd91259833a12bbdb4c06d19d675371e2c4634cb5098a2e1c753"
+    },
+    {
+      "path": "presentation/final/말씨_결선_실전발표_v4.pptx",
+      "bytes": 1452242,
+      "sha256": "675e8b41e9c21d595724a8663979b1f150f62529b10bec04f95d55b932124c56"
+    },
+    {
+      "path": "presentation/final/말씨_결선_실전발표_v4.json",
+      "bytes": 30044,
+      "sha256": "1de39a02d78fc5c772cd052e87644d451658e9b88302b902f47330e80f65d51b"
+    },
+    {
+      "path": "presentation/final/assets/말씨_결과화면_합성예시_v4.png",
+      "bytes": 282813,
+      "sha256": "c9491ab26289e7f2ae28931c64503ff9e86f4a20b8b1ac2e5c11ff31ef754e24"
+    },
+    {
+      "path": "presentation/final/assets/말씨_삭제키_합성화면_v4.png",
+      "bytes": 31143,
+      "sha256": "eebf35ece90339d4d8911c09991975fb9a622eed04a6aa440e237b129708b7b7"
+    }
+  ]
+}

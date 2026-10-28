@@ -1,0 +1,18 @@
+{
+  "schema_version": "1.0",
+  "default_character_id": "bulssi",
+  "characters": [
+    {
+      "id": "bulssi",
+      "display_name": "불씨",
+      "avatar_path": "/characters/bulssi/greeting.png",
+      "state_assets": {
+        "idle": "/characters/bulssi/greeting.png",
+        "listening": "/characters/bulssi/listening.png",
+        "speaking": "/characters/bulssi/speaking.png",
+        "empathy": "/characters/bulssi/empathy.png",
+        "attention": "/characters/bulssi/attention.png"
+      }
+    }
+  ]
+}

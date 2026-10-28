@@ -1,0 +1,85 @@
+{
+  "schema": "malssi-training-stop-policy-v2",
+  "status": "initial_performance_targets_not_empirically_optimal",
+  "evaluation": {
+    "schedule": "baseline_then_each_complete_epoch",
+    "split": "full_validation",
+    "loss": "sum(weight_i * mean_last_assistant_target_CE_i) / N",
+    "minimum_complete_epochs": 1,
+    "min_delta_relative": 0.005,
+    "min_delta_absolute": 0.001,
+    "patience_evaluations": 2,
+    "deterioration_relative": 0.03,
+    "deterioration_patience": 2,
+    "restore": "first_complete_epoch_checkpoint_meeting_phase_performance_targets",
+    "preserve_loss_best_for_review": true,
+    "advance_requires_meaningful_improvement_over_phase_input": true,
+    "intermediate_phase_success": "validation_loss_target_met",
+    "final_phase_success": "current_checkpoint_loss_and_role_targets_met",
+    "final_role_evaluation_schedule": "each_complete_epoch",
+    "missing_role_evaluation": "stop_pending_evaluation",
+    "normal_stop_at_complete_epoch_only": true,
+    "full_train_once_per_epoch": true,
+    "validation_never_used_for_gradient": true,
+    "cross_model_adapter_reuse": false
+  },
+  "abort_immediately_on": [
+    "non_finite_loss_or_gradient",
+    "data_or_tokenizer_binding_changed",
+    "validation_used_for_gradient",
+    "incomplete_or_duplicate_epoch_coverage",
+    "invalid_or_incomplete_validation",
+    "checkpoint_save_or_load_failure",
+    "model_or_parent_checkpoint_mismatch"
+  ],
+  "models": {
+    "chat_12b": {
+      "parameter_size": "12B",
+      "phases": [
+        {"id": "01_dialogue_warmup", "safety_max_epochs": 3},
+        {"id": "02_supporter_dialogue", "safety_max_epochs": 3},
+        {"id": "03_state_memory", "safety_max_epochs": 2}
+      ],
+      "role_acceptance": {
+        "minimum_source_families": 30,
+        "critical_all_pass": ["schema_valid", "no_fabricated_answers", "speaker_attribution_correct", "no_unsupported_safety_or_diagnosis", "skips_grounded_in_context", "consent_and_bounds_respected"],
+        "quality_checks": ["no_unnecessary_repeat", "responds_to_current_context"],
+        "minimum_family_pass_rate": 0.95,
+        "must_not_regress_against_baseline": true
+      }
+    },
+    "cards_31b": {
+      "parameter_size": "31B",
+      "phases": [
+        {"id": "00_original_warmup", "safety_max_epochs": 3},
+        {"id": "01_card_repair", "safety_max_epochs": 2},
+        {"id": "02_card_generation", "safety_max_epochs": 5}
+      ],
+      "role_acceptance": {
+        "minimum_source_families": 30,
+        "critical_all_pass": ["schema_valid", "facts_grounded", "speaker_attribution_correct", "consent_and_bounds_respected", "no_unsafe_advice", "script_is_direct_speech", "doList_is_action", "avoid_roles_correct", "next_conditions_correct", "care_is_for_supporter"],
+        "quality_checks": ["specific_to_context", "practically_usable"],
+        "minimum_family_pass_rate": 0.95,
+        "must_not_regress_against_baseline": true
+      }
+    }
+  },
+  "completion": {
+    "basis": "measured_performance",
+    "all_phases_accepted_in_order": true,
+    "role_acceptance_required": true,
+    "missing_evidence_means_pending": true,
+    "epoch_cap_alone_is_not_success": true,
+    "plateau_alone_is_not_success": true,
+    "deterioration_alone_is_not_success": true,
+    "validation_is_independent_test": false,
+    "automatic_deployment": false,
+    "unseen_test_reserved_until_candidate_is_locked": true,
+    "project_competition_scoring_changed": false
+  },
+  "references": [
+    "https://huggingface.co/docs/transformers/v5.10.0/en/trainer_callbacks#earlystoppingcallback",
+    "https://huggingface.co/docs/transformers/v5.10.0/en/main_classes/trainer",
+    "https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets"
+  ]
+}

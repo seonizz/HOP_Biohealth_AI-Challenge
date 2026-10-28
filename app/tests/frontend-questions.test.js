@@ -11,6 +11,7 @@ import { createIntake, currentView, answerIntake, backIntake, buildContext,
 
 const migration = readFileSync(new URL('../migrations/004_frontend_questions.sql', import.meta.url), 'utf8');
 const updates = JSON.parse(migration.split('$frontend_defaults$')[1]);
+const naturalUpdates = JSON.parse(readFileSync(new URL('../migrations/007_natural_prompts.sql', import.meta.url), 'utf8').split('$natural_prompts$')[1]);
 function latestRows() {
   return structuredClone(initialQuestionRows).map(row => {
     if (row.id === 'name') {
@@ -232,4 +233,39 @@ test('frontend migration preserves customized definitions and settings and retai
   await f.store.pool.query("UPDATE questions SET definition=$1::jsonb WHERE id='events'", [JSON.stringify(initialQuestionRows.find(q => q.id === 'events').definition)]);
   await restart(f);
   assert.deepEqual((await f.store.questionSet()).questions.find(q => q.id === 'events'), {id:'events',subject:'patient',...initialQuestionRows.find(q => q.id === 'events').definition});
+});
+
+test('natural prompts update only untouched defaults for new conversations and preserve saved content', {skip:!databaseUrl}, async t => {
+  const f = await fixture(t);
+  await f.store.pool.query("DELETE FROM schema_migrations WHERE version='007_natural_prompts.sql'");
+  for (const row of naturalUpdates) await f.store.pool.query('UPDATE questions SET definition=$1::jsonb WHERE id=$2', [JSON.stringify(row.before),row.id]);
+  const owner = await f.store.createBrowser();
+  const old = await f.store.createIntake(owner.id, createIntake(await f.store.questionSet()));
+  const encrypted = async () => (await f.store.pool.query(`SELECT content FROM intakes WHERE id=$1
+    UNION ALL SELECT content FROM patient_states WHERE intake_id=$1
+    UNION ALL SELECT content FROM patient_state_revisions WHERE intake_id=$1`, [old.id])).rows;
+  const saved = await encrypted();
+  await restart(f);
+  for (const row of naturalUpdates) assert.deepEqual((await f.store.questionSet()).questions.find(q => q.id===row.id), {id:row.id,subject:row.subject,...row.after});
+  assert.deepEqual((await f.store.intake(owner.id, old.id)).state, old.state);
+  assert.deepEqual(await encrypted(),saved);
+  assert.match(old.state.questionSet.questions.find(q=>q.id==='want').ph,/병원/);
+  assert.doesNotMatch((await f.store.questionSet()).questions.find(q=>q.id==='want').ph,/병원|상담/);
+  const after = (await f.store.pool.query('SELECT * FROM questions ORDER BY id')).rows;
+  await restart(f);
+  assert.deepEqual((await f.store.pool.query('SELECT * FROM questions ORDER BY id')).rows,after);
+});
+
+test('natural prompts preserve administrator wording, options and disabled/customized settings', {skip:!databaseUrl}, async t => {
+  const f=await fixture(t);
+  await f.store.pool.query("DELETE FROM schema_migrations WHERE version='007_natural_prompts.sql'");
+  for(const row of naturalUpdates) await f.store.pool.query('UPDATE questions SET definition=$1::jsonb WHERE id=$2',[JSON.stringify(row.before),row.id]);
+  await f.store.pool.query("UPDATE questions SET definition=jsonb_set(definition,'{ph}',to_jsonb('관리자 예시'::text)) WHERE id='want'");
+  await f.store.pool.query("UPDATE questions SET enabled=FALSE WHERE id='need'");
+  await f.store.pool.query("UPDATE questions SET sort_order=1550 WHERE id='burden'");
+  await f.store.pool.query("UPDATE questions SET subject='supporter' WHERE id='others_help'");
+  await f.store.pool.query("UPDATE questions SET definition=jsonb_set(definition,'{q}',to_jsonb('관리자 질문'::text)) WHERE id='others_why'");
+  const before=(await f.store.pool.query('SELECT * FROM questions ORDER BY id')).rows;
+  await restart(f);
+  assert.deepEqual((await f.store.pool.query('SELECT * FROM questions ORDER BY id')).rows,before);
 });

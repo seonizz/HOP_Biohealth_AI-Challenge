@@ -47,6 +47,9 @@
                       "enum": [
                         false
                       ]
+                    },
+                    "retention_cleanup_ok": {
+                      "type": "boolean"
                     }
                   }
                 }
@@ -72,7 +75,7 @@
             "description": "모델 출력 검증 실패"
           },
           "503": {
-            "description": "모델 또는 저장소 연결 실패"
+            "description": "보유기간 청소 실패. retention_cleanup_ok:false; 다음 주기에 재시도"
           },
           "504": {
             "description": "모델 제한 시간 초과"
@@ -94,7 +97,8 @@
                   "required": [
                     "records",
                     "incomplete_intakes",
-                    "conversation_epoch"
+                    "conversation_epoch",
+                    "retention"
                   ],
                   "properties": {
                     "records": {
@@ -132,6 +136,27 @@
                       "type": "integer",
                       "minimum": 0,
                       "description": "전체 대화 삭제 시 증가하는 생성 버전. bootstrap 또는 최신 기록 목록에서 읽습니다."
+                    },
+                    "retention": {
+                      "type": "object",
+                      "required": [
+                        "inactivity_days",
+                        "cleanup_interval_seconds"
+                      ],
+                      "additionalProperties": false,
+                      "properties": {
+                        "inactivity_days": {
+                          "type": "integer",
+                          "minimum": 1,
+                          "maximum": 90
+                        },
+                        "cleanup_interval_seconds": {
+                          "type": "number",
+                          "maximum": 3600,
+                          "exclusiveMinimum": true,
+                          "minimum": 0
+                        }
+                      }
                     }
                   }
                 }
@@ -369,6 +394,9 @@
           "403": {
             "description": "Origin/CSRF 거부"
           },
+          "404": {
+            "description": "해당 소유자의 대화/기록 없음"
+          },
           "409": {
             "description": "대화 버전 충돌"
           },
@@ -383,9 +411,6 @@
           },
           "504": {
             "description": "모델 제한 시간 초과"
-          },
-          "404": {
-            "description": "해당 소유자의 대화/기록 없음"
           }
         },
         "parameters": [
@@ -1177,6 +1202,9 @@
           "403": {
             "description": "Origin/CSRF 거부"
           },
+          "404": {
+            "description": "해당 소유자의 대화/기록 없음"
+          },
           "409": {
             "description": "대화 버전 충돌"
           },
@@ -1191,9 +1219,6 @@
           },
           "504": {
             "description": "모델 제한 시간 초과"
-          },
-          "404": {
-            "description": "해당 소유자의 대화/기록 없음"
           }
         },
         "parameters": [
@@ -1298,6 +1323,345 @@
           }
         }
       }
+    },
+    "/api/deletion-key": {
+      "post": {
+        "summary": "현재 소유자의 삭제 전용 키 발급/교체",
+        "description": "원문 키를 한 번 반환하고 해시만 저장합니다. 기존 키는 무효화됩니다. 세션 및 CSRF 필요.",
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "additionalProperties": false,
+                "properties": {}
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "삭제 키 발급",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "deletion_key"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "deletion_key": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z0-9_-]{43}$",
+                      "minLength": 43,
+                      "maxLength": 43
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON 입력 오류"
+          },
+          "401": {
+            "description": "유효 세션 없음"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "413": {
+            "description": "본문 크기 제한"
+          },
+          "415": {
+            "description": "JSON 형식 필요"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "429": {
+            "description": "요청 제한"
+          }
+        }
+      }
+    },
+    "/api/conversations/delete-with-key": {
+      "post": {
+        "summary": "쿠키 없이 보관한 키로 해당 소유자의 대화 삭제",
+        "description": "조회·복구 권한이 없는 삭제 전용 경로. 완료·미완료 대화와 결과·상태·이력을 삭제하고 칼럼 상태는 유지합니다. current_session은 전달한 쿠키의 소유자 일치 여부이며 만료 세션을 복구하지 않습니다.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "허용된 앱의 정확한 HTTP(S) Origin"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "deletion_key"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "deletion_key": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_-]{43}$",
+                    "minLength": 43,
+                    "maxLength": 43
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "삭제 완료; 같은 키 재시도 가능",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "deleted",
+                    "current_session"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "deleted": {
+                      "type": "boolean",
+                      "enum": [
+                        true
+                      ]
+                    },
+                    "current_session": {
+                      "type": "boolean"
+                    },
+                    "conversation_epoch": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "현재 쿠키와 대상 소유자가 같을 때만 반환"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "JSON 입력 오류"
+          },
+          "403": {
+            "description": "Origin/CSRF 거부"
+          },
+          "404": {
+            "description": "키가 잘못됐거나 교체됐거나 자동 삭제된 소유자"
+          },
+          "413": {
+            "description": "본문 크기 제한"
+          },
+          "415": {
+            "description": "JSON 형식 필요"
+          },
+          "422": {
+            "description": "입력 검증 실패"
+          },
+          "429": {
+            "description": "요청 제한"
+          }
+        }
+      }
+    },
+    "/api/guidance/characters": {
+      "get": {
+        "summary": "교체 가능한 안내 캐릭터",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "schema_version",
+                    "default_character_id",
+                    "characters"
+                  ],
+                  "properties": {
+                    "schema_version": {
+                      "type": "string",
+                      "enum": [
+                        "1.0"
+                      ]
+                    },
+                    "default_character_id": {
+                      "type": "string"
+                    },
+                    "characters": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/GuideCharacter"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 필요"
+          },
+          "403": {
+            "description": "동일 출처 정책 위반"
+          }
+        }
+      }
+    },
+    "/api/guidance/institutions": {
+      "get": {
+        "summary": "활성 지정 상담기관 연락처",
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "schema_version",
+                    "configured",
+                    "institutions"
+                  ],
+                  "properties": {
+                    "schema_version": {
+                      "type": "string",
+                      "enum": [
+                        "1.0"
+                      ]
+                    },
+                    "configured": {
+                      "type": "boolean"
+                    },
+                    "institutions": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ReferralInstitution"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 필요"
+          },
+          "403": {
+            "description": "동일 출처 정책 위반"
+          }
+        }
+      }
+    },
+    "/api/intakes/{id}/guidance": {
+      "post": {
+        "summary": "현재 당사자의 도움 긴급성과 기관 연락처 안내",
+        "description": "모델·UI 연결 계약은 REFERRAL_GUIDANCE.md 참고. 안내만 반환하며 기록을 변경하거나 기관에 전송하지 않습니다.",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "revision"
+                ],
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "character_id": {
+                    "type": "string",
+                    "pattern": "^[a-z][a-z0-9_-]{0,39}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "성공",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReferralGuidance"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 필요"
+          },
+          "403": {
+            "description": "CSRF 또는 동일 출처 위반"
+          },
+          "404": {
+            "description": "소유자가 다르거나 대화 삭제됨"
+          },
+          "409": {
+            "description": "리비전 충돌 또는 답변 검토 중"
+          },
+          "422": {
+            "description": "입력 형식 오류"
+          },
+          "502": {
+            "description": "분류 provider 응답 검증 실패"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1306,6 +1670,453 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "malssi_session"
+      }
+    },
+    "schemas": {
+      "GuideCharacter": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "display_name",
+          "avatar_path",
+          "state_assets"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "avatar_path": {
+            "type": "string",
+            "nullable": true
+          },
+          "state_assets": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "idle": {
+                "type": "string"
+              },
+              "listening": {
+                "type": "string"
+              },
+              "speaking": {
+                "type": "string"
+              },
+              "empathy": {
+                "type": "string"
+              },
+              "attention": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "GuidePresentation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "display_name",
+          "avatar_path",
+          "state_assets",
+          "state",
+          "asset_path",
+          "fallback",
+          "animation_optional"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "avatar_path": {
+            "type": "string",
+            "nullable": true
+          },
+          "state_assets": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "idle": {
+                "type": "string"
+              },
+              "listening": {
+                "type": "string"
+              },
+              "speaking": {
+                "type": "string"
+              },
+              "empathy": {
+                "type": "string"
+              },
+              "attention": {
+                "type": "string"
+              }
+            }
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "idle",
+              "listening",
+              "speaking",
+              "empathy",
+              "attention"
+            ]
+          },
+          "asset_path": {
+            "type": "string",
+            "nullable": true
+          },
+          "fallback": {
+            "type": "string",
+            "enum": [
+              "text"
+            ]
+          },
+          "animation_optional": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          }
+        }
+      },
+      "ReferralAction": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "kind",
+          "label",
+          "href",
+          "requires_user_action",
+          "shares_conversation"
+        ],
+        "properties": {
+          "kind": {
+            "type": "string",
+            "enum": [
+              "phone",
+              "booking"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "href": {
+            "type": "string"
+          },
+          "requires_user_action": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "shares_conversation": {
+            "type": "boolean",
+            "enum": [
+              false
+            ]
+          },
+          "referrer_policy": {
+            "type": "string",
+            "enum": [
+              "no-referrer"
+            ]
+          },
+          "rel": {
+            "type": "string",
+            "enum": [
+              "noopener noreferrer"
+            ]
+          }
+        }
+      },
+      "ReferralInstitution": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "urgencies",
+          "last_verified_on",
+          "actions"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "urgencies": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "immediate",
+                "soon",
+                "planned",
+                "undetermined"
+              ]
+            }
+          },
+          "last_verified_on": {
+            "type": "string",
+            "format": "date"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReferralAction"
+            }
+          }
+        }
+      },
+      "ReferralGuidance": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "schema_version",
+          "revision",
+          "subject",
+          "status",
+          "assessment",
+          "guidance",
+          "presentation",
+          "safety_alert",
+          "preserved_safety_alert",
+          "failure_code"
+        ],
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "enum": [
+              "1.0"
+            ]
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "subject": {
+            "type": "string",
+            "enum": [
+              "patient"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ready",
+              "needs_review",
+              "model_unavailable",
+              "no_matching_institution",
+              "institutions_unconfigured"
+            ]
+          },
+          "assessment": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "urgency",
+              "needs_review",
+              "clinically_validated"
+            ],
+            "properties": {
+              "urgency": {
+                "type": "string",
+                "enum": [
+                  "immediate",
+                  "soon",
+                  "planned",
+                  "undetermined"
+                ]
+              },
+              "needs_review": {
+                "type": "boolean"
+              },
+              "clinically_validated": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              }
+            }
+          },
+          "guidance": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "message",
+              "urgent",
+              "institutions",
+              "connection_mode",
+              "automatically_contacted",
+              "conversation_shared",
+              "urgency",
+              "message_id",
+              "concerns"
+            ],
+            "properties": {
+              "message": {
+                "type": "string"
+              },
+              "urgent": {
+                "type": "boolean"
+              },
+              "institutions": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ReferralInstitution"
+                }
+              },
+              "connection_mode": {
+                "type": "string",
+                "enum": [
+                  "contact_links"
+                ]
+              },
+              "automatically_contacted": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              },
+              "conversation_shared": {
+                "type": "boolean",
+                "enum": [
+                  false
+                ]
+              },
+              "urgency": {
+                "type": "string",
+                "enum": [
+                  "immediate",
+                  "soon",
+                  "planned",
+                  "undetermined"
+                ]
+              },
+              "message_id": {
+                "type": "string",
+                "description": "개발자 등록 문장의 고정 식별자"
+              },
+              "concerns": {
+                "type": "array",
+                "description": "모델이 선택한 현재 답변 근거의 전체 원문과 서버 등록 상담 추천 이유. 결과 카드에 표시하며 별도 저장하지 않는다.",
+                "maxItems": 101,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["subject", "code", "reason", "quotes"],
+                  "properties": {
+                    "subject": {"type": "string", "enum": ["patient", "supporter", "other", "unclear"]},
+                    "code": {
+                      "type": "string",
+                      "nullable": true,
+                      "enum": ["current_suicidal_thoughts", "self_harm_action", "immediate_violence", "physical_emergency", "wish_to_die_or_self_harm_concern", "self_harm_history", "abuse_or_neglect", "severe_function_impairment", "mental_health_concern", "substance_use_concern", "support_requested", null]
+                    },
+                    "reason": {"type": "string"},
+                    "quotes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": ["question_id", "text"],
+                        "properties": {
+                          "question_id": {"type": "string"},
+                          "text": {"type": "string", "description": "현재 저장된 답변에서 가져온, 수정하지 않은 전체 원문"}
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "presentation": {
+            "$ref": "#/components/schemas/GuidePresentation"
+          },
+          "safety_alert": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "required": [
+              "urgency",
+              "subjects"
+            ],
+            "properties": {
+              "urgency": {
+                "type": "string",
+                "enum": [
+                  "immediate",
+                  "soon"
+                ]
+              },
+              "subjects": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 4,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "patient",
+                    "supporter",
+                    "other",
+                    "unclear"
+                  ]
+                }
+              }
+            }
+          },
+          "preserved_safety_alert": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": false,
+            "required": [
+              "urgency",
+              "subjects"
+            ],
+            "properties": {
+              "urgency": {
+                "type": "string",
+                "enum": [
+                  "immediate"
+                ]
+              },
+              "subjects": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "unclear"
+                  ]
+                },
+                "minItems": 1,
+                "maxItems": 1
+              }
+            },
+            "description": "기존 대화의 검증된 긴급 안내. 새 safety_alert와 대상·긴급성을 합치지 않는다."
+          },
+          "failure_code": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "REFERRAL_INVALID_RESPONSE",
+              null
+            ],
+            "description": "잘못된 모델 응답에도 기존 긴급 안내를 보존할 때의 제한된 오류 코드."
+          }
+        }
       }
     }
   },

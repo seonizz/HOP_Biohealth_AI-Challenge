@@ -72,20 +72,21 @@ def string_list(value, *, allow_empty=False):
             and all(nonempty(item) for item in value) and len(value) == len(set(value)))
 
 
-def question_bank_dependency(used_in):
-    bank_bytes = QUESTION_BANK_PATH.read_bytes()
+def question_bank_dependency(used_in, *, question_bank_bytes=None):
+    bank_bytes = QUESTION_BANK_PATH.read_bytes() if question_bank_bytes is None else question_bank_bytes
     return {"resource_id": "question_bank", "version": json.loads(bank_bytes)["version"],
             "content_sha256": hashlib.sha256(bank_bytes).hexdigest(), "used_in": sorted(used_in)}
 
 
-def detected_question_bank_usage(case):
+def detected_question_bank_usage(case, *, question_bank_bytes=None):
     """Detect known verbatim borrowing; declarations/review cover adaptations.
 
     This is a provenance guard, not a legal or semantic authorship judgment.
     Matching ignores whitespace/Unicode composition, not paraphrase meaning.
     """
     normalize = lambda text: "".join(unicodedata.normalize("NFKC", text).split())
-    bank = json.loads(QUESTION_BANK_PATH.read_text(encoding="utf-8"))
+    bank_bytes = QUESTION_BANK_PATH.read_bytes() if question_bank_bytes is None else question_bank_bytes
+    bank = json.loads(bank_bytes.decode("utf-8"))
     phrases = set()
     for question in bank["questions"]:
         for key in ("canonical_question", "supporting_text"):
@@ -109,7 +110,7 @@ def detected_question_bank_usage(case):
     return usage
 
 
-def validate_resources(case):
+def validate_resources(case, *, question_bank_bytes=None):
     dependencies = case.get("resource_dependencies")
     require(isinstance(dependencies, list), "resource_dependencies inventory required (list, even when empty)")
     ids = set()
@@ -125,11 +126,11 @@ def validate_resources(case):
         locations = dependency.get("used_in")
         require(string_list(locations) and set(locations) <= {"prefix", "target", "adaptation"},
                 "resource usage locations required")
-    known_usage = detected_question_bank_usage(case)
+    known_usage = detected_question_bank_usage(case, question_bank_bytes=question_bank_bytes)
     declared = next((d for d in dependencies if d["resource_id"] == "question_bank"), None)
     require(not known_usage or declared is not None, "known question-bank usage missing resource dependency")
     if declared is not None:
-        expected = question_bank_dependency(known_usage)
+        expected = question_bank_dependency(known_usage, question_bank_bytes=question_bank_bytes)
         require(all(declared[k] == expected[k] for k in ("version", "content_sha256")),
                 "question-bank dependency version/content mismatch")
         require(known_usage <= set(declared["used_in"]), "question-bank usage location missing")
@@ -169,14 +170,14 @@ def case_hash(case):
     return digest(case)
 
 
-def annotation_view(case):
+def annotation_view(case, *, question_bank_bytes=None):
     """Blind annotation view excludes old targets, reviews and future dialogue."""
-    validate_case(case)
+    validate_case(case, question_bank_bytes=question_bank_bytes)
     return {"case_id": case["case_id"], "prefix": case["prefix"],
             "prefix_sha256": digest(case["prefix"])}
 
 
-def validate_case(case):
+def validate_case(case, *, question_bank_bytes=None):
     require(case.get("schema_version") == SCHEMA, "unsupported agent schema")
     require(nonempty(case.get("case_id")), "missing case_id")
     roots = case.get("source_root_ids")
@@ -240,7 +241,7 @@ def validate_case(case):
     require(nonempty(case.get("target_response")), "target response required")
     risks = case.get("risk_tags")
     require(isinstance(risks, list) and all(nonempty(r) for r in risks), "risk_tags must be explicit")
-    validate_resources(case)
+    validate_resources(case, question_bank_bytes=question_bank_bytes)
     return case
 
 

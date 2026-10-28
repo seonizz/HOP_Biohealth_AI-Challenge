@@ -38,12 +38,12 @@ const ColumnsScreen={
   mount(){
     this.load();
     $("colFilter").innerHTML=["전체",...COLUMN_CATS.map(c=>c[0])].map(c=>`<button class="chip" data-cat="${c}">${c==="통합"?"가족 돌봄 전반":c}</button>`).join("");
-    $("colFilter").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.filter=b.dataset.cat;this.draw();});
-    $("colOnly").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.only=this.only===b.dataset.only?"":b.dataset.only;this.draw();});
+    $("colFilter").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.filter=b.dataset.cat;this.draw();if(typeof AppRouter!=="undefined")AppRouter.sync("columns");});
+    $("colOnly").querySelectorAll("button").forEach(b=>b.onclick=()=>{this.only=this.only===b.dataset.only?"":b.dataset.only;this.draw();if(typeof AppRouter!=="undefined")AppRouter.sync("columns");});
     this.draw();
   },
   // cat을 주면 그 분류만 보여 주며 열기 (예: 결과 화면의 경향)
-  open(cat){this.filter=cat&&COLUMN_CATS.some(c=>c[0]===cat)?cat:"전체";this.only="";this.draw();show("columns");document.querySelector("#columns .cbody").scrollTop=0;window.scrollTo(0,0);},
+  open(cat){if(this.cur!=null)this.close({route:false});this.filter=cat&&COLUMN_CATS.some(c=>c[0]===cat)?cat:"전체";this.only="";this.draw();show("columns");document.querySelector("#columns .cbody").scrollTop=0;window.scrollTo(0,0);},
 
   draw(){
     $("colFilter").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.cat===this.filter));
@@ -68,18 +68,21 @@ const ColumnsScreen={
   },
   // 서로 다른 글을 빠르게 눌러도 서버가 반환한 전체 상태가 순서대로 반영돼요.
   update(a,kind){
-    const key=`${a.art}:${kind}`;
-    if(this.pending.has(key)||(kind==="read"&&this.isRead(a)))return;
-    this.pending.add(key);
+    const key=`${a.art}:${kind}`,pending=this.pending;
+    if(pending.has(key)||(kind==="read"&&this.isRead(a)))return;
+    pending.add(key);
     const operation=this.queue.then(async()=>{
       try{
+        // A session reload replaces this queue; old writes and replies stay with it.
+        if(this.pending!==pending)return;
         const body=kind==="read"?{read:true}:{saved:!this.isSaved(a)};
         const result=await API.request(`/api/columns/${a.art}/state`,{method:"PATCH",body});
+        if(this.pending!==pending)return;
         this.st=result.state;this.draw();
         if(this.cur!=null)this.drawReaderFoot();
         if(kind==="read")this.toast("읽음으로 표시했어요.");
-      }catch(error){this.toast(error.message);}
-      finally{this.pending.delete(key);}
+      }catch(error){if(this.pending===pending)this.toast(error.message);}
+      finally{pending.delete(key);}
     });
     this.queue=operation;return operation;
   },
@@ -91,7 +94,11 @@ const ColumnsScreen={
   size:1,
   read(i){
     this.cur=i;const a=COLUMNS[i],body=colBody(a),r=$("colReader");
-    if(r.hidden)this.back=document.activeElement;
+    if(r.hidden){
+      this.back=document.activeElement;this.backIndex=i;
+      this.readerBackground=[...$("columns").children].filter(el=>el!==r&&el.id!=="colToast").map(el=>({el,inert:el.inert}));
+      this.readerBackground.forEach(({el})=>el.inert=true);
+    }
     r.innerHTML=`
       <div class="cr-panel" style="--fs:${this.size}">
         <div class="cr-top">
@@ -114,13 +121,22 @@ const ColumnsScreen={
     r.querySelectorAll(".cr-sz").forEach(b=>b.onclick=()=>{this.size=Math.min(1.3,Math.max(.85,Math.round((this.size+(+b.dataset.sz)*.15)*100)/100));r.querySelector(".cr-panel").style.setProperty("--fs",this.size);});
     $("crClose").onclick=()=>this.close();
     r.onclick=e=>{if(e.target===r)this.close();};
-    r.onkeydown=e=>{if(e.key==="Escape")this.close();};
+    r.onkeydown=e=>{
+      if(e.key==="Escape"){e.preventDefault();this.close();return;}
+      if(e.key!=="Tab")return;
+      const stops=[...r.querySelectorAll("button,a")].filter(el=>!el.disabled&&!el.hidden&&el.getAttribute("tabindex")!=="-1");
+      const first=stops[0],last=stops.at(-1);
+      if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}
+      else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
+    };
     // 읽은 정도 막대, 끝까지 내려오면 읽음으로 기록
     const sc=$("crScroll");sc.onscroll=()=>{const p=sc.scrollTop/Math.max(1,sc.scrollHeight-sc.clientHeight);$("crProg").style.width=Math.min(100,p*100)+"%";if(p>.97&&!this.isRead(a)){this.markRead(a);}};
     this.drawReaderFoot();$("crClose").focus();
+    if(typeof AppRouter!=="undefined")AppRouter.sync("columns");
   },
   drawReaderFoot(){
     const i=this.cur,a=COLUMNS[i],n=COLUMNS.length,prev=COLUMNS[(i-1+n)%n],next=COLUMNS[(i+1)%n];
+    const focused=$("crFoot").contains(document.activeElement)?document.activeElement.id:null;
     $("crFoot").innerHTML=`
       <div class="cr-end"><img src="${M[this.isRead(a)?"cheer":"listen"]}" alt=""><p>${this.isRead(a)?"끝까지 읽어 주셔서 고마워요.":"여기까지 읽으셨다면, 다 읽었다고 알려 주세요."}</p></div>
       <div class="cr-act">
@@ -134,6 +150,13 @@ const ColumnsScreen={
     $("crTalk").onclick=()=>{this.close();begin();};
     $("crPrev").onclick=()=>{this.read((i-1+n)%n);$("crScroll").scrollTop=0;};
     $("crNext").onclick=()=>{this.read((i+1)%n);$("crScroll").scrollTop=0;};
+    if(focused)($(focused)||$("crSave")).focus();
   },
-  close(){$("colReader").hidden=true;$("colReader").innerHTML="";document.body.classList.remove("noscroll");this.cur=null;this.back?.focus?.();}
+  close({route=true}={}){
+    $("colReader").hidden=true;$("colReader").innerHTML="";document.body.classList.remove("noscroll");this.cur=null;
+    (this.readerBackground||[]).forEach(({el,inert})=>el.inert=inert);this.readerBackground=[];
+    const back=this.back?.isConnected?this.back:[...$("colGrid").querySelectorAll(".cc-open")].find(button=>+button.dataset.i===this.backIndex)||$("colFilter").querySelector("button");
+    back?.focus();this.back=null;
+    if(route&&!$("columns").hidden&&typeof AppRouter!=="undefined")AppRouter.sync("columns");
+  }
 };

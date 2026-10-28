@@ -1,0 +1,301 @@
+--- a/live_worker.py
++++ b/live_worker.py
+@@ -15,6 +15,7 @@
+ from pathlib import Path
+ import queue
+ import re
++import select
+ import signal
+ import sys
+ import threading
+@@ -196,10 +197,36 @@
+             self.emit("reply", id=request_id, ok=False,
+                       error={"type": "invalid_request", "message": str(error)})
+ 
++    def read_pipe_line(self, descriptor, pending):
++        """Read a bounded frame without holding BufferedReader's shutdown lock."""
++        while not self.stopping.is_set():
++            newline = pending.find(b"\n")
++            if newline >= 0 or len(pending) > MAX_LINE_BYTES:
++                end = newline + 1 if newline >= 0 else len(pending)
++                line = bytes(pending[:end])
++                del pending[:end]
++                return line
++            readable, _, _ = select.select([descriptor], [], [], 0.1)
++            if not readable:
++                continue
++            chunk = os.read(descriptor, min(65536, MAX_LINE_BYTES + 1 - len(pending)))
++            if not chunk:
++                line = bytes(pending)
++                pending.clear()
++                return line
++            pending.extend(chunk)
++        return b""
++
+     def read(self, stream):
+         try:
++            try:
++                descriptor = stream.fileno()
++            except (AttributeError, OSError):
++                descriptor = None  # In-memory protocol fixtures have no OS descriptor.
++            pending = bytearray()
+             while not self.stopping.is_set():
+-                line = stream.readline(MAX_LINE_BYTES + 1)
++                line = (stream.readline(MAX_LINE_BYTES + 1) if descriptor is None
++                        else self.read_pipe_line(descriptor, pending))
+                 if not line:
+                     self.stop("eof")
+                     return
+@@ -312,6 +339,7 @@
+                          "adapter_sha256": adapter_sha, "campaign_sha256": admission["campaign_sha256"],
+                          "task": "conversation", "epoch": 3, "gpu_only": True,
+                          "prefill_chunk_size": 1024, "grouped_global_attention": True,
++                         "qa_folded_decode": True, "final_attention": "grouped",
+                          "generation_profile": "greedy_at_temperature_zero_sampling_follows_request"}
+ 
+     def generate(self, request):
+@@ -342,7 +370,8 @@
+         tensor = output = None
+         try:
+             tensor = self.torch.tensor([ids], dtype=self.torch.long, device=self.device)
+-            with self.torch.inference_mode():
++            from inference_scope import qa_decode_attention
++            with self.torch.inference_mode(), qa_decode_attention(messages):
+                 output = self.model.generate(input_ids=tensor, attention_mask=self.torch.ones_like(tensor), **options)
+             if request.should_stop():
+                 raise RequestError("Generation was cancelled or reached its deadline")
+@@ -424,14 +453,14 @@
+     args = parser.parse_args()
+     emit = Emitter(private_protocol_stream())
+     controller = Controller(emit)
+-    backend = receipt = None
++    backend = receipt = reader = None
+     status = "failed"
+     try:
+         from quality_campaign import canonical_path
+         root = canonical_path(args.campaign_root, directory=True)
+         entries = canonical_path(args.entries)
+         model = canonical_path(args.model, directory=True)
+-        work = canonical_path(root / "work/live-web-20261017-r1/work", directory=True)
++        work = canonical_path(root / "work/live-web-20261018-r2/work", directory=True)
+         require(Path.cwd() == work, "Bootstrap working directory mismatch")
+         require(entries == root / "work/token/entries.json", "Unexpected frozen entries path")
+         startticks = int(Path("/proc/self/stat").read_text().rsplit(")", 1)[1].split()[19])
+@@ -439,7 +468,8 @@
+         receipt.write("starting", 0)
+         for sig in (signal.SIGTERM, signal.SIGINT):
+             signal.signal(sig, lambda signum, frame: controller.stop("signal"))
+-        threading.Thread(target=controller.read, args=(sys.stdin.buffer,), daemon=True).start()
++        reader = threading.Thread(target=controller.read, args=(sys.stdin.buffer,), daemon=True)
++        reader.start()
+         threading.Thread(target=controller.watchdog, args=(receipt,), daemon=True).start()
+         backend = Backend(root, entries, model)
+         if not controller.stopping.is_set():
+@@ -464,6 +494,8 @@
+                  request_count=controller.request_count,
+                  evidence_path=str(receipt.path) if receipt is not None else None)
+         finally:
++            if reader is not None:
++                reader.join(timeout=1)
+             controller.closed.set()
+     return 0 if status == "stopped" else 1
+ 
+--- a/local_live.py
++++ b/local_live.py
+@@ -17,7 +17,7 @@
+ 
+ HERE = Path(__file__).resolve().parent
+ ROOT = HERE.parents[2]
+-REMOTE = '/home/slim/choieram/training_data/supporter-v11-20261017-7d1e112f/full-training-quality-20261017-r1/work/live-web-20261017-r1'
++REMOTE = '/home/slim/choieram/training_data/supporter-v11-20261017-7d1e112f/full-training-quality-20261017-r1/work/live-web-20261018-r2'
+ SSH = ['ssh', '-T', '-S', '/private/tmp/hop-gpu-ssh-z0bddbnn/control', '-o', 'BatchMode=yes', '-o', 'StrictHostKeyChecking=yes', '-p', '20522', 'slim@165.194.161.61']
+ PROTOCOL = 'hop-v11-live-v1'
+ sys.path.insert(0, str(ROOT / 'ai/trained_model_api'))
+@@ -153,6 +153,10 @@
+                 # Closing this owned channel triggers the worker EOF cancellation path.
+                 self.process.terminate()
+                 self.process.wait(timeout=10)
++        if self.process and self.process.poll() is not None:
++            self.verified_ssh_pid = None
++            save('worker-status.json', {'state': 'stopped', 'at': time.time(),
++                'remote_identity': self.ready, 'requests': self.calls})
+ 
+ def main():
+     worker = Worker()
+@@ -183,19 +187,23 @@
+         assert probe.get('text', '').strip()
+         save('connection-proof.json', {'model': config['model_id'], 'checkpoint_sha256': config['checkpoint_sha256'],
+             'remote_identity': worker.ready, 'actual_reply': probe, 'verified_at': time.time()})
++        worker.close()  # Return startup GPU allocation; later requests reload on demand.
+         threading.Thread(target=server.serve_forever, daemon=True).start()
+-        private = json.loads((HERE / 'local-secrets.json').read_text())
++        private = json.loads((HERE.with_name('live-web-20261017-r1') / 'local-secrets.json').read_text())
+         env = {**os.environ, 'HOST': '127.0.0.1', 'PORT': '9000', 'PUBLIC_ORIGIN': 'http://127.0.0.1:9000',
+             'DATABASE_URL': 'postgresql://malssi:' + private['database_password'] + '@127.0.0.1:5434/malssi',
+             'CONTENT_KEY': private['content_key'], 'MODEL_BASE_URL': 'http://127.0.0.1:18080/v1',
+             'MODEL_API_KEY': key, 'MODEL_NAME': config['model_id'], 'MODEL_PROTOCOL': 'relationship_agent',
+             'MODEL_AGENT_FORMAT': 'prompt', 'MODEL_REASONING_EFFORT': 'omit', 'MODEL_TIMEOUT_MS': '3600000',
++            'MODEL_STATE_MODE': os.environ.get('MODEL_STATE_MODE', 'combined'),
+             'SESSION_TTL_DAYS': '30', 'DATA_RETENTION_DAYS': '30', 'NODE_ENV': 'development'}
+         env.pop('ALLOWED_ORIGINS', None)
+         env.pop('DEMO_CONTAINER', None)
+         log = (HERE / 'web.log').open('a')
+         node = subprocess.Popen(['node', 'src/server.js'], cwd=ROOT / 'app', env=env, stdout=log, stderr=log)
+-        save('local-processes.json', {'manager_pid': os.getpid(), 'web_pid': node.pid, 'ssh_pid': worker.process.pid,
++        save('local-processes.json', {'manager_pid': os.getpid(), 'web_pid': node.pid,
++            'ssh_pid': worker.process.pid if worker.process.poll() is None else None,
++            'startup_ssh_pid': worker.process.pid,
+             'web_url': 'http://127.0.0.1:9000', 'api_url': 'http://127.0.0.1:18080/v1',
+             'started_unix': time.time(), 'gpu_idle_release_seconds': 900,
+             'database_container': 'hop-v11-live-db-20261017-r1'})
+--- a/test_live_worker.py
++++ b/test_live_worker.py
+@@ -1,10 +1,14 @@
+-"""CPU-only synthetic checks; no model, network or child-process execution."""
++"""CPU-only synthetic checks; lifecycle subprocesses never load a model or use the network."""
+ from contextlib import nullcontext
+ import importlib.util
+ import io
+ import json
++import os
+ from pathlib import Path
+ import re
++import select
++import signal
++import subprocess
+ import sys
+ import tempfile
+ import threading
+@@ -86,6 +90,35 @@
+             thread.join(1)
+             self.assertFalse(thread.is_alive())
+         self.assertTrue(self.controller.stopping.is_set())
++
++    def test_pipe_reader_preserves_split_and_batched_frames(self):
++        request = self.generate()
++        read_end, write_end = os.pipe()
++        with os.fdopen(read_end, "rb") as reader, os.fdopen(write_end, "wb") as writer:
++            thread = threading.Thread(target=self.controller.read, args=(reader,))
++            thread.start()
++            writer.write(b'{"id":"c1","op":"cancel",')
++            writer.flush()
++            writer.write(b'"target_id":"r1"}\n{"id":"s1","op":"shutdown"}\n')
++            writer.flush()
++            thread.join(1)
++            self.assertFalse(thread.is_alive())
++        self.assertTrue(request.event.is_set())
++        self.assertEqual(self.controller.stop_reason, "shutdown")
++        self.assertEqual([event.get("id") for event in self.emissions], ["c1", "s1"])
++
++    def test_pipe_reader_rejects_oversized_and_incomplete_frames(self):
++        for raw in (b"x" * 21, b'{"id":'):
++            with self.subTest(raw=raw), patch.object(worker, "MAX_LINE_BYTES", 20):
++                events = []
++                controller = worker.Controller(lambda kind, **values: events.append({"kind": kind, **values}))
++                read_end, write_end = os.pipe()
++                with os.fdopen(read_end, "rb") as reader:
++                    with os.fdopen(write_end, "wb") as writer:
++                        writer.write(raw)
++                    controller.read(reader)
++                self.assertEqual(controller.stop_reason, "protocol_error")
++                self.assertEqual(events[0]["error"]["message"], "Invalid protocol frame")
+ 
+     def test_cancel_targets_only_current_request(self):
+         request = self.generate()
+@@ -211,6 +244,35 @@
+         self.assertTrue(backend.model.options["do_sample"])
+         self.assertEqual(backend.model.options["temperature"], 0.2)
+         self.assertEqual(backend.model.options["top_p"], 0.9)
++
++    def test_backend_enables_folded_decode_only_during_combined_qa_generation(self):
++        from inference_scope import FOLDED_DECODE
++        for stage, expected in [('turn_draft', True), ('turn_review', True),
++                                ('turn_draft_after_review', True), ('turn_review_after_review', True),
++                                ('state_observations', False), ('relationship_memory', False),
++                                ('report_draft', False), ('final_guide', False)]:
++            backend = fake_backend()
++            seen = []
++            backend.model.on_generate = lambda options: seen.append(FOLDED_DECODE.get())
++            content = json.dumps({'stage': stage, 'data': {}, 'output_schema': {}})
++            request = self.request(messages=[{'role': 'user', 'content': content}])
++            backend.generate(request)
++            self.assertEqual(seen, [expected], stage)
++            self.assertFalse(FOLDED_DECODE.get())
++
++    def test_backend_failure_restores_original_attention_for_next_final_generation(self):
++        from inference_scope import FOLDED_DECODE
++        backend = fake_backend()
++        def fail(options):
++            self.assertTrue(FOLDED_DECODE.get())
++            raise RuntimeError('synthetic failure')
++        backend.model.on_generate = fail
++        content = json.dumps({'stage': 'turn_review', 'data': {}, 'output_schema': {}})
++        with self.assertRaises(RuntimeError):
++            backend.generate(self.request(messages=[{'role': 'user', 'content': content}]))
++        self.assertFalse(FOLDED_DECODE.get())
++        backend.model.on_generate = lambda options: self.assertFalse(FOLDED_DECODE.get())
++        backend.generate(self.request())
+ 
+     def test_over_budget_prompt_is_rejected_without_truncation(self):
+         backend = fake_backend()
+@@ -312,5 +374,60 @@
+             self.assertEqual(json.loads(output.getvalue())["error"]["type"], "generation_failed")
+ 
+ 
++class ProcessLifecycleTests(unittest.TestCase):
++    def check_open_stdin_exit(self, mode):
++        code = r'''
++import json, os, resource, signal, sys, threading, types
++resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
++sys.path.insert(0, sys.argv[1])
++import live_worker as worker
++controller = worker.Controller(lambda *args, **kwargs: None)
++controller.ready = True
++signal.signal(signal.SIGTERM, lambda signum, frame: controller.stop("signal"))
++reader = threading.Thread(target=controller.read, args=(sys.stdin.buffer,), daemon=True)
++reader.start()
++print("ready", flush=True)
++worker.serve(controller, types.SimpleNamespace(), None,
++             idle_timeout=0.1 if sys.argv[2] == "idle" else 30)
++reader.join(timeout=1)
++print(json.dumps({"reason": controller.stop_reason, "reader_stopped": not reader.is_alive()}), flush=True)
++controller.closed.set()
++if reader.is_alive():
++    # A regression must fail without causing a macOS/Python crash dialog.
++    os._exit(3)
++'''
++        process = subprocess.Popen(
++            [sys.executable, "-I", "-B", "-c", code, str(Path(__file__).resolve().parent), mode],
++            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
++        try:
++            readable, _, _ = select.select([process.stdout], [], [], 5)
++            self.assertTrue(readable, "Lifecycle subprocess did not become ready")
++            self.assertEqual(process.stdout.readline().strip(), "ready")
++            if mode == "signal":
++                process.stdin.write('{"unfinished":')
++                process.stdin.flush()
++                process.send_signal(signal.SIGTERM)
++            # Keep stdin open: communicate() would close it and only test EOF.
++            exit_code = process.wait(timeout=5)
++            output, errors = process.stdout.read(), process.stderr.read()
++            self.assertEqual(exit_code, 0, (output, errors))
++            self.assertEqual(errors, "")
++            self.assertEqual(json.loads(output), {
++                "reason": "idle_timeout" if mode == "idle" else "signal", "reader_stopped": True})
++        finally:
++            if process.poll() is None:
++                process.kill()
++                process.wait(timeout=5)
++            process.stdin.close()
++            process.stdout.close()
++            process.stderr.close()
++
++    def test_idle_timeout_exits_cleanly_with_stdin_still_open(self):
++        self.check_open_stdin_exit("idle")
++
++    def test_sigterm_interrupts_an_unfinished_stdin_frame(self):
++        self.check_open_stdin_exit("signal")
++
++
+ if __name__ == "__main__":
+     unittest.main()

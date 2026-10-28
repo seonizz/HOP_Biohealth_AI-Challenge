@@ -1,0 +1,171 @@
+--- a/live_worker.py
++++ b/live_worker.py
+@@ -23,9 +23,8 @@
+ PROTOCOL = "hop-v11-live-v1"
+ MODEL_ID = "malssi-gemma4-31b-v11-epoch3"
+ MAX_LINE_BYTES = 8 * 1024 * 1024
+-MAX_INPUT_TOKENS = 4096
+-MAX_OUTPUT_TOKENS = 8192
+-MAX_CONTEXT_TOKENS = 12288
++from inference_budget import (MAX_INPUT_TOKENS, MAX_OUTPUT_TOKENS, MAX_CONTEXT_TOKENS,
++                              validate_inference_budget)
+ REQUEST_TIMEOUT = 600
+ IDLE_TIMEOUT = 900
+ CANCEL_GRACE = 15
+@@ -299,6 +298,9 @@
+         self.model.requires_grad_(False)
+         self.model.config.use_cache = True
+         self.model.config.get_text_config().use_cache = True
++        # Keep the documented long-input path: bounded prefill and grouped KV.
++        from grouped_attention import install_grouped_attention
++        install_grouped_attention()
+         require(all(not parameter.requires_grad and parameter.device.type == "cuda"
+                     for parameter in self.model.parameters()), "Inference must be frozen and GPU-only")
+         self.device = self.model.get_input_embeddings().weight.device
+@@ -309,6 +311,7 @@
+                          "checkpoint_sha256": chosen["manifest_sha256"], "checkpoint_step": chosen["step"],
+                          "adapter_sha256": adapter_sha, "campaign_sha256": admission["campaign_sha256"],
+                          "task": "conversation", "epoch": 3, "gpu_only": True,
++                         "prefill_chunk_size": 1024, "grouped_global_attention": True,
+                          "generation_profile": "greedy_at_temperature_zero_sampling_follows_request"}
+ 
+     def generate(self, request):
+@@ -321,8 +324,10 @@
+         prompt = self.tokenizer.apply_chat_template(messages, tokenize=False,
+             add_generation_prompt=True, enable_thinking=False)
+         ids = self.tokenizer(prompt, add_special_tokens=False, truncation=False)["input_ids"]
+-        require(0 < len(ids) <= MAX_INPUT_TOKENS and len(ids) + MAX_OUTPUT_TOKENS <= MAX_CONTEXT_TOKENS,
+-                "Prompt exceeds the input budget; no text was truncated")
++        try:
++            validate_inference_budget(len(ids), max_tokens)
++        except ValueError as error:
++            raise RequestError(str(error)) from None
+         if request.should_stop():
+             raise RequestError("Generation was cancelled or reached its deadline")
+         class CancelCriteria(self.criteria_base):
+@@ -330,6 +335,7 @@
+                 return request.should_stop()
+         options = {**self.generation_config(max_new_tokens=max_tokens),
+                    "cache_implementation": "dynamic", "disable_compile": True, "logits_to_keep": 1,
++                   "prefill_chunk_size": 1024,
+                    "stopping_criteria": self.criteria_list([CancelCriteria()])}
+         if temperature > 0:
+             options.update(do_sample=True, temperature=temperature, top_p=top_p)
+@@ -384,7 +390,9 @@
+         except RequestError as error:
+             controller.emit("reply", id=request.request_id, ok=False,
+                 error={"type": request.reason or "invalid_request", "message": str(error)})
+-        except Exception:
++        except Exception as error:
++            receipt.identity["failure_kind"] = ("out_of_memory" if type(error).__name__ == "OutOfMemoryError"
++                                                else "generation_failed")
+             controller.emit("reply", id=request.request_id, ok=False,
+                 error={"type": "generation_failed", "message": "GPU generation failed"})
+             controller.stop("generation_failed")
+--- a/local_live.py
++++ b/local_live.py
+@@ -23,6 +23,8 @@
+ sys.path.insert(0, str(ROOT / 'ai/trained_model_api'))
+ from backend import RequestError
+ from server import make_server
++from inference_budget import (safe_budget_error_message, MAX_INPUT_TOKENS,
++                              MAX_OUTPUT_TOKENS, MAX_CONTEXT_TOKENS)
+ 
+ def save(name, value):
+     target = HERE / name
+@@ -114,6 +116,9 @@
+             assert ready['checkpoint_sha256'] == self.expected['manifest_sha256']
+             assert ready['adapter_sha256'] == self.expected['adapter_parameters_sha256']
+             assert ready['checkpoint_path'] == self.expected['path']
++            assert ready['max_input_tokens'] == MAX_INPUT_TOKENS
++            assert ready['max_output_tokens'] == MAX_OUTPUT_TOKENS
++            assert ready['max_context_tokens'] == MAX_CONTEXT_TOKENS
+             self.ready = ready
+             self.verified_ssh_pid = self.process.pid
+         except BaseException:
+@@ -130,7 +135,11 @@
+         self.calls += 1
+         save('worker-status.json', {'state': 'ready', 'at': time.time(), 'remote_identity': self.ready, 'requests': self.calls})
+         if not reply.get('ok'):
+-            raise RequestError('GPU worker rejected the request: ' + str(reply.get('error', {}).get('type', 'request_error')))
++            detail = reply.get('error', {})
++            budget_message = safe_budget_error_message(detail.get('message'))
++            if budget_message is not None:
++                raise RequestError(budget_message)
++            raise RequestError('GPU worker rejected the request: ' + str(detail.get('type', 'request_error')))
+         return reply['result']
+ 
+     def close(self):
+@@ -150,7 +159,8 @@
+     pin = worker.expected
+     config = {'host': '127.0.0.1', 'port': 18080, 'model_id': 'malssi-gemma4-31b-v11-epoch3',
+         'checkpoint_step': pin['step'], 'checkpoint_sha256': pin['manifest_sha256'],
+-        'max_context_tokens': 12288, 'max_output_tokens': 8192, 'default_output_tokens': 512}
++        'max_input_tokens': MAX_INPUT_TOKENS, 'max_context_tokens': MAX_CONTEXT_TOKENS,
++        'max_output_tokens': MAX_OUTPUT_TOKENS, 'default_output_tokens': 512}
+     key = secrets.token_urlsafe(32)
+     server = make_server(config, worker, key, timing_log=None)
+     original = server.RequestHandlerClass
+--- a/test_live_worker.py
++++ b/test_live_worker.py
+@@ -199,6 +199,7 @@
+                          {"tokenize": False, "add_generation_prompt": True, "enable_thinking": False})
+         self.assertEqual(backend.tokenizer.tokenizer_options, {"add_special_tokens": False, "truncation": False})
+         self.assertEqual(backend.model.options["cache_implementation"], "dynamic")
++        self.assertEqual(backend.model.options["prefill_chunk_size"], 1024)
+         self.assertTrue(backend.model.options["disable_compile"])
+         self.assertEqual(backend.model.options["logits_to_keep"], 1)
+         self.assertFalse(backend.model.options["do_sample"])
+@@ -213,11 +214,24 @@
+ 
+     def test_over_budget_prompt_is_rejected_without_truncation(self):
+         backend = fake_backend()
+-        backend.tokenizer.ids = [12] * 4097
++        backend.tokenizer.ids = [12] * 65537
+         with self.assertRaises(worker.RequestError):
+             backend.generate(self.request(max_tokens=1))
+         self.assertIsNone(backend.model.options)
+-        self.assertEqual(len(backend.tokenizer.ids), 4097)
++        self.assertEqual(len(backend.tokenizer.ids), 65537)
++
++    def test_requested_output_not_global_maximum_reserves_context(self):
++        for input_tokens, output_tokens in [(4097, 1800), (65536, 4096), (61440, 8192)]:
++            backend = fake_backend()
++            backend.tokenizer.ids = [12] * input_tokens
++            result = backend.generate(self.request(max_tokens=output_tokens))
++            self.assertEqual(result['prompt_tokens'], input_tokens)
++            self.assertEqual(backend.model.options['max_new_tokens'], output_tokens)
++        backend = fake_backend()
++        backend.tokenizer.ids = [12] * 61441
++        with self.assertRaisesRegex(worker.RequestError, 'context budget'):
++            backend.generate(self.request(max_tokens=8192))
++        self.assertIsNone(backend.model.options)
+ 
+     def test_reserved_input_is_rejected_before_tokenization(self):
+         backend = fake_backend()
+@@ -250,6 +264,25 @@
+ 
+ 
+ class ServingTests(unittest.TestCase):
++    def test_generation_failures_record_only_a_source_free_category(self):
++        oom = type("OutOfMemoryError", (RuntimeError,), {})
++        for error_type, kind in ((oom, "out_of_memory"), (RuntimeError, "generation_failed")):
++            output = io.StringIO()
++            controller = worker.Controller(worker.Emitter(output))
++            controller.ready = True
++            controller.handle({"id": "r1", "op": "generate", "payload": payload()})
++            backend = fake_backend()
++            def fail(request):
++                raise error_type("private prompt or runtime diagnostic")
++            backend.generate = fail
++            with tempfile.TemporaryDirectory() as directory:
++                receipt = worker.Receipt(Path(directory), 123, 456)
++                worker.serve(controller, backend, receipt)
++                evidence = json.loads(receipt.path.read_text())
++                self.assertEqual(evidence["failure_kind"], kind)
++                self.assertEqual(controller.stop_reason, "generation_failed")
++                self.assertNotIn("private", output.getvalue() + receipt.path.read_text())
++
+     def test_idle_timeout_exits_and_receipt_contains_no_source(self):
+         output = io.StringIO()
+         controller = worker.Controller(worker.Emitter(output))
