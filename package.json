@@ -10,7 +10,7 @@
     "app:start": "npm --prefix app start",
     "ai:test": "cd ai && python3 -B -m unittest discover -s local_api -p 'test_*.py'",
     "ai:model-test": "node --env-file-if-exists=app/.env ai/scripts/test_model_question_sets.mjs",
-    "test:model-runner": "node --test ai/scripts/test_model_question_sets.test.mjs",
+    "test:model-runner": "node --test ai/scripts/test_model_question_sets.test.mjs ai/scripts/model_test_*.test.mjs",
     "test:evidence": "node --test ai/scripts/*evidence.test.mjs",
     "audit:git": "python3 -B tools/audit_git_privacy.py",
     "test:privacy": "python3 -B -m unittest discover -s tools -p 'test_audit_git_privacy.py' -v",

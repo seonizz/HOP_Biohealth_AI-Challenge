@@ -60,7 +60,7 @@ test('repetitions isolate gateways/context, retain diagnostics and distinguish n
   let created = 0, saved = 0;
   const cases = prepareSuite(input());
   const results = await runSuite(cases, {repeat:2, gatewayFactory:({diagnosticLogger, retryFailures}) => {
-    created++; assert.equal(retryFailures, false);
+    created++; assert.equal(retryFailures, undefined); // The app owns retry policy.
     return {model:'synthetic', protocol:'relationship_agent', async respond(context, memory) {
       assert.equal(memory, null); assert.equal(context.answered_count, 1); context.answered_count = 99;
       diagnosticLogger(trace()); diagnosticLogger({event:'model_operation_retry'});
@@ -90,6 +90,24 @@ test('errors and failed checks do not stop later cases; missing token usage rema
   assert.equal(JSON.stringify(rows).includes('credential'), false);
   assert.equal(summarize(rows, 3).prompt_tokens, null);
   assert.equal(summarize(rows, 3).expectation_pass_rate_denominator, 2);
+});
+
+test('new diagnostic events and longer retry sequences cannot break dynamic HTTP counts or output checks', async () => {
+  const suite=input(); suite.cases[0].expectations=[{path:'assessment.safety',operator:'equals',value:false}];
+  const [row]=await runSuite(prepareSuite(suite),{gatewayFactory:({diagnosticLogger})=>({
+    fetchImpl:async()=>new Response('{}'),
+    async respond() {
+      for(let attempt=1;attempt<=5;attempt++) {
+        await this.fetchImpl('http://synthetic.invalid/v1/chat/completions',{method:'POST'});
+        diagnosticLogger({...trace(),attempt,attempt_id:'a'+attempt,reason:attempt===5?'success':'future_repair_reason'});
+      }
+      diagnosticLogger({event:'future_scheduler_event'});
+      return answer();
+    },
+  })});
+  assert.equal(row.status,'passed'); assert.equal(row.http.summary.total,5);
+  assert.equal(row.metrics.attempt_count_verified,false); assert.equal(row.metrics.attempts,null);
+  assert.equal(row.trace.length,6);
 });
 
 test('deadline aborts a case and state mode uses updateState', async () => {
@@ -182,6 +200,13 @@ test('agent CLI describes its schema, validates offline and emits parseable JSON
     writeFileSync(inputPath, JSON.stringify(input()));
     const dry = await run(['--input', inputPath, '--dry-run']);
     assert.equal(dry.status, 0); assert.equal(JSON.parse(dry.stdout).model_called, false);
+    const pending = await run(['--input', inputPath, '--mode', 'workflow']);
+    const pendingFinal = JSON.parse(pending.stdout.trim().split('\n').at(-1)); outputs.push(pendingFinal.output);
+    assert.equal(pending.status,3,pending.stderr);
+    assert.equal(pendingFinal.summary.awaiting_input,1);
+    const pendingReport = JSON.parse(readFileSync(pendingFinal.artifacts.report));
+    assert.equal(pendingReport.results[0].workflow.next_question.id,'name');
+    assert.equal(pendingReport.results[0].http.summary.total,0);
     for (const safety of [false, true]) {
       const suite = input(); suite.cases[0].expectations = [{path:'assessment.safety',operator:'equals',value:safety}];
       writeFileSync(inputPath, JSON.stringify(suite));

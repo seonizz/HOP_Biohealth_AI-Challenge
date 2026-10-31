@@ -2,6 +2,8 @@
 
 AI 에이전트가 질문·답변 세트를 JSON으로 만들고 프로젝트의 실제 AI 경로를 호출해 결과를 분석하는 CLI입니다. `app/src/intake.js`의 입력 검증·문맥 구성과 `app/src/model-config.js`의 모델 설정, `ModelGateway.respond/updateState`를 재사용합니다. 웹 서버·DB 없이 실행하며 서비스 기록을 저장하지 않습니다. 새 의존성 설치는 필요 없고 프로젝트와 동일한 Node.js 24.14 이상 25 미만을 사용합니다.
 
+[실제 워크플로우 연결 검증 결과와 범위](MODEL_QUESTION_TESTS_VERIFICATION.md)
+
 ## 에이전트 실행 순서
 
 프로젝트 루트에서 실행합니다. 자동화는 npm의 안내 로그를 피하도록 아래 `node` 명령을 사용하세요. `--help`를 제외한 stdout은 **한 줄당 JSON 객체 하나(JSONL)**입니다. 최상위 오류도 stderr에 JSON 객체로 출력합니다.
@@ -21,6 +23,9 @@ node ai/scripts/test_model_question_sets.mjs --input INPUT.json --dry-run
 
 # 5. 설정된 모델로 실행. 결과 output/artifacts 경로를 읽어 분석
 node --env-file-if-exists=app/.env ai/scripts/test_model_question_sets.mjs --input INPUT.json --repeat 3 --timeout-ms 600000
+
+# 실제 앱의 문답·기억 갱신·질문 선택·최종 생성 흐름 재현
+node --env-file-if-exists=app/.env ai/scripts/test_model_question_sets.mjs --input INPUT.json --mode workflow
 ```
 
 `INPUT.json`은 `--init`이 반환한 절대경로로 바꿉니다. 입력 파일은 `ai/outputs/model-tests/private/` 안에서 관리하세요. `npm run ai:model-test -- ...`도 같은 도구를 실행합니다. 입력은 최대 5 MiB, 사례는 1~100개, 반복은 1~20회입니다. 사례별 제한 시간 기본값은 10분, 허용 범위는 1~86,400,000ms입니다. 사례는 순차 실행하며 한 사례의 모델 오류·기대값 불일치 후에도 다음 사례를 실행합니다.
@@ -62,7 +67,17 @@ MODEL_BASE_URL=http://127.0.0.1:11434/v1 MODEL_NAME=gemma4:12b \
 - `expectations`는 선택 사항입니다. `path`는 결과 객체 기준 점 경로이며 배열 인덱스도 가능합니다. `equals`는 JSON 값의 엄격한 구조 비교, `contains/not_contains`는 대소문자와 공백을 그대로 비교하는 문자열 검사, `exists`는 필드 존재 검사입니다. `exists`에는 `value`를 넣지 않습니다. 없는 필드의 `not_contains`도 실패합니다.
 - `exists`는 비어 있지 않음이나 의미 품질을 보장하지 않습니다. 기대값 없는 사례는 `completed`로 표시하며 `passed`로 계산하지 않습니다.
 
-`--mode final`(기본값)은 전체 생성 경로로 카드·상태·관계 분석 등 해당 프로토콜이 반환하는 결과를 저장합니다. `--mode state`는 상태 갱신·기억·질문 선택 결과만 테스트합니다. 두 모드 모두 각 사례의 입력 스냅샷에서 시작하며, 순차 대화 재현이나 이전 사례 기억 전달은 하지 않습니다. `state`에서 `guide.script` 같은 최종 카드 경로를 검사하면 실패하므로 해당 모드의 출력 경로로 기대값을 바꿉니다. 기본 템플릿은 `final`용입니다.
+`--mode final`(기본값)은 완성된 입력 스냅샷에서 전체 최종 생성 경로를 호출합니다. 카드·상태·관계 분석 등 해당 프로토콜이 반환하는 결과를 저장하고 앱의 `applyModelUpdate`까지 통과해야 완료됩니다. `--mode state`는 같은 스냅샷의 상태·기억 갱신을 검사합니다. 스냅샷에는 활성 다음 질문 후보가 없으므로 **state 모드는 실제 다음 질문 선택 검증이 아닙니다**. `state`에서 `guide.script` 같은 최종 카드 경로를 검사하면 실패합니다. 기본 템플릿은 `final`용입니다.
+
+### 실제 문답 workflow 모드
+
+`--mode workflow`는 서비스와 같은 `createIntake → currentView → prepareModelAnswer → buildContext → gateway.updateState → completeModelAnswer`를 답변마다 사용합니다. 이전 답변에서 승인된 기억을 다음 호출에 넘기고, 앱 상태가 `ready`가 되면 `gateway.respond → applyModelUpdate`를 실행합니다. 모델 호출·검토·재시도·병렬 스케줄링은 현재 앱 코드와 `configuredModelGateway` 설정이 결정합니다. 테스트 코드에는 단계명 목록이나 예상 호출 횟수·고정 호출 순서가 없습니다.
+
+`answers`는 에이전트가 명시적으로 제공한 답변 풀입니다. 배열 순서와 관계없이 앱이 현재 요청한 `question_id` 및 `follow_up`에 맞는 첫 미사용 답변을 제출합니다. 앱이 질문을 생략하면 해당 입력은 미사용으로 남고 근거로 들어가지 않습니다. 후속 질문에는 같은 ID와 `"follow_up":true`를 가진 별도 답변을 제공하세요. 명확화 질문도 앱이 반환한 ID로 제공합니다. 최대 답변 수는 400개이며, 문항별 의미 검증은 실제 선택된 질문을 제출할 때 앱이 수행합니다. 따라서 workflow의 `--dry-run`은 구조 검증만 하고 `validation_scope`로 이를 알립니다.
+
+현재 질문의 답변이 없으면 생성하거나 강제로 생략하지 않고 `status:awaiting_input`, 종료 코드 **3**을 반환합니다. `results[].workflow.next_question`의 질문·보기·후속 여부를 읽어 입력을 추가하세요. `turns`에는 선택된 질문, 후보 ID, 문맥 해시, 이전 기억 유무, 승인된 모델 결과가 있고 `unused_answers`에는 사용하지 않은 입력 인덱스가 있습니다. 미완료 대화의 최종 기대값은 채점하지 않습니다. 현재 CLI는 재실행 시 처음부터 재현하므로 답변 추가 후 다시 실행하면 이전 턴도 다시 호출합니다.
+
+workflow는 **서비스의 메모리 내 문답·AI 경로**를 검사합니다. HTTP 인증·CSRF·revision 충돌·DB 저장·기록 재조회·화면 렌더링 검사는 기존 앱 통합 테스트의 범위입니다. 사례마다 새 게이트웨이와 대화를 만들지만 한 사례 안에서는 실제 앱처럼 같은 게이트웨이·기억을 유지합니다. 재시도 기본값도 앱과 같으며, 테스트 전체가 끝나지 않는 상황을 막는 사례별 제한 시간만 별도로 적용합니다.
 
 기본 문항은 `app/seeds/questions.json`입니다. 다른 질문 은행을 쓰려면 앱과 동일한 행 형식의 파일을 `--questions ROWS.json`으로 지정합니다. DB에서 수정한 문항은 자동으로 조회하지 않으므로 같은 내용을 명시적으로 제공해야 합니다. `--init`은 기본 질문 은행만 사용합니다.
 
@@ -72,7 +87,7 @@ MODEL_BASE_URL=http://127.0.0.1:11434/v1 MODEL_NAME=gemma4:12b \
 
 | 파일 | 내용 |
 |---|---|
-| `report.json` | 입력·질문·앱 소스·실행기 해시, 모델 설정 식별값, 사례별 전체 생성 결과, 기대값/실제값/판정, 단계, 진행 이벤트, 진단 이벤트, 오류, 호출·토큰·시간 통계 |
+| `report.json` | v2 규격. 입력·질문·앱 소스·실행기 모듈 해시, 모델 설정 식별값, 사례별 전체 생성 결과, 기대값/실제값/판정, 턴, 카드 이벤트, 단계, 진행·진단 이벤트, 오류, 실제 HTTP 호출·토큰·시간 통계 |
 | `results.csv` | 사례·반복별 결과, 오류, 답변 수, 안전 플래그, 기대값 통과 수, 호출/재시도/토큰/시간 비교. UTF-8 BOM 포함 |
 | `summary.md` | 완료·통과·불일치·오류 수와 사례별 요약 |
 
@@ -80,7 +95,9 @@ MODEL_BASE_URL=http://127.0.0.1:11434/v1 MODEL_NAME=gemma4:12b \
 
 `results[].checks`에서 기대값 불일치의 경로와 `actual`을 읽어 다음 테스트를 설계하세요. `summary.expectation_pass_rate`는 **생성에 성공하고 기대값이 있는 사례 실행만** 분모로 씁니다. 실행 오류는 `errors`, 기대값 없는 생성은 `without_expectations`에 따로 기록됩니다. 성공률 판단 시 이 세 항목을 함께 확인합니다.
 
-호출 통계는 기존 `attemptMetrics` 검증기를 재사용합니다. 지원하는 세 진단 이벤트(`model_attempt`, `model_retry_wait`, `model_request_failure`)로 계산하며 나머지는 `trace`에 보존하고 `excluded_diagnostic_events`에 셉니다. 검증할 수 없는 호출 수나 제공되지 않은 토큰 수는 `null`이고 CSV에서는 빈칸입니다. 토큰 수는 HTTP 응답 제공값이며 GPU 연산량이나 비용이 아닙니다. 재시도 통계는 해당 검증기의 시도 번호 기준이며 전체 작업 재시작 횟수와 같지 않습니다.
+**호출 수는 `results[].http.summary`를 먼저 읽습니다.** 실제 writer/reviewer의 `fetchImpl` 호출을 감싸 기록하므로 재시도 횟수나 단계 이름이 바뀌어도 집계됩니다. `total`은 모든 HTTP 요청, `by_route.chat_completions`는 모델 생성 요청, `by_route.model_discovery`는 모델 설정 조회입니다. 각 `http.calls`에는 시작·응답 헤더 도착/실패 시각, 역할, HTTP 상태가 있습니다. URL·키·요청 본문은 기록하지 않으며 응답 스트림을 읽거나 복제하지 않습니다. 원래 앱의 Promise 실행 순서와 스트림 소비를 유지합니다.
+
+`peak_outstanding_until_headers`는 **응답 헤더를 받기 전 미완료 HTTP 요청의 최대 수**입니다. 스트리밍 생성 전체의 동시성이나 실제 GPU 병렬 추론 수가 아닙니다. 앱이 순차/병렬 실행을 바꾸면 관측값이 따라 바뀌며, 이 값 자체를 합격 조건으로 고정하지 않습니다. 기존 `metrics`는 `attemptMetrics`의 상세 진단·토큰 통계를 보조적으로 제공합니다. 지원하는 세 이벤트(`model_attempt`, `model_retry_wait`, `model_request_failure`) 외 이벤트도 전체 `trace`에 보존합니다. 진단 규격이나 재시도 한도가 바뀌어 기존 검증기가 해석하지 못하면 상세 수치는 `null`로 남으며, 독립 HTTP 관측 및 모델 결과 판정은 계속 동작합니다. 제공되지 않은 토큰 수는 `null`/CSV 빈칸이며 비용이나 GPU 연산량을 의미하지 않습니다.
 
 보고서는 사례 완료마다 갱신합니다. SIGINT/SIGTERM으로 중단하면 현재 요청을 취소하고 부분 보고서와 종료 코드 130을 남깁니다. 강제 종료나 디스크 오류에는 마지막 기록까지만 남을 수 있습니다. API 키·환경변수 전체·원시 예외 메시지는 보고하지 않습니다. 입력/응답과 원문 인용은 개인정보를 포함할 수 있으므로 보고서는 기존 Git 제외 경로 `ai/outputs/model-tests/private/`에만 저장하고 업로드하지 않습니다. 일반 파일 권한은 0600, 실행 폴더는 0700입니다.
 
@@ -89,6 +106,7 @@ MODEL_BASE_URL=http://127.0.0.1:11434/v1 MODEL_NAME=gemma4:12b \
 | 0 | 입력 검증 또는 생성 완료. 기대값 없는 완료도 포함하므로 `passed`와 혼동하지 않기 |
 | 1 | 모델 오류 또는 기대값 불일치. 결과 파일을 읽고 원인 분류 |
 | 2 | 입력·설정·실행기 오류. stderr의 JSON 오류 코드를 읽고 수정 |
+| 3 | workflow에 현재 질문 답변이 없음. `workflow.next_question`을 보고 명시적인 답변 추가 |
 | 130 | 취소됨. 남은 사례와 부분 보고서 확인 |
 
 이 도구의 필드·키워드 검사 통과는 사실성·상담 적절성·임상 효과를 증명하지 않습니다. `human_review:pending`을 유지하며, 모델 성능과 시간 수치를 프로젝트 대회 점수로 환산하지 않습니다. 질문 선택의 적절성과 근거 없는 사실 생성은 별도로 검토합니다.
@@ -100,4 +118,4 @@ npm run test:model-runner
 node --test app/tests/test-intake.test.js ai/scripts/evaluation_evidence.test.mjs
 ```
 
-실제 `ModelGateway`와 가짜 HTTP 응답을 연결해 직렬화·앱 검증·진단 기록을 검사하고, 입력 오류, 반복 격리, 기대값 비교, 제한 시간, 취소, 보고서와 권한을 회귀 검증합니다. 이 테스트 통과는 실제 모델 서버의 접속·생성 품질을 검증한 결과가 아닙니다.
+실제 `ModelGateway`와 가짜 HTTP 응답을 연결해 직렬화·앱 검증·진단 기록을 검사하고, 입력 오류, 반복 격리, 기대값 비교, 제한 시간, 취소, 보고서와 권한을 회귀 검증합니다. workflow 검사는 실제 intake 함수로 기억 전달, 생략, 후속 질문, 입력 부족 시 중단, 최종 반영 거절을 확인합니다. 관측기 검사는 호출 횟수 변화, 순차/병렬 처리, reviewer, 스트림·반환값·예외 보존을 검증합니다. 이 자동 테스트만으로 실제 모델 서버의 생성 품질을 입증하지 않습니다.
