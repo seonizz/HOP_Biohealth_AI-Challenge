@@ -158,3 +158,16 @@ JSON 재작성에는 해당 단계에서 검증에 실패한 직전 출력과 �
 | HTTP 요청·응답과 오류 | [API 계약](docs/API.md), [OpenAPI](docs/openapi.json) |
 
 정리 전 설명과 당시 검증 기록은 [원문 보관](../archive/08_문서통합_원문/app/README.md)에 남깁니다.
+
+## 추가 질문 화면 로컬 미리보기
+
+실제 모델 호출 없이 예시 관계도·원본 카드·추가 대화·새 카드를 확인하는 별도 실행기입니다. 기존 화면과 저장 API를 사용하고, 브라우저 세션마다 `[예시] 친구 민서` 기록을 만듭니다. 상단에 미리보기 표시가 나오며 응답과 새 카드는 고정 예시입니다. 실제 상담 내용은 입력하지 않습니다.
+
+격리한 로컬 PostgreSQL의 **`hop_followup_preview`** DB만 허용합니다. `.env`와 운영 `DATABASE_URL`을 읽지 않으며 서버는 `127.0.0.1`에만 바인딩합니다. 아래 포트는 별도로 만든 미리보기 DB 포트에 맞춥니다.
+
+```sh
+PREVIEW_DATABASE_URL=postgresql://postgres@127.0.0.1:49488/hop_followup_preview \
+PREVIEW_PORT=9011 node scripts/preview-continuations.js
+```
+
+[미리보기 기록 화면](http://127.0.0.1:9011/records)에서 **추가 질문하기**를 누릅니다. 이미 저장된 예시 추가 대화와 새 카드를 볼 수 있고, 입력·수정·삭제·새 카드 버튼을 시험할 수 있습니다. 실행기는 임의 이름의 전용 스키마를 만들며 정상 종료(`Ctrl+C`/`SIGTERM`) 시 그 스키마만 삭제합니다. 강제 종료로 남은 스키마는 시작 출력의 `schema`로 구분하고, 다른 스키마·DB는 정리하지 않습니다.

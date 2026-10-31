@@ -172,8 +172,17 @@ const ContinuationScreen={
     if(this.busy||!this.row||(this.row.pending&&!this.editing))return;
     const text=$("continuationText").value;
     if(!skipped&&!hasAnswerContent(text)){this.notice('질문이나 상황을 입력해 주세요.');return;}
-    if(this.editing)return this.perform('corrections',{answer_ref:this.editing,replacement:text});
+    if(this.editing){
+      const retry=this.retryAction;
+      if(retry?.action==='corrections'&&retry.body?.answer_ref===this.editing&&retry.body.replacement===text)return this.perform('corrections',{},retry.body);
+      return this.perform('corrections',{answer_ref:this.editing,replacement:text});
+    }
     const clarification=this.latestClarification();
+    const retry=this.retryAction;
+    // The server may have saved a turn even when its response was lost. The
+    // ordinary Send button must retain the same replay key just like Retry.
+    if(retry?.action==='messages'&&retry.body?.text===(skipped?'':text)&&Boolean(retry.body.skipped)===skipped&&
+      (!skipped||retry.body.reply_to===clarification?.id))return this.perform('messages',{},retry.body);
     return this.perform('messages',{text:skipped?'':text,...(clarification?{reply_to:clarification.id}:{}),...(skipped?{skipped:true}:{})});
   },
   async perform(action,input={},retryBody){

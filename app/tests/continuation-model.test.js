@@ -80,3 +80,16 @@ test('independently reviewed danger omitted from facts remains bound in the new 
   assert.equal(context.safety_signal.review.basis,'current_physical_danger');
   assert.throws(()=>continuationCardContext(record,messages,draft,{...safety,evidence:[{subject:'supporter',question_id:'invented',quote:'없는 위험 보고'}]}),{code:'MODEL_INVALID_RESPONSE'});
 });
+
+test('superseded mood and gap observations cannot survive through the profile observation alias',()=>{
+  for(const id of ['mood','gap_obs']) {
+    const record=original(),stale='친구가 며칠째 잠을 못 잔다고 했어요.';
+    record.context.patient.fields[id]=field(id,stale);record.context.profileInput.obs=stale;
+    record.context.payload.answers.push(field(id,stale));
+    const messages=[message('정정할게요. 친구는 잠을 잘 자고 있어요.')];
+    const source=continuationInput(record,messages).original_sources.find(s=>s.question_id===id);
+    const context=continuationCardContext(record,messages,{answer:'정정한 내용을 참고할게요.',clarification:null,
+      facts:[{message_id:messages[0].id,subject:'patient',quote:messages[0].text}],superseded:[source.source_id]});
+    assert.equal(context.profileInput.obs,'');assert.equal(record.context.profileInput.obs,stale);
+  }
+});

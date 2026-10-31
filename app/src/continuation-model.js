@@ -66,6 +66,10 @@ export function continuationCardContext(record, messages, reviewed, safety) {
     context.payload.answers=context.payload.answers.filter(a=>a.id!==source.question_id);
     if (context.profileInput?.answers) delete context.profileInput.answers[source.question_id];
     if (context.profileInput && Object.hasOwn(context.profileInput,source.question_id)) context.profileInput[source.question_id]='';
+    // Intake stores mood.custom / gap_obs under the separate obs alias too.
+    // Removing the source field alone would leave that old report in new cards.
+    if (['mood','gap_obs'].includes(source.question_id)&&context.profileInput.obs&&
+      input.original_sources.some(row=>row.question_id===source.question_id&&row.text.includes(context.profileInput.obs))) context.profileInput.obs='';
     if (source.question_id==='name') {context.name_index=null;context.patient.alias='그분';context.profileInput.name='그분';context.payload.name='그분';}
     if (source.question_id==='rel') context.patient.relationship=null;
   }

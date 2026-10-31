@@ -166,4 +166,6 @@ dbtest('finishing an unreviewed correction does not summarize superseded earlier
   const done=await f.request(f.session,`/api/continuations/${row.id}/complete`,'POST',{revision:row.revision,request_id:randomUUID()});
   assert.equal(done.status,200);assert.equal(done.data.continuation.summary.includes('오늘 친구를 만났어요'),false);
   assert.equal((await pending).status,409);
+  const repeated=await f.request(f.session,`/api/continuations/${row.id}/complete`,'POST',{revision:done.data.continuation.revision,request_id:randomUUID()});
+  assert.equal(repeated.status,200);assert.equal(repeated.data.continuation.summary.includes('오늘 친구를 만났어요'),false);
 });

@@ -120,7 +120,12 @@ export function createContinuations({store,gateway,sharedRun,subscribeRun}) {
       if(action==='cards'&&!row.state.messages.some(m=>m.role==='user'&&!m.skipped))throw new HttpError(409,'NO_NEW_FACTS','추가 상황을 먼저 들려주세요.');
       try {
         row=await store.updateContinuation(owner,id,row.revision,state=>{
-          if(action==='messages')state.messages.push({id:randomUUID(),role:'user',kind:data.skipped?'skipped':'question',text:data.text,skipped:data.skipped,reply_to:data.reply_to});
+          if(action==='messages') {
+            state.messages.push({id:randomUUID(),role:'user',kind:data.skipped?'skipped':'question',text:data.text,skipped:data.skipped,reply_to:data.reply_to});
+            // A new report can correct any previously reviewed fact. Until its
+            // own review succeeds, no old fact set may summarize this revision.
+            state.reviewed=null;
+          }
           state.requests[rid]={action,hash,status:'pending'};
           state.pending={action,request_id:rid,input:{...input},resume_status:state.status};
           // A completed older round may generate cards while a newer round is

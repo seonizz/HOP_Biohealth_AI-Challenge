@@ -230,3 +230,19 @@ test('continuation draft namespace survives original-draft initialization and pu
   assert.equal(h.saved.has(h.screen.draftKey()),true);
   assert.equal(h.saved.has('malssi.conversation-drafts.v1.current'),true);
 });
+
+test('Send after a lost success response reuses the request ID instead of duplicating a saved message',async()=>{
+  let attempts=0;
+  const h=harness(async path=>{
+    if(path.endsWith('/messages')) {
+      if(++attempts===1)throw Object.assign(new Error('응답 연결 끊김'),{status:0});
+      return {continuation:row({revision:2,messages:[{id:'u1',role:'user',text:answer},{id:'a1',role:'assistant',text:'저장된 답변'}]})};
+    }
+    if(path===`/api/continuations/${id}`)return {continuation:row({revision:2,messages:[{id:'u1',role:'user',text:answer},{id:'a1',role:'assistant',text:'저장된 답변'}]})};
+    return {continuations:[]};
+  });
+  h.node('continuationText').value=answer;h.node('continuationText').oninput();await h.screen.send();
+  await h.screen.send();
+  const posts=h.calls.filter(c=>c.path.endsWith('/messages'));
+  assert.equal(posts.length,2);assert.equal(posts[0].options.body.request_id,posts[1].options.body.request_id);
+});
