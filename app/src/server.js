@@ -16,6 +16,7 @@ import { PROMPT_VERSION } from './relationship-prompts.js';
 import { createReferralGuidance } from './referral-guidance.js';
 import { configuredReferralProvider } from './referral-runtime.js';
 import { createTestRuns } from './test-runs.js';
+import { createContinuations } from './continuations.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -116,6 +117,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   } catch (error) { await store.close(); throw error; }
   const resultRuns = new Map();
   const modelRuns = new Map();
+  const continuations = createContinuations({store,gateway,sharedRun,subscribeRun});
   const testRuns = createTestRuns({ gateway, questionSet:() => store.questionSet() });
   const cancelRuns = (owner, id, reason = revisionConflict(), keepRevision) => {
     for (const runs of [modelRuns, resultRuns]) for (const [key, run] of runs) {
@@ -124,6 +126,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       runs.delete(key);
     }
     referral.cancel(owner, id, reason, keepRevision);
+    continuations.cancel(owner,id,reason);
     if (id === undefined) testRuns.cancelOwner(owner);
   };
   const view = row => ({ id: row.id, revision: row.revision, name:row.state.name, chat_title:row.state.chatTitle || '', ...currentView(row.state), log: row.state.log,
@@ -158,7 +161,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if (!['GET','HEAD'].includes(method)) throw new HttpError(405, 'METHOD_NOT_ALLOWED', '허용되지 않은 요청이에요.');
         let decoded;
         try { decoded = decodeURIComponent(path); } catch { throw new HttpError(400, 'INVALID_PATH', '주소를 확인해 주세요.'); }
-        const screenPath=/^\/(?:about|records(?:\/\d+)?|columns(?:\/[a-zA-Z0-9_-]+)?|(?:chat|result)(?:\/[a-f0-9-]{36})?)\/?$/i.test(decoded);
+        const screenPath=/^\/(?:about|records(?:\/\d+)?|columns(?:\/[a-zA-Z0-9_-]+)?|(?:chat|result|continuations)(?:\/[a-f0-9-]{36})?)\/?$/i.test(decoded);
         const file = resolve(ROOT, '.' + (decoded === '/' || screenPath ? '/index.html' : decoded));
         if (!file.startsWith(ROOT.endsWith(sep) ? ROOT : ROOT + sep) || !MIMES[extname(file)] || decoded.split('/').some(part => part.startsWith('.'))) throw new HttpError(404, 'NOT_FOUND', '페이지를 찾을 수 없어요.');
         try {
@@ -213,6 +216,19 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (!browser) throw new HttpError(401, 'SESSION_REQUIRED', '앱을 새로고침해 주세요.');
       if (!['GET','HEAD'].includes(method) && !safeEqual(req.headers['x-csrf-token'], browser.csrf)) throw new HttpError(403, 'CSRF_REJECTED', '앱을 새로고침한 뒤 다시 시도해 주세요.');
       const owner = browser.id;
+      const continuationListMatch = /^\/api\/records\/(\d+)\/continuations$/.exec(path);
+      if(continuationListMatch) {
+        if(method==='GET')return json(res,200,await continuations.list(owner,continuationListMatch[1]));
+        if(method==='POST')return json(res,201,await continuations.create(owner,continuationListMatch[1],await body(req)));
+      }
+      const continuationMatch = /^\/api\/continuations\/([^/]+)(?:\/(messages|corrections|complete|cards))?$/.exec(path);
+      if(continuationMatch) {
+        const [,id,action]=continuationMatch;
+        if(!UUID.test(id))throw notFound();
+        if(method==='GET'&&!action)return json(res,200,await continuations.get(owner,id));
+        if(method==='DELETE'&&!action)return json(res,200,await continuations.remove(owner,id));
+        if(method==='POST'&&action)return json(res,200,await continuations.mutate(owner,id,action,await body(req),{signal:request.signal,requestId}));
+      }
       const testMatch = /^\/api\/test-runs\/([^/]+)(\/progress)?$/.exec(path);
       if (testMatch) {
         const [,id,progress] = testMatch;
@@ -442,12 +458,12 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   server.requestTimeout = 15000;
   server.headersTimeout = 10000;
   const cleanupTimer = setInterval(() => {
-    cleanup().catch(() => console.error(JSON.stringify({event:'retention_cleanup_failed'})));
+    cleanup().then(()=>continuations.prune()).catch(() => console.error(JSON.stringify({event:'retention_cleanup_failed'})));
   }, retentionCleanupMs);
   cleanupTimer.unref();
   let storeClosing, shutdownRun;
   const closeStore = () => storeClosing ||= store.close();
-  server.on('close', () => { clearInterval(cleanupTimer); closeStore().catch(() => {}); });
+  server.on('close', () => { clearInterval(cleanupTimer); continuations.close(); closeStore().catch(() => {}); });
   const shutdown = () => shutdownRun ||= (async () => {
     // An unlimited model retry must stop before graceful HTTP close waits for
     // its response. These runs all belong to this app instance.
@@ -456,6 +472,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       runs.clear();
     }
     referral.shutdown();
+    continuations.close();
     testRuns.shutdown();
     await new Promise((resolve, reject) => {
       server.close(error => error && error.code !== 'ERR_SERVER_NOT_RUNNING' ? reject(error) : resolve());

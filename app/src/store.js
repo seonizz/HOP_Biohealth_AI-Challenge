@@ -7,6 +7,7 @@ import { buildContext } from './intake.js';
 import { normalizeAnswerContext } from './answer-sources.js';
 import { initialQuestionRows, createQuestionSet } from './question-bank.js';
 import { referralSnapshotFingerprint } from './referral-guidance.js';
+import * as continuationStore from './continuation-store.js';
 
 const { Pool } = pg;
 const digest = value => createHash('sha256').update(value).digest('hex');
@@ -56,7 +57,7 @@ export class Store {
         await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
           version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`);
-        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql', '008_record_access_keys.sql']) {
+        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql', '008_record_access_keys.sql', '009_continuations.sql']) {
           const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8');
           const checksum = digest(source);
           const applied = await client.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
@@ -90,6 +91,12 @@ export class Store {
   }
 
   async close() { await this.pool.end(); }
+
+  createContinuation(owner, recordId, epoch, requestId) { return continuationStore.createContinuation(this, owner, recordId, epoch, requestId); }
+  listContinuations(owner, recordId) { return continuationStore.listContinuations(this, owner, recordId); }
+  getContinuation(owner, id) { return continuationStore.getContinuation(this, owner, id); }
+  updateContinuation(owner, id, revision, mutate, options) { return continuationStore.updateContinuation(this, owner, id, revision, mutate, options); }
+  deleteContinuation(owner, id) { return continuationStore.deleteContinuation(this, owner, id); }
 
   async questionSet() {
     const result = await this.pool.query(`SELECT id,kind,sort_order,enabled,subject,definition FROM questions

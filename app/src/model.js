@@ -1,4 +1,5 @@
 import {finalEvidenceTransport} from './final-evidence-transport.js';
+import {generateContinuation} from './continuation-model.js';
 import { HttpError } from './errors.js';
 import { modelHttpFetch } from './model-http.js';
 import { JSON_STREAM_COMPLETE, ModelStreamError, streamJsonResponse, schemaArrayLimit, schemaPropertyArrayLimits, schemaStringLimit } from './model-stream.js';
@@ -627,6 +628,10 @@ export class ModelGateway {
       // a later request, diagnostics or persisted conversation state.
       for(const key of Object.keys(recovery))delete recovery[key];
     }
+  }
+
+  async continueConversation(input, options = {}) {
+    return generateContinuation(this, input, options);
   }
 
   async respond(context, priorMemory = null, options = {}) {

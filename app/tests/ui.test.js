@@ -38,6 +38,16 @@ class Element {
   removeAttribute(name) { delete this.attributes[name]; }
   set textContent(value) { this.children = []; this._text = String(value); }
   get textContent() { return this._text + this.children.map(child => child.textContent).join(''); }
+  get innerHTML() {
+    // Browser += reads the existing markup before replacing it. Keep the real
+    // component's earlier cards/buttons when a later section is appended.
+    const markup = element => {
+      const attributes = Object.entries(element.attributes).map(([name, value]) => ` ${name}="${value}"`).join('');
+      const opening = `<${element.tagName}${attributes}>`;
+      return ['img', 'input', 'br', 'hr'].includes(element.tagName) ? opening : opening + element.innerHTML + `</${element.tagName}>`;
+    };
+    return this._text + this.children.map(markup).join('');
+  }
   set innerHTML(html) {
     this.children = []; this._text = ''; const stack = [this];
     for (const token of String(html).match(/<[^>]+>|[^<]+/g) || []) {
@@ -1420,4 +1430,19 @@ test('opening a record with a key renders it without importing ownership or key-
   assert.match(document.getElementById('rdetail').textContent,/보관한 기록/);
   assert.equal(document.getElementById('createRecordKey'),null);
   assert.equal(document.getElementById('revokeRecordKey'),null);
+});
+
+test('additional-question entry survives appended key controls without replacing original record cards',()=>{
+  const document=documentWith(['rdetail']),opened=[];
+  const record={id:22,title:'원래 기록',date:'2026-11-01T00:00:00Z',profile:{},guide:{top:'통합',script:'원래 대화문',next:'원래 다음 단계'},log:[]};
+  const context=vm.createContext({document,M:{},GuideCards:{doAvoid:()=>'',speech:g=>`<div class="card script">${g.script}</div>`,next:g=>`<div class="card next">${g.next}</div>`,bindCopy(){}},ContinuationScreen:{start:id=>opened.push(id)}});
+  vm.runInContext(script('core/utils.js')+script('components/RecordsScreen.js')+'\nglobalThis.screen=RecordsScreen;',context);
+  context.screen.renderDetail(record);
+  assert.equal(document.getElementById('rdetail').querySelector('.script').textContent,'원래 대화문');
+  assert.equal(document.getElementById('rdetail').querySelector('.next').textContent,'원래 다음 단계');
+  assert.ok(document.getElementById('createRecordKey'));
+  document.getElementById('recordContinue').click();assert.deepEqual(opened,[22]);
+  context.screen.renderDetail(record,true);
+  assert.equal(document.getElementById('recordContinue'),null);
+  assert.equal(document.getElementById('rdetail').querySelector('.script').textContent,'원래 대화문');
 });

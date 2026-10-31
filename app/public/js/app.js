@@ -1,5 +1,5 @@
 // 익명 세션과 서버 저장 상태를 읽은 뒤 화면을 시작해요.
-const SCREENS=[StartScreen,ChatScreen,ResultScreen,AboutScreen,RecordsScreen,ColumnsScreen];
+const SCREENS=[StartScreen,ChatScreen,ResultScreen,AboutScreen,RecordsScreen,ColumnsScreen,ContinuationScreen];
 async function startApp(){
   $("app").innerHTML='<p class="note" role="status">말씨를 준비하고 있어요.</p>';
   try{

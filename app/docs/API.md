@@ -16,6 +16,14 @@
 | `POST /api/intakes/:id/result` | `{revision}`로 실제 모델 결과 생성·저장; 완료 재시도는 기존 기록 반환 |
 | `GET /api/records` | `{records, incomplete_intakes, conversation_epoch}` 최신순 완료 기록 및 미완료 요약 |
 | `GET /api/records/:id` | `{record}` 상세 |
+| `POST /api/records/:id/continuations` | `{request_id,conversation_epoch}`로 추가 대화 시작/활성 회차 재개; `201 {continuation}` |
+| `GET /api/records/:id/continuations` | `{continuations}` 원본에 연결된 회차 메타데이터; 생성 순서 |
+| `GET /api/continuations/:id` | `{continuation}` 저장된 메시지·대기 요청·새 카드 복원 |
+| `POST /api/continuations/:id/messages` | `{revision,request_id,text,reply_to?,skipped?}`로 추가 질문/상황 전송; `{continuation}` |
+| `POST /api/continuations/:id/corrections` | `{revision,request_id,answer_ref,replacement}`로 사용자 메시지 정정; `{continuation}` |
+| `POST /api/continuations/:id/cards` | `{revision,request_id}`로 검증된 추가 상황의 새 카드 생성; `{continuation,card}` |
+| `POST /api/continuations/:id/complete` | `{revision,request_id}`로 추가 대화 마치기; `{continuation}` |
+| `DELETE /api/continuations/:id` | 선택 회차 삭제·이후 파생 내용 무효화; `{deleted:true}` |
 | `DELETE /api/records/:id` | 기록과 연결된 대화/상태 이력 삭제; `{deleted, intake_id}` |
 | `DELETE /api/intakes/:id` | 완료 여부와 무관하게 대화와 결과·상태·이력 삭제; `{deleted, record_ids}` |
 | `DELETE /api/conversations` | 소유자의 완료·미완료 대화/결과 전체 삭제; `{deleted, conversation_epoch}`. 칼럼 상태 유지 |
@@ -54,6 +62,45 @@
 모델 호출이 필요한 답변은 원문을 먼저 `modelPending` 대기 상태로 저장하며 모델 실패 시 502/503/504 오류를 반환합니다. 다음 기본 질문으로 넘어가지 않습니다. 같은 답변으로 재시도하면 답변을 중복 저장하지 않고 모델 호출을 다시 진행합니다. 실패한 답변을 수정하면 해당 질문 직전 상태를 기준으로 대기 답변을 교체하며 수정 전 원문은 버전 이력에 남습니다. 현재 `relationship_agent`는 명시적 사용자 건너뛰기도 모델 상태 갱신을 거칩니다. 모델 미설정 경로와 기존 프로토콜의 건너뛰기 처리는 호환용 질문 진행 규칙을 사용합니다.
 
 `GET /api/intakes/:id`에서 모델 처리가 남아 있으면 기존 질문·진행률과 사용자 말풍선을 유지하고 `model_pending:true`, `pending_answer`를 반환합니다. 동일 입력 재시도에는 최초 전송 버전 또는 조회한 현재 `revision`을 사용할 수 있습니다. 답변 수정·되돌리기·명시적 건너뛰기는 현재 버전이 필요합니다. 완료 응답을 받았다면 반환된 `revision`을 다음 요청에 사용합니다. 모델 오류나 409가 발생하면 대기 표시를 유지하면서 현재 상태를 다시 조회하고, 같은 질문의 입력창은 보존합니다.
+
+## 관계도 기반 추가 질문과 새 카드
+
+완료 기록의 원문 문맥과 관계 분석을 바탕으로 사용자가 자유롭게 질문하는 별도 대화입니다. 기존 설문 중의 `follow_up`과 구분하며, 완료 intake를 다시 열거나 원래 관계도·결과 카드를 수정하지 않습니다. 결과·기록 화면의 **추가 질문하기**로 진입하고 `/continuations/:id`에서 새로고침 후 복원합니다. 기록 보관키는 이 기능의 작성 권한을 주지 않습니다. 원래 기록의 익명 세션 소유권이 필요합니다.
+
+### 요청과 반환 값
+
+시작 요청의 `request_id`와 각 변경 요청의 `request_id`는 클라이언트가 만든 UUID입니다. 시작 시 최신 기록 목록의 `conversation_epoch`를 보냅니다. 한 원본에 활성 회차는 하나이며, 다른 시작 토큰으로 요청해도 기존 활성 회차를 반환합니다. 이미 처리한 시작 토큰은 회차를 마친 뒤에도 같은 회차를 가리킵니다. 회차를 삭제한 뒤 같은 시작 토큰으로 재전송하면 404이며 새 회차를 되살리지 않습니다.
+
+자유 질문에는 `reply_to`가 필요 없습니다. 서비스가 마지막 메시지에 `clarification`을 제공했을 때 그 확인 질문에 답하거나 건너뛰려면 해당 assistant 메시지 ID를 `reply_to`로 보냅니다. `skipped:true`는 그 확인 질문이 현재 대기 중인 경우에만 허용하며 실제 내용 있는 `text`와 함께 보낼 수 없습니다. 일반 입력과 정정의 `replacement`는 최대 10,000자이며, 공백·비가시 문자만 있는 일반 입력은 거절합니다. 정정의 `answer_ref`는 해당 회차의 건너뛰지 않은 user 메시지 ID입니다.
+
+`continuation`은 `id,source_record_id,revision,status,messages,pending,summary,cards,safety_urgent`를 반환합니다. 메시지는 `id,role,text,kind`와 선택적 `clarification,skipped`를 가집니다. 정정 전 원문 이력·내부 근거 추출·검토 기록·요청 해시는 공개 응답에 포함하지 않습니다. 목록은 원문 없는 `id,source_record_id,source_intake_id,revision,status,created_at,updated_at`만 생성 순서로 반환합니다.
+
+### 입력 저장·재시도·종료
+
+- 새 메시지를 받은 뒤 원문과 요청 ID를 먼저 암호화 저장하고 `status=pending`으로 둡니다. 이후 모델 작업을 수행하며 검증된 답변만 공개 상태로 저장합니다.
+- `pending`은 `{action,request_id,input,resume_status}`입니다. `action`은 `messages` 또는 `cards`이며, 소유자는 저장된 `input`으로 같은 요청을 재시도할 수 있습니다. 원문은 URL이나 로그에 넣지 않습니다.
+- 같은 요청 ID와 같은 입력의 재전송은 사용자 메시지·완료 카드가 중복되지 않습니다. 처리 완료 후에도 같은 요청 ID는 현재 회차와 이미 생성된 해당 카드를 반환합니다. 같은 ID로 입력이나 작업 종류를 바꾸거나 무효화된 요청 ID를 재사용하면 409입니다.
+- 새 입력·정정·종료에는 현재 `revision`이 필요합니다. 모델 실패·연결 종료 뒤에는 입력과 pending을 보존하고 같은 ID로 재시도합니다. 새 질문을 보내려면 pending을 재시도하거나 정정·종료로 정리합니다.
+- `complete`는 pending 작업을 취소하고 회차를 `completed`로 저장합니다. 별도 요약 모델을 호출하지 않고, 마지막 검토에서 확인한 사실 인용 또는 고정 종료 안내를 요약으로 남깁니다. 완료 회차에 새 메시지를 추가하려면 새 회차를 시작합니다. 저장된 실제 상황으로 카드 생성은 완료 후에도 요청할 수 있습니다. 이때는 `status=completed`를 유지한 채 `pending`만 설정하므로 더 새로운 활성 회차와 충돌하지 않습니다. 미검토 메시지를 남기고 종료할 때에는 이전 사실을 새 요약으로 확정하지 않고 고정 종료 안내를 사용합니다.
+- DB 상태는 `active,pending,retryable,completed`를 허용하지만 현재 모델 실패 경로는 `pending`을 유지합니다. 실패했다고 자동으로 완료 처리하지 않습니다.
+
+### 사실 검증과 카드 생성
+
+현재 관계 모델 전송 계층에서 `continuation_answer`를 작성하고, `support_review_continuation`이 답변·추출 사실·정정 대상·확인 질문을 독립 검토합니다. 이어 `safety_review_continuation`이 사용자 메시지 전체를 기존 안전 분류 계약으로 확인합니다. 정확한 인용·메시지 ID·주체 검증은 저장 경계에서도 수행합니다. 질문·가정·실행 전 제안·모델 답변·건너뜀은 사용자 사실로 채택하지 않도록 검토합니다. 관계도는 당시 해석이며 사실의 대체 근거가 아닙니다. 이는 검증 절차의 구현 설명으로, 실제 모델이 모든 의미 오류를 차단했다는 검증 결과는 아닙니다.
+
+**새 카드 만들기**는 추가 상황을 입력한 뒤 사용자가 직접 요청합니다. 검토된 실제 후속 보고와 유효한 기존 원문을 새 문맥에 결합하고, 명시적으로 정정된 원문은 새 문맥에서 제외합니다. 이전 모델 메모리는 재사용하지 않으며 기존 카드 생성·검토 경로로 새 카드를 준비합니다. 독립 안전 검토가 확인한 현재 위험은 사실 추출에서 누락됐더라도 전체 근거를 새 카드 문맥에 전달하고, 안전 상황을 반영하지 않은 결과는 저장하지 않습니다. 실제 추가 사실이 없고 긴급 안전 상황도 아니면 `409 NO_NEW_FACTS`를 반환합니다. 이 경우 해당 카드 시도만 무효화하고 pending을 해제하여 사용자가 상황을 더 입력할 수 있게 합니다.
+
+완성된 `card`는 `{id,date,profile,guide,relationship_analysis?,conversation_detail?,source_revision,provenance}`입니다. 후속 회차의 암호화된 `state.cards`에 추가하며 **기존 `records` 목록에 새 행을 만들지 않습니다**. 원래 관계도·카드·intake는 그대로 보존합니다. 화면은 기존 공용 카드 컴포넌트와 복사 기능을 재사용하며, 후속 카드 API는 전체 검토와 저장이 끝난 스냅샷을 반환합니다. 기존 intake의 부분 카드 진행 조회와는 별개입니다.
+
+안전 검토가 명시적 긴급 상황을 확인하면 후속 회차를 `completed`로 마치고 고정 안전 안내와 `safety_urgent:true`를 반환합니다. 사실 추출에서 빠진 사용자 원문도 안전 검토에 전달합니다. 불씨 기관 안내를 대화 중 자동으로 추가하는 기능은 구현하지 않습니다.
+
+### 정정·삭제·접근 경계
+
+정정은 해당 회차의 사용자 메시지를 갱신하고 이전 원문을 암호화된 이력으로 남깁니다. 현재 회차의 assistant 답변·카드·검토 요약은 제거하며, 같은 원본의 이후 회차도 자체 user 메시지만 보존하고 파생 답변·카드·요약·pending을 제거합니다. 이후 완료 회차의 완료 상태는 유지합니다. 무효화된 회차의 revision은 증가하고 요청 ID에는 `action,hash,status=invalidated`만 남겨 오래된 입력의 재전송을 차단합니다.
+
+회차 하나를 삭제해도 원본 기록은 남습니다. 해당 회차를 참조할 수 있는 이후 회차에는 같은 무효화 규칙을 적용합니다. 원본 record/intake 삭제, 전체 대화 삭제, 삭제 키 사용, 소유자 보유기간 만료는 연결된 후속 회차·카드·시작 토큰까지 삭제합니다. 삭제·정정·종료는 진행 중 작업을 취소하고 revision/존재 여부로 늦은 결과의 저장을 차단합니다. 소유하지 않은 자원은 404, Origin·CSRF 오류는 403으로 처리합니다.
+
+주요 추가 오류는 `SOURCE_CONTEXT_UNAVAILABLE`(원문 없는 이전 기록), `INTAKE_NOT_COMPLETE`, `CONTINUATION_PENDING`, `CONTINUATION_COMPLETE`, `NO_NEW_FACTS`, `REVISION_CONFLICT`(이상 409), `INVALID_REQUEST_ID`, `INVALID_CLARIFICATION`, `INVALID_MESSAGE`, `ANSWER_REQUIRED`(이상 422)입니다. 현재 카드·관계도 표시 제한과 향후 검증 기준은 [추가 질문 기능 기획·구현](../../docs/current/관계도_기반_추가질문_기획.md)을 따릅니다.
 
 ## 서버 내부 상태
 
