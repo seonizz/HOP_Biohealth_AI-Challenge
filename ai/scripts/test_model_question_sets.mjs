@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, chmodSync, statSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, chmodSync, statSync, renameSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs, isDeepStrictEqual } from 'node:util';
@@ -9,7 +9,7 @@ import { configuredModelGateway } from '../../app/src/model-config.js';
 import { PROMPT_VERSION } from '../../app/src/relationship-prompts.js';
 import { sourceFingerprint } from '../../app/src/source-identity.js';
 import { attemptMetrics, percentile, sha256 } from './evaluation_evidence.mjs';
-import { applyFinalResult, runIntakeWorkflow } from './model_test_workflow.mjs';
+import { applyFinalResult, runIntakeWorkflow, workflowAnswerSlots } from './model_test_workflow.mjs';
 import { observeGateway } from './model_test_observer.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -23,6 +23,7 @@ const traceEvents = new Set(['model_attempt', 'model_retry_wait', 'model_request
 // Validate the batch before any request. Workflow semantics are validated by
 // the app when it chooses each question; only structure is knowable upfront.
 export function prepareSuite(data, questionSet = initialQuestionSet, mode = 'final') {
+  if (!['final','state','workflow'].includes(mode)) fail('INVALID_RUN_OPTIONS');
   if (!exact(data, ['cases']) || !Array.isArray(data.cases) || !data.cases.length || data.cases.length > 100) fail('INVALID_SUITE');
   const ids = new Set();
   return data.cases.map(item => {
@@ -39,12 +40,18 @@ export function prepareSuite(data, questionSet = initialQuestionSet, mode = 'fin
     }
     if (mode === 'workflow') {
       if (!Array.isArray(item.answers) || !item.answers.length || item.answers.length > 400) fail('INVALID_WORKFLOW_ANSWERS');
+      const slotKey = answer => JSON.stringify([answer.question_id,Boolean(answer.follow_up)]);
+      const allowed = new Set(workflowAnswerSlots(questionSet).map(slotKey)), seen = new Set();
       for (const answer of item.answers) {
         if (!exact(answer, ['question_id','text','selected','custom','skipped','follow_up']) ||
             typeof answer.question_id !== 'string' || !/^[a-z][a-z0-9_]{0,79}$/.test(answer.question_id) ||
             ['text','custom'].some(key => answer[key] !== undefined && (typeof answer[key] !== 'string' || answer[key].length > 10000)) ||
             ['skipped','follow_up'].some(key => answer[key] !== undefined && typeof answer[key] !== 'boolean') ||
             answer.selected !== undefined && (!Array.isArray(answer.selected) || answer.selected.some(index => !Number.isSafeInteger(index) || index < 0) || new Set(answer.selected).size !== answer.selected.length)) fail('INVALID_WORKFLOW_ANSWER');
+        const key = slotKey(answer);
+        if (!allowed.has(key)) fail('UNKNOWN_WORKFLOW_QUESTION');
+        if (seen.has(key)) fail('DUPLICATE_WORKFLOW_ANSWER');
+        seen.add(key);
       }
     }
     const state = mode === 'workflow' ? createIntake(questionSet) : createTestIntake(item.answers, questionSet);
@@ -119,13 +126,21 @@ export async function runSuite(cases, { env = process.env, mode = 'final', repea
       };
       if (mode === 'workflow') {
         const outcome = await runIntakeWorkflow({answers:item.answers, questionSet:item.questionSet, gateway, options,
-          onTurn:turn => row.turns.push(structuredClone(turn))});
+          onCheckpoint:(workflow, result) => {
+            row.workflow = workflow;
+            row.turns = workflow.turns;
+            row.answered_count = workflow.answered_count;
+            row.result = result;
+            row.result_scope = result ? 'last_applied_turn' : 'none';
+          }});
         row.result = outcome.result;
+        row.result_scope = outcome.workflow.completed ? 'final' : outcome.result ? 'last_applied_turn' : 'none';
         row.workflow = outcome.workflow;
         row.answered_count = outcome.workflow.answered_count;
         if (outcome.awaitingInput) row.status = 'awaiting_input';
       } else {
         row.result = await gateway[mode === 'state' ? 'updateState' : 'respond'](structuredClone(item.context), null, options);
+        caseSignal.throwIfAborted();
         if (mode === 'final') applyFinalResult(item.state, row.result);
         else applyModelUpdate(item.state, row.result);
         row.app_state_applied = true;
@@ -152,6 +167,14 @@ export async function runSuite(cases, { env = process.env, mode = 'final', repea
 }
 
 const csvCell = value => '"' + String(value ?? '').replaceAll('"', '""') + '"';
+
+function atomicWrite(path, contents) {
+  const temporary = `${path}.${randomUUID()}.tmp`;
+  try {
+    writeFileSync(temporary, contents, {mode:0o600,flag:'wx'});
+    renameSync(temporary, path);
+  } finally { rmSync(temporary, {force:true}); }
+}
 export function renderCsv(results) {
   const columns = ['case_id', 'repetition', 'status', 'error_code', 'answered_count', 'duration_ms',
     'safety', 'checks_passed', 'checks_total', 'http_calls', 'model_http_calls', 'peak_http_until_headers',
@@ -166,10 +189,10 @@ export function renderCsv(results) {
 export function writeReports(directory, identity, results, planned, status) {
   const summary = summarize(results, planned);
   const report = { schema_version:'malssi-model-question-tests-v2', status, identity, summary, results };
-  writeFileSync(join(directory, 'report.json'), JSON.stringify(report, null, 2) + '\n', {mode:0o600});
-  writeFileSync(join(directory, 'results.csv'), '\uFEFF' + renderCsv(results), {mode:0o600});
+  const json = JSON.stringify(report, null, 2) + '\n';
+  atomicWrite(join(directory, 'results.csv'), '\uFEFF' + renderCsv(results));
   const rows = results.map(row => `| ${row.case_id} | ${row.repetition} | ${row.status} | ${row.checks.filter(check => check.passed).length}/${row.checks.length} | ${row.error_code || '—'} |`);
-  writeFileSync(join(directory, 'summary.md'), [
+  atomicWrite(join(directory, 'summary.md'), [
     '# AI 질문셋 테스트 결과', '', `상태: ${status} · 완료: ${summary.finished}/${planned}`,
     `기대값 통과: ${summary.passed} · 불일치: ${summary.failed} · 실행 오류: ${summary.errors} · 입력 대기: ${summary.awaiting_input} · 기대값 없음: ${summary.without_expectations}`, '',
     '| 사례 | 반복 | 결과 | 기대값 검사 | 오류 |', '|---|---:|---|---:|---|', ...rows, '',
@@ -177,7 +200,10 @@ export function writeReports(directory, identity, results, planned, status) {
     'completed는 생성 완료이며 품질 합격을 뜻하지 않습니다. 오류 사례는 기대값 통과율 분모에서 제외되어 errors로 별도 집계합니다.',
     '토큰 미제공·진단 불완전 시 수치는 null( CSV에서는 빈 칸 )입니다. 시간은 참고 측정이며 대회 점수가 아닙니다.',
     '키워드·필드 검사만으로 사실성, 상담 적절성, 임상 효과를 증명하지 않습니다. 사람 검토: 대기.', '',
-  ].join('\n'), {mode:0o600});
+  ].join('\n'));
+  // report.json is the canonical snapshot. Publish it only after both derived
+  // files are written, and never expose a truncated JSON document to readers.
+  atomicWrite(join(directory, 'report.json'), json);
   return report;
 }
 
@@ -204,7 +230,8 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(JSON.stringify({tool:'malssi-model-question-tests', version:2,
       commands:{questions:['node','ai/scripts/test_model_question_sets.mjs','--list-questions'],
         template:['node','ai/scripts/test_model_question_sets.mjs','--init'],
-        validate:['node','ai/scripts/test_model_question_sets.mjs','--input','INPUT.json','--dry-run'],
+        validate:['node','ai/scripts/test_model_question_sets.mjs','--input','INPUT.json','--mode','workflow','--dry-run'],
+        validate_snapshot:['node','ai/scripts/test_model_question_sets.mjs','--input','INPUT.json','--mode','final','--dry-run'],
         run:['node','--env-file-if-exists=app/.env','ai/scripts/test_model_question_sets.mjs','--input','INPUT.json','--mode','workflow'],
         snapshot:['node','--env-file-if-exists=app/.env','ai/scripts/test_model_question_sets.mjs','--input','INPUT.json','--mode','final']},
       input_schema:readJson(join(root, 'ai/docs/model_question_tests.schema.json')),
@@ -230,7 +257,8 @@ export async function main(argv = process.argv.slice(2)) {
   const commands = [values.init, values['list-questions'], Boolean(values.input)].filter(Boolean).length;
   if (commands !== 1) fail('CHOOSE_INPUT_INIT_OR_LIST_QUESTIONS');
   const questionSet = values.questions ? createQuestionSet(readJson(resolve(values.questions))) : initialQuestionSet;
-  if (values['list-questions']) { console.log(JSON.stringify({status:'questions', version:questionSet.version, questions:questionCatalogOf(questionSet)})); return 0; }
+  if (values['list-questions']) { console.log(JSON.stringify({status:'questions', version:questionSet.version,
+    questions:questionCatalogOf(questionSet), workflow_answer_slots:workflowAnswerSlots(questionSet)})); return 0; }
   if (values.init) {
     if (values.questions) fail('INIT_USES_DEFAULT_QUESTIONS');
     mkdirSync(privateRoot, {recursive:true, mode:0o700});
@@ -244,7 +272,7 @@ export async function main(argv = process.argv.slice(2)) {
   const data = readJson(resolve(values.input));
   const cases = prepareSuite(data, questionSet, mode);
   if (values['dry-run']) {
-    console.log(JSON.stringify({status:'input_validated', model_called:false, validation_scope:mode === 'workflow' ? 'structure_only_until_app_selects_question' : 'all_snapshot_answers', mode, repeat, planned:cases.length * repeat,
+    console.log(JSON.stringify({status:'input_validated', model_called:false, validation_scope:mode === 'workflow' ? 'structure_and_question_slots' : 'all_snapshot_answers', mode, repeat, planned:cases.length * repeat,
       question_version:questionSet.version, cases:cases.map(item => ({id:item.id, answered_count:item.context.answered_count, expectations:item.expectations.length}))}));
     return 0;
   }

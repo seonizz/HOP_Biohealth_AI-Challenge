@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createQuestionSet } from '../../app/src/question-bank.js';
+import { createQuestionSet, initialQuestionSet } from '../../app/src/question-bank.js';
 import { prepareSuite, runSuite } from './test_model_question_sets.mjs';
 
 const questionSet = (follow = false) => createQuestionSet([
@@ -102,4 +102,46 @@ test('final state application rejects a gateway result that fails the app name b
   })})});
   assert.equal(row.status,'error'); assert.equal(row.error_code,'MODEL_INVALID_RESPONSE');
   assert.notEqual(row.app_state_applied,true);
+});
+
+test('workflow rejects misspelled IDs, duplicate answer slots and impossible follow-ups before model calls', () => {
+  const set=questionSet();
+  for(const extra of [{question_id:'concern_typo',text:'오타'}, {question_id:'concern',text:'중복'},
+    {question_id:'name',text:'후속 없음',follow_up:true}, {question_id:'clarify_help',text:'후속 표시 없음'}]) {
+    const suite=input();suite.cases[0].answers.push(extra);
+    assert.throws(()=>prepareSuite(suite,set,'workflow'));
+  }
+});
+
+test('app-defined clarification and gap answers remain valid explicit future inputs', () => {
+  const suite={cases:[{id:'future_questions',answers:[
+    {question_id:'name',text:'합성별칭'},
+    {question_id:'clarify_help',text:'명시적으로 제공한 도움 의향',follow_up:true},
+    {question_id:initialQuestionSet.gapQuestion.id,text:'명시적으로 제공한 보충 관찰',follow_up:true},
+  ]}]};
+  assert.equal(prepareSuite(suite,initialQuestionSet,'workflow')[0].answers.length,3);
+});
+
+test('later turn failure retains applied state and the uncommitted failing question', async () => {
+  const model=gateway(),original=model.updateState;let calls=0;
+  model.updateState=async function(...args) {
+    if(++calls===2)throw Object.assign(new Error('private message'),{code:'MODEL_UNAVAILABLE'});
+    return original.apply(this,args);
+  };
+  const [row]=await runSuite(prepareSuite(input(),questionSet(),'workflow'),{mode:'workflow',gatewayFactory:()=>model});
+  assert.equal(row.status,'error');assert.equal(row.answered_count,1);
+  assert.equal(row.workflow.completed,false);assert.equal(row.workflow.next_question.id,'want');
+  assert.deepEqual(row.turns.map(turn=>turn.applied),[true,false]);
+  assert.equal(row.turns[1].question.id,'want');
+  assert.equal(row.result_scope,'last_applied_turn');
+  assert.equal(row.result.name_index.alias,'합성별칭');
+});
+
+test('final model failure preserves all applied answers without claiming final completion', async () => {
+  const model=gateway();model.respond=async()=>{throw Object.assign(new Error('private'),{code:'MODEL_UNAVAILABLE'});};
+  const [row]=await runSuite(prepareSuite(input(),questionSet(),'workflow'),{mode:'workflow',gatewayFactory:()=>model});
+  assert.equal(row.status,'error');assert.equal(row.answered_count,3);
+  assert.equal(row.workflow.completed,false);assert.equal(row.workflow.phase,'final');
+  assert.equal(row.workflow.next_question,null);assert.equal(row.turns.length,3);
+  assert.equal(row.result_scope,'last_applied_turn');assert.deepEqual(row.checks,[]);
 });

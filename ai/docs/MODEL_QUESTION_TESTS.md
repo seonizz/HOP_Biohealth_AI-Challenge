@@ -73,7 +73,9 @@ MODEL_BASE_URL=http://127.0.0.1:11434/v1 MODEL_NAME=gemma4:12b \
 
 `--mode workflow`는 서비스와 같은 `createIntake → currentView → prepareModelAnswer → buildContext → gateway.updateState → completeModelAnswer`를 답변마다 사용합니다. 이전 답변에서 승인된 기억을 다음 호출에 넘기고, 앱 상태가 `ready`가 되면 `gateway.respond → applyModelUpdate`를 실행합니다. 모델 호출·검토·재시도·병렬 스케줄링은 현재 앱 코드와 `configuredModelGateway` 설정이 결정합니다. 테스트 코드에는 단계명 목록이나 예상 호출 횟수·고정 호출 순서가 없습니다.
 
-`answers`는 에이전트가 명시적으로 제공한 답변 풀입니다. 배열 순서와 관계없이 앱이 현재 요청한 `question_id` 및 `follow_up`에 맞는 첫 미사용 답변을 제출합니다. 앱이 질문을 생략하면 해당 입력은 미사용으로 남고 근거로 들어가지 않습니다. 후속 질문에는 같은 ID와 `"follow_up":true`를 가진 별도 답변을 제공하세요. 명확화 질문도 앱이 반환한 ID로 제공합니다. 최대 답변 수는 400개이며, 문항별 의미 검증은 실제 선택된 질문을 제출할 때 앱이 수행합니다. 따라서 workflow의 `--dry-run`은 구조 검증만 하고 `validation_scope`로 이를 알립니다.
+`answers`는 에이전트가 명시적으로 제공한 답변 풀입니다. 배열 순서와 관계없이 앱이 현재 요청한 `question_id` 및 `follow_up`에 맞는 답변을 제출합니다. 이 두 값의 조합은 중복될 수 없으며, 실제 질문 은행·후속 질문 정의·보충 관찰·앱의 명확화 질문 목록에 있는 조합만 허용합니다. `--list-questions`의 `workflow_answer_slots`에서 허용 조합을 조회하세요. 오타는 `UNKNOWN_WORKFLOW_QUESTION`, 중복은 `DUPLICATE_WORKFLOW_ANSWER`로 모델 호출 전에 거부합니다. 앱이 정상적으로 질문을 생략하면 해당 입력은 미사용으로 남고 근거로 들어가지 않습니다.
+
+후속 질문에는 같은 ID와 `"follow_up":true`를 가진 별도 답변을 제공하세요. 명확화·보충 관찰 질문도 해당 ID 및 `follow_up:true`로 제공합니다. 최대 답변 수는 400개이며, 문항별 내용·선택 범위 검증은 실제 선택된 질문을 제출할 때 앱이 수행합니다. workflow의 `--dry-run`은 구조·허용 문항 조합·중복을 검증하고 `validation_scope:structure_and_question_slots`로 범위를 알립니다. `--describe`가 제공하는 validate 명령도 workflow 모드와 일치합니다.
 
 현재 질문의 답변이 없으면 생성하거나 강제로 생략하지 않고 `status:awaiting_input`, 종료 코드 **3**을 반환합니다. `results[].workflow.next_question`의 질문·보기·후속 여부를 읽어 입력을 추가하세요. `turns`에는 선택된 질문, 후보 ID, 문맥 해시, 이전 기억 유무, 승인된 모델 결과가 있고 `unused_answers`에는 사용하지 않은 입력 인덱스가 있습니다. 미완료 대화의 최종 기대값은 채점하지 않습니다. 현재 CLI는 재실행 시 처음부터 재현하므로 답변 추가 후 다시 실행하면 이전 턴도 다시 호출합니다.
 
@@ -95,11 +97,13 @@ workflow는 **서비스의 메모리 내 문답·AI 경로**를 검사합니다.
 
 `results[].checks`에서 기대값 불일치의 경로와 `actual`을 읽어 다음 테스트를 설계하세요. `summary.expectation_pass_rate`는 **생성에 성공하고 기대값이 있는 사례 실행만** 분모로 씁니다. 실행 오류는 `errors`, 기대값 없는 생성은 `without_expectations`에 따로 기록됩니다. 성공률 판단 시 이 세 항목을 함께 확인합니다.
 
+workflow의 중간 오류·취소에도 마지막 적용 상태의 `answered_count`, 현재 질문, 입력 사용 여부와 시도한 턴을 보존합니다. 실패한 턴은 `applied:false`이고 반영 완료 답변 수에 포함하지 않습니다. 최종 생성이 끝나기 전 `result`는 마지막 승인된 상태 출력일 수 있으며 `result_scope:last_applied_turn`으로 구분합니다. 최종 출력은 `result_scope:final`, 아직 승인된 결과가 없으면 `none`입니다. 최종 생성 중 실패하면 `workflow.phase:final`, `completed:false`이며 최종 기대값을 채점하지 않습니다.
+
 **호출 수는 `results[].http.summary`를 먼저 읽습니다.** 실제 writer/reviewer의 `fetchImpl` 호출을 감싸 기록하므로 재시도 횟수나 단계 이름이 바뀌어도 집계됩니다. `total`은 모든 HTTP 요청, `by_route.chat_completions`는 모델 생성 요청, `by_route.model_discovery`는 모델 설정 조회입니다. 각 `http.calls`에는 시작·응답 헤더 도착/실패 시각, 역할, HTTP 상태가 있습니다. URL·키·요청 본문은 기록하지 않으며 응답 스트림을 읽거나 복제하지 않습니다. 원래 앱의 Promise 실행 순서와 스트림 소비를 유지합니다.
 
 `peak_outstanding_until_headers`는 **응답 헤더를 받기 전 미완료 HTTP 요청의 최대 수**입니다. 스트리밍 생성 전체의 동시성이나 실제 GPU 병렬 추론 수가 아닙니다. 앱이 순차/병렬 실행을 바꾸면 관측값이 따라 바뀌며, 이 값 자체를 합격 조건으로 고정하지 않습니다. 기존 `metrics`는 `attemptMetrics`의 상세 진단·토큰 통계를 보조적으로 제공합니다. 지원하는 세 이벤트(`model_attempt`, `model_retry_wait`, `model_request_failure`) 외 이벤트도 전체 `trace`에 보존합니다. 진단 규격이나 재시도 한도가 바뀌어 기존 검증기가 해석하지 못하면 상세 수치는 `null`로 남으며, 독립 HTTP 관측 및 모델 결과 판정은 계속 동작합니다. 제공되지 않은 토큰 수는 `null`/CSV 빈칸이며 비용이나 GPU 연산량을 의미하지 않습니다.
 
-보고서는 사례 완료마다 갱신합니다. SIGINT/SIGTERM으로 중단하면 현재 요청을 취소하고 부분 보고서와 종료 코드 130을 남깁니다. 강제 종료나 디스크 오류에는 마지막 기록까지만 남을 수 있습니다. API 키·환경변수 전체·원시 예외 메시지는 보고하지 않습니다. 입력/응답과 원문 인용은 개인정보를 포함할 수 있으므로 보고서는 기존 Git 제외 경로 `ai/outputs/model-tests/private/`에만 저장하고 업로드하지 않습니다. 일반 파일 권한은 0600, 실행 폴더는 0700입니다.
+보고서는 사례 완료마다 갱신합니다. 각 파일은 임시 파일 작성 후 원자적으로 교체하며, 기준 파일인 `report.json`은 CSV·요약 작성 후 마지막에 교체합니다. 저장 실패 시 기존의 유효한 JSON을 유지합니다. 세 파일 전체를 한 번에 교체하는 트랜잭션은 아니므로 에이전트는 JSON을 기준으로 판독하세요. SIGINT/SIGTERM으로 중단하면 현재 요청을 취소하고 부분 보고서와 종료 코드 130을 남깁니다. 강제 종료나 디스크 오류에는 마지막 기록까지만 남을 수 있습니다. API 키·환경변수 전체·원시 예외 메시지는 보고하지 않습니다. 입력/응답과 원문 인용은 개인정보를 포함할 수 있으므로 보고서는 기존 Git 제외 경로 `ai/outputs/model-tests/private/`에만 저장하고 업로드하지 않습니다. 일반 파일 권한은 0600, 실행 폴더는 0700입니다.
 
 | 종료 코드 | 에이전트 처리 |
 |---:|---|

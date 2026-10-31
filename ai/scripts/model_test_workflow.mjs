@@ -1,6 +1,16 @@
 import { createIntake, currentView, prepareModelAnswer, completeModelAnswer, answerIntake,
   buildContext, applyModelUpdate } from '../../app/src/intake.js';
 import { sha256 } from './evaluation_evidence.mjs';
+import { clarificationQuestions } from '../../app/src/clarifications.js';
+
+export function workflowAnswerSlots(questionSet) {
+  return [
+    ...questionSet.questions.flatMap(question => [{question_id:question.id,follow_up:false},
+      ...(question.follow_up ? [{question_id:question.id,follow_up:true}] : [])]),
+    ...(questionSet.gapQuestion ? [{question_id:questionSet.gapQuestion.id,follow_up:true}] : []),
+    ...clarificationQuestions.map(question => ({question_id:question.id,follow_up:true})),
+  ];
+}
 
 // Same final state-application boundary used by server.js and test-runs.js.
 // The runner deliberately does not create a service record or write to a DB.
@@ -14,13 +24,16 @@ export function applyFinalResult(state, result) {
 
 // Follow the app-selected question, including model skips and follow-ups. Only
 // explicitly supplied answers may be submitted. A missing answer pauses replay.
-export async function runIntakeWorkflow({answers, questionSet, gateway, options, onTurn = () => {}}) {
+export async function runIntakeWorkflow({answers, questionSet, gateway, options, onCheckpoint = () => {}}) {
   let state = createIntake(questionSet), lastResult = null;
   const used = new Set(), turns = [];
-  const snapshot = () => ({status:state.status, next_question:currentView(state).question,
+  let phase = 'answer';
+  const snapshot = () => ({status:state.status, completed:false, phase, next_question:currentView(state).question,
     answered_count:buildContext(state).answered_count, model_skipped:structuredClone(state.modelSkipped || {}),
     unused_answers:answers.map((answer,index) => ({index, question_id:answer.question_id, follow_up:Boolean(answer.follow_up)}))
       .filter(answer => !used.has(answer.index)), turns});
+  const checkpoint = () => onCheckpoint(snapshot(), lastResult);
+  checkpoint();
   while (state.status !== 'ready') {
     options.signal?.throwIfAborted();
     const question = currentView(state).question;
@@ -29,8 +42,9 @@ export async function runIntakeWorkflow({answers, questionSet, gateway, options,
       Boolean(answer.follow_up) === Boolean(question.follow_up));
     if (index < 0) return {result:lastResult, workflow:{...snapshot(), completed:false}, awaitingInput:true};
     const input = structuredClone(answers[index]);
-    const turn = {index:turns.length, input_index:index, question:structuredClone(question)};
+    const turn = {index:turns.length, input_index:index, question:structuredClone(question), applied:false};
     turns.push(turn);
+    checkpoint();
     // Mirrors server.js's legacy skipped-answer branch. The relationship agent
     // receives explicit skips too, so its question/safety review still runs.
     if (!input.skipped || gateway.protocol === 'relationship_agent') {
@@ -48,8 +62,10 @@ export async function runIntakeWorkflow({answers, questionSet, gateway, options,
     used.add(index);
     turn.applied = true;
     turn.next_question = currentView(state).question;
-    await onTurn(turn);
+    checkpoint();
   }
+  phase = 'final';
+  checkpoint();
   const context = buildContext(state);
   const result = await gateway.respond(context, state.agentMemory || null, options);
   options.signal?.throwIfAborted();

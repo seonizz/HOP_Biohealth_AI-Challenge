@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, writeFileSync, rmSync, statSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readdirSync, readFileSync, writeFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
@@ -126,6 +126,7 @@ test('cancellation saves the current case and never starts remaining repetitions
     async respond() { calls++; controller.abort(); return answer(); },
   })});
   assert.equal(calls, 1); assert.equal(rows[0].error_code, 'CANCELLED');
+  assert.notEqual(rows[0].app_state_applied,true);
 });
 
 test('real app gateway serializes input and validates response with a fake HTTP transport', async () => {
@@ -163,6 +164,23 @@ test('JSON, CSV and Markdown reports preserve error and pass counts with private
   } finally { rmSync(directory, {recursive:true, force:true}); }
 });
 
+test('a failed report refresh preserves the last valid canonical JSON and removes temporary files', () => {
+  const directory=mkdtempSync(join(tmpdir(),'hop-report-atomic-'));
+  try {
+    writeReports(directory,{test:true},[],1,'running');
+    const original=readFileSync(join(directory,'report.json'),'utf8');
+    rmSync(join(directory,'results.csv'));mkdirSync(join(directory,'results.csv'));
+    assert.throws(()=>writeReports(directory,{test:true},[],1,'finished'));
+    assert.equal(readFileSync(join(directory,'report.json'),'utf8'),original);
+    assert.equal(JSON.parse(original).status,'running');
+    assert.ok(readdirSync(directory).every(name=>!name.endsWith('.tmp')));
+    rmSync(join(directory,'results.csv'),{recursive:true});
+    writeReports(directory,{test:true},[],1,'finished');
+    assert.equal(JSON.parse(readFileSync(join(directory,'report.json'))).status,'finished');
+    assert.equal(statSync(join(directory,'report.json')).mode&0o777,0o600);
+  } finally {rmSync(directory,{recursive:true,force:true});}
+});
+
 test('CLI rejects ambiguous commands and invalid numeric options', async () => {
   await assert.rejects(main(['--input','unused','--init']), {code:'CHOOSE_INPUT_INIT_OR_LIST_QUESTIONS'});
   for (const args of [['--repeat','0'], ['--repeat','1.5'], ['--timeout-ms','NaN'], ['--mode','other']]) {
@@ -173,10 +191,24 @@ test('CLI rejects ambiguous commands and invalid numeric options', async () => {
 test('agent CLI describes its schema, validates offline and emits parseable JSONL and exit codes', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'hop-model-cli-'));
   const script = fileURLToPath(new URL('./test_model_question_sets.mjs', import.meta.url));
-  const server = createServer((request, response) => {
-    request.resume();
+  let workflowTransport=false;
+  const received=[];
+  const server = createServer(async (request, response) => {
+    let body='';for await(const chunk of request) body+=chunk;
+    let generated=answer();
+    if(workflowTransport) {
+      const payload=JSON.parse(body), wire=JSON.parse(payload.messages.at(-1).content), context=wire.current_context;
+      const final=payload.response_format.json_schema.name==='malssi_guide';
+      received.push({final,context,prior_memory:wire.prior_memory});
+      const name=context.patient.fields.name;
+      const state={patient_state:{summary:'사용자가 제공한 합성 별칭과 목적입니다.',
+        facts:[{subject:'patient',question_id:'name',quote:name.rawText,interpretation:'사용자가 입력한 별칭입니다.',certainty:'reported'}],
+        unknowns:[],user_goal:context.user_goal.message?.status==='answered'?context.user_goal.message.text:'확인되지 않음'},
+        name_index:{alias:name.rawText,source_question_id:'name',quote:name.rawText}};
+      generated=final?{...answer(),...state}:{...state,question_plan:{skip:[]}};
+    }
     response.writeHead(200, {'content-type':'application/json'});
-    response.end(JSON.stringify({choices:[{finish_reason:'stop', message:{content:JSON.stringify(answer())}}],
+    response.end(JSON.stringify({choices:[{finish_reason:'stop', message:{content:JSON.stringify(generated)}}],
       usage:{prompt_tokens:12, completion_tokens:7}}));
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
@@ -190,6 +222,7 @@ test('agent CLI describes its schema, validates offline and emits parseable JSON
     const description = await run(['--describe']);
     assert.equal(description.status, 0, description.stderr);
     assert.equal(JSON.parse(description.stdout).input_schema.required[0], 'cases');
+    assert.ok(JSON.parse(description.stdout).commands.validate.includes('workflow'));
     const questions = JSON.parse((await run(['--list-questions'])).stdout);
     assert.ok(questions.questions.some(q => q.id === 'concern'));
     const template = await run(['--init']);
@@ -219,6 +252,27 @@ test('agent CLI describes its schema, validates offline and emits parseable JSON
       assert.equal(JSON.parse(readFileSync(final.artifacts.report)).results[0].result.assessment.safety, false);
       assert.equal(statSync(final.output).mode & 0o777, 0o700);
     }
+    const bankPath=join(directory,'questions.json');
+    writeFileSync(bankPath,JSON.stringify([
+      {id:'name',enabled:true,sort_order:0,kind:'base',subject:'patient',definition:{q:'이름?',type:'text',required:true}},
+      {id:'want',enabled:true,sort_order:1,kind:'base',subject:'user_goal',definition:{q:'목적?',type:'text',required:true}},
+    ]));
+    writeFileSync(inputPath,JSON.stringify({cases:[{id:'full_workflow',answers:[
+      {question_id:'name',text:'합성별칭'},{question_id:'want',text:'이야기를 듣고 싶어요.'}],
+      expectations:[{path:'guide.script',operator:'exists'}]}]}));
+    workflowTransport=true;
+    const workflowResult=await run(['--input',inputPath,'--questions',bankPath,'--mode','workflow']);
+    const workflowFinal=JSON.parse(workflowResult.stdout.trim().split('\n').at(-1));outputs.push(workflowFinal.output);
+    assert.equal(workflowResult.status,0,workflowResult.stderr||workflowResult.stdout);
+    const workflowRow=JSON.parse(readFileSync(workflowFinal.artifacts.report)).results[0];
+    assert.equal(workflowRow.status,'passed');assert.equal(workflowRow.workflow.completed,true);
+    assert.equal(workflowRow.answered_count,2);assert.equal(workflowRow.result_scope,'final');
+    assert.deepEqual(received.map(call=>call.final),[false,false,true]);
+    assert.equal(received[0].prior_memory,null);
+    assert.ok(received[1].prior_memory.facts.some(fact=>fact.question_id==='name'));
+    assert.equal(received[2].prior_memory.user_goal,'이야기를 듣고 싶어요.');
+    assert.equal(workflowRow.http.summary.total,received.length);
+    assert.equal(workflowRow.workflow.final_state_applied,true);
     writeFileSync(inputPath, '{');
     const invalid = await run(['--input', inputPath, '--dry-run']);
     assert.equal(invalid.status, 2); assert.equal(JSON.parse(invalid.stderr).code, 'INVALID_JSON');
