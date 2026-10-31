@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readdirSync, readFileSync, writeFileSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { execFile } from 'node:child_process';
+import { execFile, execFileSync } from 'node:child_process';
 import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { prepareSuite, checkExpectations, runSuite, summarize, writeReports, main } from './test_model_question_sets.mjs';
@@ -188,6 +188,26 @@ test('CLI rejects ambiguous commands and invalid numeric options', async () => {
   }
 });
 
+test('CLI rejects FIFOs in both input paths and oversized regular files before any model work', () => {
+  const directory=mkdtempSync(join(tmpdir(),'hop-cli-input-bound-'));
+  const script=fileURLToPath(new URL('./test_model_question_sets.mjs',import.meta.url));
+  try {
+    const fifo=join(directory,'input.fifo'), oversized=join(directory,'oversized.json');
+    execFileSync('mkfifo',[fifo]);
+    writeFileSync(oversized,' '.repeat(5242881));
+    for (const [args,code] of [
+      [['--input',fifo,'--dry-run','--timeout-ms','1'],'INPUT_NOT_REGULAR_FILE'],
+      [['--questions',fifo,'--list-questions'],'INPUT_NOT_REGULAR_FILE'],
+      [['--input',oversized,'--dry-run'],'INPUT_TOO_LARGE'],
+    ]) {
+      assert.throws(()=>execFileSync(process.execPath,[script,...args],{encoding:'utf8',timeout:3000,stdio:'pipe'}),error=>{
+        assert.equal(error.status,2);assert.equal(error.stdout,'');
+        assert.equal(JSON.parse(error.stderr).code,code);return true;
+      });
+    }
+  } finally {rmSync(directory,{recursive:true,force:true});}
+});
+
 test('agent CLI describes its schema, validates offline and emits parseable JSONL and exit codes', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'hop-model-cli-'));
   const script = fileURLToPath(new URL('./test_model_question_sets.mjs', import.meta.url));
@@ -212,10 +232,10 @@ test('agent CLI describes its schema, validates offline and emits parseable JSON
       usage:{prompt_tokens:12, completion_tokens:7}}));
   });
   await new Promise((resolve, reject) => { server.once('error', reject); server.listen(0, '127.0.0.1', resolve); });
-  const run = args => new Promise(resolve => execFile(process.execPath, [script, ...args], {
+  const run = (args, settings = {}) => new Promise(resolve => execFile(process.execPath, [script, ...args], {
     encoding:'utf8', timeout:10000,
     env:{PATH:process.env.PATH, MODEL_BASE_URL:`http://127.0.0.1:${server.address().port}/v1`, MODEL_PROTOCOL:'json_schema',
-      MODEL_DISCOVER_TOKEN_LIMITS:'false', MODEL_API_KEY:'synthetic-cli-only'},
+      MODEL_DISCOVER_TOKEN_LIMITS:'false', MODEL_API_KEY:'synthetic-cli-only', ...settings},
   }, (error, stdout, stderr) => resolve({status:error?.code ?? 0, stdout, stderr})));
   const outputs = [];
   try {
@@ -240,6 +260,16 @@ test('agent CLI describes its schema, validates offline and emits parseable JSON
     const pendingReport = JSON.parse(readFileSync(pendingFinal.artifacts.report));
     assert.equal(pendingReport.results[0].workflow.next_question.id,'name');
     assert.equal(pendingReport.results[0].http.summary.total,0);
+    const changed = await run(['--input',inputPath,'--mode','workflow'],{MODEL_SKIP_FINAL_EXTRAS:'true',MODEL_TIMEOUT_MS:'10000'});
+    assert.equal(changed.status,3,changed.stderr);
+    const changedFinal=JSON.parse(changed.stdout.trim().split('\n').at(-1));outputs.push(changedFinal.output);
+    const changedReport=JSON.parse(readFileSync(changedFinal.artifacts.report));
+    assert.equal(changedReport.identity.writer.skip_final_extras,true);
+    assert.equal(changedReport.identity.writer.timeout_ms,10000);
+    assert.notEqual(changedReport.identity.writer.effective_config_sha256,pendingReport.identity.writer.effective_config_sha256);
+    assert.ok(changedReport.identity.runner_modules['model_test_io.mjs']);
+    assert.ok(changedReport.identity.runner_modules['model_test_identity.mjs']);
+    assert.equal(JSON.stringify(changedReport).includes('synthetic-cli-only'),false);
     for (const safety of [false, true]) {
       const suite = input(); suite.cases[0].expectations = [{path:'assessment.safety',operator:'equals',value:safety}];
       writeFileSync(inputPath, JSON.stringify(suite));

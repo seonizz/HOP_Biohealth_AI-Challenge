@@ -34,6 +34,7 @@
               "type": "object", "additionalProperties": false,
               "required": ["path", "operator"],
               "properties": {
+                "scope": {"enum": ["result", "safety"], "default": "result", "description": "result is the unmodified model output; safety exposes model and effective service safety separately."},
                 "path": {
                   "type": "string", "maxLength": 200,
                   "pattern": "^(?!(?:.*\\.)?(?:__proto__|prototype|constructor)(?:\\.|$))[a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)*$"

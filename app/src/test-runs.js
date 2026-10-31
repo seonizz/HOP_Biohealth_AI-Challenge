@@ -1,6 +1,7 @@
 import { HttpError, object } from './errors.js';
 import { createTestIntake, buildContext, applyModelUpdate } from './intake.js';
 import { generationProgress } from './generation-progress.js';
+import { finalSafety } from './final-safety.js';
 
 const missing = () => new HttpError(404, 'TEST_RUN_NOT_FOUND', '실행 중인 테스트를 찾을 수 없어요.');
 const cancelled = () => new HttpError(499, 'MODEL_CANCELLED', '테스트를 중단했어요.');
@@ -35,9 +36,7 @@ export function createTestRuns({ gateway, questionSet }) {
           ...(result.agent?.safety_signal ? { safety_signal:result.agent.safety_signal } : {}),
           ...(result.relationship_memory ? { relationship_memory:result.relationship_memory } : {}) });
         const profile = { ...context.profileInput, name:reviewed.name, scores:{},
-          safety:result.assessment.safety, symptoms:[], risks:[], protect:[] };
-        if (gateway.protocol !== 'relationship_agent') profile.safety ||= context.payload.answers.some(a =>
-          a.selected.some(o => o.meta.s === 'suicidal') || /죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|자해/.test(a.type === 'text' ? a.text : a.custom));
+          safety:finalSafety(context, result, gateway.protocol), symptoms:[], risks:[], protect:[] };
         return { test:true, saved:false, profile, guide:result.guide,
           ...(result.relationship_analysis ? { relationship_analysis:result.relationship_analysis } : {}),
           ...(result.conversation_detail ? { conversation_detail:result.conversation_detail } : {}) };

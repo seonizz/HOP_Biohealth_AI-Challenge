@@ -2,6 +2,7 @@ import { createIntake, currentView, prepareModelAnswer, completeModelAnswer, ans
   buildContext, applyModelUpdate } from '../../app/src/intake.js';
 import { sha256 } from './evaluation_evidence.mjs';
 import { clarificationQuestions } from '../../app/src/clarifications.js';
+import { finalSafety } from '../../app/src/final-safety.js';
 
 export function workflowAnswerSlots(questionSet) {
   return [
@@ -70,6 +71,6 @@ export async function runIntakeWorkflow({answers, questionSet, gateway, options,
   const result = await gateway.respond(context, state.agentMemory || null, options);
   options.signal?.throwIfAborted();
   state = applyFinalResult(state, result);
-  return {result, workflow:{...snapshot(), completed:true, final_context_sha256:sha256(JSON.stringify(context)),
+  return {result, serviceSafety:finalSafety(context, result, gateway.protocol), workflow:{...snapshot(), completed:true, final_context_sha256:sha256(JSON.stringify(context)),
     final_prior_memory_present:Boolean(context.agent_state), final_state_applied:true}, awaitingInput:false};
 }

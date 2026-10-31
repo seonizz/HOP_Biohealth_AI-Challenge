@@ -64,7 +64,9 @@ MODEL_BASE_URL=http://127.0.0.1:11434/v1 MODEL_NAME=gemma4:12b \
 
 - `answers`는 앱의 문항 ID별 답변 배열입니다. 자유 입력은 `text`, 선택형은 `selected:[0]`처럼 0 기반 인덱스, 허용된 직접 입력은 `custom`, 명시적 건너뛰기는 `skipped:true`를 사용합니다. 선택형 추가 설명은 해당 선택지가 설명을 요구할 때만 `text`를 사용합니다. 웹 UI의 `answers` 객체 축약형은 이 CLI에서 지원하지 않습니다.
 - 넣지 않은 문항은 `not_asked`로 유지합니다. 빈 부분을 답변으로 생성하지 않습니다. 명시적 생략은 앱 규칙에 맞아야 하며 사실 근거로 사용되지 않습니다.
-- `expectations`는 선택 사항입니다. `path`는 결과 객체 기준 점 경로이며 배열 인덱스도 가능합니다. `equals`는 JSON 값의 엄격한 구조 비교, `contains/not_contains`는 대소문자와 공백을 그대로 비교하는 문자열 검사, `exists`는 필드 존재 검사입니다. `exists`에는 `value`를 넣지 않습니다. 없는 필드의 `not_contains`도 실패합니다.
+- `expectations`는 선택 사항입니다. `path`는 결과 객체 기준 점 경로이며 배열 인덱스도 가능합니다. `scope` 생략 또는 `result`는 원본 모델 출력, `scope:"safety"`는 아래의 안전 판정 객체를 검사합니다. `equals`는 JSON 값의 엄격한 구조 비교, `contains/not_contains`는 대소문자와 공백을 그대로 비교하는 문자열 검사, `exists`는 필드 존재 검사입니다. `exists`에는 `value`를 넣지 않습니다. 없는 필드의 `not_contains`도 실패합니다. `null`도 존재하는 값이므로 안전 여부는 `exists` 대신 `equals`로 검사합니다.
+
+`--input`과 `--questions`는 일반 파일만 허용합니다. FIFO·디렉터리는 `INPUT_NOT_REGULAR_FILE`, 5MiB 초과는 `INPUT_TOO_LARGE`로 모델 호출 전에 종료합니다. 파일 크기 정보뿐 아니라 실제 읽은 바이트에도 제한을 적용합니다.
 - `exists`는 비어 있지 않음이나 의미 품질을 보장하지 않습니다. 기대값 없는 사례는 `completed`로 표시하며 `passed`로 계산하지 않습니다.
 
 `--mode final`(기본값)은 완성된 입력 스냅샷에서 전체 최종 생성 경로를 호출합니다. 카드·상태·관계 분석 등 해당 프로토콜이 반환하는 결과를 저장하고 앱의 `applyModelUpdate`까지 통과해야 완료됩니다. `--mode state`는 같은 스냅샷의 상태·기억 갱신을 검사합니다. 스냅샷에는 활성 다음 질문 후보가 없으므로 **state 모드는 실제 다음 질문 선택 검증이 아닙니다**. `state`에서 `guide.script` 같은 최종 카드 경로를 검사하면 실패합니다. 기본 템플릿은 `final`용입니다.
@@ -94,6 +96,16 @@ workflow는 **서비스의 메모리 내 문답·AI 경로**를 검사합니다.
 | `summary.md` | 완료·통과·불일치·오류 수와 사례별 요약 |
 
 `report.json.results[].result`에는 선택한 앱 프로토콜이 실제 반환한 값만 들어갑니다. `relationship_agent`의 최종 결과에서는 `guide`, `patient_state`, `assessment`, `name_index`, `relationship_analysis`, `relationship_memory`, `conversation_detail`, `agent` 등을 확인할 수 있습니다. 모델이 반환하지 않은 필드는 만들어 채우지 않습니다. 검증 실패 시 정상 결과가 없을 수 있으며 `error_code`, `trace`에서 실패 단계와 이유를 확인합니다.
+
+`results[].safety`는 상태 적용을 통과한 출력의 안전 판정을 구분합니다.
+
+- `model`: 최종 출력의 `assessment.safety` 또는 상태 출력의 `safety_signal.urgent`. 신호가 없거나 적용에 실패하면 `null`입니다. workflow 오류에서는 마지막 적용된 턴의 값이 남을 수 있으므로 `result_scope`와 함께 읽습니다.
+- `effective`: 최종 출력 적용 후 서비스에서 사용하는 안전 표시. 앱의 공용 `finalSafety` 함수를 재사용하며, 구형 프로토콜의 명시적 입력 기반 보정도 동일하게 적용합니다. 최종 완료 전에는 `null`입니다.
+- `summary.safety_flagged`와 CSV의 `safety`: `effective`가 있으면 그 값, 없으면 `model`을 사용합니다. 미확인은 `safety_unknown`으로 따로 집계하고 CSV에서는 빈칸입니다. CSV의 `model_safety`·`service_safety` 및 요약의 `service_safety_flagged`로 최종 서비스 값을 별도로 확인할 수 있습니다.
+
+예를 들어 `{"scope":"safety","path":"effective","operator":"equals","value":true}`는 서비스 안전 표시를 검사합니다. 기존 `assessment.safety` 검사는 보정 전 원본 값에 계속 적용됩니다. 안전 플래그는 앱 동작의 관측값이며 임상적 정확성 판정이 아닙니다.
+
+`identity.writer/reviewer`에는 각각의 실제 설정을 허용 목록으로 기록합니다. 제한 시간, 재시도, 스트리밍, 최종 부가 생성 생략·초안 재사용, 질문·블록 입력 범위, 검토 입력·수정 범위, 토큰 정책 재사용·조회, 스키마 문자열 제한 등이 포함됩니다. `effective_config_sha256`으로 설정 차이를 비교할 수 있습니다. 키·원본 URL·환경변수 전체는 제외하며, 런타임에서 실제 로딩된 모델의 동일성을 보증하지는 않습니다. 새로운 gateway 속성이 생기면 분류 누락 테스트가 실패하므로 기록 또는 제외 여부를 명시해야 합니다.
 
 `results[].checks`에서 기대값 불일치의 경로와 `actual`을 읽어 다음 테스트를 설계하세요. `summary.expectation_pass_rate`는 **생성에 성공하고 기대값이 있는 사례 실행만** 분모로 씁니다. 실행 오류는 `errors`, 기대값 없는 생성은 `without_expectations`에 따로 기록됩니다. 성공률 판단 시 이 세 항목을 함께 확인합니다.
 

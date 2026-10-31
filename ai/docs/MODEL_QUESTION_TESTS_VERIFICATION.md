@@ -2,6 +2,25 @@
 
 검증일: 2026-11-01(KST). 테스트 도구는 실제 앱 모듈을 import해 실행하며, 모델 호출 수·단계 순서·병렬 스케줄을 자체 구현하지 않는다.
 
+## 적대적 검토에서 발견한 4개 결함 수정
+
+`e6a6d15`에서 재현한 아래 4개 문제를 수정하고 다시 적대적으로 검토했다.
+
+| 문제 | 수정·회귀 검증 |
+|---|---|
+| 상태 출력 `safety_signal.urgent:true`가 요약에서 0, CSV에서 빈칸 | 상태·최종 출력의 안전 필드를 구분. `true/false/null`과 적용 거절을 각각 검사하고, workflow 최종 실패 시 마지막 승인 상태 유지 확인 |
+| 구형 프로토콜의 모델 `assessment.safety:false`와 앱 `profile.safety:true`가 다름 | 서버·앱 테스트·CLI가 같은 `finalSafety` 함수 사용. 원본 결과를 보존하고 `safety.model/effective` 분리 및 별도 기대값 검사. 실제 ModelGateway와 앱 createTestRuns를 같은 합성 응답으로 대조 |
+| FIFO 입력 무한 대기와 5MiB 제한 우회 | 일반 파일만 허용, 비차단 열기 후 파일 디스크립터 재검사, 실제 읽기 바이트 제한. FIFO와 초과 파일은 실제 CLI에서 종료 코드 2, 오래된 크기 정보에서도 제한·디스크립터 정리 확인 |
+| 호출 방식을 바꾸는 설정이 실행 식별값에서 누락 | writer/reviewer 유효 설정의 허용 목록 및 해시 기록. 설정 변경 시 저장된 해시 차이, 키·원본 URL 제외, 신규 속성 분류 누락 감지 확인 |
+
+다른 미커밋 변경을 제외한 `e6a6d15` 기반 임시 검증본에서 **109개 통과, 실패·건너뜀 0개**. 실행 명령:
+
+```sh
+node --test ai/scripts/test_model_question_sets.test.mjs ai/scripts/model_test_*.test.mjs app/tests/test-intake.test.js ai/scripts/evaluation_evidence.test.mjs app/tests/final-safety-projection.test.js app/tests/test-runner.test.js app/tests/safety-boundaries.test.js app/tests/safety-selection.test.js app/tests/safety-final-boundaries.test.js app/tests/safety-evidence.test.js
+```
+
+동일 검증본의 `npm --prefix app run check`도 통과했다. 독립 코드 검토에서는 추가로 재현된 결함이 없었고 별도 선택 검사 31개가 통과했다(위 109개와 중복되므로 합산하지 않음). 지정 LAN Ollama 검토 API는 연결 오류로 사용하지 못했다. 이번에는 합성 입력·모의 HTTP 응답으로 코드와 CLI 동작을 검증했으며, 새 라이브 모델 생성이나 DB E2E는 실행하지 않았다. 아래의 실제 모델 첫 턴 성공·최종 생성 미완료 범위는 그대로 유지한다.
+
 ## 실사용 코드 재검토와 수정
 
 후속 코드 검토에서 아래 문제를 확인하고 수정했다. 입력·진행 상태 문제는 수정 전 실패하는 회귀 검사를 먼저 추가해 재현했다.

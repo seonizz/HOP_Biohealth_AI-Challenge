@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, chmodSync, statSync, renameSync, rmSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, chmodSync, renameSync, rmSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs, isDeepStrictEqual } from 'node:util';
@@ -11,6 +11,9 @@ import { sourceFingerprint } from '../../app/src/source-identity.js';
 import { attemptMetrics, percentile, sha256 } from './evaluation_evidence.mjs';
 import { applyFinalResult, runIntakeWorkflow, workflowAnswerSlots } from './model_test_workflow.mjs';
 import { observeGateway } from './model_test_observer.mjs';
+import { finalSafety } from '../../app/src/final-safety.js';
+import { readJson } from './model_test_io.mjs';
+import { describeModelGateway } from './model_test_identity.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const privateRoot = join(root, 'ai/outputs/model-tests/private');
@@ -32,7 +35,8 @@ export function prepareSuite(data, questionSet = initialQuestionSet, mode = 'fin
     const expectations = item.expectations === undefined ? [] : item.expectations;
     if (!Array.isArray(expectations) || expectations.length > 100) fail('INVALID_EXPECTATIONS');
     for (const check of expectations) {
-      if (!exact(check, ['path', 'operator', 'value']) || typeof check.path !== 'string' || check.path.length > 200 ||
+      if (!exact(check, ['path', 'operator', 'value', 'scope']) ||
+          check.scope !== undefined && !['result', 'safety'].includes(check.scope) || typeof check.path !== 'string' || check.path.length > 200 ||
           !check.path.split('.').every(key => /^[a-zA-Z0-9_]+$/.test(key) && !['__proto__', 'prototype', 'constructor'].includes(key)) ||
           !['equals', 'contains', 'not_contains', 'exists'].includes(check.operator)) fail('INVALID_EXPECTATION');
       if (check.operator === 'exists' ? Object.hasOwn(check, 'value') : !Object.hasOwn(check, 'value')) fail('INVALID_EXPECTATION_VALUE');
@@ -61,9 +65,9 @@ export function prepareSuite(data, questionSet = initialQuestionSet, mode = 'fin
   });
 }
 
-export function checkExpectations(result, expectations) {
+export function checkExpectations(result, expectations, safety = {}) {
   return expectations.map(check => {
-    let actual = result, found = true;
+    let actual = check.scope === 'safety' ? safety : result, found = true;
     for (const key of check.path.split('.')) {
       if (actual === null || typeof actual !== 'object' || !Object.hasOwn(actual, key)) { found = false; actual = undefined; break; }
       actual = actual[key];
@@ -88,7 +92,9 @@ export function summarize(results, planned) {
     without_expectations:results.filter(row => row.status === 'completed').length,
     expectation_pass_rate:checked.length ? passed / checked.length : null,
     expectation_pass_rate_denominator:checked.length,
-    safety_flagged:results.filter(row => row.result?.assessment?.safety === true).length,
+    safety_flagged:results.filter(row => (row.safety?.effective ?? row.safety?.model) === true).length,
+    safety_unknown:results.filter(row => typeof (row.safety?.effective ?? row.safety?.model) !== 'boolean').length,
+    service_safety_flagged:results.filter(row => row.safety?.effective === true).length,
     prompt_tokens:totalTokens('prompt_tokens'), completion_tokens:totalTokens('completion_tokens'),
     elapsed_p50_ms:percentile(results.map(row => row.duration_ms), 0.5),
     elapsed_p95_ms:percentile(results.map(row => row.duration_ms), 0.95),
@@ -117,7 +123,8 @@ export async function runSuite(cases, { env = process.env, mode = 'final', repea
     const started = performance.now();
     const row = { case_id:item.id, repetition, request_id:randomUUID(), mode, input_sha256:item.input_sha256,
       context_sha256:sha256(JSON.stringify(item.context)), answered_count:item.context.answered_count,
-      model_requested:gateway.model, protocol:gateway.protocol, checks:[], trace, progress, cards, turns:[] };
+      model_requested:gateway.model, protocol:gateway.protocol, checks:[], trace, progress, cards, turns:[],
+      safety:{model:null, effective:null}, result_scope:'none' };
     try {
       const options = {
         requestId:row.request_id, signal:caseSignal,
@@ -132,11 +139,13 @@ export async function runSuite(cases, { env = process.env, mode = 'final', repea
             row.answered_count = workflow.answered_count;
             row.result = result;
             row.result_scope = result ? 'last_applied_turn' : 'none';
+            row.safety.model = typeof result?.safety_signal?.urgent === 'boolean' ? result.safety_signal.urgent : null;
           }});
         row.result = outcome.result;
         row.result_scope = outcome.workflow.completed ? 'final' : outcome.result ? 'last_applied_turn' : 'none';
         row.workflow = outcome.workflow;
         row.answered_count = outcome.workflow.answered_count;
+        if (outcome.workflow.completed) row.safety = {model:outcome.result.assessment.safety, effective:outcome.serviceSafety};
         if (outcome.awaitingInput) row.status = 'awaiting_input';
       } else {
         row.result = await gateway[mode === 'state' ? 'updateState' : 'respond'](structuredClone(item.context), null, options);
@@ -144,10 +153,14 @@ export async function runSuite(cases, { env = process.env, mode = 'final', repea
         if (mode === 'final') applyFinalResult(item.state, row.result);
         else applyModelUpdate(item.state, row.result);
         row.app_state_applied = true;
+        row.result_scope = mode === 'final' ? 'final' : 'state';
+        const modelSafety = mode === 'final' ? row.result.assessment?.safety : row.result.safety_signal?.urgent;
+        row.safety = {model:typeof modelSafety === 'boolean' ? modelSafety : null,
+          effective:mode === 'final' ? finalSafety(item.context, row.result, gateway.protocol) : null};
       }
       caseSignal.throwIfAborted();
       if (row.status !== 'awaiting_input') {
-        row.checks = checkExpectations(row.result, item.expectations);
+        row.checks = checkExpectations(row.result, item.expectations, row.safety);
         row.status = !row.checks.length ? 'completed' : row.checks.every(check => check.passed) ? 'passed' : 'failed';
       }
     } catch (error) {
@@ -178,11 +191,12 @@ function atomicWrite(path, contents) {
 export function renderCsv(results) {
   const columns = ['case_id', 'repetition', 'status', 'error_code', 'answered_count', 'duration_ms',
     'safety', 'checks_passed', 'checks_total', 'http_calls', 'model_http_calls', 'peak_http_until_headers',
-    'attempts', 'retries', 'prompt_tokens', 'completion_tokens'];
+    'attempts', 'retries', 'prompt_tokens', 'completion_tokens', 'model_safety', 'service_safety'];
   return [columns, ...results.map(row => [row.case_id, row.repetition, row.status, row.error_code, row.answered_count,
-    row.duration_ms, row.result?.assessment?.safety, row.checks.filter(check => check.passed).length, row.checks.length,
+    row.duration_ms, row.safety?.effective ?? row.safety?.model, row.checks.filter(check => check.passed).length, row.checks.length,
     row.http?.summary.total, row.http?.summary.by_route.chat_completions || 0, row.http?.summary.peak_outstanding_until_headers,
-    row.metrics.attempts, row.metrics.retries, row.metrics.prompt_tokens, row.metrics.completion_tokens])]
+    row.metrics.attempts, row.metrics.retries, row.metrics.prompt_tokens, row.metrics.completion_tokens,
+    row.safety?.model, row.safety?.effective])]
     .map(cells => cells.map(csvCell).join(',')).join('\n') + '\n';
 }
 
@@ -205,11 +219,6 @@ export function writeReports(directory, identity, results, planned, status) {
   // files are written, and never expose a truncated JSON document to readers.
   atomicWrite(join(directory, 'report.json'), json);
   return report;
-}
-
-function readJson(path) {
-  if (statSync(path).size > 5 * 1024 * 1024) fail('INPUT_TOO_LARGE');
-  try { return JSON.parse(readFileSync(path, 'utf8')); } catch { fail('INVALID_JSON'); }
 }
 
 const example = {cases:[{id:'synthetic_friend', answers:[
@@ -279,16 +288,12 @@ export async function main(argv = process.argv.slice(2)) {
   // Configuration validation does not call the model. Never persist env or keys.
   const gateway = configuredModelGateway({diagnosticLogger:null});
   if (!gateway) fail('MODEL_NOT_CONFIGURED');
-  const describe = model => ({model_requested:model.model, protocol:model.protocol,
-    endpoint_sha256:sha256(model.baseUrl), agent_format:model.agentFormat, state_mode:model.stateMode,
-    reasoning_effort:model.reasoningEffort, discover_token_limits:model.discoverTokenLimits,
-    api_profile:model.apiProfile, runtime_model_identity_verified:false});
   const identity = {started_at:new Date().toISOString(), input_sha256:sha256(JSON.stringify(data)),
     questions_sha256:questionSet.version, prompt_version:PROMPT_VERSION, source:sourceFingerprint(join(root, 'app')),
     runner_sha256:sha256(readFileSync(new URL(import.meta.url))),
-    runner_modules:Object.fromEntries(['model_test_workflow.mjs','model_test_observer.mjs','evaluation_evidence.mjs'].map(name =>
+    runner_modules:Object.fromEntries(['model_test_workflow.mjs','model_test_observer.mjs','model_test_io.mjs','model_test_identity.mjs','evaluation_evidence.mjs'].map(name =>
       [name,sha256(readFileSync(new URL(name,import.meta.url)))])),
-    writer:describe(gateway), reviewer:gateway.reviewGateway ? describe(gateway.reviewGateway) : null,
+    writer:describeModelGateway(gateway), reviewer:gateway.reviewGateway ? describeModelGateway(gateway.reviewGateway) : null,
     mode, repeat, case_timeout_ms:timeoutMs, independent_test:false};
   mkdirSync(privateRoot, {recursive:true, mode:0o700});
   const directory = mkdtempSync(join(privateRoot, 'run-'));

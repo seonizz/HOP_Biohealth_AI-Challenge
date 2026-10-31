@@ -16,6 +16,7 @@ import { PROMPT_VERSION } from './relationship-prompts.js';
 import { createReferralGuidance } from './referral-guidance.js';
 import { configuredReferralProvider } from './referral-runtime.js';
 import { createTestRuns } from './test-runs.js';
+import { finalSafety } from './final-safety.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -362,10 +363,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             signal.throwIfAborted();
             progress.finish('saving');
             const recordId = await store.nextRecordId();
-            const p = { ...context.profileInput, scores:{}, safety:result.assessment.safety,
+            const p = { ...context.profileInput, scores:{}, safety:finalSafety(context, result, gateway.protocol),
               symptoms:[], risks:[], protect:[] };
-            // The relationship agent reviews current danger and negation before approving the guide.
-            if (gateway.protocol !== 'relationship_agent') p.safety ||= context.payload.answers.some(a => a.selected.some(o => o.meta.s === 'suicidal') || /죽고\s?싶|사라지고\s?싶|없어지고\s?싶|자살|자해/.test(a.type === 'text' ? a.text : a.custom));
             row = await store.updateIntake(owner, id, revision, state => {
               signal.throwIfAborted();
               const next = { ...applyModelUpdate(state, { patient_state:result.patient_state,
