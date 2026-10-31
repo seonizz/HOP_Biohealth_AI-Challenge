@@ -4,6 +4,7 @@
 
 | 작업 | 위치 |
 |---|---|
+| AI 에이전트용 질문셋 일괄 테스트 | [CLI·입력 스키마·결과 규격](docs/MODEL_QUESTION_TESTS.md) |
 | 합성 사례·실제 웹 평가 | [평가 실행 안내](local_api/RELATIONSHIP_AGENT.md) |
 | 현재 기술 계약 | [관계 에이전트](../app/docs/RELATIONSHIP_AGENT.md) |
 | 실행본·남은 검증 | [현황과 할 일](../docs/current/현황과_할일.md) |
