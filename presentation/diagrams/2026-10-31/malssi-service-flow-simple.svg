@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+<title id="title">말씨 핵심 서비스 흐름</title>
+<desc id="desc">상황 입력, 맥락 이해, 맞춤 안내, 검토와 저장의 네 단계. 답변에 따라 질문을 조정하고 대화 원문을 근거로 대화문과 실천 및 돌봄 안내를 만든다. 검토에서 문제가 있으면 수정한다.</desc>
+<defs><marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L12 6 L0 12Z" fill="#AAAAD0"/></marker></defs>
+<rect width="1600" height="900" fill="#FFFFFF"/>
+<g font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif">
+<text x="70" y="88" font-size="38" fill="#7474D7" font-weight="700" text-anchor="start">말씨</text>
+<text x="170" y="88" font-size="27" fill="#6A7187" font-weight="400" text-anchor="start">서비스 핵심 흐름</text>
+<text x="70" y="177" font-size="49" fill="#252C43" font-weight="600" text-anchor="start">걱정되는 상황에서, 건넬 말과 행동까지</text>
+<text x="215" y="347" font-size="25" fill="#7474D7" font-weight="500" text-anchor="middle">01</text>
+<text x="215" y="401" font-size="37" fill="#252C43" font-weight="600" text-anchor="middle">상황 입력</text>
+<text x="215" y="456" font-size="25" fill="#687189" font-weight="400" text-anchor="middle">관계·관찰·고민 입력</text>
+<path d="M388 423 H432" stroke="#AAAAD0" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+<rect x="450" y="300" width="310" height="248" rx="26" fill="#F1F0FC"/>
+<text x="605" y="347" font-size="25" fill="#7474D7" font-weight="500" text-anchor="middle">02</text>
+<text x="605" y="401" font-size="37" fill="#252C43" font-weight="600" text-anchor="middle">맥락 이해</text>
+<text x="605" y="456" font-size="25" fill="#687189" font-weight="400" text-anchor="middle">답변에 맞춰 질문 조정</text>
+<text x="605" y="496" font-size="25" fill="#687189" font-weight="400" text-anchor="middle">대화 원문에서 근거 확인</text>
+<path d="M778 423 H822" stroke="#AAAAD0" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+<rect x="840" y="300" width="310" height="248" rx="26" fill="#7474D7"/>
+<text x="995" y="347" font-size="25" fill="#E7E6FF" font-weight="500" text-anchor="middle">03</text>
+<text x="995" y="401" font-size="37" fill="#FFFFFF" font-weight="600" text-anchor="middle">맞춤 안내</text>
+<text x="995" y="456" font-size="25" fill="#F4F3FF" font-weight="400" text-anchor="middle">대화문·실천·돌봄 제안</text>
+<path d="M1168 423 H1212" stroke="#AAAAD0" stroke-width="3" fill="none" marker-end="url(#arrow)"/>
+<text x="1385" y="347" font-size="25" fill="#7474D7" font-weight="500" text-anchor="middle">04</text>
+<text x="1385" y="401" font-size="37" fill="#252C43" font-weight="600" text-anchor="middle">검토·저장</text>
+<text x="1385" y="456" font-size="25" fill="#687189" font-weight="400" text-anchor="middle">원문 근거·안전 검토</text>
+<text x="1385" y="496" font-size="25" fill="#687189" font-weight="400" text-anchor="middle">결과 저장·다시 보기</text>
+<path d="M1385 560 V602 H995 V560" stroke="#AAAAD0" stroke-width="2" stroke-dasharray="7 7" fill="none" marker-end="url(#arrow)"/>
+<text x="1190" y="637" font-size="23" fill="#6A7187" font-weight="400" text-anchor="middle">검토에서 문제가 있으면 수정</text>
+<path d="M70 701 H1530" stroke="#E5E5EF" stroke-width="1.5"/>
+<text x="800" y="773" font-size="32" fill="#252C43" font-weight="500" text-anchor="middle">무슨 말을 할지 · 어떻게 도울지 · 나를 어떻게 돌볼지</text>
+<text x="1530" y="854" font-size="20" fill="#83889A" font-weight="400" text-anchor="end">2026.10.31 · 현재 구현 기준</text>
+</g></svg>

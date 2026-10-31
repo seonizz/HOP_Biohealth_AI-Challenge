@@ -83,6 +83,10 @@ def validate_policy(policy):
         gates = model["role_acceptance"]
         require(gates["minimum_source_families"] >= 30 and gates["minimum_family_pass_rate"] == 0.95
                 and gates["must_not_regress_against_baseline"] is True, "Unsafe role acceptance gate")
+        if "role_evaluation_binding" in model:
+            binding=model["role_evaluation_binding"]
+            require(set(binding)=={"development_suite_sha256","test_suite_sha256","evaluation_manifest_sha256"}
+                    and all(valid_hash(v) for v in binding.values()), "Invalid frozen role evaluation binding")
 
 
 def bind(defaults, roots, output):
@@ -97,14 +101,14 @@ def bind(defaults, roots, output):
         require(course["role"] == role and course["model"]["family"] == "Gemma 4"
                 and course["model"]["parameter_size"] == policy["models"][role]["parameter_size"], "Wrong dataset/model")
         require(course["loss"]["reduction"] == "mean_target_token_CE_per_row" and course["loss"]["weighting"] == "equal_task_then_connected_source_family", "Wrong dataset loss")
-        manifest_root = root.parent if role == "chat_12b" else root
+        manifest_root = root if (root / "MANIFEST.json").exists() else root.parent
         manifest_path = manifest_root / "MANIFEST.json"
         manifest = read_json(manifest_path)
         require(file_hash(course_path) == manifest["files"][str(course_path.relative_to(manifest_root))]["sha256"], "Unbound course")
         settings = policy["models"][role]
         require([p["id"] for p in course["phases"]] == [p["id"] for p in settings["phases"]], "Phase order changed")
         settings["binding"] = {"root_at_binding": str(root), "course_sha256": file_hash(course_path),
-                               "manifest_sha256": file_hash(manifest_path), "manifest_at_parent": role == "chat_12b",
+                               "manifest_sha256": file_hash(manifest_path), "manifest_at_parent": manifest_root == root.parent,
                                "tokenizer_sha256": course["model"]["tokenizer_sha256"]}
         for rule, phase in zip(settings["phases"], course["phases"]):
             rule["data"] = {}
@@ -218,6 +222,9 @@ def decide(policy, role, phase_id, history, indexes, evidence_base, previous=Non
     require(valid_hash(history["role_eval_suite_sha256"]) and valid_hash(history["model_start_checkpoint_sha256"])
             and valid_hash(history["role_baseline_judgments_sha256"]),
             "Freeze the role-evaluation suite, baseline judgments and model-start checkpoint before training")
+    if "role_evaluation_binding" in model:
+        require(history["role_eval_suite_sha256"]==model["role_evaluation_binding"]["development_suite_sha256"],
+                "History differs from policy-bound development evaluation")
     if position:
         require(previous is not None and previous["status"] == "stop_phase_accepted"
                 and previous["policy_sha256"] == fingerprint(policy) and previous["model_role"] == role
@@ -330,6 +337,9 @@ def score_role(policy, role, suite, evidence, candidate, baseline, suite_sha256,
     """Family-level performance of one checkpoint; never claims training complete."""
     validate_policy(policy)
     gates = policy["models"][role]["role_acceptance"]
+    frozen=policy["models"][role].get("role_evaluation_binding")
+    if frozen:
+        require(suite_sha256==frozen["development_suite_sha256"], "Suite differs from policy-bound development evaluation")
     require(valid_hash(candidate) and valid_hash(baseline) and candidate != baseline, "Invalid role-evaluation checkpoint identities")
     require(suite["schema"] == "malssi-role-evaluation-suite-v1" and suite["model_role"] == role
             and suite["split"] == "development", "Role selection must use a frozen development suite")

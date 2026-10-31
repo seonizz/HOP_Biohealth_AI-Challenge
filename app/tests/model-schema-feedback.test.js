@@ -48,6 +48,32 @@ for(const [name,candidate,expected] of [
   assert.equal(errors[0].modelFeedback,requests[1].validation_feedback);
   assert.equal(errors[0].modelReason,'agent_schema');assert.ok(!requests[1].validation_feedback.includes('PRIVATE_'));
   assert.deepEqual(logs.map(entry=>entry.reason),['agent_schema','success']);privateLogs(logs);
+  assert.deepEqual(logs[0].schema_failure,{path:expected.path,keyword:expected.keyword});
+  assert.equal(Object.hasOwn(logs[1],'schema_failure'),false);
+});
+
+test('schema diagnostics retain only bounded allowlisted paths and keywords, never feedback values',async()=>{
+  const requests=[],logs=[],feedback=JSON.stringify({path:'output.patient[2].evidence[0].quote',keyword:'enum',
+    expected:{enum:['PRIVATE_SOURCE']},actual:'PRIVATE_RESPONSE',repair:'PRIVATE_REPAIR'});
+  const model=gateway([valid],requests,logs);let validations=0;
+  await generate(model,value=>{if(++validations===1)throw failure('agent_schema',feedback);return value;});
+  assert.deepEqual(logs[0].schema_failure,{path:'output.patient[2].evidence[0].quote',keyword:'enum'});
+  assert.deepEqual(Object.keys(logs[0].schema_failure),['path','keyword']);privateLogs(logs);
+});
+
+for(const feedback of [
+  {path:'output.PRIVATE_SOURCE',keyword:'type'},
+  {path:'output.rows[PRIVATE_SOURCE]',keyword:'type'},
+  {path:'output.rows[10000]',keyword:'type'},
+  {path:'output'+'.rows'.repeat(17),keyword:'type'},
+  {path:'output.__proto__',keyword:'type'},
+  {path:'output.rows',keyword:'PRIVATE_SOURCE'},
+  {path:['PRIVATE_SOURCE'],keyword:'type'},
+  null,
+])test('schema diagnostics omit untrusted structural metadata: '+JSON.stringify(feedback),async()=>{
+  const requests=[],logs=[],model=gateway([valid],requests,logs);let validations=0;
+  await generate(model,value=>{if(++validations===1)throw failure('agent_schema',JSON.stringify(feedback));return value;});
+  assert.equal(Object.hasOwn(logs[0],'schema_failure'),false);privateLogs(logs);
 });
 
 test('explicit custom schema feedback is preserved even when the wire format also fails',async()=>{
@@ -128,4 +154,15 @@ test('source-bearing schema candidates, unknown keys and model values stay out o
   assert.deepEqual(JSON.parse(requests[1].validation_feedback),{path:'output.quote',keyword:'enum',
     expected:{enum_count:1},actual:{type:'string'}});
   assert.ok(!requests[1].validation_feedback.includes('PRIVATE_'));privateLogs(logs);
+});
+
+test('schema diagnostics parse only the first JSON line and never log appended repair prose',async()=>{
+  const requests=[],logs=[],model=gateway([valid],requests,logs);
+  const feedback=JSON.stringify({path:'output.observations.patient[0]',keyword:'enum',actual:{type:'object',value:'PRIVATE_VALUE'}})+'\nPRIVATE_ADVICE 원문과 전체 근거 객체를 다시 확인하세요.';
+  await assert.rejects(generate(model,()=>{throw failure('agent_schema',feedback);}),{modelReason:'agent_schema'});
+  for(const entry of logs)assert.deepEqual(entry.schema_failure,{path:'output.observations.patient[0]',keyword:'enum'});
+  assert.equal(requests[1].validation_feedback,feedback);privateLogs(logs);
+  const badRequests=[],badLogs=[],badModel=gateway([valid],badRequests,badLogs);
+  await assert.rejects(generate(badModel,()=>{throw failure('agent_schema','PRIVATE_INVALID\n'+JSON.stringify({path:'output.patient',keyword:'enum'}));}));
+  assert.ok(badLogs.every(entry=>!entry.schema_failure));privateLogs(badLogs);
 });

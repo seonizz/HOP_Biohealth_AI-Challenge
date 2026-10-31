@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>최종 출력 테스트 · 말씨</title>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/chat.css">
+  <link rel="stylesheet" href="css/result.css">
+  <link rel="stylesheet" href="css/test-runner.css">
+</head>
+<body>
+  <main class="test-workspace">
+    <header class="top"><a class="logo" href="/" aria-label="말씨 서비스로"><img src="assets/logo.png" alt="말씨"></a><span class="pill">최종 출력 테스트</span><a class="test-service" href="/">서비스로 돌아가기 ↗</a></header>
+    <div class="test-intro"><h1>답변을 한 번에, 결과는 말씨처럼</h1><p>테스트 세트를 넣으면 같은 생성·검토 과정을 거쳐 서비스 카드로 보여 드려요.</p></div>
+    <section class="card test-editor" aria-labelledby="input-title">
+      <div class="test-toolbar"><h2 id="input-title">테스트 세트</h2><button class="ghost" id="test-example" type="button" disabled>예시 불러오기</button><label class="ghost test-file">JSON 파일 불러오기<input id="test-file" type="file" accept=".json,application/json" disabled></label></div>
+      <label class="note" for="test-input">JSON 답변을 붙여넣어 주세요. 여러 사례는 {"cases": [{"title": "사례 이름", "answers": {…}}]} 형식으로 넣을 수 있어요.</label>
+      <textarea id="test-input" spellcheck="false" placeholder="문항 목록을 불러오고 있어요." aria-describedby="test-privacy" disabled></textarea>
+      <p class="note" id="test-privacy">입력은 서비스에 연결된 모델로 전송됩니다. 테스트 답변과 결과는 내 기록에 저장하지 않으며, 새로고침하면 사라져요. 넣지 않은 답변은 미응답으로 유지해요.</p>
+      <div class="test-toolbar"><button class="btn" id="test-run" type="button" disabled>최종 출력 생성</button><button class="ghost" id="test-stop" type="button" hidden>중단</button><span id="test-status" role="status" aria-live="polite">문항을 불러오고 있어요.</span></div>
+      <p id="test-error" role="alert" hidden></p>
+      <details class="test-format"><summary>문항 ID와 보기 · 입력 형식</summary><p class="note">글 답변은 문자열, 선택 답변은 보기 문구 배열로 넣어 주세요. 선택과 직접 입력을 함께 넣을 때는 {"selected": ["보기 문구"], "custom": "추가 답변"}을 사용해요. 명시적 건너뛰기는 null로 넣으며 필수 문항에는 사용할 수 없어요. 번호를 쓰면 첫 보기는 0이에요.</p><div id="test-questions"></div></details>
+    </section>
+    <section class="test-results" aria-label="테스트 결과">
+      <div class="test-toolbar"><h2>최종 출력</h2><label for="test-case" id="test-case-label" hidden>사례 선택</label><select id="test-case" hidden></select><button class="ghost" id="test-download" type="button" disabled>결과 JSON 내려받기</button></div>
+      <p class="note" id="test-empty">답변을 넣고 최종 출력 생성을 눌러 주세요.</p>
+    </section>
+  </main>
+  <div id="app"></div>
+  <script src="js/core/assets.js"></script>
+  <script src="js/core/utils.js"></script>
+  <script src="js/components/TopBar.js"></script>
+  <script src="js/components/ChatScreen.js"></script>
+  <script src="js/components/GuideCards.js"></script>
+  <script src="js/components/ResultScreen.js"></script>
+  <script src="js/test-input.js"></script>
+  <script src="js/test-runner.js"></script>
+</body>
+</html>

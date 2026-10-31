@@ -159,3 +159,54 @@ for(const gateway of [null,{model:'synthetic-injected'}])test('injected model co
   const app=await createApp({databaseUrl:'unused',key:randomBytes(32),gateway,referralProvider:null});
   await app.shutdown();assert.equal(closed,1);
 });
+
+test('optional final extras skip is strict opt-in on the writer only',()=>{
+  const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435'};
+  assert.equal(configuredModelGateway({env}).skipFinalExtras,false);
+  assert.equal(configuredModelGateway({env:{...env,MODEL_SKIP_FINAL_EXTRAS:'false'}}).skipFinalExtras,false);
+  const enabled=configuredModelGateway({env:{...env,MODEL_SKIP_FINAL_EXTRAS:'true'}});
+  assert.equal(enabled.skipFinalExtras,true);assert.equal(enabled.reviewGateway.skipFinalExtras,false);
+  for(const flag of ['', 'yes', 'TRUE', '1', true, null])assert.throws(()=>configuredModelGateway({env:{...env,MODEL_SKIP_FINAL_EXTRAS:flag}}),/Invalid MODEL configuration/);
+  const direct=new ModelGateway({baseUrl:'http://127.0.0.1:11434/v1',apiKey:'synthetic',skipFinalExtras:'true'});assert.equal(direct.configured,false);
+});
+
+test('O4 draft reuse is opt-in and cannot disable full reviews or stored detail',()=>{
+  const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435'};
+  assert.equal(configuredModelGateway({env}).reuseFinalDraft,false);
+  assert.equal(configuredModelGateway({env:{...env,MODEL_REUSE_FINAL_DRAFT:'false'}}).reuseFinalDraft,false);
+  const gateway=configuredModelGateway({env:{...env,MODEL_REUSE_FINAL_DRAFT:'true'}});
+  assert.equal(gateway.reuseFinalDraft,true);
+  assert.equal(gateway.skipFinalExtras,false);
+  assert.equal(gateway.reviewGateway.reuseFinalDraft,false);
+  assert.equal(gateway.timeoutMs,0);
+  for(const value of ['', 'yes', 'TRUE', '1', true, null])
+    assert.throws(()=>configuredModelGateway({env:{...env,MODEL_REUSE_FINAL_DRAFT:value}}),/Invalid MODEL configuration/);
+  for(const overrides of [{MODEL_SKIP_FINAL_EXTRAS:'true'},{MODEL_PROTOCOL:'json_prompt'},{MODEL_PROTOCOL:'json_schema'}])
+    assert.throws(()=>configuredModelGateway({env:{...env,MODEL_REUSE_FINAL_DRAFT:'true',...overrides}}),/Invalid MODEL configuration/);
+  const direct=new ModelGateway({baseUrl:'http://127.0.0.1:11434/v1',apiKey:'synthetic',reuseFinalDraft:'true'});
+  assert.equal(direct.configured,false);
+});
+
+test('turn input slimming is strict writer-only opt-in without changing state mode or review settings',()=>{
+  const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435'};
+  const flags=['MODEL_STAGE_SCOPED_QUESTION_RULES','MODEL_BLOCK_SCOPED_INPUTS'];
+  for(const value of [undefined,'false']) {
+    const gateway=configuredModelGateway({env:{...env,...Object.fromEntries(flags.map(key=>[key,value]))}});
+    assert.equal(gateway.stageScopedQuestionRules,false);assert.equal(gateway.blockScopedInputs,false);
+  }
+  for(const stateMode of ['combined','combined_blocks','staged']) {
+    const gateway=configuredModelGateway({env:{...env,MODEL_STATE_MODE:stateMode,MODEL_REUSE_FINAL_DRAFT:'true',
+      MODEL_STAGE_SCOPED_QUESTION_RULES:'true',MODEL_BLOCK_SCOPED_INPUTS:'true'}});
+    assert.equal(gateway.stateMode,stateMode);
+    assert.equal(gateway.stageScopedQuestionRules,true);assert.equal(gateway.blockScopedInputs,true);
+    assert.equal(gateway.reviewGateway.stageScopedQuestionRules,false);assert.equal(gateway.reviewGateway.blockScopedInputs,false);
+    assert.equal(gateway.reuseFinalDraft,true);assert.equal(gateway.skipFinalExtras,false);assert.equal(gateway.timeoutMs,0);
+  }
+  for(const key of flags)for(const value of ['', 'TRUE', '1', 'yes', true, null])
+    assert.throws(()=>configuredModelGateway({env:{...env,MODEL_STAGE_SCOPED_QUESTION_RULES:'true',[key]:value}}),/Invalid MODEL configuration/);
+  assert.throws(()=>configuredModelGateway({env:{...env,MODEL_BLOCK_SCOPED_INPUTS:'true'}}),/Invalid MODEL configuration/);
+  for(const protocol of ['json_prompt','json_schema'])
+    assert.throws(()=>configuredModelGateway({env:{...env,MODEL_PROTOCOL:protocol,MODEL_STAGE_SCOPED_QUESTION_RULES:'true'}}),/Invalid MODEL configuration/);
+  for(const options of [{stageScopedQuestionRules:'true'},{blockScopedInputs:1},{blockScopedInputs:true}])
+    assert.equal(new ModelGateway({baseUrl:env.MODEL_BASE_URL,apiKey:'synthetic',protocol:'relationship_agent',...options}).configured,false);
+});

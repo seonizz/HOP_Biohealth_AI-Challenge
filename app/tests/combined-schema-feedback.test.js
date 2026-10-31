@@ -40,7 +40,7 @@ test('combined draft rejects three reported findings outside the normalization e
     return true;
   });
   assert.equal(calls,1);assert.deepEqual(value,before);
-  assert.match(TURN_PROMPT_VERSION,/-combined-turn-v49$/);
+  assert.match(TURN_PROMPT_VERSION,/-combined-turn-v50$/);
 });
 
 test('fact writing selects its quote enum while the complete long answer survives input and independent review',async()=>{

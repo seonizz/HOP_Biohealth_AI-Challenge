@@ -1,0 +1,37 @@
+# Explicit deployment overlay; do not launch until GPU-server use is approved.
+# The configured URL may be a local bridge, but its backend must be server GPU.
+services:
+  api:
+    environment:
+      MODEL_SERVER_GPU_ONLY: "true"
+      MODEL_API_PROFILE: trained_chat
+      MODEL_BASE_URL: ${MODEL_BASE_URL:?Set the verified GPU bridge URL}
+      MODEL_NAME: ${MODEL_NAME:?Set the verified server model ID}
+      MODEL_API_KEY: ${MODEL_API_KEY:?Set the GPU bridge credential}
+      MODEL_PROTOCOL: relationship_agent
+      MODEL_REUSE_FINAL_DRAFT: "true"
+      MODEL_SKIP_FINAL_EXTRAS: "false"
+      MODEL_STAGE_SCOPED_QUESTION_RULES: "true"
+      MODEL_BLOCK_SCOPED_INPUTS: "true"
+      MODEL_AGENT_FORMAT: prompt
+      MODEL_REASONING_EFFORT: omit
+      MODEL_STREAM_JSON: "false"
+      MODEL_STREAM_COMPLETE_JSON: "false"
+      MODEL_REVIEW_API_PROFILE: trained_chat
+      MODEL_REVIEW_BASE_URL: ${MODEL_BASE_URL:?Set the verified GPU bridge URL}
+      MODEL_REVIEW_DOCKER_BASE_URL: ${MODEL_DOCKER_BASE_URL:-}
+      MODEL_REVIEW_NAME: ${MODEL_NAME:?Set the verified server model ID}
+      MODEL_REVIEW_API_KEY: ${MODEL_API_KEY:?Set the GPU bridge credential}
+      MODEL_REVIEW_AGENT_FORMAT: prompt
+      MODEL_REVIEW_REASONING_EFFORT: omit
+      MODEL_REVIEW_STREAM_JSON: "false"
+      MODEL_REVIEW_STREAM_COMPLETE_JSON: "false"
+      REFERRAL_MODEL_API_PROFILE: trained_chat
+      REFERRAL_MODEL_BASE_URL: ${MODEL_BASE_URL:?Set the verified GPU bridge URL}
+      REFERRAL_MODEL_DOCKER_BASE_URL: ${MODEL_DOCKER_BASE_URL:-}
+      REFERRAL_MODEL_NAME: ${MODEL_NAME:?Set the verified server model ID}
+      REFERRAL_MODEL_API_KEY: ${MODEL_API_KEY:?Set the GPU bridge credential}
+      REFERRAL_MODEL_AGENT_FORMAT: prompt
+      REFERRAL_MODEL_REASONING_EFFORT: omit
+      REFERRAL_MODEL_STREAM_JSON: "false"
+      REFERRAL_MODEL_STREAM_COMPLETE_JSON: "false"

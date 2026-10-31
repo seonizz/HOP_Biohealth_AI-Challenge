@@ -15,6 +15,7 @@ import { sourceFingerprint } from './source-identity.js';
 import { PROMPT_VERSION } from './relationship-prompts.js';
 import { createReferralGuidance } from './referral-guidance.js';
 import { configuredReferralProvider } from './referral-runtime.js';
+import { createTestRuns } from './test-runs.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -115,6 +116,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   } catch (error) { await store.close(); throw error; }
   const resultRuns = new Map();
   const modelRuns = new Map();
+  const testRuns = createTestRuns({ gateway, questionSet:() => store.questionSet() });
   const cancelRuns = (owner, id, reason = revisionConflict(), keepRevision) => {
     for (const runs of [modelRuns, resultRuns]) for (const [key, run] of runs) {
       if (run.owner !== owner || id !== undefined && run.id !== id || run.revision === keepRevision) continue;
@@ -122,6 +124,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       runs.delete(key);
     }
     referral.cancel(owner, id, reason, keepRevision);
+    if (id === undefined) testRuns.cancelOwner(owner);
   };
   const view = row => ({ id: row.id, revision: row.revision, name:row.state.name, chat_title:row.state.chatTitle || '', ...currentView(row.state), log: row.state.log,
     referral_available:referral.available(row.state) });
@@ -186,6 +189,11 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if (matched?.rows[0]) cancelRuns(matched.rows[0].id, undefined, notFound());
         return json(res, 200, { deleted:true, ...deleted });
       }
+      if (method === 'POST' && path === '/api/records/open-with-key') {
+        if (!origins.includes(req.headers.origin)) throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
+        const input = object(await body(req), ['access_key']);
+        return json(res, 200, { record:await store.recordWithAccessKey(input.access_key) });
+      }
       let browser = await store.browser(tokenFrom(req));
       if (method === 'GET' && path === '/api/bootstrap') {
         if (!browser) {
@@ -205,6 +213,18 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (!browser) throw new HttpError(401, 'SESSION_REQUIRED', '앱을 새로고침해 주세요.');
       if (!['GET','HEAD'].includes(method) && !safeEqual(req.headers['x-csrf-token'], browser.csrf)) throw new HttpError(403, 'CSRF_REJECTED', '앱을 새로고침한 뒤 다시 시도해 주세요.');
       const owner = browser.id;
+      const testMatch = /^\/api\/test-runs\/([^/]+)(\/progress)?$/.exec(path);
+      if (testMatch) {
+        const [,id,progress] = testMatch;
+        if (!UUID.test(id)) throw new HttpError(404, 'NOT_FOUND', '테스트를 찾을 수 없어요.');
+        if (method === 'GET' && progress) return json(res, 200, testRuns.progress(owner, id));
+        if (method === 'POST' && !progress) return json(res, 200,
+          await testRuns.start(owner, id, await body(req), { signal:request.signal, requestId }));
+        if (method === 'DELETE' && !progress) {
+          testRuns.cancel(owner, id);
+          return json(res, 200, { cancelled:true });
+        }
+      }
       if (method === 'GET' && path === '/api/guidance/characters') return json(res, 200, referral.characters());
       if (method === 'GET' && path === '/api/guidance/institutions') return json(res, 200, referral.institutions());
       if (method === 'POST' && path === '/api/deletion-key') {
@@ -382,6 +402,13 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         cancelRuns(owner, undefined, notFound());
         return json(res, 200, { deleted:true, ...deleted });
       }
+      const accessKeyMatch = /^\/api\/records\/(\d+)\/access-key$/.exec(path);
+      if (accessKeyMatch && ['POST', 'DELETE'].includes(method)) {
+        object(await body(req), []);
+        if (method === 'POST') return json(res, 201, { access_key:await store.createRecordAccessKey(owner, accessKeyMatch[1]) });
+        await store.revokeRecordAccessKey(owner, accessKeyMatch[1]);
+        return json(res, 200, { revoked:true });
+      }
       const recordMatch = /^\/api\/records\/(\d+)$/.exec(path);
       if (recordMatch) {
         if (method === 'GET') return json(res, 200, { record:await store.record(owner, recordMatch[1]) });
@@ -429,6 +456,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       runs.clear();
     }
     referral.shutdown();
+    testRuns.shutdown();
     await new Promise((resolve, reject) => {
       server.close(error => error && error.code !== 'ERR_SERVER_NOT_RUNNING' ? reject(error) : resolve());
       server.closeIdleConnections();

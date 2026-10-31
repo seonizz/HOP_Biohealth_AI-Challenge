@@ -497,7 +497,7 @@ test('identical cross-array unknowns share a model audit and retain distinct com
   assert.equal(model.calls.length,3);
   assert.match(prompt,/review_target\.claims에 나열된 각 id만/u);
   assert.match(prompt,/보이지 않는 다른 배열의 항목·id를 재구성하거나 추가하지 마세요/u);
-  assert.match(output.state_agent.prompt_version,/-combined-turn-v49$/);
+  assert.match(output.state_agent.prompt_version,/-combined-turn-v50$/);
 });
 
 test('rejected review history keeps all original unknown IDs and arrays after shared-audit expansion',async()=>{

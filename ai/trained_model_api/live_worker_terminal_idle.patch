@@ -1,0 +1,21 @@
+--- a/live_worker.py
++++ b/live_worker.py
+@@ -311,6 +311,7 @@
+                          "checkpoint_sha256": chosen["manifest_sha256"], "checkpoint_step": chosen["step"],
+                          "adapter_sha256": adapter_sha, "campaign_sha256": admission["campaign_sha256"],
+                          "task": "conversation", "epoch": 3, "gpu_only": True,
++                         "terminal_reply_after_idle": True,
+                          "prefill_chunk_size": 1024, "grouped_global_attention": True,
+                          "generation_profile": "greedy_at_temperature_zero_sampling_follows_request"}
+ 
+@@ -388,6 +389,10 @@
+                 controller.active = None
+             controller.emit("reply", id=request.request_id, ok=True, result=result)
+         except RequestError as error:
++            # Terminal replies promise this generation no longer owns admission.
++            with controller.lock:
++                if controller.active is request:
++                    controller.active = None
+             controller.emit("reply", id=request.request_id, ok=False,
+                 error={"type": request.reason or "invalid_request", "message": str(error)})
+         except Exception as error:

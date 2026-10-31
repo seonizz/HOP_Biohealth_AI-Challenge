@@ -173,6 +173,49 @@ function commitAnswer(state, question, answer) {
   }
 }
 
+// Final-output testing supplies an explicit snapshot, not a simulated interview.
+// Missing questions remain unasked; only supplied answers become model evidence.
+export function createTestIntake(answers, questionSet = initialQuestionSet) {
+  const questions = questionSet.questions;
+  if (!Array.isArray(answers) || !answers.length || answers.length > questions.length) {
+    invalid('invalid_test_answers', '테스트 답변을 하나 이상, 문항 수 이내로 보내 주세요.', 422);
+  }
+  const inputs = new Map(), ids = new Set(questions.map(question => question.id));
+  const keys = ['question_id', 'text', 'selected', 'custom', 'skipped'];
+  for (const input of answers) {
+    if (!input || typeof input !== 'object' || Array.isArray(input) ||
+        Object.keys(input).some(key => !keys.includes(key)) ||
+        typeof input.question_id !== 'string' || !ids.has(input.question_id)) {
+      invalid('invalid_test_answer', '테스트 답변의 문항 ID와 입력 형식을 확인해 주세요.', 422);
+    }
+    if (inputs.has(input.question_id)) invalid('duplicate_test_answer', '같은 문항의 답변은 한 번만 보내 주세요.', 422);
+    if (['text', 'custom'].some(key => Object.hasOwn(input, key) && typeof input[key] !== 'string') ||
+        Object.hasOwn(input, 'selected') && !Array.isArray(input.selected) ||
+        Object.hasOwn(input, 'skipped') && typeof input.skipped !== 'boolean') {
+      invalid('invalid_test_answer', '테스트 답변의 값 형식을 확인해 주세요.', 422);
+    }
+    inputs.set(input.question_id, input);
+  }
+  const state = { ...createIntake(questionSet), i:questions.length, status:'ready',
+    log:[], history:[], prev:null, cur:null, pendingFollow:null };
+  for (const question of questions) {
+    const input = inputs.get(question.id);
+    if (!input) continue;
+    const answer = normalizeAnswer(question, input);
+    if (input.skipped && hasAnswerContent(input.text || '')) {
+      invalid('invalid_test_answer', '건너뛴 문항에 실제 답변을 함께 넣을 수 없어요.', 422);
+    }
+    const detail = question.type === 'one' && answer.sel.length === 1 && optMeta(question.opts[answer.sel[0]]).input;
+    if (!input.skipped && question.type !== 'text' && input.text && !detail) {
+      invalid('invalid_test_answer', '선택형 문항은 보기 번호 또는 직접 입력으로 보내 주세요.', 422);
+    }
+    addPrompt(state, question);
+    state.log.push({ who:'me', text:answer.text, fu:false });
+    commitAnswer(state, question, answer);
+  }
+  return state;
+}
+
 export function answerIntake(originalState, input) {
   const { questions } = questionSetOf(originalState);
   if (originalState.status !== 'active') invalid('intake_complete', '이미 모든 질문에 답했어요.', 409);

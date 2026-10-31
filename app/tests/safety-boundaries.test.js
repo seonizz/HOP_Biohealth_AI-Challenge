@@ -1,3 +1,4 @@
+import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ModelGateway} from '../src/model.js';
@@ -17,7 +18,7 @@ function fixture(context,basis,{stateMode='combined_blocks',evidenceIds,proposed
       const input=JSON.parse(JSON.parse(request.body).messages.at(-1).content),{stage,data}=input;calls.push(input);
       if(stage==='turn_draft')return envelope(draft);
       if(stage==='turn_draft_block_name_index')return envelope({name_index:draft.state.name_index});
-      if(stage.startsWith('turn_draft_block_'))return envelope(stage.endsWith('questions')?draft.questions:draft.state[stage.slice(17)]);
+      if(stage.startsWith('turn_draft_block_'))return envelope(evidenceWireFixture(input,stage.endsWith('questions')?draft.questions:draft.state[stage.slice(17)]));
       if(stage==='state_observations')return envelope({patient_state:draft.state.patient_state,name_index:draft.state.name_index});
       if(stage==='relationship_memory')return envelope({relationship_memory:draft.state.relationship_memory});
       const approved=claims=>({approved:true,issues:[],audits:claims.map(claim=>({id:claim.id,verdict:'supported',reason:'합성 현재 원문을 보존한 사실'}))});

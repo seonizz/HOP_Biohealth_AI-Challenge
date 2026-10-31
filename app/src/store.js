@@ -56,7 +56,7 @@ export class Store {
         await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
           version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`);
-        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql']) {
+        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql', '008_record_access_keys.sql']) {
           const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8');
           const checksum = digest(source);
           const applied = await client.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
@@ -172,6 +172,40 @@ export class Store {
       await client.query('UPDATE browsers SET deletion_key_hash=$1 WHERE id=$2', [digest(key), owner]);
     });
     return key;
+  }
+
+  async createRecordAccessKey(owner, id) {
+    const key = randomBytes(32).toString('base64url');
+    await this.transaction(async client => {
+      await this.lockOwner(client, owner);
+      const result = await client.query('UPDATE records SET access_key_hash=$1 WHERE owner=$2 AND id=$3 RETURNING id', [digest(key), owner, String(id)]);
+      if (!result.rowCount) throw notFound();
+    });
+    return key;
+  }
+
+  async revokeRecordAccessKey(owner, id) {
+    await this.transaction(async client => {
+      await this.lockOwner(client, owner);
+      const result = await client.query('UPDATE records SET access_key_hash=NULL WHERE owner=$1 AND id=$2 RETURNING id', [owner, String(id)]);
+      if (!result.rowCount) throw notFound();
+    });
+  }
+
+  async recordWithAccessKey(key) {
+    const invalid = () => new HttpError(404, 'ACCESS_KEY_INVALID', '보관키를 확인해 주세요. 교체·해제되거나 보유기간이 지난 키는 사용할 수 없어요.');
+    if (typeof key !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(key)) throw invalid();
+    return this.transaction(async client => {
+      // Lock both rows so rotation, deletion and retention cleanup serialize
+      // with this read. Key access does not renew the owner's retention period.
+      const result = await client.query(`SELECT r.id,r.owner,r.content FROM records r
+        JOIN browsers b ON b.id=r.owner WHERE r.access_key_hash=$1
+        AND b.last_active_at>clock_timestamp()-make_interval(days=>$2)
+        FOR SHARE OF b,r`, [digest(key), this.retentionDays]);
+      if (!result.rowCount) throw invalid();
+      const row = result.rows[0];
+      return this.openRecord(row.content, row.owner, row.id);
+    });
   }
 
   async deleteConversationsWithKey(key, token) {

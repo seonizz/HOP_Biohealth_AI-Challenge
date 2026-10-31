@@ -123,6 +123,8 @@ analysis.safety.urgent=true이면 위의 평소 대화 순서보다 지금 응�
 도움을 거부했다는 보고가 있으면 거절을 존중하는 대응과 동의할 때 정보를 함께 찾는 대응을 나눕니다. 사용자 한계가 미확인이면 실제 시간표를 만들지 말고 사용자가 가능한 범위를 정하는 행동을 제안하세요.
 모든 항목은 구체적으로, 각 1문장 이내로 작성하세요.`;
 
+const GUIDE_SCRIPT_LAYOUT = '첫 문단은 대화 허락·관찰·이용자가 전하려는 마음, 다음 문단은 듣기·선택 가능한 작은 도움입니다. 두 문단 사이에 빈 줄을 넣으세요. 총 6~9문장, 300~650자 정도로 자연스럽게 쓰세요.';
+
 export const WRITE = COMMON + `
 역할: 사용자에게 보여 줄 다섯 안내 카드의 작성자. analysis와 plan은 검토 자료이며 원문 answers를 최종 기준으로 사용하세요.
 avoid의 대안은 실제 상대에게 할 말이나 사용자가 할 행동입니다. “지금 말하기 편한지 먼저 물어보세요”라고 말하라고 쓰지 말고, “지금 잠깐 이야기해도 괜찮아?”라고 직접 물을 수 있게 쓰세요.
@@ -136,7 +138,7 @@ script에는 발화문만 쓰세요. '(상대가 대답하면)' 같은 괄호 �
 관계에 맞는 이름으로 말을 걸고 첫 문장에서 지금 이야기해도 되는지 한 번만 물으세요. 같은 허락 질문을 다른 표현으로 반복하지 마세요.
 plan.opening_evidence의 실제 행동·장면을 구체적으로 넣으세요. 잘 알고 있다는 말로 장면을 대신하지 마세요.
 이용자의 추측이 원문에 있더라도 “완벽하게 준비하고 싶어서 계획을 고치는구나”처럼 대상자의 마음과 행동 원인을 확정하지 마세요. “밤에 계획표를 고치고 괜찮은지 여러 번 물어보는 걸 봤어. 어떤 점이 걱정되는지 듣고 싶어”처럼 눈으로 본 행동과 열린 질문으로 나누세요. 예시의 사실은 이 사례 원문에도 있을 때만 사용합니다.
-첫 문단은 대화 허락·관찰·이용자가 전하려는 마음, 다음 문단은 듣기·선택 가능한 작은 도움입니다. 두 문단 사이에 빈 줄을 넣으세요. 총 6~9문장, 300~650자 정도로 자연스럽게 쓰세요.
+${GUIDE_SCRIPT_LAYOUT}
 즉각적 위험이 없을 때는 오늘 말하기 어렵다면 다음 기회를 선택할 수 있게 하세요. 상담/진료 권유가 이용자의 목표라면 상담을 함께 알아볼지 묻는 문장을 넣으세요. 상담에 이미 동의한 것처럼 쓰지 마세요.
 care.feel은 이용자가 실제 표현한 감정·생활 영향 2~3개를 연결한 2~4문장입니다. 과장된 칭찬이나 정형적인 위로를 쓰지 마세요.
 care.tips는 이용자 자신의 실제 자원·부담에 맞는 2~4개 방법입니다. 각 항목에 어떻게 활용할지와 부담을 덜 목적을 설명하세요.
@@ -271,6 +273,33 @@ export const SPEECH_PARTS = {
   listening:'사용자의 마음과 듣는 질문. 사용자가 실제 전하고 싶은 마음을 담고, 이전 말과 상대 반응이 확인되면 같은 방식을 반복하지 않는 말로 연결하세요. 대상자의 속마음은 묻고 단정하지 않는 직접 발화 2~4문장. 대화 허락 질문을 다시 쓰지 마세요.',
   offer:'작은 제안과 선택권. 사용자 목적에 맞는 작은 제안, 함께 알아볼 도움, 지금 거절할 수 있는 여지를 담은 직접 발화 2~4문장. 상담 권유 목적이면 상담을 함께 알아볼지 물으세요. 확인되지 않은 지원 자원·의향·무제한 약속을 만들지 마세요.',
 };
+
+// O4 composes the contracts used by the separate writers into the existing
+// full-guide schema. Keep the legacy WRITE/SPEAK strings unchanged for rollback.
+export function reuseFinalDraftPrompt({alias=null,includeTreatmentOffer=false}={}) {
+  const speech = SPEAK.slice(COMMON.length).split('\n')
+    .filter(line=>!line.startsWith('역할:')&&!line.startsWith('parts는'))
+    .map(line=>line.replace('observations에 두 장면이 있으면','plan.opening_evidence에 두 장면이 있으면'))
+    .join('\n');
+  const layout = 'script는 도입·관찰, 이용자 마음·경청, 작은 제안·선택권의 세 부분을 이어 하나의 전체 발화로 작성하세요. 세 문단 사이에 빈 줄을 넣되 제목·단계 이름·괄호 지시는 넣지 마세요.';
+  const address = typeof alias==='string'&&alias.trim()
+    ? '호칭은 answers에서 확인된 이름·호칭만 사용하세요. 이름이나 관계에서 성별·나이·새 호칭을 추정하지 마세요.'
+    : '이번 발화에 사용할 확인된 호칭이 없으므로 호칭을 생략하세요. 상대에게 직접 건네는 말에서 그분·대상자 같은 제삼자 표현으로 부르지 마세요.';
+  return WRITE.replace(GUIDE_SCRIPT_LAYOUT,layout)+`
+전체 카드 초안 재사용 계약: 이번 guide의 다섯 카드는 각자 독립 검토를 거쳐 그대로 사용될 수 있으므로 아래 작성 요구를 처음부터 지키세요. 다른 요청이 내용을 확장하거나 문장을 합칠 것이라고 전제하지 마세요. 초안 작성은 승인이 아니며 검토·수정·최종 저장 절차를 생략하지 않습니다.
+다음 발화 계약은 guide.script에 적용합니다. 화자는 도움을 건네는 supporter(이용자), 청자는 이야기하거나 제안을 거절할 수 있는 patient(대상자)입니다.
+${address}
+${includeTreatmentOffer===true?'이용자가 상담/진료 권유를 선택했습니다. script에 상담 또는 진료라는 단어를 명시하고, 다른 작은 제안과 별도로 함께 알아볼지 선택을 묻는 말을 포함하세요. 이미 수락·예약·약속했다고 쓰지 마세요.':''}
+${speech}
+script의 세 부분별 작성 요구:
+${Object.entries(SPEECH_PARTS).map(([part,contract])=>`${part}: ${contract}`).join('\n')}
+다음 요구는 해당 guide 카드에만 적용합니다:
+${Object.entries(CARD_ROLES).map(([field,contract])=>`${field}: ${contract}`).join('\n')}
+care에는 supporter의 현재 원문 감정·부담·대처·지원 자원을 사용하세요. patient의 지원 자원을 supporter의 자원으로 옮기거나, 자원이 있다는 보고를 이미 도움받았다는 사실로 바꾸지 마세요.
+guide.avoid는 기존 스키마의 문자열 배열입니다. 각 문자열 하나 안에서 피할 말·행동임을 명시하고 이유와 “대신” 건넬 대안까지 연결하세요. 각 항목은 “피할 말·행동: <피할 구체적인 말이나 행동> 이유: <조심할 이유> 대신 <같은 목적을 전할 실제 한마디나 행동>” 형식으로 세 부분을 빠짐없이 작성하세요. 좋은 대안을 별도 배열 항목으로 분리하지 마세요.
+출력은 기존 스키마의 guide와 assessment를 포함하는 JSON 객체 하나입니다. script는 전체 발화 문자열이고, opening/listening/offer나 parts를 별도 출력 키로 만들지 마세요. 다섯 카드와 top을 유지하며 관계 분석·전략·단계 설명을 출력에 추가하지 마세요.`;
+}
+
 export const DETAIL = COMMON + `
 역할: 최종 발화를 사용자에게 설명하는 편집자. script는 이미 검토한 최종 발화이며 script_units는 그 원문을 순서대로 나눈 조각입니다. 문장을 다시 쓰거나 전체 script를 각 단계에 복사하지 마세요.
 opening_end에는 첫마디가 끝나는 조각 id, listening_end에는 듣는 말이 끝나는 조각 id를 선택하세요. opening_end < listening_end이며 마지막 조각은 offer에 남겨야 합니다. opening은 첫 조각부터 opening_end까지, listening은 그 다음부터 listening_end까지, offer는 나머지 모든 조각입니다. 각 조각은 순서대로 정확히 한 번씩 사용합니다. 전체 발화가 한 문단이어도 내용의 역할에 맞는 두 경계를 고르세요. excerpt는 서버가 선택한 경계의 원문으로 복원하므로 출력하지 않습니다. opening/listening/offer에는 해당 구간의 why와 evidence만 작성하세요.

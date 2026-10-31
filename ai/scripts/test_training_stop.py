@@ -95,6 +95,13 @@ class StopFixture:
 
 
 class StopTests(StopFixture, unittest.TestCase):
+    def test_prepared_evaluation_is_fixed_before_first_epoch(self):
+        self.policy['models'][self.role]['role_evaluation_binding']={
+            'development_suite_sha256':checkpoint(777),'test_suite_sha256':checkpoint(778),
+            'evaluation_manifest_sha256':checkpoint(779)}
+        with self.assertRaisesRegex(ValueError,'policy-bound'):
+            self.decide([1.0,0.8])
+
     def test_baseline_does_not_finish_training(self):
         result = self.decide([1.0])
         self.assertEqual(result["status"], "continue")
@@ -408,6 +415,18 @@ class RoleAcceptanceTests(unittest.TestCase):
         self.assertFalse(result["model_training_criteria_satisfied_from_supplied_evidence"])
         self.assertFalse(result["automatic_deployment"])
         self.assertFalse(result["unseen_test_passed"])
+
+    def test_policy_bound_suite_cannot_be_replaced_by_rehashed_evidence(self):
+        self.policy['models'][self.role]['role_evaluation_binding']={
+            'development_suite_sha256':self.suite_hash,'test_suite_sha256':checkpoint(778),
+            'evaluation_manifest_sha256':checkpoint(779)}
+        self.evidence['policy_sha256']=stop.fingerprint(self.policy)
+        self.assertEqual(self.score()['status'],'role_acceptance_passed')
+        self.suite['cases'][0]['input_sha256']=checkpoint(999)
+        self.evidence['cases'][0]['input_sha256']=checkpoint(999)
+        self.freeze()
+        with self.assertRaisesRegex(ValueError,'policy-bound'):
+            self.score()
 
     def test_each_role_critical_error_fails(self):
         for role in ("chat_12b", "cards_31b"):

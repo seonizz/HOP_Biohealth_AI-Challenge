@@ -13,6 +13,10 @@ class RequestError(ValueError):
     """A request cannot be served within the configured contract."""
 
 
+class BackendUnavailableError(RequestError):
+    """Inference cannot safely proceed because backend readiness was lost."""
+
+
 def file_sha(path):
     digest = hashlib.sha256()
     with Path(path).open("rb") as stream:

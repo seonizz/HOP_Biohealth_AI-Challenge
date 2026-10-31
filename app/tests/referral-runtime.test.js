@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {ModelGateway} from '../src/model.js';
-import {configuredModelGateway} from '../src/model-config.js';
+import {configuredModelGateway, configuredServerGpuReferralGateway} from '../src/model-config.js';
 import {createModelReferralProvider} from '../src/referral-provider.js';
 import {TRIAGE_VERSION} from '../src/risk-classification.js';
 import {configuredReferralProvider} from '../src/referral-runtime.js';
@@ -24,7 +24,7 @@ const eligibility=()=>({'synthetic-center':{capabilities:['mental_health_counsel
 // file or contacting a model. The actual provider still validates the catalog.
 function configuredWith(contents,{version=TRIAGE_VERSION,env={}}={}){
   let reads=0,configuredGateway;
-  const context=vm.createContext({URL,process:{env:{}},createHash,ModelGateway,configuredModelGateway,TRIAGE_VERSION:version,
+  const context=vm.createContext({URL,process:{env:{}},createHash,ModelGateway,configuredModelGateway,configuredServerGpuReferralGateway,TRIAGE_VERSION:version,
     createModelReferralProvider(options){configuredGateway=options.gateway;return createModelReferralProvider(options);},
     readFileSync(url,encoding){reads++;assert.equal(url.href,new URL('../seeds/referral-eligibility.json',moduleUrl).href);
       assert.equal(encoding,'utf8');return contents;}});

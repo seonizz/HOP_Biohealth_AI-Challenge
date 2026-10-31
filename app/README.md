@@ -128,6 +128,12 @@ JSON 재작성에는 해당 단계에서 검증에 실패한 직전 출력과 �
 
 로컬 Ollama에서 GPU 서버의 31B로 옮길 때는 기존 `MODEL_BASE_URL`·`MODEL_NAME`·`MODEL_API_KEY`와 프로토콜 설정을 해당 서버에 맞춰 적용합니다. 웹 소스의 토큰 숫자를 다시 수정할 필요는 없습니다. 한도는 각 작업에서 새로 확인합니다. 31B의 실제 대용량 추론과 GPU 자원 검증은 서버 전환 시 별도로 수행합니다.
 
+생성·검토·기관 분류를 서버 GPU 하나로 고정하는 opt-in 설정은 [서버 GPU 전용 P0 구현](docs/SERVER_GPU_P0.md)을 따릅니다. `MODEL_SERVER_GPU_ONLY=true`, `trained_chat` 프로필, 선택형 `compose.gpu.yaml`, 공용 대기열과 worker 종료 확인이 포함됩니다. 실제 적용·GPU 서버 접속 전에 사용자 승인이 필요합니다.
+
+[O4 최종 초안 재사용](docs/FINAL_DRAFT_REUSE.md)은 `MODEL_REUSE_FINAL_DRAFT=true`로 활성화합니다. 정상 최종 생성은 26→18회이며 독립 검토 14회와 발화 상세 저장을 유지합니다. 기본값은 false, GPU overlay는 true이며 `MODEL_SKIP_FINAL_EXTRAS=true`와는 함께 사용할 수 없습니다. 실행 중인 서비스는 변경하지 않았습니다.
+
+[모델 입력 최적화](docs/MODEL_INPUT_OPTIMIZATION.md)는 카드 수정의 공통 지시 중복을 제거하고, 스키마가 null만 허용하는 이름 블록의 추론을 생략합니다. `combined_blocks`에서는 `MODEL_STAGE_SCOPED_QUESTION_RULES=true`와 `MODEL_BLOCK_SCOPED_INPUTS=true`로 단계별 입력 축소를 활성화할 수 있습니다. 두 옵션의 기본값은 false이며 GPU overlay에는 true를 준비했습니다. 원문·검토·질문 생략·저장 계약과 기존 상태 모드는 유지합니다.
+
 ## URL과 새로고침 복원
 
 화면은 `/`, `/about`, `/chat/:intakeId`, `/result/:intakeId`, `/records/:recordId`, `/columns/:articleId` 경로를 사용합니다. 칼럼 분류와 담은 글·안 읽은 글 필터는 쿼리로 유지합니다. 뒤로·앞으로 이동과 경로 직접 열기를 지원하며, 화면 경로도 서버에서 `index.html`로 연결합니다. URL에는 원문·호칭·인증값을 넣지 않습니다. 대화와 결과는 기존 세션 쿠키로 접근 권한을 확인하므로 URL만으로 다른 세션에 공유되지는 않습니다.
@@ -141,6 +147,8 @@ JSON 재작성에는 해당 단계에서 검증에 실패한 직전 출력과 �
 2026-10-22: 사용자 요청으로 URL·초안·배치·진행바 변경의 테스트와 실제 모델 확인은 추후 일괄 수행합니다. 현재 변경에 대한 검증 완료를 의미하지 않습니다.
 
 ## 관리와 상세 계약
+
+[최종 출력 테스트](http://127.0.0.1:9000/test-runner.html)에서 JSON 답변을 일괄 입력하고 서비스와 같은 카드로 결과를 확인할 수 있습니다. [입력 형식과 실행·격리 범위](docs/FINAL_OUTPUT_TEST.md)를 참고하세요.
 
 | 할 일 | 기준 문서 |
 | --- | --- |

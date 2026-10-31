@@ -1,7 +1,8 @@
+import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ModelGateway } from '../src/model.js';
+import { ModelGateway, relationshipEvidenceTransport } from '../src/model.js';
 import { runCombinedRelationshipState } from '../src/relationship-turn.js';
 import { HttpError } from '../src/errors.js';
 import { safetySources } from '../src/relationship-agent.js';
@@ -33,7 +34,7 @@ function model(handler,options={}){
   const gateway=new ModelGateway({baseUrl:'http://model.test/v1',apiKey:'synthetic-key',model:'synthetic-model',protocol:'relationship_agent',
     agentFormat:'json_object',timeoutMs:0,retryFailures:false,diagnosticLogger:null,...options,fetchImpl:async(_url,request)=>{
       const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content),call={...input,prompt:body.messages[0].content,request};
-      calls.push(call);const value=await handler(call,calls.length);return value instanceof Response?value:envelope(value);
+      calls.push(call);const value=await handler(call,calls.length);return value instanceof Response?value:envelope(evidenceWireFixture(call,value));
     }});
   return {gateway,calls};
 }
@@ -56,7 +57,7 @@ test('only three exhausted combined format failures generate four exact-schema b
   const original=calls[0],partCalls=calls.slice(3,7);
   for(const [index,call]of partCalls.entries()){
     const block=blocks[index],expected=block==='questions'?original.output_schema.properties.questions:original.output_schema.properties.state.properties[block];
-    assert.deepEqual(block==='name_index'?call.output_schema.properties.name_index:call.output_schema,expected);
+    assert.deepEqual(block==='name_index'?call.output_schema.properties.name_index:call.output_schema,block==='relationship_memory'?relationshipEvidenceTransport(call.stage,expected).schema:expected);
     assert.equal(call.output_schema.type,'object');assert.equal(call.output_schema.additionalProperties,false);
     assert.equal(Object.hasOwn(call.data,'combined_output_schema'),false);assert.equal(Object.hasOwn(call.data,'failed_combined_candidate'),false);
     for(const name of ['shared_input','state_input','question_input'])assert.deepEqual(call.data[name],original.data[name]);
@@ -212,7 +213,7 @@ test('transient transport attempts followed by one schema failure never qualify 
 
 test('three outside-string whitespace stalls use the same block recovery without a fabricated candidate',async t=>{
   const ctx=context(),value=draft(ctx);
-  const {gateway,calls}=model(call=>stream(call.stage==='turn_draft'?' '.repeat(4097):call.data.output_block?blockValue(value,call.data.output_block):review(call.data)),
+  const {gateway,calls}=model(call=>stream(call.stage==='turn_draft'?' '.repeat(4097):call.data.output_block?evidenceWireFixture(call,blockValue(value,call.data.output_block)):review(call.data)),
     {baseUrl:'http://127.0.0.1:11434/v1',streamJson:true,agentFormat:'json_schema'});
   const result=await gateway.updateState(ctx,null,{signal:t.signal});
   assert.equal(result.state_agent.reviewed,true);assert.equal(calls.length,9);
@@ -337,6 +338,52 @@ test('a transient operation restart preserves explicit block mode and full sourc
   assert.equal(logs.filter(entry=>entry.event==='model_operation_retry').length,1);
 });
 
+test('an evidence enum repair still requires full validation and a fresh independent review',async t=>{
+  const ctx=context(),value=draft(ctx);let memories=0;
+  const {gateway,calls}=model(call=>{
+    if(!call.data.output_block)return review(call.data);
+    const output=blockValue(value,call.data.output_block);
+    if(call.data.output_block==='relationship_memory'&&++memories===1)
+      output.patient[0].evidence[0].quote='밤에 계획표';
+    return output;
+  },{stateMode:'combined_blocks',agentFormat:'prompt'});
+  const result=await gateway.updateState(ctx,null,{signal:t.signal});
+  const memoryCalls=calls.filter(call=>call.data.output_block==='relationship_memory');
+  assert.equal(memoryCalls.length,2);
+  assert.equal(memoryCalls[1].evidence_selection_repair,undefined);
+  assert.ok(memoryCalls[1].evidence_sources.length);
+  assert.equal(JSON.parse(memoryCalls[1].validation_feedback).path,'output.patient[0].evidence[0]');
+  assert.deepEqual(result.relationship_memory.patient[0].evidence,[ref(ctx)]);
+  assert.equal(result.state_agent.reviewed,true);
+  assert.deepEqual(calls.slice(-2).map(call=>call.stage),['turn_review','safety_review']);
+  assert.ok(calls.filter(call=>!call.data.output_block).every(call=>call.evidence_selection_repair===undefined));
+});
+
+test('an exhausted block-local schema failure reaches only its originating block on operation recovery',async t=>{
+  const ctx=context(),value=draft(ctx),logs=[];let memories=0;
+  const {gateway,calls}=model(call=>{
+    if(!call.data.output_block)return review(call.data);
+    const output=blockValue(value,call.data.output_block);
+    if(call.data.output_block==='relationship_memory'&&++memories<=3)delete output.unknowns;
+    return output;
+  },{stateMode:'combined_blocks',retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>logs.push(entry)});
+  const result=await gateway.updateState(ctx,null,{signal:t.signal});
+  assert.equal(result.state_agent.reviewed,true);
+  assert.deepEqual(calls.map(call=>call.stage),[
+    'turn_draft_block_patient_state','turn_draft_block_name_index',...Array(3).fill('turn_draft_block_relationship_memory'),
+    'turn_draft_block_relationship_memory','turn_draft_block_questions','turn_review','safety_review']);
+  const recovered=calls.slice(5,7);
+  for(const call of recovered){
+    if(call.data.output_block==='relationship_memory'){
+      const feedback=JSON.parse(call.data.combined_validation_feedback);
+      assert.equal(feedback.path,'output');assert.equal(feedback.keyword,'objectKeys');
+    }else assert.equal(Object.hasOwn(call.data,'combined_validation_feedback'),false);
+    for(const key of ['shared_input','state_input','question_input'])assert.deepEqual(call.data[key],calls[0].data[key]);
+  }
+  assert.equal(logs.filter(entry=>entry.event==='model_operation_retry').length,1);
+  assert.equal(memories,4);
+});
+
 test('name-only memory rejection informs the next block cycle before original-source validation and independent review',async t=>{
   const ctx=context(),source=structuredClone(ctx),value=draft(ctx),bad=structuredClone(value),logs=[];
   bad.state.relationship_memory.patient[0].evidence=[ref(ctx,'patient','name')];
@@ -446,4 +493,37 @@ for(const repaired of [true,false])test('duplicate question choices are repaired
     assert.equal(questionAttempts,3);assert.equal(calls.some(call=>call.stage==='turn_review'),false);
   }
   for(const block of blocks.slice(0,3))assert.equal(calls.filter(call=>call.stage==='turn_draft_block_'+block).length,1);
+});
+
+for(const verdict of ['supported','unsupported'])test('question ID selection repair preserves independent question review: '+verdict,async t=>{
+  const ctx=context();ctx.question_candidates.push({id:'extra',subject:'patient',question:'더할 내용이 있나요?'});
+  ctx.patient.fields.contact=field('contact','일주일에 몇 번 연락해요.');ctx.answered_count=5;
+  Object.assign(ctx.question_candidates[0],{required:false,noSkip:false});
+  const value=draft(ctx);value.questions.skip=[{question_id:'daily',reason:'not_needed',explanation:'현재 상황에서는 보고한 장면을 먼저 듣습니다.',evidence:[ref(ctx)]}];
+  let questionAttempts=0;
+  const {gateway,calls}=model(call=>{
+    if(call.data.output_block){
+      const output=blockValue(value,call.data.output_block);
+      if(call.data.output_block==='questions'&&++questionAttempts===1)output.skip[0].question_id='invalid_question';
+      return output;
+    }
+    if(call.stage==='question_review')return {audits:call.data.claims.map(({id})=>({id,verdict,reason:'질문 판단의 원문 근거를 검토했습니다.'}))};
+    return review(call.data);
+  },{stateMode:'combined_blocks'});
+  const result=await gateway.updateState(ctx,null,{signal:t.signal});
+  const attempts=calls.filter(call=>call.stage==='turn_draft_block_questions');
+  assert.equal(attempts.length,2);assert.equal(attempts[0].question_selection_repair,undefined);
+  assert.equal(attempts[1].question_selection_repair.output_path,'output.skip[0].question_id');
+  assert.ok(attempts[1].question_selection_repair.eligible_choices.some(choice=>choice.question_ids.includes('daily')));
+  assert.ok(calls.some(call=>call.stage==='question_review'));assert.equal(result.state_agent.reviewed,true);
+  assert.deepEqual(result.question_plan.skip.map(item=>item.question_id),verdict==='supported'?['daily']:[]);
+});
+
+test('decoded wire evidence is independently reviewed and cannot bypass semantic rejection',async t=>{
+  const ctx=context(),value=draft(ctx);
+  const {gateway,calls}=model(call=>call.data.output_block?blockValue(value,call.data.output_block):review(call.data,true),{stateMode:'combined_blocks'});
+  await assert.rejects(gateway.updateState(ctx,null,{signal:t.signal}),{modelReason:'state_review_rejected'});
+  const memory=calls.filter(call=>call.data.output_block==='relationship_memory');assert.ok(memory.length>0);assert.ok(memory.every(call=>call.evidence_sources.length>0));
+  const reviews=calls.filter(call=>call.stage.startsWith('turn_review'));assert.ok(reviews.length>0);
+  for(const call of reviews){assert.ok(JSON.stringify(call.data).includes(ref(ctx).quote));assert.equal(JSON.stringify(call.data).includes('source_patient_'),false);}
 });

@@ -4,7 +4,7 @@ import { answerComponents } from './answer-sources.js';
 import { contextGoal, validatePatientState, validateQuestionPlan } from './agent-state.js';
 import { modelResponseFormat, safetyEvidenceQuotes } from './model-schema.js';
 import { retrieveSources, retrievedContext, citedSources, citationsRetrieved } from './relationship-retrieval.js';
-import { COMMON, STATE, ANALYZE, PLAN, WRITE, REVIEW, QUALITY, QUALITY_CHECK, PLAN_REVIEW, speechReviewPrompt, SPEAK, SUPPORT_REVIEW, GUIDANCE_REVIEW_BOUNDARY, GUIDANCE_REVIEW_VERDICTS, PROMPT_VERSION, CARD_ROLES, AVOID_CARD_WIRE, SPEECH_PARTS, DETAIL } from './relationship-prompts.js';
+import { COMMON, STATE, ANALYZE, PLAN, WRITE, REVIEW, QUALITY, QUALITY_CHECK, PLAN_REVIEW, speechReviewPrompt, SPEAK, SUPPORT_REVIEW, GUIDANCE_REVIEW_BOUNDARY, GUIDANCE_REVIEW_VERDICTS, PROMPT_VERSION, CARD_ROLES, AVOID_CARD_WIRE, SPEECH_PARTS, DETAIL, reuseFinalDraftPrompt } from './relationship-prompts.js';
 import { claimsOf, auditSchema, validateAudits, AUDIT_INSTRUCTION } from './grounding-audit.js';
 
 const string = (maxLength = 2000) => ({ type:'string', minLength:1, maxLength });
@@ -358,9 +358,8 @@ export function currentApprovedSafety(context) {
 
 // Validate the wire format before hydration. Quote-shaped legacy reports are
 // still readable, but are never accepted as a new model selection.
-export function canonicalRelationshipSelection(value,context,retrieval,schemaFeedback=false) {
-  const scoped=retrievedContext(context,retrieval);
-  try { validateSchema(value,groundedEvidenceSchema(relationshipSelectionSchema,scoped),'output',schemaFeedback); }
+function validateRelationshipSelectionSchema(value,schema,schemaFeedback) {
+  try { validateSchema(value,schema,'output',schemaFeedback); }
   catch (error) {
     if(schemaFeedback&&error.modelReason==='agent_schema'&&error.modelFeedback) {
       const issue=JSON.parse(error.modelFeedback);
@@ -368,6 +367,11 @@ export function canonicalRelationshipSelection(value,context,retrieval,schemaFee
     }
     throw error;
   }
+}
+
+export function canonicalRelationshipSelection(value,context,retrieval,schemaFeedback=false) {
+  const scoped=retrievedContext(context,retrieval);
+  validateRelationshipSelectionSchema(value,groundedEvidenceSchema(relationshipSelectionSchema,scoped),schemaFeedback);
   const safety=canonicalSafetySelection(value.safety,context,retrieval);
   const draft={...value,safety};
   assertRetrievedEvidence(draft,retrieval);
@@ -586,6 +590,24 @@ export function validatePlan(value,context) {
 export function validateReview(value) {
   validateSchema(value,reviewSchema);
   if (value.approved !== (value.issues.length===0)) invalid('agent_review');
+  return value;
+}
+
+// Reconcile only explicit claim-ID contradictions in the analysis reviewer's
+// own output. Unnamed, relationship-label and unknown-information concerns
+// remain genuine rejection paths; no issue or audit is approved or rewritten.
+export function validateAnalysisReviewConsistency(value,claims) {
+  if(value.approved!==false)return value;
+  const known=new Set(claims.map(claim=>claim.id).filter(id=>/^(?:dynamics|strengths|boundaries)\.(?:0|[1-9]\d*)$/.test(id)));
+  const verdicts=new Map(value.audits.map(audit=>[audit.id,audit.verdict]));
+  const conflicts=new Set();
+  for(const issue of value.issues){
+    const ids=[...new Set([...`${issue.reason} ${issue.repair}`.matchAll(/(?<![a-zA-Z0-9_.])(?:dynamics|strengths|boundaries)\.(?:0|[1-9]\d*)(?![a-zA-Z0-9_.])/g)].map(match=>match[0]))];
+    // An unknown ID is not evidence that a known claim's audit contradicts it.
+    if(ids.length&&ids.every(id=>known.has(id)&&verdicts.get(id)==='supported'))ids.forEach(id=>conflicts.add(id));
+  }
+  if(conflicts.size)invalid('agent_analysis_review_inconsistent',JSON.stringify({claim_ids:[...conflicts],
+    instruction:'같은 claim ID의 audit는 supported인데 issue가 수정을 요구하여 검토기 출력 안에 가능한 충돌이 있습니다. 현재 analysis·claims를 원문과 다시 대조하여 audits·issues·approved를 일관되게 반환하세요. 초안을 새로 작성하지 마세요. 실제 근거 부족이면 해당 audit를 올바르게 반려하고, 별도의 미검토 문제가 있다면 그 문제를 정확히 설명하세요. supported를 이유로 자동 승인하거나 실제 문제를 삭제하지 마세요.'}));
   return value;
 }
 
@@ -819,6 +841,31 @@ export function knownSpeechIssues(guide,context) {
   return issues;
 }
 
+function invalidFinalDraftSeed() {
+  const error=new HttpError(409,'MODEL_SEED_INVALID','저장된 초안과 현재 대화의 일치 여부를 확인하지 못했어요.');
+  error.modelReason='final_seed_invalid';return error;
+}
+
+// Only a trusted local gateway owner may attach a seed. It is not read from
+// context, request options or HTTP input, and it never substitutes for review.
+function prepareFinalDraftSeed(seed,answers,context) {
+  if(seed===undefined)return null;
+  try {
+    const copy=structuredClone(seed),serialized=JSON.stringify(answers);
+    const fingerprint=createHash('sha256').update(serialized).digest('hex');
+    if(!copy||typeof copy.seed_id!=='string'||!/^[a-zA-Z0-9_-]{1,128}$/.test(copy.seed_id)||
+      copy.context_fingerprint!==fingerprint||JSON.stringify(copy.answers)!==serialized||
+      !copy.draft||!copy.draft.guide||!copy.draft.assessment)throw invalidFinalDraftSeed();
+    const analysis=validateRelationship(copy.analysis,context);
+    if(!analysis.observations)throw invalidFinalDraftSeed();
+    const ids=safetySources(context).filter(source=>analysis.safety.evidence.some(ref=>
+      ref.subject===source.subject&&ref.question_id===source.question_id)).map(source=>source.id);
+    const selection={observations:analysis.observations,relationship:analysis.relationship,unknowns:analysis.unknowns,
+      safety:{urgent:analysis.safety.urgent,evidence_ids:ids}};
+    return {...copy,analysis,selection};
+  } catch { throw invalidFinalDraftSeed(); }
+}
+
 export async function runRelationshipAgent(gateway,context,memory,name,operation) {
   if(!operation.controller)operation={...operation,controller:new AbortController()};
   memory=canonicalPatientState(memory,context);
@@ -833,6 +880,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     context={...context,safety_signal:approvedSafety,safety_review_required:false};
   }
   const data=agentContext(context);
+  const finalSeed=prepareFinalDraftSeed(gateway.finalDraftSeed,data,context),seededStages=[];
   const speechAlias=name?.alias&&!['그분','상대방','대상자'].includes(name.alias)?name.alias:null;
   const publishedCards=new Map();
   const emitCard=event=>{try{operation.onCard?.(structuredClone(event));}catch{ /* Display updates do not change validation. */ }};
@@ -846,8 +894,11 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   const resetCards=()=>{publishedCards.clear();emitCard({type:'reset'});};
   const generate=async (stage,prompt,payload,schema,validate,activeOperation=operation)=>{
     activeOperation.controller.signal.throwIfAborted();
+    const seeded=finalSeed&&(stage==='relationship_analysis'?finalSeed.selection:
+      stage==='guide_write'&&equalJSON(analysis,finalSeed.analysis)?finalSeed.draft:undefined);
     const required=citedSources(payload);
-    if(/^(?:card_care|support_review|speech_detail)/u.test(stage)||stage.startsWith('guide_repair')&&payload.field==='care'||
+    if(seeded)required.push(...citedSources(seeded));
+    if(/^(?:card_care|support_review|speech_detail)/u.test(stage)||gateway.reuseFinalDraft===true&&/^guide_(?:write|refine)(?:_|$)/u.test(stage)||stage.startsWith('guide_repair')&&payload.field==='care'||
       stage.startsWith('speech_review')&&payload.guide?.care)
       required.push(...Object.keys(context.supporter?.fields||{}).map(question_id=>({subject:'supporter',question_id})));
     const retrieval=retrieveSources(context,{stage,required,
@@ -861,17 +912,32 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
       // its sources and issues without copying the rejected serialized card.
       delete wirePayload.current;delete wirePayload.review;
     }
-    const result=await gateway.agentComplete(stage,prompt,wirePayload,groundedEvidenceSchema(schema,scoped),activeOperation,value=>{
+    const groundedSchema=groundedEvidenceSchema(schema,scoped);
+    const validateGenerated=value=>{
+      // Preserve precise schema repair feedback before the generic retrieval
+      // check; retrieval and canonical/semantic checks still run unchanged.
+      if(stage==='relationship_analysis')validateRelationshipSelectionSchema(value,groundedSchema,true);
       assertRetrievedEvidence(value,retrieval);
       return validate(value,retrieval);
-    });
+    };
+    let result;
+    if(seeded){
+      try {
+        // Always validate the original selection/draft contract, even when a
+        // normal model request would use a lossless ID wire representation.
+        validateSchema(seeded,groundedSchema,'output',true);
+        result=validateGenerated(structuredClone(seeded));
+        if(stage==='relationship_analysis'&&!equalJSON(result,finalSeed.analysis))throw invalidFinalDraftSeed();
+      } catch { throw invalidFinalDraftSeed(); }
+    } else result=await gateway.agentComplete(stage,prompt,wirePayload,groundedSchema,activeOperation,validateGenerated);
     activeOperation.controller.signal.throwIfAborted();
-    retrievalTrace.push({stage,indexed_sources:retrieval.indexed_sources,source_ids:retrieval.documents.map(row=>row.source_id)});
-    stages.push(stage);
+    retrievalTrace.push({stage,...(seeded?{source:'trusted_local_seed'}:{}),indexed_sources:retrieval.indexed_sources,source_ids:retrieval.documents.map(row=>row.source_id)});
+    if(seeded)seededStages.push(stage);else stages.push(stage);
     return result;
   };
   const relationKnown=context.patient?.fields?.rel?.status==='answered';
-  const analysisPrompt=ANALYZE+(relationKnown ? '' : '\n관계 답변이 미확인입니다. relationship.label과 supporter_role은 반드시 확인되지 않음으로 쓰세요.')+
+  const analysisSourceBoundary='\n원문 귀속·가설 보존: 이용자가 대상자에 대해 “그런 것 같아요”, “그렇게 보입니다”처럼 추측한 답변은 이용자의 추측 보고이며 대상자가 직접 밝힌 사실이 아닙니다. 해석 문장 전체에서 누가 추측했는지와 확인되지 않은 범위를 유지하세요. 원문에 없는 속마음·심리 상태·원인·경향을 확정하지 마세요. certainty=tentative나 “가능한 해석” 표지만 붙여 다른 절의 단정을 덮지 마세요. 연결된 모든 절을 각각 원문과 대조하고, 근거가 없는 절은 근거 범위로 다시 작성하거나 제외하세요. reported에는 실제로 보고된 내용만 남기고 추측을 직접 관찰이나 자기보고로 바꾸지 마세요.';
+  const analysisPrompt=ANALYZE+analysisSourceBoundary+(relationKnown ? '' : '\n관계 답변이 미확인입니다. relationship.label과 supporter_role은 반드시 확인되지 않음으로 쓰세요.')+
     (approvedSafety?'\napproved_safety는 동일한 전체 원문에서 독립 검토를 통과한 현재 위험입니다. 안전 안내를 유지하며 일반 대화 안내로 낮추지 마세요.':'');
   const analysisSchema=relationshipSelectionSchema;
   let safetySourceIds=[];
@@ -889,13 +955,15 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     return result;
   };
   let analysis=await generate('relationship_analysis',analysisPrompt,data,analysisSchema,validateAnalysis);
-  const analysisReviewPrompt=REVIEW+'\n지금은 analysis만 원문과 대조하세요. 안내 문장은 아직 없으며 평가하지 마세요. 모든 issue.field는 relationship_analysis입니다.';
+  const analysisReviewPrompt=REVIEW+'\n지금은 analysis만 원문과 대조하세요. 안내 문장은 아직 없으며 평가하지 마세요. 모든 issue.field는 relationship_analysis입니다. 의미·화자·부정·시점·강도를 바꾸지 않는 동의어·바꿔쓰기는 오류가 아닙니다. 단어가 원문과 다르다는 이유만으로 거절하지 마세요. tentative의 plausible은 근거에 맞고 가설임을 밝힌 해석일 때 허용됩니다. 다만 새 사실·감정·인과를 덧붙이거나 가설을 단정한 경우는 계속 거절하세요.';
   const reviewAnalysis=async stage=>{
     const claims=claimsOf(Object.fromEntries(['dynamics','strengths','boundaries'].map(key=>[key,analysis.relationship[key]])));
     const schema=structuredClone(analysisReviewSchema);schema.properties.audits=auditSchema(claims);schema.required.push('audits');
     return generate(stage,analysisReviewPrompt+AUDIT_INSTRUCTION,{answers:data,analysis,claims},schema,value=>{
       validateSchema(value,schema);validateAudits(value.audits,claims,value.approved);
-      return validateReview({approved:value.approved,issues:value.issues});
+      const review=validateReview({approved:value.approved,issues:value.issues});
+      validateAnalysisReviewConsistency(value,claims);
+      return review;
     });
   };
   let analysisRepairs=0;
@@ -905,7 +973,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     analysisRepairs++;
     const analysisIssues={approved:false,issues:review.issues.filter(issue=>issue.field==='relationship_analysis')};
     analysis=await generate(late?'analysis_repair_after_guide_review':'analysis_repair',
-      analysisPrompt+'\n검토의 중대한 분석 오류를 바로잡고 원문 근거로 전체 분석을 다시 작성하세요.',
+      analysisPrompt+'\n검토의 중대한 분석 오류를 바로잡고 원문 근거로 전체 분석을 다시 작성하세요. review.issues의 reason과 repair, 검토기가 제안한 문장은 확인된 사실이나 승인된 수정안이 아닙니다. 제안 문장을 그대로 복사하지 말고 answers의 원문과 독립적으로 대조하세요. 지적한 첫 절만 바꾸지 말고 남은 모든 절의 화자·추측·조건·부정·시점을 다시 확인하세요. 제안 자체가 이용자의 가설을 대상자의 확정 사실로 바꾸면 채택하지 말고 원문 귀속과 불확실성을 유지해 다시 작성하세요. 실제 근거 없는 주장은 표현만 완곡하게 바꿔 살리지 마세요.',
       {answers:data,draft:analysis,review:analysisIssues},analysisSchema,validateAnalysis);
     const repairedReview=await reviewAnalysis(late?'analysis_review_after_guide_review_repair':'analysis_review_after_repair');
     if (!repairedReview.approved) invalid('agent_analysis_review_rejected');
@@ -935,6 +1003,17 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
       fixed_action_fields:['script','doList','avoid','next','care.tips'],fixed_action_version:'immediate-help-v1',
     }}};
   };
+  const treatmentGoal=context.user_goal?.desired_outcomes?.status==='answered'&&
+    context.user_goal.desired_outcomes.selected?.some(option=>option.meta?.t==='goal_treat');
+  const validateSpeech = guide => {
+    validateSpeechInference(guide.script,'script');
+    if(!speechAlias&&/그분(?:이|은|의|에 대해)|대상자/u.test(guide.script))invalid('agent_speech_address');
+    if(speechPermissionQuestions(guide.script).length>1)invalid('agent_speech_repeat');
+    const issues=knownSpeechIssues(guide,context).filter(issue=>issue.field==='script');
+    if(issues.length)invalid('agent_speech_specific','거절된 발화: '+guide.script+'\n'+issues.map(issue=>issue.reason+' '+issue.repair).join('\n'));
+    if(treatmentGoal&&!/상담|진료|전문가|의사|치료사/u.test(guide.script))invalid('agent_goal_missing',
+      '이용자는 상담/진료 권유를 선택했습니다. “도움을 받을 수 있는 곳”만 쓰면 목적이 불명확합니다. 최종 발화에 상담 또는 진료라는 단어를 명시하여 함께 알아볼지 선택을 물으세요. 거절된 발화: '+guide.script);
+  };
   const validateDraft = (draft,{checkSpeech=true}={}) => {
     validateSchema(draft,guideSchema);
     if (draft.assessment.safety!==analysis.safety.urgent) invalid('agent_safety_mismatch');
@@ -944,24 +1023,35 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         JSON.stringify(draft.guide.care.tips)!==JSON.stringify(actions.care.tips)) invalid('agent_urgent_action');
     } else {
       for(const key of ['script','next'])draft.guide[key]=draft.guide[key].replace(/[ \t]*\((?:줄바꿈|빈 줄)\)[ \t]*/gu,'\n\n');
-      // Recurrent live failure: converting a caregiver's hypothesis into a
-      // confident explanation of the other person's mind in the spoken line.
-      if(checkSpeech)validateSpeechInference(draft.guide.script,'script');
-      if(checkSpeech&&!speechAlias&&/그분(?:이|은|의|에 대해)|대상자/u.test(draft.guide.script))invalid('agent_speech_address');
-      const permissions=speechPermissionQuestions(draft.guide.script);
-      if(checkSpeech&&permissions.length>1)invalid('agent_speech_repeat');
-      if(checkSpeech){
-        const issues=knownSpeechIssues(draft.guide,context).filter(issue=>issue.field==='script');
-        if(issues.length)invalid('agent_speech_specific','거절된 발화: '+draft.guide.script+'\n'+issues.map(issue=>issue.reason+' '+issue.repair).join('\n'));
+      if(checkSpeech)validateSpeech(draft.guide);
+    }
+    return draft;
+  };
+  const localCardIssues=(field,value)=>{
+    const guide={script:'',doList:[],avoid:[],next:'',care:{feel:'',tips:[]},[field]:value};
+    const issues=knownSpeechIssues(guide,context);
+    if(gateway.reuseFinalDraft!==true)return issues;
+    if(field==='script') {
+      // Only these established card semantics enter local repair. Schema,
+      // evidence and safety failures remain whole-operation failures.
+      const failures={
+        agent_script_inference:{reason:'대상자의 마음이나 원인을 알고 있다는 발화입니다.',repair:'원문에서 관찰한 행동과 이용자 자신의 마음만 남기고 상대 마음은 열린 질문으로 물으세요.'},
+        agent_speech_address:{reason:'직접 말을 듣는 상대를 제삼자로 지칭했습니다.',repair:'호칭을 생략하고 상대에게 직접 건넬 말로 작성하세요.'},
+        agent_speech_repeat:{reason:'지금 대화해도 되는지 묻는 허락 질문이 중복됐습니다.',repair:'대화 허락은 한 번만 묻고, 다른 부분은 상대 이야기를 듣는 열린 질문과 선택 가능한 제안으로 작성하세요.'},
+        agent_goal_missing:{reason:'이용자가 선택한 상담·진료 권유 목적이 빠졌습니다.',repair:'상담 또는 진료를 함께 알아볼지 선택을 묻되, 이미 동의했다고 가정하거나 회복을 조건으로 삼지 마세요.'},
+      };
+      try {validateSpeech(guide);} catch(error) {
+        if(!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE')throw error;
+        if(Object.hasOwn(failures,error.modelReason))issues.push({field,...failures[error.modelReason]});
+        else if(error.modelReason!=='agent_speech_specific'||!issues.length)throw error;
       }
     }
-    const goal=context.user_goal?.desired_outcomes;
-    const treatmentGoal=goal?.status==='answered'&&goal.selected?.some(option=>option.meta?.t==='goal_treat');
-    // The initial script is provisional; the dedicated speech writer replaces it.
-    // Enforce the requested goal on the final speech and every subsequent repair.
-    if(checkSpeech&&treatmentGoal&&!analysis.safety.urgent&&!/상담|진료|전문가|의사|치료사/u.test(draft.guide.script))invalid('agent_goal_missing',
-      '이용자는 상담/진료 권유를 선택했습니다. “도움을 받을 수 있는 곳”만 쓰면 목적이 불명확합니다. 최종 발화에 상담 또는 진료라는 단어를 명시하여 함께 알아볼지 선택을 물으세요. 거절된 발화: '+draft.guide.script);
-    return draft;
+    if(field==='avoid'&&value.some(text=>{
+      const match=text.trim().match(/^피할 말·행동:\s*([\s\S]+?)\s+이유:\s*([\s\S]+?)\s+대신\s+([\s\S]+)$/u);
+      return !match||match.slice(1).some(part=>!part.trim());
+    }))issues.push({field,reason:'피할 말·행동과 이유, 실제 대안이 한 항목 안에 완결된 묶음으로 구분되지 않았습니다.',
+      repair:'각 항목의 avoid_phrase, reason, alternative를 모두 작성하세요. 피할 예문과 대안을 다른 항목으로 나누지 마세요.'});
+    return issues;
   };
   const guideClaims=guide=>Object.entries(guide).flatMap(([field,value])=>{
     const texts=field==='care'?[value.feel,...value.tips]:Array.isArray(value)?value:
@@ -978,7 +1068,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     const request=claimReviewRequest(payload,schema);
     const review=await generate('speech_review_card_'+field+suffix,request.prompt,
       request.payload,request.schema,request.validate,activeOperation);
-    const requiredFixes=knownSpeechIssues({script:'',doList:[],avoid:[],next:'',care:{feel:'',tips:[]},...guide},context);
+    const requiredFixes=localCardIssues(field,value);
     if(requiredFixes.length)return {...review,approved:false,issues:[...requiredFixes,...review.issues]};
     if(!review.approved||!['care','next'].includes(field))return review;
     const supportRequest=claimReviewRequest(payload,schema,{support:true});
@@ -989,8 +1079,9 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     const storedSchema=object({[field]:guideSchema.properties.guide.properties[field]}),schema=field==='avoid'?avoidCardDraftSchema(storedSchema):storedSchema;
     const issues=review.issues.filter(issue=>issue.field===field);
     const claims=(review.claims||[]).filter(claim=>claim.field===field),claimIds=new Set(claims.map(claim=>claim.id));
+    const prompt=field==='script'?SPEAK:CARD_ROLES[field]?COMMON+'\n'+CARD_ROLES[field]:WRITE;
     const fixed=await generate(stage,
-      COMMON+'\n'+(field==='script'?SPEAK:CARD_ROLES[field]||WRITE)+(field==='avoid'?AVOID_CARD_WIRE:'')+'\n지적된 카드 하나의 오류만 고칩니다. 다른 카드는 작성하지 마세요.',
+      prompt+(field==='avoid'?AVOID_CARD_WIRE:'')+'\n지적된 카드 하나의 오류만 고칩니다. 다른 카드는 작성하지 마세요.',
       {answers:data,plan,field,current,task:issues.map(issue=>issue.repair).join('\n'),issues,
         ...(review.claims?{review:{claims,audits:review.audits.filter(audit=>claimIds.has(audit.id))}}:{})},schema,value=>{
         const canonical=field==='avoid'?canonicalAvoidCard(value,storedSchema):validateSchema(value,schema);
@@ -1001,6 +1092,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
       },activeOperation);
     return fixed[field];
   };
+  const reportedFeelingReviewBoundary='\n최종 검토의 자기보고·바꿔쓰기 기준: 이용자가 자신의 감정을 직접 말한 원문은 그 감정에 대한 보고 근거입니다. 누가 느끼는지, 대상·시점·부정·조건·강도를 유지한 감정 상태의 요약이나 동의어 표현은 같은 보고이며, 원문과 단어가 다르거나 “느끼고 있다”로 서술했다는 이유만으로 추론·미확인으로 바꾸라고 요구하지 마세요. 해당 감정을 직접 보고했다는 근거가 있으면 정확한 원문 반복이나 특정 보고 문구의 삽입 자체를 승인 조건으로 삼지 마세요. 반대로 원문에 없는 감정·원인·강도를 더하거나 이용자의 감정을 다른 사람에게 옮긴 경우, 이용자의 추측을 대상자의 확정된 속마음으로 바꾼 경우는 계속 거절하세요. 거절할 때 issues.reason에는 단순 표현 차이가 아닌 실제 의미·화자·근거 불일치를 구체적으로 설명하고 그 불일치만 수정하도록 요구하세요. 기존 분석·안내·안전의 근거 검증은 모두 유지합니다.';
   const reviewGuide=async (stage,draft,plan,revision)=>{
     const revisionData=revision?{revision}:{};
     if(!analysis.safety.urgent){
@@ -1013,7 +1105,9 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         ...(causalClaims.length?{semantic_review_focus:causalClaims}:{})},speechSchema);
       const speech=await generate(stage.replace('guide_review','speech_review'),request.prompt,
         request.payload,request.schema,request.validate);
-      const requiredFixes=knownSpeechIssues(draft.guide,context);
+      const requiredFixes=gateway.reuseFinalDraft===true
+        ?['script',...Object.keys(CARD_ROLES)].flatMap(field=>localCardIssues(field,draft.guide[field]))
+        :knownSpeechIssues(draft.guide,context);
       if(requiredFixes.length)return {...speech,approved:false,issues:[...requiredFixes,...speech.issues]};
       if(!speech.approved)return speech;
       const supportClaims=speechClaims.filter(claim=>['next','care'].includes(claim.field));
@@ -1027,33 +1121,44 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
       if(!support.approved)return support;
     }
     const request=currentReviewRequest(false);
-    return generate(stage,REVIEW+GUIDANCE_REVIEW_BOUNDARY,{answers:data,analysis,plan,guide:draft.guide,...request.metadata,...revisionData},request.schema,value=>{
+    // Derived memory belongs to earlier turns, not this final review target.
+    // Keep every original answer and current analysis/guide without mutation.
+    const finalReviewAnswers=Object.fromEntries(Object.entries(data).filter(([key])=>key!=='prior_relationship_memory'));
+    const currentTargetBoundary='\n최종 검토 대상 경계: 이번에 검토할 출력은 현재 data.analysis와 data.guide입니다. 근거는 data.answers의 이용자 원답변입니다. 이전 단계의 파생 메모리를 현재 분석 문장이나 원답변으로 취급하지 마세요. 문제를 지적하기 전에 해당 표현이 현재 analysis 또는 guide에 실제로 있는지 확인하세요. 과거 초안이나 검토 이력에만 있는 문구를 현재 오류로 다시 지적하지 마세요. 현재 출력에 실제로 남은 근거·화자·의미 오류는 계속 거절하세요.';
+    return generate(stage,REVIEW+reportedFeelingReviewBoundary+currentTargetBoundary+GUIDANCE_REVIEW_BOUNDARY,{answers:finalReviewAnswers,analysis,plan,guide:draft.guide,...request.metadata,...revisionData},request.schema,value=>{
       validateSchema(value,request.schema);
       return validateReview(value);
     });
   };
   const composeGuide=async suffix=>{
-    let plan=await generate('communication_plan'+suffix,PLAN,{answers:data,analysis},groundedEvidenceSchema(planSchema,context),v=>validatePlan(v,context));
-    const planReviewSchema=structuredClone(reviewSchema);
-    planReviewSchema.properties.issues.items.properties.field.enum=Object.keys(planSchema.properties);
-    planReviewSchema.properties.issues.items.properties.repair.maxLength=180;
-    let planRevision;
-    for(let repair=0;repair<2;repair++){
-      const review=await generate((repair?'plan_review_after_repair':'plan_review')+suffix,PLAN_REVIEW,
-        {answers:data,analysis,plan,...(planRevision?{revision:planRevision}:{})},planReviewSchema,value=>{
-          validateSchema(value,planReviewSchema);
-          if(value.approved!==(value.issues.length===0))invalid('agent_review');
-          return value;
-        });
-      if(review.approved)break;
-      if(repair===1)invalid('agent_plan_review_rejected');
-      const before=structuredClone(plan);
-      plan=await generate('communication_plan_repair'+suffix,PLAN+'\n검토한 오류를 원문으로 바로잡아 전략 전체를 다시 작성하세요.',
-        {answers:data,analysis,draft:plan,review},groundedEvidenceSchema(planSchema,context),v=>validatePlan(v,context));
-      planRevision={previous_review:structuredClone(review),before,after:structuredClone(plan)};
+    let plan;
+    if(!gateway.skipFinalExtras){
+      plan=await generate('communication_plan'+suffix,PLAN,{answers:data,analysis},groundedEvidenceSchema(planSchema,context),v=>validatePlan(v,context));
+      const planReviewSchema=structuredClone(reviewSchema);
+      planReviewSchema.properties.issues.items.properties.field.enum=Object.keys(planSchema.properties);
+      planReviewSchema.properties.issues.items.properties.repair.maxLength=180;
+      let planRevision;
+      for(let repair=0;repair<2;repair++){
+        const review=await generate((repair?'plan_review_after_repair':'plan_review')+suffix,PLAN_REVIEW,
+          {answers:data,analysis,plan,...(planRevision?{revision:planRevision}:{})},planReviewSchema,value=>{
+            validateSchema(value,planReviewSchema);
+            if(value.approved!==(value.issues.length===0))invalid('agent_review');
+            return value;
+          });
+        if(review.approved)break;
+        if(repair===1)invalid('agent_plan_review_rejected');
+        const before=structuredClone(plan);
+        plan=await generate('communication_plan_repair'+suffix,PLAN+'\n검토한 오류를 원문으로 바로잡아 전략 전체를 다시 작성하세요.',
+          {answers:data,analysis,draft:plan,review},groundedEvidenceSchema(planSchema,context),v=>validatePlan(v,context));
+        planRevision={previous_review:structuredClone(review),before,after:structuredClone(plan)};
+      }
     }
-    const writerData={answers:data,analysis,plan};
-    let draft=await generate('guide_write'+suffix,WRITE,writerData,currentGuideSchema(),value=>validateDraft(value,{checkSpeech:false}));
+    const writerData={answers:data,analysis,...(plan===undefined?{}:{plan})};
+    const reuseDraft=gateway.reuseFinalDraft===true&&!analysis.safety.urgent;
+    const draftPrompt=reuseDraft?reuseFinalDraftPrompt({alias:speechAlias,includeTreatmentOffer:Boolean(treatmentGoal)}):WRITE;
+    // The entire structure and safety contract is required before any card is
+    // reviewed. O4 card semantics stay field-local until repair/reapproval.
+    let draft=await generate('guide_write'+suffix,draftPrompt,writerData,currentGuideSchema(),value=>validateDraft(value,{checkSpeech:gateway.skipFinalExtras===true}));
     if(!analysis.safety.urgent){
       const controller=new AbortController(),abort=()=>controller.abort(operation.controller.signal.reason);
       operation.controller.signal.addEventListener('abort',abort,{once:true});
@@ -1062,6 +1167,9 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         if(!controller.signal.aborted)operation.onProgress?.(event);
       }};
       const writeCard=async field=>{
+        // Fast mode uses the model's complete guide draft; each card still
+        // passes its independent reviews and the same repair loop below.
+        if(gateway.skipFinalExtras||reuseDraft)return structuredClone(draft.guide[field]);
         if(field!=='script'){
           const role=CARD_ROLES[field],storedSchema=object({[field]:guideSchema.properties.guide.properties[field]}),schema=field==='avoid'?avoidCardDraftSchema(storedSchema):storedSchema;
           const expanded=await generate('card_'+field+suffix,COMMON+'\n'+role+(field==='avoid'?AVOID_CARD_WIRE:''),
@@ -1131,31 +1239,32 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         }
       };
       try{
-        // Bound simultaneous model requests, while keeping the long speech chain
-        // independent from the four card writers and their approval gates.
+        // Bound card workers; O4 skips expansion but retains each approval gate.
         await Promise.allSettled(Array.from({length:3},()=>worker()));
         if(failure)throw failure;
         draft=validateDraft({...draft,guide:{...draft.guide,...values}});
       }finally{operation.controller.signal.removeEventListener('abort',abort);}
     }
-    const qualityRequest=currentReviewRequest(true);
-    const quality=await generate('guide_quality'+suffix,QUALITY,{...writerData,guide:draft.guide,...qualityRequest.metadata},
-      qualityRequest.schema,value=>validateSchema(value,qualityRequest.schema));
-    if (quality.improvements.length) {
-      for(const field of ['script',...Object.keys(CARD_ROLES)])removeCard(field);
-      const before=structuredClone(draft.guide),refinementSchema=currentGuideSchema();
-      if (analysis.safety.urgent) refinementSchema.properties.guide.properties.top.enum=[draft.guide.top];
-      draft=await generate('guide_refine'+suffix,WRITE+'\n품질 검토의 제안을 적용하되 사실·관계·목적·안전 판단은 원문을 유지하세요.',
-        {...writerData,draft:draft.guide,quality},refinementSchema,value=>{
-          validateDraft(value,{checkSpeech:true});
-          validateSchema(value.guide.top,refinementSchema.properties.guide.properties.top);
-          return value;
-        });
-      const checkedQuality=await generate('guide_quality_check'+suffix,QUALITY_CHECK,
-        {...writerData,guide:draft.guide,...qualityRequest.metadata,
-          revision:{previous_quality:structuredClone(quality),before,after:structuredClone(draft.guide)}},qualityRequest.schema,
-        value=>validateSchema(value,qualityRequest.schema));
-      if (checkedQuality.improvements.length) invalid('agent_quality_review_rejected');
+    if(!gateway.skipFinalExtras){
+      const qualityRequest=currentReviewRequest(true);
+      const quality=await generate('guide_quality'+suffix,QUALITY,{...writerData,guide:draft.guide,...qualityRequest.metadata},
+        qualityRequest.schema,value=>validateSchema(value,qualityRequest.schema));
+      if (quality.improvements.length) {
+        for(const field of ['script',...Object.keys(CARD_ROLES)])removeCard(field);
+        const before=structuredClone(draft.guide),refinementSchema=currentGuideSchema();
+        if (analysis.safety.urgent) refinementSchema.properties.guide.properties.top.enum=[draft.guide.top];
+        draft=await generate('guide_refine'+suffix,draftPrompt+'\n품질 검토의 제안을 적용하되 사실·관계·목적·안전 판단은 원문을 유지하세요.',
+          {...writerData,draft:draft.guide,quality},refinementSchema,value=>{
+            validateDraft(value,{checkSpeech:true});
+            validateSchema(value.guide.top,refinementSchema.properties.guide.properties.top);
+            return value;
+          });
+        const checkedQuality=await generate('guide_quality_check'+suffix,QUALITY_CHECK,
+          {...writerData,guide:draft.guide,...qualityRequest.metadata,
+            revision:{previous_quality:structuredClone(quality),before,after:structuredClone(draft.guide)}},qualityRequest.schema,
+          value=>validateSchema(value,qualityRequest.schema));
+        if (checkedQuality.improvements.length) invalid('agent_quality_review_rejected');
+      }
     }
     const review=await reviewGuide('guide_review'+suffix,draft,plan);
     return {writerData,draft,review};
@@ -1203,7 +1312,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   }
   for(const field of [...Object.keys(CARD_ROLES),'script'])publishCard(field,draft.guide[field]);
   let conversationDetail;
-  if(!analysis.safety.urgent){
+  if(!analysis.safety.urgent&&!gateway.skipFinalExtras){
     // Copy final speech mechanically, after the model chooses its two section
     // boundaries. Reproducing the entire script three times was a recurring
     // model failure, especially after a refinement collapsed its paragraphs.
@@ -1266,7 +1375,9 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   return {payload:{...draft,patient_state:memory,name_index:name},relationship_analysis:analysis,
     ...(conversationDetail?{conversation_detail:conversationDetail}:{}),
     relationship_memory:reviewedRelationshipMemory(analysis,context),
-    agent:{prompt_version:PROMPT_VERSION,stages,reviewed:true,quality_reviewed:true,
+    agent:{prompt_version:PROMPT_VERSION,stages,reviewed:true,quality_reviewed:!gateway.skipFinalExtras,
+      ...(gateway.reuseFinalDraft===true&&!analysis.safety.urgent?{final_draft_reused:true}:{}),
+      ...(seededStages.length?{seed_reuse:{source:'trusted_local_seed',seed_id:finalSeed.seed_id,context_fingerprint:finalSeed.context_fingerprint,stages:seededStages}}:{}),
       safety_evidence_version:'question-bundle-v1',safety_source_ids:safetySourceIds,
       ...(reviewedSafety?{safety_signal:reviewedSafety}:{}),
       ...(analysis.safety.urgent?{safety_guidance_version:'immediate-help-v1'}:{}),

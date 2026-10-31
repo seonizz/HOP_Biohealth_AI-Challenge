@@ -1405,3 +1405,19 @@ test('polled cards precede the final result, and only the confirmed saved record
   assert.equal(document.getElementById('rbody').querySelector('.result-stream'),null);
   assert.equal(context.flow.loadRecs()[0],record);assert.equal(clock.timers.size,0);
 });
+
+test('opening a record with a key renders it without importing ownership or key-management controls', async () => {
+  const document=documentWith(['records','rdetail','recordAccessKeyInput','recordAccessKeyNotice','openRecordWithKey']);
+  const record={id:21,title:'보관한 기록',date:'2026-10-29T00:00:00Z',profile:{},guide:{top:'통합',script:'안녕',next:'다음'},log:[]};
+  const calls=[];
+  const context=vm.createContext({document,M:{},GuideCards:{doAvoid:()=>'',speech:g=>g.script,next:g=>g.next,bindCopy(){}},API:{async request(path,options){calls.push({path,options});return {record};}}});
+  vm.runInContext(script('core/utils.js')+script('components/RecordsScreen.js')+'\nglobalThis.screen=RecordsScreen;',context);
+  document.getElementById('recordAccessKeyInput').value='a'.repeat(43);
+  await context.screen.openWithKey();
+  assert.equal(calls[0].path,'/api/records/open-with-key');
+  assert.equal(calls[0].options.body.access_key,'a'.repeat(43));
+  assert.equal(document.getElementById('recordAccessKeyInput').value,'');
+  assert.match(document.getElementById('rdetail').textContent,/보관한 기록/);
+  assert.equal(document.getElementById('createRecordKey'),null);
+  assert.equal(document.getElementById('revokeRecordKey'),null);
+});

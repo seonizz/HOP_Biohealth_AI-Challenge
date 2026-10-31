@@ -374,7 +374,10 @@ test('internal operation recovery restarts exhausted validation with a fresh con
   assert.equal(signals[0],signals[2]);assert.notEqual(signals[2],signals[3]);
   assert.equal(new Set(bodies.map(body=>body.messages.at(-1).content)).size,1);
   const retries=records.filter(entry=>entry.event==='model_operation_retry');assert.equal(retries.length,1);
-  assert.deepEqual(retries[0],{event:'model_operation_retry',request_id:REQUEST_ID,attempt:1,code:'MODEL_INVALID_RESPONSE',reason:'content_json',delay_ms:1});
+  const {operation_id,operation_restart,operation_elapsed_ms,...retry}=retries[0];
+  assert.deepEqual(retry,{event:'model_operation_retry',request_id:REQUEST_ID,attempt:1,code:'MODEL_INVALID_RESPONSE',reason:'content_json',delay_ms:1});
+  assert.equal(operation_id,records.find(entry=>entry.event==='model_attempt').operation_id);
+  assert.equal(operation_restart,0);assert.ok(Number.isSafeInteger(operation_elapsed_ms)&&operation_elapsed_ms>=0);
   assert.ok(events.some(event=>event.stage==='retry'&&event.status==='started'));
   assert.equal(JSON.stringify(retries).includes(context().patient.fields.mood.text),false);
 });

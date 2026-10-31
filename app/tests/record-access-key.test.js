@@ -1,0 +1,62 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { randomBytes, createHash } from 'node:crypto';
+import pg from 'pg';
+import { createApp } from '../src/server.js';
+
+const databaseUrl = process.env.TEST_DATABASE_URL;
+test('record access keys grant only one read-only record and honor revocation and retention', {skip:!databaseUrl}, async t => {
+  const schema = 'access_test_' + randomBytes(8).toString('hex');
+  const admin = new pg.Pool({connectionString:databaseUrl});
+  await admin.query(`CREATE SCHEMA ${schema}`);
+  const app = await createApp({databaseUrl,schema,key:randomBytes(32),gateway:null,referralProvider:null});
+  await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
+  const base=`http://127.0.0.1:${app.server.address().port}`;
+  t.after(async()=>{
+    await new Promise(resolve=>app.server.close(resolve));
+    await app.store.close().catch(()=>{});
+    await admin.query(`DROP SCHEMA ${schema} CASCADE`);await admin.end();
+  });
+  const owner=await app.store.createBrowser(), other=await app.store.createBrowser();
+  const first={id:await app.store.nextRecordId(),date:new Date().toISOString(),title:'one',log:[]};
+  const second={...first,id:await app.store.nextRecordId(),title:'two'};
+  await app.store.saveRecord(owner.id,first);await app.store.saveRecord(owner.id,second);
+  const request=async(path,method='POST',data={},session,origin=base)=>{
+    const response=await fetch(base+path,{method,headers:{'content-type':'application/json',...(origin?{origin}:{}),...(session?{cookie:`malssi_session=${session.token}`,'x-csrf-token':session.csrf}:{})},body:JSON.stringify(data)});
+    return {status:response.status,data:await response.json()};
+  };
+  const path=`/api/records/${first.id}/access-key`;
+  assert.equal((await request(path,'POST',{},other)).status,404);
+  assert.equal((await request(path,'POST')).status,401);
+  assert.equal((await request(path,'POST',{}, {...owner,csrf:'wrong'})).status,403);
+  const issued=await request(path,'POST',{},owner);
+  assert.equal(issued.status,201);
+  const key=issued.data.access_key;assert.match(key,/^[A-Za-z0-9_-]{43}$/);
+  const persisted=await app.store.pool.query('SELECT access_key_hash FROM records WHERE owner=$1 AND id=$2',[owner.id,String(first.id)]);
+  assert.equal(persisted.rows[0].access_key_hash,createHash('sha256').update(key).digest('hex'));
+  const read=(access_key,session,origin)=>request('/api/records/open-with-key','POST',{access_key},session,origin);
+  assert.deepEqual((await read(key)).data,{record:first});
+  assert.deepEqual((await read(key,other)).data,{record:first});
+  assert.equal((await read(key,undefined,null)).status,403);
+  assert.equal((await read(key,undefined,'https://elsewhere.invalid')).status,403);
+  assert.equal((await read('invalid')).status,404);
+  assert.equal((await read(await app.store.createDeletionKey(owner.id))).status,404);
+  assert.equal((await app.store.history(other.id)).records.length,0);
+  assert.equal((await request(path,'DELETE',{},other)).status,404);
+  await app.store.pool.query("UPDATE browsers SET expires_at=clock_timestamp()-interval '1 day' WHERE id=$1",[owner.id]);
+  assert.equal((await read(key)).status,200); // separate capability survives lost/expired session
+  const rotated=await app.store.createRecordAccessKey(owner.id,first.id);
+  assert.equal((await read(key)).status,404);assert.equal((await read(rotated)).status,200);
+  await app.store.revokeRecordAccessKey(owner.id,first.id);
+  assert.equal((await read(rotated)).status,404);
+  const expiring=await app.store.createRecordAccessKey(owner.id,first.id);
+  await app.store.pool.query("UPDATE browsers SET last_active_at=clock_timestamp()-interval '31 days' WHERE id=$1",[owner.id]);
+  assert.equal((await read(expiring)).status,404);
+  assert.equal((await app.store.purgeExpired()).deleted_owners,1);
+  assert.equal((await read(expiring)).status,404);
+  const removable={...first,id:await app.store.nextRecordId()};
+  await app.store.saveRecord(other.id,removable);
+  const removedKey=await app.store.createRecordAccessKey(other.id,removable.id);
+  await app.store.deleteRecord(other.id,removable.id);
+  assert.equal((await read(removedKey)).status,404);
+});

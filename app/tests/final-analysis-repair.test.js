@@ -125,3 +125,31 @@ test('the final pipeline independently reviews the analysis after an enum repair
     {message:'TEST_REVIEW_BOUNDARY'});
   assert.equal(reviewed,true);assert.equal(calls,2);assert.deepEqual(stages,['relationship_analysis','analysis_review']);
 });
+
+test('analysis repair treats reviewer wording as unverified and keeps hypothesis-to-fact rejection',async()=>{
+  const ctx=context(),hypothesis='한동안 동료가 업무를 혼자 맡으려는 것 같아요.';
+  ctx.patient.fields.describe=field('describe',hypothesis);
+  const candidate=selection();candidate.observations.patient[0].quote=hypothesis;
+  candidate.relationship.dynamics[0].evidence[0].quote=hypothesis;
+  candidate.relationship.dynamics[0].interpretation='대상자는 업무 부담을 혼자 감당하는 경향이 있습니다.';
+  const before=structuredClone({ctx,candidate}),calls=[];
+  const proposal='대상자는 업무 부담을 혼자 감당하는 경향이 있습니다.';
+  const gateway={async agentComplete(stage,prompt,payload,schema,operation,validate){
+    calls.push({stage,prompt,payload});
+    if(stage==='relationship_analysis'||stage==='analysis_repair')return validate(structuredClone(candidate));
+    assert.ok(stage.startsWith('analysis_review'));
+    return validate({approved:false,issues:[{field:'relationship_analysis',reason:'이용자의 추측을 확정된 경향으로 바꿨습니다.',repair:proposal}],
+      audits:payload.claims.map(claim=>({id:claim.id,verdict:claim.id==='dynamics.0'?'unsupported':'supported',reason:'추측의 주체와 확실성을 원문과 대조했습니다.'}))});
+  }};
+  const prior={summary:'합성 관찰',facts:[{subject:'patient',question_id:'describe',quote:hypothesis,interpretation:'이용자의 추측 보고',certainty:'reported'}],unknowns:[],user_goal:'이해하고 싶어요'};
+  await assert.rejects(runRelationshipAgent(gateway,ctx,prior,null,{controller:new AbortController()}),{modelReason:'agent_analysis_review_rejected'});
+  assert.deepEqual(calls.map(call=>call.stage),['relationship_analysis','analysis_review','analysis_repair','analysis_review_after_repair']);
+  for(const call of calls.filter(call=>['relationship_analysis','analysis_repair'].includes(call.stage))){
+    assert.match(call.prompt,/누가 추측했는지/u);assert.match(call.prompt,/표지만 붙여 다른 절의 단정을 덮지/u);
+  }
+  const repaired=calls.find(call=>call.stage==='analysis_repair');
+  assert.match(repaired.prompt,/제안한 문장은 확인된 사실이나 승인된 수정안이 아닙니다/u);
+  assert.match(repaired.prompt,/남은 모든 절의 화자·추측·조건·부정·시점/u);
+  assert.equal(repaired.payload.review.issues[0].repair,proposal);
+  assert.deepEqual({ctx,candidate},before);
+});

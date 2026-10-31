@@ -1,8 +1,10 @@
+import {finalEvidenceTransport} from './final-evidence-transport.js';
 import { HttpError } from './errors.js';
 import { modelHttpFetch } from './model-http.js';
 import { JSON_STREAM_COMPLETE, ModelStreamError, streamJsonResponse, schemaArrayLimit, schemaPropertyArrayLimits, schemaStringLimit } from './model-stream.js';
 import { discoverModelTokenPolicy } from './model-token-policy.js';
 import { randomUUID } from 'node:crypto';
+import {createOperationMetrics, operationMetrics, beginHttpAttempt, modelStageRole} from './model-operation-metrics.js';
 import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { modelResponseFormat } from './model-schema.js';
 import { trainedContext } from './model-context.js';
@@ -18,7 +20,7 @@ const TRAINED_MODEL = 'malssi-gemma4-31b-step100';
 // semantic rejection. Transport/schema recovery and turn-state repair retain
 // their separate retry policies.
 const EXHAUSTED_GUIDE_REVIEWS = new Set([
-  'agent_analysis_review_rejected','agent_plan_review_rejected',
+  'agent_analysis_review_rejected','agent_analysis_review_inconsistent','agent_plan_review_rejected',
   'agent_quality_review_rejected','agent_review_rejected','agent_detail_review_rejected',
   'agent_review_stale','agent_review_noop',
 ]);
@@ -239,6 +241,7 @@ function correction(reason, repair) {
   if(reason==='agent_script_inference')return '\n검증 실패: script 또는 발화 부분에서 대상자의 마음·노력·원인을 알고 있는 것처럼 설명했습니다. validation_feedback의 field와 rejected_text, matched_text를 확인하고 “네가 얼마나 최선을 다하는지 다 알고 있어”, “완벽하게 하고 싶은 마음 때문에” 같은 단정을 삭제하세요. parts와 earlier_parts도 초안이며 사실 근거가 아닙니다. answers에 있는 관찰과 이용자 자신의 마음만 유지하고 대상자의 마음은 열린 질문으로 물으세요. 지정된 현재 단계의 전체 JSON만 다시 쓰고 원문에 없는 행동이나 다른 단계의 문장을 보태지 마세요.';
   if(reason==='agent_hypothesis_language')return '\n검증 실패: tentative 해석을 확정된 사실처럼 썼습니다. 원문이 뒷받침하는 하나의 관계 가설만 남기고 “일 수 있어요”, “가능성이 있어 확인이 필요해요”처럼 불확실성을 명시하세요. 원인·진단을 새로 만들어 표현만 완곡하게 바꾸면 안 됩니다.';
   if(reason==='agent_claim_audit')return '\n검증 실패: 모든 claims의 id를 audits에 정확히 한 번씩 검토하세요. unsupported나 reported의 plausible 판정이 있으면 approved=false와 구체적인 issues를 반환하세요.';
+  if(reason==='agent_analysis_review_inconsistent')return '\n검증 실패: 검토기 자신의 audits와 issues가 같은 claim ID에 대해 충돌할 수 있습니다. rejected_output은 초안이 아닌 직전 검토 JSON입니다. data.analysis와 data.claims를 data.answers 원문과 다시 대조하여 검토 JSON만 수정하세요. 실제 문제는 유지하고 필요한 audit를 반려하거나 별도의 미검토 문제를 명시하세요. 근거 확인 없이 자동 승인하거나 초안을 재작성하지 마세요.';
   if(reason==='agent_review_stale')return '\n검증 실패: 이전 수정 이력에만 있는 문구를 현재 오류로 지적했습니다. 이번 data.guide와 data.claims만 data.answers의 원문과 새로 대조하세요. 현재 실제로 남은 오류만 해당 audits와 issues에 기록하고 전체 검토 JSON을 다시 반환하세요. 제거된 문구를 이유로 반복 거절하지도, 다른 현재 오류를 자동 승인하지도 마세요.';
   if(reason==='agent_unreported_label')return '\n검증 실패: 인용에 없는 완벽주의·강박·수면장애 명칭으로 행동을 바꾸었습니다. 그런 명칭을 삭제하고 원문에 실제 나온 관찰 행동으로만 다시 쓰세요. tentative로 바꾸는 것만으로 통과할 수 없습니다.';
   if(reason==='agent_duplicate_findings')return '\n검증 실패: 동일한 해석을 dynamics, strengths, boundaries에 중복했습니다. 각 항목은 서로 달라야 합니다. strengths는 원문에 확인된 긍정적 자원만 쓰고 없으면 []로 두세요.';
@@ -298,8 +301,215 @@ function safeUsage(usage) {
   return Object.keys(result).length ? result : null;
 }
 
+const SCHEMA_DIAGNOSTIC_KEYS = new Set(('state patient_state name_index relationship_memory questions facts unknowns patient supporter relationship '+
+  'subject question_id quote certainty evidence interpretation alias source_question_id skip clarify safety urgent evidence_ids '+
+  'summary rows text approved audits id verdict reason issues repair guide script doList avoid next care feel tips '+
+  'avoid_phrase alternative observations dynamics strengths boundaries').split(' '));
+const SCHEMA_DIAGNOSTIC_KEYWORDS = new Set(['anyOf','const','type','objectKeys','maxItems','minItems','nonBlank','maxLength','enum']);
+function safeSchemaDiagnostic(feedback) {
+  if(typeof feedback!=='string'||feedback.length>16384)return null;
+  try {
+    const {path,keyword}=JSON.parse(feedback.split('\n',1)[0]);
+    if(typeof path!=='string'||path.length>256||!SCHEMA_DIAGNOSTIC_KEYWORDS.has(keyword)||
+      !/^output(?:\.[a-zA-Z_]+|\[(?:0|[1-9]\d{0,3})\]){0,16}$/.test(path))return null;
+    // Even schema properties may be dynamic. Never log arbitrary path names,
+    // expected/actual values, repair prose or source-bearing enum candidates.
+    if([...path.matchAll(/\.([a-zA-Z_]+)/g)].some(([,key])=>!SCHEMA_DIAGNOSTIC_KEYS.has(key)))return null;
+    return {path,keyword};
+  } catch { return null; }
+}
+
+function evidenceSelectionRepair(stage,schema,feedback,candidate) {
+  if(!/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)||
+    typeof feedback!=='string'||feedback.length>16384)return null;
+  let issue;
+  try { issue=JSON.parse(feedback); } catch { return null; }
+  if(issue?.keyword!=='enum'||issue.actual?.type!=='object'||typeof issue.path!=='string')return null;
+  const match=/^output\.(patient|supporter|relationship)\[(0|[1-9]\d{0,3})\]\.evidence\[(0|[1-9]\d{0,3})\]$/.exec(issue.path);
+  if(!match)return null;
+  const [,group,row,index]=match,groupSchema=schema?.properties?.[group];
+  if(groupSchema?.type!=='array'||!Number.isSafeInteger(groupSchema.maxItems)||Number(row)>=groupSchema.maxItems)return null;
+  const item=groupSchema.items,root=`output_schema.properties.${group}.items`;
+  let branches=Array.isArray(item?.anyOf)?item.anyOf.map((value,i)=>({value,path:`${root}.anyOf[${i}]`})):[{value:item,path:root}];
+  if(candidate!==undefined){
+    const finding=candidate?.[group]?.[Number(row)],certainty=finding?.certainty;
+    if(!['reported','tentative'].includes(certainty)||!Array.isArray(finding.evidence)||!finding.evidence[Number(index)])return null;
+    branches=branches.filter(({value})=>value?.properties?.certainty?.const===certainty||
+      value?.properties?.certainty?.enum?.includes(certainty));
+  }
+  if(!branches.length)return null;
+  const pools=branches.map(({value})=>{
+    const evidence=value?.properties?.evidence;
+    return evidence?.type==='array'&&Number.isSafeInteger(evidence.maxItems)&&Number(index)<evidence.maxItems?evidence.items?.enum:null;
+  });
+  const pool=pools[0];
+  if(!Array.isArray(pool)||!pool.length||pool.some(ref=>!ref||typeof ref!=='object'||
+    Object.keys(ref).length!==3||!['subject','question_id','quote'].every(key=>typeof ref[key]==='string')))return null;
+  const serialized=JSON.stringify(pool);
+  // A recovered block has no rejected candidate. Only share its hint when all
+  // possible certainty branches contain the exact same complete evidence pool.
+  if(pools.some(other=>JSON.stringify(other)!==serialized))return null;
+  return {output_path:issue.path,
+    schema_paths:branches.map(({path})=>path+'.properties.evidence.items.enum'),candidate_count:pool.length,
+    ...(pool.length<=16&&Buffer.byteLength(serialized,'utf8')<=8192?{allowed_evidence:structuredClone(pool)}:{}),
+    instruction:'지정한 schema_paths의 enum에서 subject·question_id·quote 전체 객체를 그대로 선택하세요. 원문의 부분 문자열도 후보에 없으면 사용할 수 없으며 인용을 자르거나 결합하거나 서로 다른 사람·문항과 섞지 마세요. allowed_evidence가 없으면 output_schema의 전체 후보를 확인하세요. 해당 finding의 다른 evidence도 함께 대조하고, 선택한 근거가 주장 전체를 지지하지 못하면 원문 범위에 맞게 주장을 다시 작성하세요. 배열 상한·사실과 가설 구분·부정·조건·시점·정정을 보존하고 완전한 블록 JSON을 반환하세요.'};
+}
+
+function questionEligibleChoices(stage,schema) {
+  if(!/^turn_draft_block_questions(?:_after_review)?$/.test(stage))return null;
+  const skip=schema?.properties?.skip,reasons=['already_covered','not_needed'];
+  if(skip?.type!=='array'||!Number.isSafeInteger(skip.maxItems)||skip.maxItems<0)return null;
+  const allowed=new Set(['type','properties','required','additionalProperties','items','anyOf','enum','const','maxItems','minItems','minLength','maxLength','description']);
+  const supported=node=>node&&typeof node==='object'&&!Array.isArray(node)&&Object.keys(node).every(key=>allowed.has(key))&&
+    (!node.properties||Object.values(node.properties).every(supported))&&(!node.items||supported(node.items))&&
+    (!node.anyOf||Array.isArray(node.anyOf)&&node.anyOf.every(supported));
+  if(!supported(skip))return null;
+  if(skip.maxItems===0)return [];
+  const item=skip.items,branches=Array.isArray(item?.anyOf)?item.anyOf.map((value,i)=>({value,path:`output_schema.properties.skip.items.anyOf[${i}]`})):
+    [{value:item,path:'output_schema.properties.skip.items'}];
+  if(!branches.length||branches.length>128)return null;
+  const choices=[];
+  for(const {value,path} of branches){
+    const reason=value?.properties?.reason,allowedReasons=reason?.const?[reason.const]:reason?.enum;
+    const ids=value?.properties?.question_id?.enum;
+    if(value?.properties?.question_id?.type!=='string'||!Array.isArray(allowedReasons)||!allowedReasons.length||allowedReasons.some(value=>!reasons.includes(value))||
+      !Array.isArray(ids)||!ids.length||ids.some(id=>typeof id!=='string'||!/^[a-z][a-z0-9_]{0,63}$/.test(id)))return null;
+    choices.push({schema_path:path+'.properties.question_id.enum',reasons:[...allowedReasons],question_ids:[...ids]});
+  }
+  // Keep reason/ID pairs intact: an ID eligible for one reason need not be
+  // eligible for another. Never narrow a large or incompatible catalog.
+  if(!choices.length||choices.reduce((count,choice)=>count+choice.question_ids.length,0)>64||
+    Buffer.byteLength(JSON.stringify(choices),'utf8')>8192)return null;
+  return choices;
+}
+
+function questionSelectionRepair(stage,schema,feedback,candidate) {
+  if(!/^turn_draft_block_questions(?:_after_review)?$/.test(stage)||typeof feedback!=='string'||feedback.length>16384)return null;
+  let issue;
+  try { issue=JSON.parse(feedback); } catch { return null; }
+  if(issue?.keyword!=='enum'||issue.actual?.type!=='string'||typeof issue.path!=='string')return null;
+  const match=/^output\.skip\[(0|[1-9]\d{0,3})\]\.question_id$/.exec(issue.path),skip=schema?.properties?.skip;
+  if(!match||skip?.type!=='array'||!Number.isSafeInteger(skip.maxItems)||Number(match[1])>=skip.maxItems)return null;
+  const reasons=['already_covered','not_needed'],declared=candidate?.skip?.[Number(match[1])]?.reason;
+  if(candidate!==undefined&&!reasons.includes(declared))return null;
+  const choices=questionEligibleChoices(stage,schema)?.filter(choice=>!declared||choice.reasons.includes(declared));
+  if(!choices?.length)return null;
+  return {output_path:issue.path,eligible_choices:choices,
+    instruction:'eligible_choices의 현재 reason과 question_ids 조합 안에서만 생략 후보를 선택하세요. 후보에 없는 ID를 만들거나 비슷한 ID로 바꾸지 말고 부적격한 생략 제안은 제외하세요. 이 목록은 생략하라는 지시가 아닙니다. 각 질문의 원문·조건·근거를 다시 대조하고 이미 답한 경우와 문맥상 불필요한 경우를 구분하세요. 다른 유효한 생략 판단은 보존하되 근거가 불확실하면 생략하지 마세요. 출력 스키마와 배열 상한을 지킨 전체 questions JSON을 반환하고 독립 질문 검토를 받아야 합니다.'};
+}
+
+function questionCatalogInstruction(stage,schema) {
+  const choices=questionEligibleChoices(stage,schema);
+  if(!choices)return '';
+  return '\n질문 생략 최종 제약: skip의 question_id와 reason은 아래 허용 조합만 사용할 수 있습니다. 답변 원문의 question_id는 근거 위치이며 자동으로 생략 후보가 되지 않습니다. 목록에 없는 ID를 만들거나 비슷한 ID로 바꾸지 마세요. 목록은 생략 지시가 아닙니다. 생략 여부는 실제 문맥·근거로 판단하고 부적격 제안은 제외하며, 필요한 질문은 유지하세요. 전체 출력 스키마와 독립 질문 검토는 그대로 적용됩니다. 허용 조합이 없으면 skip은 []입니다. 허용 조합: '+JSON.stringify(choices.map(({reasons,question_ids})=>({reasons,question_ids})));
+}
+function questionIdDiagnostic(stage,schema,feedback,candidate) {
+  const choices=questionEligibleChoices(stage,schema);
+  if(!choices||typeof feedback!=='string'||feedback.length>16384)return null;
+  let issue;
+  try { issue=JSON.parse(feedback); } catch { return null; }
+  if(!['enum','type'].includes(issue?.keyword)||typeof issue.path!=='string')return null;
+  const match=/^output\.skip\[(0|[1-9]\d{0,3})\]\.question_id$/.exec(issue.path);
+  if(!match||Number(match[1])>=schema.properties.skip.maxItems)return null;
+  const row=candidate?.skip?.[Number(match[1])],id=row?.question_id,isString=typeof id==='string';
+  return {id_string:isString,any_eligible:isString&&choices.some(choice=>choice.question_ids.includes(id)),
+    reason_eligible:isString&&choices.some(choice=>choice.reasons.includes(row.reason)&&choice.question_ids.includes(id)),
+    trimmed_eligible:isString&&choices.some(choice=>choice.question_ids.includes(id.trim()))};
+}
+
+// This transport changes representation only. Each citation remains scoped to
+// its original schema node; decoding is followed by the original validators.
+export function relationshipEvidenceTransport(stage,schema) {
+  if(!/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage))return null;
+  const supported=new Set(['type','properties','required','additionalProperties','items','anyOf','enum','const','maxItems','minItems','minLength','maxLength','description']);
+  const known=node=>node&&typeof node==='object'&&!Array.isArray(node)&&Object.keys(node).every(key=>supported.has(key))&&
+    (!node.properties||Object.values(node.properties).every(known))&&(!node.items||known(node.items))&&
+    (!node.anyOf||Array.isArray(node.anyOf)&&node.anyOf.length>0&&node.anyOf.every(known));
+  if(!known(schema)||schema.type!=='object'||!schema.properties||schema.anyOf)return null;
+  const wire=structuredClone(schema),groups=[],table=[];
+  for(const group of ['patient','supporter','relationship']) {
+    const array=wire.properties[group];
+    if(array?.type!=='array'||!array.items||array.anyOf)return null;
+    const variants=array.items.anyOf||[array.items],entries=[];
+    if(array.items.anyOf&&Object.keys(array.items).some(key=>key!=='anyOf'&&key!=='description'))return null;
+    for(const [index,branch] of variants.entries()) {
+      if(branch.type!=='object'||!branch.properties||branch.anyOf)return null;
+      const evidence=branch.properties.evidence;
+      if(evidence?.type!=='array'||!evidence.items||evidence.anyOf)return null;
+      const pool=evidence.items.enum;
+      const path=`output_schema.properties.${group}.items`+(array.items.anyOf?`.anyOf[${index}]`:'')+'.properties.evidence.items';
+      const refs=new Map();
+      if(pool!==undefined) {
+        if(evidence.items.anyOf)return null;
+        if(!Array.isArray(pool)||!pool.length||pool.some(ref=>!ref||typeof ref!=='object'||Array.isArray(ref)||
+          Object.keys(ref).length!==3||!['subject','question_id','quote'].every(key=>typeof ref[key]==='string')))return null;
+        for(const [ordinal,ref] of pool.entries()) {
+          // Check all original restrictions before replacing the node.
+          // Never discard a candidate silently.
+          try { validateSchema(ref,evidence.items); } catch { return null; }
+          const id=`source_${group}_${index}_${ordinal}`;
+          refs.set(id,structuredClone(ref));
+        }
+        evidence.items={type:'string',enum:[...refs.keys()]};
+        table.push({schema_path:path,sources:[...refs].map(([id,evidence])=>({id,evidence}))});
+      }
+      entries.push({branch,refs});
+    }
+    groups.push({group,entries});
+  }
+  if(!table.length)return null;
+  return {schema:wire,table,decode(value){
+    validateSchema(value,wire,'output',true);
+    const decoded=structuredClone(value);
+    for(const {group,entries} of groups)decoded[group]=value[group].map((row,index)=>{
+      const matches=[];
+      for(const {branch,refs} of entries) {
+        try { validateSchema(row,branch,`output.${group}[${index}]`,true); }
+        catch(error) { if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE')continue;throw error; }
+        const result=structuredClone(row);
+        if(refs.size)result.evidence=row.evidence.map(id=>structuredClone(refs.get(id)));
+        matches.push(result);
+      }
+      // No first-branch/global-table lookup: every matching branch must agree.
+      if(!matches.length||matches.some(result=>JSON.stringify(result)!==JSON.stringify(matches[0])))throw invalidResponse('agent_schema');
+      return matches[0];
+    });
+    validateSchema(decoded,schema,'output',true);
+    return decoded;
+  }};
+}
+const EVIDENCE_WIRE_INSTRUCTION='\n이 관계 기억 블록에서 evidence_sources 대응표가 있는 위치의 evidence만 인용 객체 대신 output_schema의 해당 위치에 허용된 source ID 문자열 배열로 반환하세요. 대응표가 없는 위치는 output_schema의 기존 객체 형식을 그대로 유지하세요. evidence_sources는 각 스키마 위치의 전체 ID와 원래 근거 객체 대응표입니다. 다른 사람·certainty 분기의 ID를 가져오거나 ID·원문을 만들거나 수정하지 마세요. 원문과 전체 문맥으로 주장을 검토한 뒤 해당 위치의 근거 ID를 선택하세요. ID는 서버에서 원래 객체로 복원한 후 기존 원문 검증과 독립 검토를 거칩니다.';
+
+function wireEvidenceSelectionRepair(stage,transport,feedback,candidate) {
+  if(!/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)||!transport||
+    typeof feedback!=='string'||feedback.length>16384)return null;
+  let issue;
+  try { issue=JSON.parse(feedback); } catch { return null; }
+  if(issue?.keyword!=='enum'||issue.actual?.type!=='string'||typeof issue.path!=='string')return null;
+  const match=/^output\.(patient|supporter|relationship)\[(0|[1-9]\d{0,3})\]\.evidence\[(0|[1-9]\d{0,3})\]$/.exec(issue.path);
+  if(!match)return null;
+  const [,group,row,index]=match,groupSchema=transport.schema.properties[group],finding=candidate?.[group]?.[Number(row)];
+  if(!Number.isSafeInteger(groupSchema?.maxItems)||Number(row)>=groupSchema.maxItems||
+    !['reported','tentative'].includes(finding?.certainty)||!Array.isArray(finding.evidence)||
+    typeof finding.evidence[Number(index)]!=='string')return null;
+  const root=`output_schema.properties.${group}.items`,item=groupSchema.items;
+  const branches=(item.anyOf?item.anyOf.map((value,i)=>({value,path:`${root}.anyOf[${i}]`})):[{value:item,path:root}])
+    .filter(({value})=>value.properties.certainty?.const===finding.certainty||value.properties.certainty?.enum?.includes(finding.certainty));
+  // A declared certainty must identify exactly one node. Do not choose a
+  // branch, source or subset on the model's behalf when it is ambiguous.
+  if(branches.length!==1)return null;
+  const {value,path}=branches[0],evidence=value.properties.evidence;
+  if(!Number.isSafeInteger(evidence.maxItems)||Number(index)>=evidence.maxItems||evidence.items.type!=='string')return null;
+  const ids=evidence.items.enum,tablePath=path+'.properties.evidence.items';
+  const table=transport.table.find(entry=>entry.schema_path===tablePath);
+  if(!Array.isArray(ids)||!ids.length||!table||JSON.stringify(ids)!==JSON.stringify(table.sources.map(source=>source.id)))return null;
+  return {output_path:issue.path,schema_path:tablePath+'.enum',certainty:finding.certainty,allowed_source_ids:[...ids],
+    instruction:'이 위치의 evidence ID는 allowed_source_ids의 문자열을 철자 그대로 사용하세요. evidence_sources의 같은 schema_path 대응표와 전체 원문을 대조하여 현재 주장을 실제로 뒷받침하는 근거만 선택하세요. 다른 위치·certainty 분기의 ID나 새 ID를 만들지 마세요. ID 목록은 근거 선택이나 주장 승인이 아닙니다. 서버가 ID를 대신 선택·변경·삭제하지 않으며 전체 블록은 기존 검증과 독립 검토를 다시 거칩니다.'};
+}
+
 export class ModelGateway {
-  constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, agentFormat = 'json_schema', reasoningEffort = 'none', stateMode = 'combined', fetchImpl = modelHttpFetch,
+  constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, agentFormat = 'json_schema', reasoningEffort = 'none', stateMode = 'combined', skipFinalExtras = false, reuseFinalDraft = false, fetchImpl = modelHttpFetch,
+    stageScopedQuestionRules = false, blockScopedInputs = false,
     discoverTokenLimits = false, preserveStringLimits = false, streamJson = false, streamCompleteJson = false, retryFailures = false, retryDelayMs = 1000, reviewGateway = null, diagnosticLogger = entry => console.error(JSON.stringify(entry)) } = {}) {
     this.baseUrl = typeof baseUrl === 'string' ? baseUrl.replace(/\/+$/, '') : '';
     this.apiKey = apiKey;
@@ -309,6 +519,10 @@ export class ModelGateway {
     this.agentFormat = agentFormat;
     this.reasoningEffort = reasoningEffort;
     this.stateMode = stateMode;
+    this.skipFinalExtras = skipFinalExtras;
+    this.reuseFinalDraft = reuseFinalDraft;
+    this.stageScopedQuestionRules = stageScopedQuestionRules;
+    this.blockScopedInputs = blockScopedInputs;
     this.fetchImpl = fetchImpl;
     this.discoverTokenLimits = discoverTokenLimits;
     this.preserveStringLimits = preserveStringLimits;
@@ -327,6 +541,11 @@ export class ModelGateway {
         typeof this.apiKey === 'string' && Boolean(this.apiKey.trim()) && !/[\u0000-\u001f\u007f-\uffff]/.test(this.apiKey) &&
         typeof this.model === 'string' && Boolean(this.model.trim()) && typeof this.discoverTokenLimits === 'boolean' && typeof this.preserveStringLimits === 'boolean' &&
         typeof this.streamJson === 'boolean' && (!this.streamJson || streamJsonHost(url.hostname)) &&
+        typeof this.skipFinalExtras === 'boolean' && typeof this.reuseFinalDraft === 'boolean' &&
+        (!this.reuseFinalDraft || this.protocol === 'relationship_agent' && !this.skipFinalExtras) &&
+        typeof this.stageScopedQuestionRules === 'boolean' && typeof this.blockScopedInputs === 'boolean' &&
+        (!this.blockScopedInputs || this.stageScopedQuestionRules) &&
+        (!(this.stageScopedQuestionRules || this.blockScopedInputs) || this.protocol === 'relationship_agent') &&
         typeof this.streamCompleteJson === 'boolean' && (!this.streamCompleteJson || this.streamJson) &&
         (this.reviewGateway === null || this.reviewGateway instanceof ModelGateway && this.reviewGateway !== this &&
           this.reviewGateway.reviewGateway === null && this.reviewGateway.configured) &&
@@ -338,11 +557,12 @@ export class ModelGateway {
     } catch { return false; }
   }
 
-  async operation(options, generate, {retryFailures=this.retryFailures} = {}) {
+  async operation(options, generate, {retryFailures=this.retryFailures,parentOperation=null} = {}) {
     if (!this.configured) throw new HttpError(503, 'MODEL_NOT_CONFIGURED', '모델 연결 설정을 확인해 주세요.');
     const requestId = typeof options?.requestId === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(options.requestId)
       ? options.requestId : null;
     const cancellation=new AbortController(),external=options?.signal,recovery={};
+    const metrics=parentOperation?.metrics||createOperationMetrics();
     const onCancel=()=>cancellation.abort(cancelled());
     external?.addEventListener('abort',onCancel,{once:true});
     if(external?.aborted)onCancel();
@@ -359,7 +579,8 @@ export class ModelGateway {
           hasCards=event.type==='reset'?false:true;
           try{options?.onCard?.(event);}catch{ /* Display updates cannot stop generation. */ }
         };
-        const operation={controller,deadline:this.timeoutMs===0?Infinity:performance.now()+this.timeoutMs,requestId,onProgress:options?.onProgress,onCard,recovery};
+        const operation={controller,deadline:this.timeoutMs===0?Infinity:performance.now()+this.timeoutMs,requestId,onProgress:options?.onProgress,onCard,recovery,
+          metrics,restart:parentOperation?.restart??retries};
         const timer=this.timeoutMs>0?setTimeout(()=>controller.abort(timeout()),this.timeoutMs):undefined;
         let delay;
         try {
@@ -386,7 +607,8 @@ export class ModelGateway {
           if(!retryFailures||!retryable||failed.modelReason==='retry_after_limit'||EXHAUSTED_GUIDE_REVIEWS.has(failed.modelReason))throw failed;
           retries++;
           delay=Math.min(30000,this.retryDelayMs*2**Math.min(retries-1,20));
-          try{this.diagnosticLogger?.({event:'model_operation_retry',request_id:requestId,attempt:retries,code:failed.code,reason:failed.modelReason||null,delay_ms:delay});}catch{ /* Diagnostics cannot stop recovery. */ }
+          try{this.diagnosticLogger?.({event:'model_operation_retry',request_id:requestId,attempt:retries,code:failed.code,reason:failed.modelReason||null,delay_ms:delay,
+            ...operationMetrics(operation)});}catch{ /* Diagnostics cannot stop recovery. */ }
           try{options?.onProgress?.({stage:'retry',status:'started',attempt:retries});}catch{ /* Progress cannot stop recovery. */ }
         } finally {
           active=false;
@@ -522,17 +744,18 @@ export class ModelGateway {
   }
 
   async agentComplete(stage,prompt,payload,schema,operation,validate) {
-    const reviewStage=/^(?:turn_review|state_review|analysis_review|plan_review|speech_review|support_review|guide_review|speech_detail_review|safety_review|question_review|guide_quality)(?:_|$)/u.test(stage);
+    const reviewStage=modelStageRole(stage)==='reviewer';
     const stateReviewTarget=/^turn_review(?:_after_review)?$/u.test(stage)?payload?.review_target||payload?.state:null;
     if(this.reviewGateway&&reviewStage) {
       // Keep the same validator and cancellation boundary. Each endpoint discovers
       // its own token policy; the writer's capacity must not constrain the reviewer.
       // request() keeps its three attempts; only the writer owns operation recovery.
       return this.reviewGateway.operation({requestId:operation.requestId,signal:operation.controller.signal,onProgress:operation.onProgress,onCard:operation.onCard},reviewOperation=>
-        this.reviewGateway.agentComplete(stage,prompt,payload,schema,reviewOperation,validate),{retryFailures:false});
+        this.reviewGateway.agentComplete(stage,prompt,payload,schema,reviewOperation,validate),{retryFailures:false,parentOperation:operation});
     }
-    let requestSchema=schema, literalState=false, stateSchemaRecovery=false;
-    let streamSchema=schema;
+    let originalRequestSchema=schema, transport=relationshipEvidenceTransport(stage,schema)||finalEvidenceTransport(stage,schema);
+    let requestSchema=transport?.schema||schema, literalState=false, stateSchemaRecovery=false;
+    let streamSchema=requestSchema;
     if(/^turn_draft(?:_after_review)?$/u.test(stage)&&schema.properties?.state?.properties?.relationship_memory){
       // The full-turn validator already accepts two literal reports plus one
       // hypothesis, merging only source-validated reports before normal review.
@@ -548,6 +771,7 @@ export class ModelGateway {
     // about an unseen answer. Keep it only in this stage invocation and never
     // treat it as approved state or include it in diagnostics.
     let rejectedOutput, currentReviewOnly=false, currentReviewFeedback, stateReviewFormatRepair=false;
+    let selectionRepairFeedback=payload?.combined_validation_feedback;
     return this.request(({repairReason,repairs,repairFeedback})=>{
       // A local streaming state draft/reviewer may need its schema grammar.
       // request() keeps its stream format fallback sticky, so this cannot oscillate.
@@ -556,19 +780,33 @@ export class ModelGateway {
       // Retry unsupported STATE hypotheses as source reports. The rejected
       // response remains a failed attempt; never relabel its inference as fact.
       if((stage==='state'||stage.startsWith('relationship_memory')||stage.startsWith('turn_draft'))&&repairReason==='agent_unreported_label'&&!literalState) {
-        literalState=true;requestSchema=literalStateRepairSchema(schema,{combined:stage.startsWith('turn_draft')});
+        literalState=true;
+        originalRequestSchema=/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)
+          ?literalStateRepairSchema({properties:{relationship_memory:schema}}).properties.relationship_memory
+          :literalStateRepairSchema(schema,{combined:stage.startsWith('turn_draft')});
+        transport=relationshipEvidenceTransport(stage,originalRequestSchema);requestSchema=transport?.schema||originalRequestSchema;
+        if(transport)streamSchema=requestSchema;
       }
-      const scope=literalState?literalStateRepairInstruction({combined:stage.startsWith('turn_draft')}):'';
+      const scope=literalState?(/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)
+        ?literalStateRepairInstruction({}).replace('relationship_memory.relationship','relationship')
+        :literalStateRepairInstruction({combined:stage.startsWith('turn_draft')})):'';
       // An obsolete review must not keep seeding its own historical wording.
       // Retain all current sources and the original validator/retry ceiling.
       const data=currentReviewOnly?Object.fromEntries(Object.entries(payload).filter(([key])=>key!=='revision')):payload;
       const feedback=currentReviewOnly?currentReviewFeedback:repairFeedback;
+      const evidenceRepair=transport?null:evidenceSelectionRepair(stage,requestSchema,selectionRepairFeedback,rejectedOutput);
+      const questionRepair=questionSelectionRepair(stage,requestSchema,selectionRepairFeedback,rejectedOutput);
+      const wireEvidenceRepair=wireEvidenceSelectionRepair(stage,transport,selectionRepairFeedback,rejectedOutput);
       return {
         model:this.model,stream:false,...(this.reasoningEffort==='omit'?{}:{reasoning_effort:this.reasoningEffort}),temperature:0.2,
         ...(this.agentFormat==='prompt'?{}:{response_format:this.agentFormat==='json_object'&&!stateSchemaRecovery?{type:'json_object'}:
           {type:'json_schema',json_schema:{name:stage,strict:true,schema:inferenceSchema(requestSchema,{preserveStringLimits:this.preserveStringLimits})}}}),
-        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope},
+        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+questionCatalogInstruction(stage,requestSchema)},
           {role:'user',content:JSON.stringify({stage,data,output_schema:requestSchema,...(feedback?{validation_feedback:feedback}:{}),
+            ...(transport?{evidence_sources:transport.table}:{}),
+            ...(wireEvidenceRepair?{wire_evidence_selection_repair:wireEvidenceRepair}:{}),
+            ...(evidenceRepair?{evidence_selection_repair:evidenceRepair}:{}),
+            ...(questionRepair?{question_selection_repair:questionRepair}:{}),
             ...(rejectedOutput===undefined?{}:{rejected_output:rejectedOutput,
               repair_task:'rejected_output은 검증에 실패한 직전 출력이며 사실이나 승인된 답안이 아닙니다. data의 원문과 output_schema를 기준으로 validation_feedback의 오류를 고쳐 완전한 출력 객체만 반환하세요. 필수 키·배열 상한·각 분기의 키를 확인하고, 근거 없는 내용을 새로 채우거나 정정·부정·시점을 없애지 마세요.'+
                 (reviewStage?' 이번 rejected_output은 검토기 자신의 이전 JSON 출력입니다. 검토 대상인 data의 초안과 혼동하지 마세요. 누락된 audits·필드·잘못된 형식은 검토 출력에서 고치고, 이 형식 오류를 초안 내용의 문제로 issues에 적지 마세요. issues는 현재 data의 주장에 실제로 남은 근거·내용 오류만 포함합니다.':'')}),
@@ -580,7 +818,8 @@ export class ModelGateway {
     },operation,value=>{
       const candidate=structuredClone(value);
       try {
-        if(literalState)validateSchema(value,requestSchema);
+        if(transport)value=transport.decode(value);
+        if(literalState)validateSchema(value,originalRequestSchema);
         return validate(value);
       } catch(error) {
         if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE') {
@@ -595,6 +834,9 @@ export class ModelGateway {
                 schemaError.modelReason==='agent_schema'&&schemaError.modelFeedback)error.modelFeedback=schemaError.modelFeedback;
             }
           }
+          selectionRepairFeedback=error.modelReason==='agent_schema'?error.modelFeedback:undefined;
+          const questionFailure=questionIdDiagnostic(stage,requestSchema,selectionRepairFeedback,candidate);
+          if(questionFailure)Object.defineProperty(error,'modelQuestionIdDiagnostic',{value:questionFailure,configurable:true});
           if(['agent_schema','state_review_schema'].includes(error.modelReason)&&Array.isArray(stateReviewTarget?.claims)) {
             stateReviewFormatRepair=true;rejectedOutput=undefined;
           }
@@ -609,7 +851,7 @@ export class ModelGateway {
         }
         throw error;
       }
-    },stage,streamSchema);
+    },stage,()=>streamSchema);
   }
 
   async trainedState(context, memory, operation, finalProjection = false) {
@@ -645,9 +887,6 @@ export class ModelGateway {
 
   async request(body, operation, validate, generation, streamSchema) {
     const generationId=randomUUID();
-    const arrayLimit=this.streamJson?schemaArrayLimit(streamSchema):null;
-    const propertyArrayLimits=this.streamJson?schemaPropertyArrayLimits(streamSchema):null;
-    const stringLimit=this.streamJson?schemaStringLimit(streamSchema):null;
     let repairReason = null; let repairs = 0; let repairFeedback = null; let schemaFallback = false;
     let structuralFailures=0;
     let outputTokens = operation.tokenPolicy?.maxOutputTokens;
@@ -655,7 +894,7 @@ export class ModelGateway {
       ensureTime(operation);
       operation.onProgress?.({stage:generation,status:'started',attempt});
       let started = performance.now(); let attemptId = null;
-      let status = null; let finishReason = null; let usage = null; let response;
+      let status = null; let finishReason = null; let usage = null; let response; let attemptDiagnostic={};
       let retry = false; let delay = 0;
       let requestFormat,streamStringOverflow=false;
       const streamController=this.streamJson?new AbortController():null;
@@ -667,6 +906,10 @@ export class ModelGateway {
       const signal=streamController?.signal||operation.controller.signal;
       try {
         const request = body({ repairReason, repairs, repairFeedback });
+        const activeStreamSchema=typeof streamSchema==='function'?streamSchema():streamSchema;
+        const arrayLimit=this.streamJson?schemaArrayLimit(activeStreamSchema):null;
+        const propertyArrayLimits=this.streamJson?schemaPropertyArrayLimits(activeStreamSchema):null;
+        const stringLimit=this.streamJson?schemaStringLimit(activeStreamSchema):null;
         if(this.streamJson) {
           request.stream=true;request.stream_options={include_usage:true};
           if(schemaFallback&&request.response_format?.type==='json_schema')request.response_format={type:'json_object'};
@@ -677,6 +920,7 @@ export class ModelGateway {
         ensureTime(operation);
         try {
           started=performance.now();attemptId=randomUUID();
+          attemptDiagnostic=beginHttpAttempt(operation,this,generation,request);
           response = await this.fetchImpl(this.baseUrl + '/chat/completions', {
             method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + this.apiKey },
             signal, body: requestBody,
@@ -712,7 +956,7 @@ export class ModelGateway {
         let payload;
         try {
           if(this.streamJson)response=await streamJsonResponse(response,{signal,arrayLimit,propertyArrayLimits,stringLimit,
-            completeJson:this.streamCompleteJson&&streamSchema!==undefined,abort:error=>streamController.abort(error)});
+            completeJson:this.streamCompleteJson&&activeStreamSchema!==undefined,abort:error=>streamController.abort(error)});
           payload = await response.json();
         } catch (error) {
           if(error instanceof ModelStreamError){
@@ -739,7 +983,7 @@ export class ModelGateway {
         if (choice.finish_reason !== 'stop'&&!localComplete) throw invalidResponse('finish_reason');
         const result = validate(parseContent(choice.message.content));
         ensureTime(operation);
-        this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, 'success');
+        this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, 'success',null,null,attemptDiagnostic);
         operation.onProgress?.({stage:generation,status:'completed',attempt});
         return result;
       } catch (error) {
@@ -749,7 +993,9 @@ export class ModelGateway {
         const stopped = operationFailure(operation);
         const known = error instanceof HttpError;
         const failure = stopped || (known ? error : unavailable('internal_failure'));
-        this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, failure.modelReason || 'internal_failure');
+        this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, failure.modelReason || 'internal_failure',
+          failure.modelReason==='agent_schema'?safeSchemaDiagnostic(failure.modelFeedback):null,
+          failure.modelReason==='agent_schema'?failure.modelQuestionIdDiagnostic:null,attemptDiagnostic);
         if(!stopped&&known&&failure.code==='MODEL_INVALID_RESPONSE'&&
           ['agent_schema','content_json','stream_whitespace_stall'].includes(failure.modelReason))structuralFailures++;
         if(!stopped&&known&&attempt===MAX_ATTEMPTS&&failure.code==='MODEL_INVALID_RESPONSE') {
@@ -786,16 +1032,21 @@ export class ModelGateway {
     }
   }
 
-  logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, reason) {
+  logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, reason, schemaFailure = null, questionFailure = null, attemptDiagnostic = {}) {
+    const diagnosticKeys=['id_string','any_eligible','reason_eligible','trimmed_eligible'];
+    const safeQuestionFailure=/^turn_draft_block_questions(?:_after_review)?$/.test(generation)&&questionFailure&&
+      diagnosticKeys.every(key=>typeof questionFailure[key]==='boolean')?Object.fromEntries(diagnosticKeys.map(key=>[key,questionFailure[key]])):null;
     const entry = { event: attemptId?'model_attempt':'model_request_failure', request_id: operation.requestId,
       generation, generation_id:generationId, attempt, attempt_id:attemptId, status,
-      duration_ms: Math.round(performance.now() - started), finish_reason: finishReason, usage, reason };
+      duration_ms: Math.round(performance.now() - started), finish_reason: finishReason, usage, reason,
+      ...attemptDiagnostic,...operationMetrics(operation),
+      ...(schemaFailure?{schema_failure:schemaFailure}:{}),...(safeQuestionFailure?{question_id_failure:safeQuestionFailure}:{}) };
     try { this.diagnosticLogger?.(entry); } catch { /* Diagnostics must never fail a validated response. */ }
   }
 
   logRetryWait(operation,generation,generationId,attempt,attemptId,started,delay,reason) {
     const entry={event:'model_retry_wait',request_id:operation.requestId,generation,generation_id:generationId,
-      attempt,after_attempt_id:attemptId,delay_ms:delay,duration_ms:Math.round(performance.now()-started),reason};
+      attempt,after_attempt_id:attemptId,delay_ms:delay,duration_ms:Math.round(performance.now()-started),reason,...operationMetrics(operation)};
     try { this.diagnosticLogger?.(entry); } catch { /* Diagnostics must never fail a validated response. */ }
   }
 }

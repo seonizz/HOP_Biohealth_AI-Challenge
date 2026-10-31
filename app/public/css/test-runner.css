@@ -1,0 +1,11 @@
+.test-workspace{max-width:1440px;margin:0 auto;padding-top:36px}
+.test-workspace h1,.test-workspace h2{font-family:var(--display);font-weight:400;color:var(--stem)}
+.test-intro{margin:32px 0 24px}.test-intro h1{font-size:clamp(26px,3vw,38px);margin:0 0 8px}.test-intro p{margin:0}
+.test-service{margin-left:auto;color:var(--stem);font-size:15px}.test-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.test-toolbar h2{margin:0 auto 0 0;font-size:25px}
+.test-editor>label{display:block;margin:18px 0 8px}.test-editor textarea{width:100%;min-height:260px;resize:vertical;border:1px solid #bac8ad;border-radius:16px;padding:18px;background:#fbfcf8;color:var(--ink);font:14px/1.7 ui-monospace,monospace;tab-size:2}
+.test-file{position:relative;cursor:pointer}.test-file input{position:absolute;inset:0;opacity:0;width:100%;cursor:pointer}.test-file:focus-within{outline:3px solid var(--leaf);outline-offset:3px}
+.test-workspace button:disabled,.test-file:has(input:disabled){opacity:.5;cursor:default}.test-format{border-top:1px solid var(--leaf-soft);margin-top:22px;padding-top:16px}.test-format summary{cursor:pointer;color:var(--stem)}
+#test-questions{max-height:360px;overflow:auto;display:grid;gap:16px;padding-top:12px}#test-questions h3{font-family:var(--body);font-size:16px;margin:0 0 4px}#test-questions p{margin:0;font-size:14px}#test-questions code{color:var(--stem)}
+#test-error{color:#9b3a2a}#test-status{font-size:15px;color:var(--muted)}.test-results{margin:28px 0 0}#test-case{max-width:100%;min-width:160px;padding:10px;border:1px solid var(--leaf);border-radius:12px;background:white;font:inherit}
+#app{height:auto}#app #result{padding-block:20px 56px}#app #result>.nav{display:none}#app .wrapr{margin-top:0}
+@media(max-width:600px){.test-workspace{padding-top:24px}.test-service{width:100%;margin:0}.test-editor{padding:20px 16px}.test-toolbar h2{width:100%}.test-editor textarea{min-height:300px;padding:12px}.test-toolbar .btn{width:100%}}

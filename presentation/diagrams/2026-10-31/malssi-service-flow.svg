@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1120" viewBox="0 0 1800 1120" role="img" aria-labelledby="title desc">
+<title id="title">말씨 서비스 흐름 관계도</title>
+<desc id="desc">대화 입력과 원문 근거 준비, 상황 이해와 질문 조정, 맞춤 안내 생성과 검토 및 저장의 세 단계. 질문은 문맥에 따라 생략하며 원문에 없는 답변을 생성하지 않는다. 기관 안내는 별도 경로다.</desc>
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L9 4.5 L0 9Z" fill="#B0B4D7"/></marker></defs>
+<rect width="1800" height="1120" fill="#FFFFFF"/>
+<g font-family="Apple SD Gothic Neo, Noto Sans KR, sans-serif">
+<text x="64" y="66" font-size="38" fill="#7474D7" font-weight="700" text-anchor="start">말씨</text>
+<text x="160" y="66" font-size="38" fill="#252C43" font-weight="600" text-anchor="start">서비스 흐름 관계도</text>
+<text x="64" y="106" font-size="25" fill="#69748A" font-weight="400" text-anchor="start">가족·친구의 이야기에서 출발해, 원문에 근거한 대화와 행동을 준비합니다.</text>
+<text x="1736" y="64" font-size="20" fill="#69748A" font-weight="400" text-anchor="end">2026.10.31 · 현재 소스 기준</text>
+<path d="M64 134 H1736" stroke="#E7E8F1"/>
+<rect x="64" y="155" width="44" height="36" rx="10" fill="#7474D7"/>
+<text x="86" y="181" font-size="21" fill="#FFFFFF" font-weight="600" text-anchor="middle">01</text>
+<text x="125" y="184" font-size="29" fill="#252C43" font-weight="600" text-anchor="start">대화 입력·원문 근거 준비</text>
+<text x="210" y="263" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">사용자 상황 입력</text>
+<text x="210" y="298" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">대상자·관계·관찰 내용</text>
+<text x="210" y="326" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">이용자 감정·도움 목적</text>
+<path d="M364 289 H395" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="550" y="263" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">입력 확인·저장</text>
+<text x="550" y="298" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">선택·직접 입력 보존</text>
+<text x="550" y="326" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">모름·거절·미응답 구분</text>
+<path d="M704 289 H735" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="890" y="263" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">원문 문서화</text>
+<text x="890" y="298" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">사람·문항·출처 연결</text>
+<text x="890" y="326" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">현재 답변과 정정 반영</text>
+<path d="M1044 289 H1075" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1090" y="218" width="280" height="142" rx="22" fill="#7474D7"/>
+<text x="1230" y="263" font-size="27" fill="#FFFFFF" font-weight="600" text-anchor="middle">대화 내 근거 검색</text>
+<text x="1230" y="298" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">단어·문자 조각 기반</text>
+<text x="1230" y="326" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">최신·안전 관련 원문 포함</text>
+<path d="M1384 289 H1415" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1570" y="263" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">단계별 근거 제공</text>
+<text x="1570" y="298" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">생성·검토 시 원문 대조</text>
+<text x="1570" y="326" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">현재 대화의 답변 사용</text>
+<path d="M1570 367 V389 H40 V453 H210 V460" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="900" y="381" font-size="20" fill="#69748A" font-weight="400" text-anchor="middle">원문과 출처를 유지해 상황 이해에 전달</text>
+<rect x="64" y="406" width="44" height="36" rx="10" fill="#7474D7"/>
+<text x="86" y="432" font-size="21" fill="#FFFFFF" font-weight="600" text-anchor="middle">02</text>
+<text x="125" y="435" font-size="29" fill="#252C43" font-weight="600" text-anchor="start">상황 이해·질문 조정</text>
+<text x="210" y="514" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">대화 맥락 해석</text>
+<text x="210" y="549" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">대상자와 이용자 구분</text>
+<text x="210" y="577" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">이름·관계·목적 확인</text>
+<path d="M364 540 H395" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="410" y="469" width="280" height="142" rx="22" fill="#7474D7"/>
+<text x="550" y="514" font-size="27" fill="#FFFFFF" font-weight="600" text-anchor="middle">상태·관계 갱신</text>
+<text x="550" y="549" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">원문 사실·잠정 해석 구분</text>
+<text x="550" y="577" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">미확인 정보는 따로 유지</text>
+<path d="M704 540 H735" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="890" y="514" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">상태·안전 검토</text>
+<text x="890" y="549" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">별도 모델 요청으로 검토</text>
+<text x="890" y="577" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">오류는 수정 후 재검토</text>
+<path d="M1044 540 H1075" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1090" y="469" width="280" height="142" rx="22" fill="#7474D7"/>
+<text x="1230" y="514" font-size="27" fill="#FFFFFF" font-weight="600" text-anchor="middle">질문 선택·생략</text>
+<text x="1230" y="549" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">중복·불필요한 질문 조정</text>
+<text x="1230" y="577" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">필요 시 후속 질문 제안</text>
+<path d="M1384 540 H1415" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1570" y="514" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">다음 질문·대화 완료</text>
+<text x="1570" y="549" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">남은 질문은 입력 반복</text>
+<text x="1570" y="577" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">대화 완료 시 안내 준비</text>
+<text x="1090" y="644" font-size="20" fill="#69748A" font-weight="400" text-anchor="middle">생략한 문항의 답변을 만들거나 사실 근거로 사용하지 않음</text>
+<path d="M1570 617 V672 H40 V735 H210 V744" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1570" y="654" font-size="19" fill="#69748A" font-weight="400" text-anchor="middle">완료</text>
+<rect x="64" y="687" width="44" height="36" rx="10" fill="#7474D7"/>
+<text x="86" y="713" font-size="21" fill="#FFFFFF" font-weight="600" text-anchor="middle">03</text>
+<text x="125" y="716" font-size="29" fill="#252C43" font-weight="600" text-anchor="start">맞춤 안내 생성·검토·저장</text>
+<text x="210" y="795" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">관계 분석·대화 전략</text>
+<text x="210" y="830" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">관계 분석 후 대화 방향 구성</text>
+<text x="210" y="858" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">각 단계 생성·독립 검토</text>
+<path d="M364 821 H395" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="410" y="750" width="280" height="142" rx="22" fill="#7474D7"/>
+<text x="550" y="795" font-size="27" fill="#FFFFFF" font-weight="600" text-anchor="middle">맞춤 안내 작성</text>
+<text x="550" y="830" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">돌봄·대화문·실천·회피</text>
+<text x="550" y="858" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">다음 단계 안내 포함</text>
+<path d="M704 821 H735" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="890" y="795" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">카드별 검토·수정</text>
+<text x="890" y="830" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">원문·카드 역할·안전 확인</text>
+<text x="890" y="858" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">통과한 카드부터 부분 표시</text>
+<path d="M1044 821 H1075" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="1230" y="795" font-size="27" fill="#252C43" font-weight="600" text-anchor="middle">전체 검토·최종 검증</text>
+<text x="1230" y="830" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">품질·통합·저장 상세 검토</text>
+<text x="1230" y="858" font-size="22" fill="#69748A" font-weight="400" text-anchor="middle">오류 시 수정·재검토</text>
+<path d="M1384 821 H1415" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="1430" y="750" width="280" height="142" rx="22" fill="#7474D7"/>
+<text x="1570" y="795" font-size="27" fill="#FFFFFF" font-weight="600" text-anchor="middle">결과 저장·다시 보기</text>
+<text x="1570" y="830" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">PostgreSQL에 최종 저장</text>
+<text x="1570" y="858" font-size="22" fill="#F2F1FF" font-weight="400" text-anchor="middle">세션별 조회·삭제</text>
+<path d="M890 897 V934 H550 V899" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="7 7"/>
+<text x="720" y="925" font-size="19" fill="#69748A" font-weight="400" text-anchor="middle">카드 반려 시 해당 항목 재작성</text>
+<text x="1550" y="931" font-size="20" fill="#69748A" font-weight="400" text-anchor="middle">저장 완료 후 최종 완료 표시</text>
+<path d="M64 973 H1736" stroke="#E7E8F1"/>
+<text x="64" y="1019" font-size="23" fill="#7474D7" font-weight="600" text-anchor="start">별도 기관 안내</text>
+<text x="280" y="1019" font-size="23" fill="#252C43" font-weight="400" text-anchor="start">원문·안전 신호 확인</text>
+<path d="M526 1011 H575" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="598" y="1019" font-size="23" fill="#252C43" font-weight="400" text-anchor="start">필요 시 독립 분류</text>
+<path d="M824 1011 H873" fill="none" stroke="#B0B4D7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="896" y="1019" font-size="23" fill="#252C43" font-weight="400" text-anchor="start">조건에 맞는 도움 정보 표시</text>
+<text x="64" y="1080" font-size="21" fill="#69748A" font-weight="400" text-anchor="start">대화 원문은 세션별로 분리  ·  원문 근거 검증  ·  검토·검증을 통과한 최종 결과만 저장</text>
+</g></svg>

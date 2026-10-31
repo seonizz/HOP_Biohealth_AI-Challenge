@@ -1,14 +1,15 @@
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
-import {configuredModelGateway} from './model-config.js';
+import {configuredModelGateway, configuredServerGpuReferralGateway} from './model-config.js';
 import {createModelReferralProvider} from './referral-provider.js';
 import {TRIAGE_VERSION} from './risk-classification.js';
 
 // Reuse the configured model by default. Never infer eligibility from prose or IP.
 export function configuredReferralProvider({gateway, env = process.env} = {}) {
   if ((env.REFERRAL_GUIDANCE_ENABLED ?? 'true') !== 'true') return null;
-  let selected = gateway;
-  if (env.REFERRAL_MODEL_BASE_URL || env.DEMO_CONTAINER === 'true' && env.REFERRAL_MODEL_DOCKER_BASE_URL) {
+  const serverGpuGateway = configuredServerGpuReferralGateway({gateway, env});
+  let selected = serverGpuGateway || gateway;
+  if (!serverGpuGateway && (env.REFERRAL_MODEL_BASE_URL || env.DEMO_CONTAINER === 'true' && env.REFERRAL_MODEL_DOCKER_BASE_URL)) {
     if (!env.REFERRAL_MODEL_NAME) throw new Error('Missing referral model configuration');
     selected = configuredModelGateway({env:{
       DEMO_CONTAINER:env.DEMO_CONTAINER,
@@ -17,8 +18,9 @@ export function configuredReferralProvider({gateway, env = process.env} = {}) {
       MODEL_API_KEY:env.REFERRAL_MODEL_API_KEY,
       MODEL_NAME:env.REFERRAL_MODEL_NAME,
       MODEL_PROTOCOL:'relationship_agent',
-      MODEL_AGENT_FORMAT:env.REFERRAL_MODEL_AGENT_FORMAT || env.MODEL_AGENT_FORMAT || 'json_schema',
-      MODEL_REASONING_EFFORT:env.REFERRAL_MODEL_REASONING_EFFORT || env.MODEL_REASONING_EFFORT || 'none',
+      MODEL_API_PROFILE:env.REFERRAL_MODEL_API_PROFILE ?? env.MODEL_API_PROFILE,
+      MODEL_AGENT_FORMAT:env.REFERRAL_MODEL_AGENT_FORMAT || env.MODEL_AGENT_FORMAT,
+      MODEL_REASONING_EFFORT:env.REFERRAL_MODEL_REASONING_EFFORT || env.MODEL_REASONING_EFFORT,
       MODEL_SCHEMA_STRING_LIMITS:env.MODEL_SCHEMA_STRING_LIMITS,
       MODEL_STREAM_JSON:env.REFERRAL_MODEL_STREAM_JSON,
       MODEL_STREAM_COMPLETE_JSON:env.REFERRAL_MODEL_STREAM_COMPLETE_JSON,

@@ -1,3 +1,4 @@
+import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelGateway } from '../src/model.js';
@@ -85,6 +86,7 @@ function gateway(handler,{speechReview,planReview,speechWrite,supportReview,card
   const model=new ModelGateway({baseUrl:'https://example.test/v1',apiKey:'test-only-secret',model:'gemma4:12b',protocol:'relationship_agent',stateMode:'staged',diagnosticLogger:null,fetchImpl:async(_url,request)=>{
     const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);
     transportStages.push(input.stage);transportInputs.push(structuredClone(input));transportPrompts.push(body.messages[0].content);
+    if(/^guide_review(?:_|$)/u.test(input.stage))assert.equal(Object.hasOwn(input.data.answers,'prior_relationship_memory'),false,input.stage);
     if(raw)return handler(body);
     // Adapt historical combined-state fixtures at the transport boundary.
     // Dedicated staged-state tests exercise the actual role contracts separately.
@@ -137,6 +139,9 @@ function gateway(handler,{speechReview,planReview,speechWrite,supportReview,card
       const json=await response.clone().json(),review=JSON.parse(json.choices[0].message.content);
       review.audits=input.data.claims.map(claim=>({id:claim.id,verdict:claim.certainty==='reported'?'supported':'plausible',reason:'합성 원문과 일치해요.'}));
       return envelope(review);
+    }
+    if(response.ok&&input.evidence_sources?.locations){
+      const json=await response.clone().json();return envelope(evidenceWireFixture(input,JSON.parse(json.choices[0].message.content)));
     }
     return response;
   }});
@@ -620,7 +625,8 @@ test('a valid original quote outside the retrieved set is rejected before the ne
       else result.observations.patient=[reference];
       return envelope(result);
     });
-    await assert.rejects(model.respond(ctx,memory()),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_retrieval_evidence'});
+    // The grounded schema now reports this rejection before the generic retrieval check.
+    await assert.rejects(model.respond(ctx,memory()),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema'});
   }
 });
 
@@ -2178,7 +2184,7 @@ test('analysis audits cannot omit claims or approve unsupported interpretations 
     const stages=[];
     const model=gateway(body=>{
       const input=JSON.parse(body.messages.at(-1).content);stages.push(input.stage);
-      if(input.stage==='relationship_analysis')return fixtureEnvelope(analysis());
+      if(input.stage==='relationship_analysis')return envelope(evidenceWireFixture(input,{...draftAnalysis(),safety:{urgent:false,evidence_ids:[]}}));
       assert.equal(input.stage,'analysis_review');
       const review={approved:true,issues:[]};
       if(kind==='unsupported')review.audits=input.data.claims.map(claim=>({id:claim.id,verdict:'unsupported',reason:'인용이 해석을 뒷받침하지 않아요.'}));
@@ -2306,7 +2312,8 @@ test('actual card and complete-guide reviews share the final guidance boundary w
     const prompt=model.transportPrompts[index],input=model.transportInputs[index];
     assert.ok(prompt.endsWith(GUIDANCE_REVIEW_BOUNDARY),stage);
     assert.equal(prompt.split(GUIDANCE_REVIEW_BOUNDARY).length-1,1,stage);
-    assert.deepEqual(input.data.answers,agentContext(context()),stage);
+    const expectedAnswers=agentContext(context());if(stage==='guide_review')delete expectedAnswers.prior_relationship_memory;
+    assert.deepEqual(input.data.answers,expectedAnswers,stage);
     if(input.data.claims){
       assert.ok(input.data.claims.every(claim=>!Object.hasOwn(claim,'certainty')),stage);
       assert.ok(input.data.claims.every(claim=>claim.claim_kind===(claim.field==='avoid'?'avoidance_guidance':'guidance')),stage);
@@ -2372,7 +2379,7 @@ test('three independent branches overlap and only individually approved cards ap
   assert.equal(result.agent.reviewed,true);assert.equal(result.agent.quality_reviewed,true);
 });
 
-test('a rejected individual card retains its exact audits through repair and is never published before reapproval',async()=>{
+for(const skipFinalExtras of [false,true])test('a rejected individual card retains its exact audits through repair and is never published before reapproval: fast='+skipFinalExtras,async()=>{
   const outputs=approvedCardOutputs(),events=[],repaired='어떤 도움이 필요한지 먼저 물어보세요.';
   let repairs=0,reviews=0;
   const model=gateway(body=>{
@@ -2393,6 +2400,7 @@ test('a rejected individual card retains its exact audits through repair and is 
     assert.deepEqual(input.data.revision.changes,[{field:'doList',before:guide().guide.doList,after:[repaired]}]);
     return {approved:true,issues:[]};
   }});
+  model.skipFinalExtras=skipFinalExtras;
   const result=await model.respond(context(),memory(),{onCard:event=>events.push(event)});
   assert.equal(repairs,1);assert.equal(reviews,2);assert.deepEqual(result.guide.doList,[repaired]);
   assert.deepEqual(events.filter(event=>event.type==='upsert'&&event.id==='doList').map(event=>event.value),[[repaired]]);

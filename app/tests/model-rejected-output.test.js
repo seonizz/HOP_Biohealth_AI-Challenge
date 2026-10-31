@@ -1,3 +1,4 @@
+import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -212,7 +213,7 @@ test('a third-attempt grammar whitespace stall can use four model-generated bloc
     const request=JSON.parse(options.body),input=JSON.parse(request.messages.at(-1).content);requests.push({request,input});
     if(input.stage==='turn_draft')return stream(++combined<=2?overflow:' '.repeat(4097));
     if(input.stage.startsWith('turn_draft_block_')){
-      const block=input.data.output_block,value=block==='questions'?draft.questions:draft.state[block];return stream(block==='name_index'?{name_index:value}:value);
+      const block=input.data.output_block,value=block==='questions'?draft.questions:draft.state[block];return stream(evidenceWireFixture(input,block==='name_index'?{name_index:value}:value));
     }
     if(input.stage.startsWith('safety_review'))return stream(safetyReviewFixture(input.data));
     return stream({state:{approved:true,issues:[],audits:input.data.review_target.claims.map(claim=>({id:claim.id,

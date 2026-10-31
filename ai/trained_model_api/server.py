@@ -12,12 +12,15 @@ import math
 import os
 from pathlib import Path
 import secrets
+import select
 import signal
-import threading
+import socket
 import time
 import uuid
 
-from backend import ModelBackend, RequestError
+from backend import ModelBackend, RequestError, BackendUnavailableError
+from inference_queue import (InferenceQueue, queue_limits, QueueFull, QueueClosed,
+                             RequestCancelled, BackendUnavailable)
 
 HERE = Path(__file__).resolve().parent
 MAX_BODY_BYTES = 8 * 1024 * 1024
@@ -48,6 +51,9 @@ def make_timing_logger(path):
 
 
 def validate_config(config):
+    queue_limits(config)
+    if type(config.get("require_backend_status", False)) is not bool:
+        raise ValueError("Invalid require_backend_status")
     if config.get("host") != "127.0.0.1":
         raise ValueError("Bind to 127.0.0.1 and use an SSH tunnel for remote access")
     for key in ("port", "checkpoint_step", "max_context_tokens", "max_output_tokens", "default_output_tokens"):
@@ -121,7 +127,25 @@ def validate_request(payload, config):
 
 
 def make_server(config, backend, api_key, timing_log=None):
-    slot = threading.BoundedSemaphore(1)
+    admission = InferenceQueue(*queue_limits(config))
+    require_status = config.get("require_backend_status", False)
+    if type(require_status) is not bool:
+        raise ValueError("Invalid require_backend_status")
+    if require_status and not callable(getattr(backend, "inference_status", None)):
+        raise ValueError("Backend inference_status is required")
+
+    def backend_status():
+        # A remote wrapper supplies a read-only status derived from its existing
+        # worker state. Absence preserves the synchronous local-backend contract.
+        hook = getattr(backend, "inference_status", None)
+        if hook is None:
+            return "ready"
+        try:
+            value = hook()
+            status = value.get("status") if isinstance(value, dict) else None
+            return status if status in {"ready", "busy", "draining", "unavailable"} else "unavailable"
+        except Exception:
+            return "unavailable"
 
     class Handler(BaseHTTPRequestHandler):
         server_version, sys_version = "MalssiAPI", ""
@@ -156,15 +180,30 @@ def make_server(config, backend, api_key, timing_log=None):
                 return False
             return True
 
+        def disconnected(self):
+            try:
+                readable, _, _ = select.select([self.connection], [], [], 0)
+                return bool(readable) and self.connection.recv(1, socket.MSG_PEEK | socket.MSG_DONTWAIT) == b""
+            except (OSError, ValueError):
+                return True
+
         def do_GET(self):
             if not self.authenticated():
                 return
             if self.path == "/healthz":
-                self.reply(200, {"status": "ready", "model": config["model_id"],
+                status = backend_status()
+                state = admission.snapshot()
+                if state["closed"]:
+                    status = "unavailable"
+                elif status == "ready" and state["active"]:
+                    status = "busy"
+                self.reply(200 if status in {"ready", "busy"} else 503,
+                                {"status": status, "model": config["model_id"],
                                  "checkpoint_step": config["checkpoint_step"],
                                  "checkpoint_sha256": config["checkpoint_sha256"],
                                  "max_context_tokens": config["max_context_tokens"],
-                                 "max_output_tokens": config["max_output_tokens"]})
+                                 "max_output_tokens": config["max_output_tokens"],
+                                 "inference_queue": state})
             elif self.path == "/v1/models":
                 self.reply(200, {"object": "list", "data": [{"id": config["model_id"], "object": "model", "created": 0, "owned_by": "local"}]})
             else:
@@ -226,10 +265,25 @@ def make_server(config, backend, api_key, timing_log=None):
                 messages, max_tokens, temperature, top_p = values
                 timing_log.info(json.dumps({**self.timing, "event": "input", "messages": messages,
                     "max_tokens": max_tokens, "temperature": temperature, "top_p": top_p}, ensure_ascii=False))
-            if not slot.acquire(blocking=False):
+            try:
+                permit = admission.acquire(length, cancelled=self.disconnected,
+                                           ready=lambda: backend_status() == "ready")
+            except QueueFull:
                 self.reject(429, "Model is busy; retry after the current request completes")
                 return
+            except (QueueClosed, BackendUnavailable):
+                self.reject(503, "Model is not ready for inference")
+                return
+            except RequestCancelled:
+                self.close_connection = True
+                return
             try:
+                if self.disconnected():
+                    self.close_connection = True
+                    return
+                if backend_status() != "ready":
+                    self.reject(503, "Model is not ready for inference")
+                    return
                 inference_started = time.monotonic()
                 if hasattr(self, "timing"):
                     self.timing["inference_started_at"] = timestamp()
@@ -249,6 +303,8 @@ def make_server(config, backend, api_key, timing_log=None):
                     "choices": [{"index": 0, "message": {"role": "assistant", "content": result["text"]}, "finish_reason": result["finish_reason"]}],
                     "usage": {"prompt_tokens": prompt, "completion_tokens": completion, "total_tokens": prompt + completion},
                 })
+            except BackendUnavailableError:
+                self.reject(503, "Model is not ready for inference")
             except RequestError as exc:
                 self.reject(400, str(exc))
             except (BrokenPipeError, ConnectionResetError):
@@ -257,18 +313,31 @@ def make_server(config, backend, api_key, timing_log=None):
                 LOG.error("Inference failed: %s", type(exc).__name__)
                 self.reject(500, "Inference failed; see server status")
             finally:
-                slot.release()
+                # The physical slot is released only after generate returns.
+                # A remote wrapper with an uncertain termination remains
+                # draining/unavailable; the next acquire must observe ready.
+                admission.release(permit)
 
     class Server(ThreadingHTTPServer):
         daemon_threads = True
         allow_reuse_address = True
+
+        def shutdown(self):
+            admission.close()
+            super().shutdown()
+
+        def server_close(self):
+            admission.close()
+            super().server_close()
 
         def get_request(self):
             connection, address = super().get_request()
             connection.settimeout(30)
             return connection, address
 
-    return Server((config["host"], config["port"]), Handler)
+    server = Server((config["host"], config["port"]), Handler)
+    server.inference_queue = admission
+    return server
 
 
 def load_api_key(runtime):
@@ -307,7 +376,8 @@ def main():
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, stop)
     # Fail on an occupied port before spending time or VRAM loading the model.
-    server = make_server(config, None, key)
+    # Bind-only preflight never serves requests or advertises backend readiness.
+    server = make_server({**config, "require_backend_status": False}, None, key)
     server.server_close()
     status_path = runtime / "status.json"
     status_path.write_text(json.dumps({"status": "loading", "pid": os.getpid()}) + "\n")
