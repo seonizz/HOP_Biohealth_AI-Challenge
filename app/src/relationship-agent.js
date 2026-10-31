@@ -1008,7 +1008,10 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   const validateSpeech = guide => {
     validateSpeechInference(guide.script,'script');
     if(!speechAlias&&/그분(?:이|은|의|에 대해)|대상자/u.test(guide.script))invalid('agent_speech_address');
-    if(speechPermissionQuestions(guide.script).length>1)invalid('agent_speech_repeat');
+    const permissionQuestions=speechPermissionQuestions(guide.script);
+    if(permissionQuestions.length>1)invalid('agent_speech_repeat',JSON.stringify({field:'script',rejected_text:guide.script,
+      permission_questions:permissionQuestions,permission_question_count:permissionQuestions.length,max_permission_questions:1,
+      repair:'최초의 대화 허락 질문만 남기세요. parts는 미검증 초안이며 반복의 원인일 수 있습니다. parts.listening과 parts.offer의 open_question·small_invitation에 있는 중복 허락 질문을 다시 복사하지 말고 삭제하거나 상대 이야기를 듣는 열린 질문·선택 가능한 작은 제안으로 수정하세요. answers와 observations의 관찰 및 이용자의 마음·가능 범위는 보존하고 새로운 사실이나 동의를 만들지 마세요.'}));
     const issues=knownSpeechIssues(guide,context).filter(issue=>issue.field==='script');
     if(issues.length)invalid('agent_speech_specific','거절된 발화: '+guide.script+'\n'+issues.map(issue=>issue.reason+' '+issue.repair).join('\n'));
     if(treatmentGoal&&!/상담|진료|전문가|의사|치료사/u.test(guide.script))invalid('agent_goal_missing',
@@ -1247,23 +1250,37 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     }
     if(!gateway.skipFinalExtras){
       const qualityRequest=currentReviewRequest(true);
-      const quality=await generate('guide_quality'+suffix,QUALITY,{...writerData,guide:draft.guide,...qualityRequest.metadata},
+      let quality=await generate('guide_quality'+suffix,QUALITY,{...writerData,guide:draft.guide,...qualityRequest.metadata},
         qualityRequest.schema,value=>validateSchema(value,qualityRequest.schema));
       if (quality.improvements.length) {
         for(const field of ['script',...Object.keys(CARD_ROLES)])removeCard(field);
-        const before=structuredClone(draft.guide),refinementSchema=currentGuideSchema();
-        if (analysis.safety.urgent) refinementSchema.properties.guide.properties.top.enum=[draft.guide.top];
-        draft=await generate('guide_refine'+suffix,draftPrompt+'\n품질 검토의 제안을 적용하되 사실·관계·목적·안전 판단은 원문을 유지하세요.',
-          {...writerData,draft:draft.guide,quality},refinementSchema,value=>{
-            validateDraft(value,{checkSpeech:true});
-            validateSchema(value.guide.top,refinementSchema.properties.guide.properties.top);
-            return value;
-          });
-        const checkedQuality=await generate('guide_quality_check'+suffix,QUALITY_CHECK,
-          {...writerData,guide:draft.guide,...qualityRequest.metadata,
-            revision:{previous_quality:structuredClone(quality),before,after:structuredClone(draft.guide)}},qualityRequest.schema,
-          value=>validateSchema(value,qualityRequest.schema));
-        if (checkedQuality.improvements.length) invalid('agent_quality_review_rejected');
+        // Edit only the named cards. A whole-guide rewrite can undo already
+        // approved content and create new defects outside the review's scope.
+        // One bounded follow-up edit consumes the latest check's actual issues;
+        // unresolved issues still fail before the final reviews or persistence.
+        for(let repair=0;repair<2&&quality.improvements.length;repair++) {
+          const before=structuredClone(draft.guide),refinementSchema=currentGuideSchema();
+          const changedFields=new Set(quality.improvements.map(issue=>issue.field));
+          for(const [field,schema] of Object.entries(refinementSchema.properties.guide.properties)) {
+            if(!changedFields.has(field))schema.enum=[structuredClone(before[field])];
+          }
+          refinementSchema.properties.assessment.enum=[structuredClone(draft.assessment)];
+          const repairSuffix=(repair?'_2':'')+suffix;
+          draft=await generate('guide_refine'+repairSuffix,draftPrompt+'\n품질 검토에서 지적한 카드만 최소 수정하세요. 다른 카드와 top·assessment는 스키마 enum과 동일하게 보존하세요. 사실·관계·목적·안전 판단은 원문을 유지하고 지적된 오류를 실제로 고치세요.',
+            {...writerData,draft:draft.guide,quality},refinementSchema,value=>{
+              validateDraft(value,{checkSpeech:true});
+              validateSchema(value,refinementSchema);
+              if(equalJSON(value.guide,before))invalid('agent_review_noop',JSON.stringify({
+                fields:[...changedFields],repair:'현재 초안과 편집 결과가 같습니다. quality.improvements의 실제 오류를 원문에 맞게 최소 수정하세요. 지적되지 않은 카드와 사실·안전 판단은 그대로 유지하세요.',
+              }));
+              return value;
+            });
+          quality=await generate('guide_quality_check'+repairSuffix,QUALITY_CHECK,
+            {...writerData,guide:draft.guide,...qualityRequest.metadata,
+              revision:{previous_quality:structuredClone(quality),before,after:structuredClone(draft.guide)}},qualityRequest.schema,
+            value=>validateSchema(value,qualityRequest.schema));
+        }
+        if (quality.improvements.length) invalid('agent_quality_review_rejected');
       }
     }
     const review=await reviewGuide('guide_review'+suffix,draft,plan);

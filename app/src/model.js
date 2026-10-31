@@ -23,7 +23,7 @@ const TRAINED_MODEL = 'malssi-gemma4-31b-step100';
 const EXHAUSTED_GUIDE_REVIEWS = new Set([
   'agent_analysis_review_rejected','agent_analysis_review_inconsistent','agent_plan_review_rejected',
   'agent_quality_review_rejected','agent_review_rejected','agent_detail_review_rejected',
-  'agent_review_stale','agent_review_noop',
+  'agent_review_stale','agent_review_noop','agent_speech_repeat',
 ]);
 function streamJsonHost(hostname) {
   if(['localhost','host.docker.internal','[::1]'].includes(hostname))return true;
@@ -237,7 +237,7 @@ function remainingOutputTokens(value, status, policy, requested) {
 
 function correction(reason, repair) {
   if (!reason) return '';
-  if(reason==='agent_speech_repeat')return '\n검증 실패: 지금 대화해도 되는지 묻는 허락 질문이 중복됐습니다. 허락은 첫 문장에 한 번만 묻고, 마지막에는 무엇이 걱정되는지 또는 어떤 도움이 필요한지를 물어보세요.';
+  if(reason==='agent_speech_repeat')return '\n검증 실패: 지금 대화해도 되는지 묻는 허락 질문이 중복됐습니다. validation_feedback의 permission_questions와 permission_question_count를 확인하고 최초의 허락 질문만 남기세요. parts는 미검증 초안이며 반복의 원인일 수 있습니다. parts.listening과 parts.offer의 open_question·small_invitation에 있는 중복 허락 질문을 다시 복사하지 말고 삭제하거나 상대 이야기를 듣는 실제 열린 질문·선택 가능한 작은 제안으로 수정하세요. 문장 표현만 바꾼 대화 허락 질문도 반복입니다. answers와 observations의 관찰 및 이용자의 마음·가능 범위는 보존하고 새로운 사실이나 동의를 만들지 마세요. 수정한 전체 JSON을 반환하세요.';
   if(reason==='agent_speech_address')return '\n검증 실패: 직접 말을 듣는 상대를 제삼자인 “그분”이나 “대상자”로 설명했습니다. 호칭을 생략하고 “요즘 어떤지 듣고 싶어요”처럼 상대에게 직접 건넬 말로 쓰세요.';
   if(reason==='agent_script_inference')return '\n검증 실패: script 또는 발화 부분에서 대상자의 마음·노력·원인을 알고 있는 것처럼 설명했습니다. validation_feedback의 field와 rejected_text, matched_text를 확인하고 “네가 얼마나 최선을 다하는지 다 알고 있어”, “완벽하게 하고 싶은 마음 때문에” 같은 단정을 삭제하세요. parts와 earlier_parts도 초안이며 사실 근거가 아닙니다. answers에 있는 관찰과 이용자 자신의 마음만 유지하고 대상자의 마음은 열린 질문으로 물으세요. 지정된 현재 단계의 전체 JSON만 다시 쓰고 원문에 없는 행동이나 다른 단계의 문장을 보태지 마세요.';
   if(reason==='agent_hypothesis_language')return '\n검증 실패: tentative 해석을 확정된 사실처럼 썼습니다. 원문이 뒷받침하는 하나의 관계 가설만 남기고 “일 수 있어요”, “가능성이 있어 확인이 필요해요”처럼 불확실성을 명시하세요. 원인·진단을 새로 만들어 표현만 완곡하게 바꾸면 안 됩니다.';
@@ -318,6 +318,14 @@ function safeSchemaDiagnostic(feedback) {
     if([...path.matchAll(/\.([a-zA-Z_]+)/g)].some(([,key])=>!SCHEMA_DIAGNOSTIC_KEYS.has(key)))return null;
     return {path,keyword};
   } catch { return null; }
+}
+
+function guideQualityRepairInstruction(stage,reason,feedback) {
+  if(reason!=='agent_schema'||!/^guide_quality(?:_check(?:_2)?)?(?:_after_analysis_repair)?$/.test(stage)||typeof feedback!=='string')return '';
+  let issue;
+  try { issue=JSON.parse(feedback); } catch { return ''; }
+  if(issue?.keyword!=='maxLength'||!/^output\.improvements\[\d+\]\.repair$/.test(issue.path))return '';
+  return '\n길이를 넘긴 것은 검토 JSON의 improvements[].repair이며 카드 본문이 아닙니다. 발화 전체를 복사하거나 일부를 잘라 붙이지 말고, 문제 위치·바꿀 동작·보존할 의미를 담은 짧은 편집 지시 1~2문장으로 작성하세요. 길이 때문에 지적을 삭제하거나 빈 improvements로 바꾸지 말고 원문과 현재 카드를 다시 대조하세요. output_schema의 maxLength 제한은 그대로 지키세요.';
 }
 
 function evidenceSelectionRepair(stage,schema,feedback,candidate) {
@@ -806,7 +814,7 @@ export class ModelGateway {
         model:this.model,stream:false,...(this.reasoningEffort==='omit'?{}:{reasoning_effort:this.reasoningEffort}),temperature:0.2,
         ...(this.agentFormat==='prompt'?{}:{response_format:this.agentFormat==='json_object'&&!stateSchemaRecovery?{type:'json_object'}:
           {type:'json_schema',json_schema:{name:stage,strict:true,schema:inferenceSchema(requestSchema,{preserveStringLimits:this.preserveStringLimits})}}}),
-        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+questionCatalogInstruction(stage,requestSchema)},
+        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+questionCatalogInstruction(stage,requestSchema)+guideQualityRepairInstruction(stage,repairReason,selectionRepairFeedback)},
           {role:'user',content:JSON.stringify({stage,data,output_schema:requestSchema,...(feedback?{validation_feedback:feedback}:{}),
             ...(transport?{evidence_sources:transport.table}:{}),
             ...(wireEvidenceRepair?{wire_evidence_selection_repair:wireEvidenceRepair}:{}),
@@ -856,7 +864,13 @@ export class ModelGateway {
         }
         throw error;
       }
-    },stage,()=>streamSchema);
+    },stage,()=>streamSchema).catch(error=>{
+      // The review response already exhausted its format-repair budget. Keep
+      // the exact schema feedback, but do not restart all approved card stages.
+      if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelAttempts===MAX_ATTEMPTS&&
+        guideQualityRepairInstruction(stage,error.modelReason,error.modelFeedback))error.modelReason='agent_quality_review_rejected';
+      throw error;
+    });
   }
 
   async trainedState(context, memory, operation, finalProjection = false) {
