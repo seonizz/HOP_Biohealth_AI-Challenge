@@ -12,6 +12,7 @@
 | 사용자 흐름·모델·검색·검토·저장 계약 | [관계 에이전트 기술 문서](../app/docs/RELATIONSHIP_AGENT.md) |
 | HTTP API | [API](../app/docs/API.md) · [OpenAPI](../app/docs/openapi.json) |
 | 질문 관리 | [질문은행 운영](../app/docs/QUESTIONS.md) |
+| 관계도 기반 추가 질문·답변 기능 기획 (미구현) | [추가 질문 기획](current/관계도_기반_추가질문_기획.md) |
 | 모델 평가 명령 | [AI 평가 도구](../ai/local_api/RELATIONSHIP_AGENT.md) |
 | 데이터 처리 방법·출력 계약 | [데이터 파이프라인](../data/README.md) |
 | 대회 요구·제출 확인사항 | [대회 안내](competition/README.md) |
