@@ -4,7 +4,7 @@ import { answerComponents } from './answer-sources.js';
 import { contextGoal, validatePatientState, validateQuestionPlan } from './agent-state.js';
 import { modelResponseFormat, safetyEvidenceQuotes } from './model-schema.js';
 import { retrieveSources, retrievedContext, citedSources, citationsRetrieved } from './relationship-retrieval.js';
-import { COMMON, STATE, ANALYZE, PLAN, WRITE, REVIEW, QUALITY, QUALITY_CHECK, PLAN_REVIEW, speechReviewPrompt, SPEAK, SUPPORT_REVIEW, GUIDANCE_REVIEW_BOUNDARY, GUIDANCE_REVIEW_VERDICTS, PROMPT_VERSION, CARD_ROLES, AVOID_CARD_WIRE, SPEECH_PARTS, DETAIL, reuseFinalDraftPrompt } from './relationship-prompts.js';
+import { COMMON, STATE, ANALYZE, PLAN, WRITE, REVIEW, QUALITY, QUALITY_CHECK, PLAN_REVIEW, speechReviewPrompt, SPEAK, SUPPORT_REVIEW, GUIDANCE_REVIEW_BOUNDARY, GUIDANCE_REVIEW_VERDICTS, PROMPT_VERSION, CARD_ROLE_CONTRACT, CARD_ROLES, AVOID_CARD_WIRE, SPEECH_PARTS, DETAIL, reuseFinalDraftPrompt } from './relationship-prompts.js';
 import { claimsOf, auditSchema, validateAudits, AUDIT_INSTRUCTION } from './grounding-audit.js';
 
 const string = (maxLength = 2000) => ({ type:'string', minLength:1, maxLength });
@@ -1084,7 +1084,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     const claims=(review.claims||[]).filter(claim=>claim.field===field),claimIds=new Set(claims.map(claim=>claim.id));
     const prompt=field==='script'?SPEAK:CARD_ROLES[field]?COMMON+'\n'+CARD_ROLES[field]:WRITE;
     const fixed=await generate(stage,
-      prompt+(field==='avoid'?AVOID_CARD_WIRE:'')+'\n지적된 카드 하나의 오류만 고칩니다. 다른 카드는 작성하지 마세요.',
+      prompt+(field==='avoid'?AVOID_CARD_WIRE:'')+(CARD_ROLES[field]?CARD_ROLE_CONTRACT:'')+'\n지적된 카드 하나의 오류만 고칩니다. 다른 카드는 작성하지 마세요.',
       {answers:data,plan,field,current,task:issues.map(issue=>issue.repair).join('\n'),issues,
         ...(review.claims?{review:{claims,audits:review.audits.filter(audit=>claimIds.has(audit.id))}}:{})},schema,value=>{
         const canonical=field==='avoid'?canonicalAvoidCard(value,storedSchema):validateSchema(value,schema);
@@ -1175,7 +1175,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         if(gateway.skipFinalExtras||reuseDraft)return structuredClone(draft.guide[field]);
         if(field!=='script'){
           const role=CARD_ROLES[field],storedSchema=object({[field]:guideSchema.properties.guide.properties[field]}),schema=field==='avoid'?avoidCardDraftSchema(storedSchema):storedSchema;
-          const expanded=await generate('card_'+field+suffix,COMMON+'\n'+role+(field==='avoid'?AVOID_CARD_WIRE:''),
+          const expanded=await generate('card_'+field+suffix,COMMON+CARD_ROLE_CONTRACT+'\n'+role+(field==='avoid'?AVOID_CARD_WIRE:''),
             {...writerData,task:role,requirements:'각 항목 안에서도 구체적인 방법, 이유, 실제 말이나 대안을 나누어 작성하세요. 이미 알고 있는 사실과 앞으로의 제안을 구분하세요.'},
             schema,value=>field==='avoid'?canonicalAvoidCard(value,storedSchema):validateSchema(value,schema),branchOperation);
           return validateDraft({...draft,guide:{...draft.guide,...expanded}},{checkSpeech:false}).guide[field];
@@ -1190,7 +1190,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         for(const [part,role] of Object.entries(SPEECH_PARTS)){
           const fields=part==='opening'?['permission','observed_scene']:part==='listening'?['user_intent','open_question','wait_for_answer']:['small_invitation','help_choice','decline_choice'];
           const schema=object(Object.fromEntries(fields.map(field=>[field,string(600)])));
-          parts[part]=await generate('speech_'+part+suffix,COMMON+'\n'+role+
+          parts[part]=await generate('speech_'+part+suffix,COMMON+CARD_ROLE_CONTRACT+'\n'+role+
             '\n각 필드에는 speech_contract에 맞는 직접 발화문만 반환하세요. 다른 단계에서 말할 내용은 반복하지 마세요. earlier_parts는 초안이며 사실 근거가 아닙니다. 대상자의 마음이나 노력의 정도를 다 안다고 말하지 말고, answers의 관찰과 이용자 자신의 마음을 구분하세요.',
             {...writerData,task:role+(part==='offer'?'\n'+treatmentTask:''),alias:speechAlias,fields,earlier_parts:parts,speech_contract:speechContract},
             schema,value=>{

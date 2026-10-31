@@ -87,7 +87,7 @@ test('the converse resource-owner mismatch rejects while explicit target attribu
 });
 
 test('writer and review contracts preserve question premises and selected-source ownership distinctions',()=>{
-  assert.equal(PROMPT_VERSION,'relationship-v3.20-source-based-avoid-repair');
+  assert.equal(PROMPT_VERSION,'relationship-v3.21-card-speaker-agreement-boundary');
   assert.match(COMMON,/뒤의 질문이 다른 내용을 묻는다면 그 추측은 여전히 질문의 전제/u);
   assert.match(COMMON,/대상자의 실제 자기보고를 출처와 함께 되짚는 표현은 구분/u);
   assert.match(ANALYZE,/선택한 evidence가 해석의 주체·행동을 뒷받침/u);

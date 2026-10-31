@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {ModelGateway} from '../src/model.js';
 import {auditSchema} from '../src/grounding-audit.js';
 import {claimReviewRequest,guidanceReviewPayload,reviewSchema,knownSpeechIssues} from '../src/relationship-agent.js';
-import {SPEECH_REVIEW,SUPPORT_REVIEW,PROMPT_VERSION,GUIDANCE_REVIEW_BOUNDARY,CARD_ROLES,QUALITY,QUALITY_CHECK} from '../src/relationship-prompts.js';
+import {SPEECH_REVIEW,SUPPORT_REVIEW,PROMPT_VERSION,GUIDANCE_REVIEW_BOUNDARY,CARD_ROLE_CONTRACT,CARD_ROLES,QUALITY,QUALITY_CHECK,PLAN,PLAN_REVIEW,WRITE,REVIEW,SPEAK,reuseFinalDraftPrompt} from '../src/relationship-prompts.js';
 
 const warning='피할 말·행동: “무조건 해결해 줄게.” 이유: 가능한 도움의 범위를 넘는 약속을 피하세요. 대신 어떤 도움이 필요한지 물어보세요.';
 const claim=(id,field,text)=>({id,field,claim:text,certainty:'reported'});
@@ -48,7 +48,7 @@ test('mixed avoidance review keeps all canonical text, sources, IDs, bounds and 
   assert.deepEqual(result.audits.map(a=>a.reason),output.audits.map(a=>a.reason));
   assert.equal(result.approved,output.approved);assert.deepEqual(result.issues,output.issues);
   assert.deepEqual(output,original);assert.deepEqual({payload:f.payload,schema:f.schema},before);
-  assert.equal(PROMPT_VERSION,'relationship-v3.20-source-based-avoid-repair');
+  assert.equal(PROMPT_VERSION,'relationship-v3.21-card-speaker-agreement-boundary');
   assert.match(wire.prompt,/잘못된 회피 권고, 이유의 오류/u);assert.match(wire.prompt,/원문 밖 사실·마음·동의·지원 약속/u);
   assert.match(wire.prompt,/일반 발화의 sound_guidance\/problem_in_guidance 기준은 avoidance_guidance가 아닌 주장/u);
   assert.match(wire.prompt,/아래 안내 판정은 claim_kind=guidance인 항목에만 적용/u);
@@ -141,6 +141,49 @@ test('speech and support role instructions distinguish proposals from factual pr
   assert.match(SPEECH_REVIEW,/이용자가 직접 보고한 자신의 걱정이나 감정을 그 화자의 발화로 표현하는 것은 대상자의 내면 추정이 아닙니다/u);
   assert.match(SPEECH_REVIEW,/강요·책임 전가를 더하지 않았다면/u);
   assert.match(SPEECH_REVIEW,/원문에 없는 원인을 전제하면 unsupported/u);
+});
+
+test('shared card contract checks speaker and agreement premises before accepting a question or proposal',()=>{
+  for(const prompt of [PLAN,PLAN_REVIEW,WRITE,REVIEW,SPEAK,SPEECH_REVIEW,SUPPORT_REVIEW,QUALITY,QUALITY_CHECK,reuseFinalDraftPrompt()]) {
+    assert.equal(prompt.split(CARD_ROLE_CONTRACT).length-1,1);
+    assert.match(prompt,/script의 화자는 supporter\(앱 이용자\), 청자는 patient\(대상자\)/u);
+    assert.match(prompt,/care.feel과 care.tips는 앱이 supporter에게/u);
+    assert.match(prompt,/먼저 각 문장의 실제 화자와 청자를 확인한 뒤/u);
+    assert.match(prompt,/한쪽이 대화를 제안했다는 보고와 다른 쪽이 시간을 낼 수 있다는 보고만으로/u);
+    assert.match(prompt,/원문에 상호 합의가 명시적으로 보고되었다면/u);
+    assert.match(prompt,/앞으로의 확인 질문·조건부 제안도 허용/u);
+  }
+  for(const prompt of [SPEECH_REVIEW,SUPPORT_REVIEW])
+    assert.ok(prompt.indexOf(CARD_ROLE_CONTRACT)<prompt.indexOf('열린 확인 질문과 실행 가능한 조건부 제안'));
+  assert.match(REVIEW,/실패 사유는 다음뿐입니다:[\s\S]*script의 화자·청자를/u);
+});
+
+test('speaker reversal and unreported agreement use existing audit rejection without banning valid agreements or future offers',()=>{
+  const cases=[
+    {field:'script',text:'말씀해 주신 상황을 정리하고 상대에게 할 말을 같이 찾아볼까요?',
+      reason:'앱이 이용자에게 상담하는 말이며 이용자가 대상자에게 하는 말이 아닙니다.'},
+    {field:'care',text:'두 분이 약속한 15분에 맞춰 통화를 마치세요.',
+      reason:'상대의 통화 제안과 이용자의 가능한 시간만 보고됐고 15분 상호 합의는 없습니다.'},
+  ];
+  for(const {field,text,reason} of cases) {
+    const f=fixture([claim(field+'.0',field,text)]),request=claimReviewRequest(f.payload,f.schema,{support:field==='care'});
+    assert.ok(request.prompt.includes(CARD_ROLE_CONTRACT));
+    const output={approved:false,issues:[{field,reason,repair:'카드의 화자와 원문에 확인된 범위에 맞게 수정하세요.'}],
+      audits:[{id:field+'.0',reason,verdict:'problem_in_guidance'}]};
+    assert.equal(request.validate(output).approved,false);
+    assert.throws(()=>request.validate({...output,approved:true,issues:[]}),{modelReason:'agent_claim_audit'});
+  }
+  for(const [text,source] of [
+    ['서로 정한 15분을 지키며 통화를 마무리해 보세요.','상대와 금요일에 15분 통화하기로 서로 약속했어요.'],
+    ['가능한 15분을 먼저 알리고 상대에게도 괜찮은지 물어보세요.','상대가 통화를 제안했고 저는 금요일에 15분 시간이 나요.'],
+  ]) {
+    const f=fixture([claim('care.0','care',text)]);
+    f.payload.answers.supporter=[{question_id:'availability',answers:[{text:source}]}];
+    const request=claimReviewRequest(f.payload,f.schema,{support:true});
+    assert.equal(request.payload.guide.care.feel,text);
+    assert.equal(request.payload.answers.supporter[0].answers[0].text,source);
+    assert.equal(request.validate(f.approval()).approved,true);
+  }
 });
 
 test('support helper retains full current inputs, distinct scope, strict labels and original canonical review checks',()=>{

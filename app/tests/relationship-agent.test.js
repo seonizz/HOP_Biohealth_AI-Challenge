@@ -7,7 +7,7 @@ import { modelResponseFormat } from '../src/model-schema.js';
 import { auditSchema } from '../src/grounding-audit.js';
 import { validateRelationship, validateRelationshipDraft, canonicalRelationship, urgentGuideActions, validatePlan, validateReview, validateSchema, agentContext, validateRelationshipMemory, canonicalPatientState, canonicalRelationshipMemory, canonicalRelationshipState, relationshipStateRequest,groundedEvidenceSchema,relationshipSchema,relationshipDraftSchema,safetySources,speechPermissionQuestions,knownSpeechIssues,avoidCardDraftSchema,canonicalAvoidCard,validateClaimReview,reviewSchema } from '../src/relationship-agent.js';
 import { createIntake,answerIntake,applyModelUpdate,buildContext,backIntake,prepareModelAnswer } from '../src/intake.js';
-import { GUIDANCE_REVIEW_BOUNDARY, CARD_ROLES } from '../src/relationship-prompts.js';
+import { GUIDANCE_REVIEW_BOUNDARY, CARD_ROLE_CONTRACT, CARD_ROLES } from '../src/relationship-prompts.js';
 
 const field=(id,text,status='answered')=>({id,text,rawText:text,custom:'',status,question:id});
 const context=()=>({patient:{alias:'지민',fields:{name:field('name','지민'),rel:field('rel','자녀'),mood:field('mood','밤에 계획표를 고쳐요')}},
@@ -1396,6 +1396,68 @@ test('claim review covers action cards as well as the script and repairs preserv
   assert.deepEqual(result.guide.doList,['어떤 도움이 필요한지 먼저 물어보세요.']);
 });
 
+test('card role and agreement rejections repair the affected cards and keep the shared contract through quality and final reviews',async()=>{
+  const ctx=context();
+  ctx.patient.fields.proposal=field('proposal','상대가 금요일에 잠깐 통화하자고 했어요.');
+  ctx.supporter.fields.availability=field('availability','저는 금요일에 15분 정도 시간이 나요.');
+  const initial=guide(),badScript='상황을 들려주셨네요. 상대에게 어떻게 말할지 같이 정리해 볼까요?';
+  initial.guide.script=badScript;
+  initial.guide.care.tips=['서로 약속한 15분의 통화를 지키세요.'];
+  const fixed=guide();fixed.guide.care.tips=['가능한 시간을 알리고 상대에게도 괜찮은지 확인해 보세요.'];
+  const edited=structuredClone(fixed);edited.guide.script+=' 원하면 편한 때 말해 줘.';
+  const repairs=[],rechecks=[];
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content),stage=input.stage;
+    if(stage==='guide_repair_card_script_1'||stage==='guide_repair_card_care_1') {
+      const field=stage==='guide_repair_card_script_1'?'script':'care';repairs.push(field);
+      return envelope({[field]:fixed.guide[field]});
+    }
+    if(stage==='guide_quality') {
+      return envelope({improvements:[{field:'script',reason:'거절해도 된다는 선택을 명확히 하세요.',repair:'마지막에 편한 때 답할 수 있다는 선택을 남기세요.'}]});
+    }
+    if(stage==='guide_refine') {
+      return envelope(edited);
+    }
+    return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
+      guide_write:initial,guide_review:{approved:true,issues:[]}}[stage]);
+  },{speechWrite:()=>({script:badScript}),cardWrite:input=>{
+    const key=Object.keys(input.output_schema.properties)[0];return {[key]:initial.guide[key]};
+  },cardReview:input=>{
+    const field=input.data.review_scope.guide_fields[0],bad=field==='script'?badScript:field==='care'?initial.guide.care.tips[0]:null;
+    const rejected=input.data.claims.filter(c=>field==='script'?input.data.guide.script===bad:c.claim===bad);
+    if(!rejected.length){if(['script','care'].includes(field))rechecks.push(field);return {approved:true,issues:[]};}
+    const reason=field==='script'?'앱에서 이용자로 향하는 상담 발화이며 supporter에서 patient로 향하지 않습니다.':
+      '통화 제안과 이용자의 가능 시간만으로 상호 합의를 확정했습니다.';
+    return {approved:false,issues:[{field,reason,repair:field==='script'?'이용자가 상대에게 직접 건넬 발화로 수정하세요.':'가능한 시간을 먼저 알리고 상대의 선택을 확인하는 안내로 수정하세요.'}],
+      audits:input.data.claims.map(c=>({id:c.id,verdict:rejected.includes(c)?'unsupported':'supported',reason:rejected.includes(c)?reason:'원문과 역할이 일치합니다.'}))};
+  },qualityCheck:()=>({improvements:[]}),speechReview:()=>({approved:true,issues:[]})});
+  const result=await model.respond(ctx,memory());
+  assert.deepEqual(result.guide,edited.guide);
+  assert.deepEqual(new Set(repairs),new Set(['script','care']));
+  assert.ok(rechecks.includes('script')&&rechecks.includes('care'));
+  const inputFor=stage=>model.transportInputs.find(input=>input.stage===stage);
+  for(const field of ['script','care']) {
+    const input=inputFor('guide_repair_card_'+field+'_1');
+    assert.equal(input.data.issues[0].field,field);
+    assert.deepEqual(input.data.current,initial.guide[field]);
+    assert.deepEqual(input.data.answers,agentContext(ctx));
+    assert.ok(input.data.review.audits.some(a=>a.verdict==='unsupported'));
+  }
+  assert.deepEqual(inputFor('guide_quality').data.guide,fixed.guide);
+  assert.deepEqual(inputFor('guide_refine').data.draft,fixed.guide);
+  assert.deepEqual(inputFor('guide_refine').output_schema.properties.guide.properties.care.enum,[fixed.guide.care]);
+  assert.deepEqual(inputFor('guide_quality_check').data.guide,edited.guide);
+  assert.deepEqual(inputFor('speech_review').data.guide,edited.guide);
+  const required=['guide_write','speech_opening','speech_listening','speech_offer','speech_write','card_care',
+    'speech_review_card_script','speech_review_card_care','support_review_card_care_after_repair_1',
+    'guide_repair_card_script_1','guide_repair_card_care_1','guide_quality','guide_refine','guide_quality_check',
+    'speech_review','support_review','guide_review'];
+  for(const stage of required) {
+    const index=model.transportStages.indexOf(stage);assert.notEqual(index,-1,stage);
+    assert.ok(model.transportPrompts[index].includes(CARD_ROLE_CONTRACT),stage);
+  }
+});
+
 test('rejected claim audits must identify the matching repair field and retain their exact feedback',async()=>{
   for(const reviewStage of ['speech_review','support_review']){
     const target=reviewStage==='speech_review'?'doList':'care',wrong=reviewStage==='speech_review'?'script':'next';
@@ -1641,24 +1703,36 @@ test('the actual gateway rejects legacy flat avoid wire output on all three atte
 });
 
 const qualityLengthSchema=()=>({type:'object',properties:{improvements:{type:'array',items:{type:'object',
-  properties:{repair:{type:'string',maxLength:180}},required:['repair'],additionalProperties:false}}},required:['improvements'],additionalProperties:false});
+  properties:{field:{type:'string'},reason:{type:'string'},repair:{type:'string',maxLength:180}},
+  required:['field','reason','repair'],additionalProperties:false}}},required:['improvements'],additionalProperties:false});
 
 test('quality repair length feedback requests concise editing instructions without changing the candidate or schema',async()=>{
   for(const stage of ['guide_quality','guide_quality_check','guide_quality_check_2',
     'guide_quality_after_analysis_repair','guide_quality_check_after_analysis_repair','guide_quality_check_2_after_analysis_repair']) {
     const schema=qualityLengthSchema(),payload={source:'SYNTHETIC_COMPLETE_SOURCE',guide:{script:'합성 카드의 발화 전체를 보존합니다.'}};
-    const rejected={improvements:[{repair:'가'.repeat(181)}]},repaired={improvements:[{repair:'마지막 문장의 강요를 허락 질문으로 바꾸고 이용자의 가능 시간은 보존하세요.'}]};
+    const rejected={improvements:[{field:'script',reason:'마지막 문장이 강요합니다.',repair:'가'.repeat(181)},
+      {field:'next',reason:'가능한 시간을 보존해야 합니다.',repair:'나'.repeat(190)}]};
+    const repaired={improvements:[{...rejected.improvements[0],repair:'마지막 문장의 강요를 허락 질문으로 바꾸세요.'},
+      {...rejected.improvements[1],repair:'이용자의 가능 시간을 보존하세요.'}]};
     const requests=[];
     const model=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'test-only',model:'synthetic-model',
       protocol:'relationship_agent',diagnosticLogger:null,fetchImpl:async(_url,request)=>{
         const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);requests.push(body);
         assert.deepEqual(input.data,payload);assert.deepEqual(input.output_schema,schema);
-        if(requests.length===1)assert.doesNotMatch(body.messages[0].content,/길이를 넘긴 것은 검토 JSON/u);
+        if(requests.length===1) {
+          assert.doesNotMatch(body.messages[0].content,/길이를 넘긴 것은 검토 JSON/u);
+          assert.equal(input.review_format_repair,undefined);
+        }
         else {
-          assert.deepEqual(input.rejected_output,rejected);
+          assert.equal(input.rejected_output,undefined);
+          for(const item of rejected.improvements)assert.equal(request.body.includes(item.repair),false);
           const feedback=JSON.parse(input.validation_feedback);
           assert.equal(feedback.path,'output.improvements[0].repair');assert.equal(feedback.keyword,'maxLength');
           assert.equal(feedback.expected.max_length,180);
+          assert.deepEqual(input.review_format_repair,{error:feedback,improvements:rejected.improvements.map((item,index)=>
+            ({index,field:item.field,reason:item.reason,repair_length:item.repair.length}))});
+          assert.match(input.repair_task,/독립적으로 다시 대조/u);
+          assert.match(input.repair_task,/빈 improvements로 자동 승인하지 마세요/u);
           assert.match(body.messages[0].content,/길이를 넘긴 것은 검토 JSON/u);
           assert.match(body.messages[0].content,/문제 위치·바꿀 동작·보존할 의미/u);
           assert.match(body.messages[0].content,/빈 improvements로 바꾸지 말고/u);
@@ -1672,7 +1746,7 @@ test('quality repair length feedback requests concise editing instructions witho
 });
 
 test('repeated oversized quality repair stops after three attempts even with operation recovery enabled',async()=>{
-  const schema=qualityLengthSchema(),rejected={improvements:[{repair:'나'.repeat(181)}]},requests=[];
+  const schema=qualityLengthSchema(),rejected={improvements:[{field:'script',reason:'합성 문제를 수정하세요.',repair:'나'.repeat(181)}]},requests=[];
   const model=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'test-only',model:'synthetic-model',
     protocol:'relationship_agent',diagnosticLogger:null,retryFailures:true,retryDelayMs:1,fetchImpl:async(_url,request)=>{
       requests.push(JSON.parse(request.body));return envelope(rejected);
@@ -1686,7 +1760,9 @@ test('repeated oversized quality repair stops after three attempts even with ope
   for(const request of requests.slice(1)) {
     assert.match(request.messages[0].content,/길이를 넘긴 것은 검토 JSON/u);
     const input=JSON.parse(request.messages.at(-1).content);
-    assert.deepEqual(input.rejected_output,rejected);assert.deepEqual(input.output_schema,schema);
+    assert.equal(input.rejected_output,undefined);assert.deepEqual(input.output_schema,schema);
+    assert.equal(JSON.stringify(request).includes(rejected.improvements[0].repair),false);
+    assert.deepEqual(input.review_format_repair.improvements,[{index:0,field:'script',reason:'합성 문제를 수정하세요.',repair_length:181}]);
     for(const feedback of input.validation_feedback.split('\n'))assert.equal(JSON.parse(feedback).expected.max_length,180);
   }
 });
@@ -1702,13 +1778,41 @@ test('quality length instructions do not affect unrelated stages, paths or schem
     let attempts=0;
     const model=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'test-only',model:'synthetic-model',
       protocol:'relationship_agent',diagnosticLogger:null,fetchImpl:async(_url,request)=>{
-        const body=JSON.parse(request.body);attempts++;
+        const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);attempts++;
         assert.doesNotMatch(body.messages[0].content,/길이를 넘긴 것은 검토 JSON/u);
+        assert.equal(input.review_format_repair,undefined);
+        if(attempts===2)assert.deepEqual(input.rejected_output,{improvements:[{[key]:bad}]});
         return envelope({improvements:[{[key]:attempts===1?bad:good}]});
       }});
     await model.operation({},operation=>model.agentComplete(stage,'독립 검토하세요.',{},schema,operation,value=>validateSchema(value,schema)));
     assert.equal(attempts,2);
   }
+});
+
+test('quality format diagnostics follow the latest failure and leave other schema repairs unchanged',async()=>{
+  const schema=qualityLengthSchema(),long={field:'script',reason:'합성 문제를 수정하세요.',repair:'다'.repeat(181)};
+  const outputs=[{improvements:[long,null]},{improvements:[{field:'next',reason:'수정 지시가 누락됐어요.'}]},
+    {improvements:[{field:'next',reason:'선택을 보존하세요.',repair:'마지막 제안을 선택할 수 있도록 바꾸세요.'}]}];
+  let attempts=0;
+  const model=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'test-only',model:'synthetic-model',
+    protocol:'relationship_agent',diagnosticLogger:null,fetchImpl:async(_url,request)=>{
+      const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);attempts++;
+      if(attempts===2) {
+        assert.equal(input.rejected_output,undefined);
+        assert.deepEqual(input.review_format_repair.improvements,[{index:0,field:long.field,reason:long.reason,repair_length:181},
+          {index:1,repair_length:null}]);
+        assert.equal(request.body.includes(long.repair),false);
+      }
+      if(attempts===3) {
+        assert.equal(input.review_format_repair,undefined);
+        assert.deepEqual(input.rejected_output,outputs[1]);
+        assert.doesNotMatch(body.messages[0].content,/길이를 넘긴 것은 검토 JSON/u);
+      }
+      return envelope(outputs[attempts-1]);
+    }});
+  const result=await model.operation({},operation=>model.agentComplete('guide_quality','품질을 검토하세요.',
+    {source:'SYNTHETIC_COMPLETE_SOURCE'},schema,operation,value=>validateSchema(value,schema)));
+  assert.deepEqual(result,outputs[2]);assert.equal(attempts,3);
 });
 
 test('avoid repair wire omits rejected cards and old audits while preserving sources and fresh review history',async()=>{

@@ -810,19 +810,29 @@ export class ModelGateway {
       const evidenceRepair=transport?null:evidenceSelectionRepair(stage,requestSchema,selectionRepairFeedback,rejectedOutput);
       const questionRepair=questionSelectionRepair(stage,requestSchema,selectionRepairFeedback,rejectedOutput);
       const wireEvidenceRepair=wireEvidenceSelectionRepair(stage,transport,selectionRepairFeedback,rejectedOutput);
+      const qualityRepairInstruction=guideQualityRepairInstruction(stage,repairReason,selectionRepairFeedback);
+      // Do not seed another copied replacement speech from the malformed
+      // review. Retain its issues, while the complete current cards and sources
+      // remain in data for an independent review.
+      const reviewFormatRepair=qualityRepairInstruction?{error:JSON.parse(selectionRepairFeedback),
+        improvements:rejectedOutput.improvements.map((item,index)=>({index,
+          ...(typeof item?.field==='string'?{field:item.field}:{}),...(typeof item?.reason==='string'?{reason:item.reason}:{}),
+          repair_length:typeof item?.repair==='string'?item.repair.length:null}))}:null;
       return {
         model:this.model,stream:false,...(this.reasoningEffort==='omit'?{}:{reasoning_effort:this.reasoningEffort}),temperature:0.2,
         ...(this.agentFormat==='prompt'?{}:{response_format:this.agentFormat==='json_object'&&!stateSchemaRecovery?{type:'json_object'}:
           {type:'json_schema',json_schema:{name:stage,strict:true,schema:inferenceSchema(requestSchema,{preserveStringLimits:this.preserveStringLimits})}}}),
-        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+questionCatalogInstruction(stage,requestSchema)+guideQualityRepairInstruction(stage,repairReason,selectionRepairFeedback)},
+        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+questionCatalogInstruction(stage,requestSchema)+qualityRepairInstruction},
           {role:'user',content:JSON.stringify({stage,data,output_schema:requestSchema,...(feedback?{validation_feedback:feedback}:{}),
             ...(transport?{evidence_sources:transport.table}:{}),
             ...(wireEvidenceRepair?{wire_evidence_selection_repair:wireEvidenceRepair}:{}),
             ...(evidenceRepair?{evidence_selection_repair:evidenceRepair}:{}),
             ...(questionRepair?{question_selection_repair:questionRepair}:{}),
-            ...(rejectedOutput===undefined?{}:{rejected_output:rejectedOutput,
+            ...(rejectedOutput===undefined||reviewFormatRepair?{}:{rejected_output:rejectedOutput,
               repair_task:'rejected_output은 검증에 실패한 직전 출력이며 사실이나 승인된 답안이 아닙니다. data의 원문과 output_schema를 기준으로 validation_feedback의 오류를 고쳐 완전한 출력 객체만 반환하세요. 필수 키·배열 상한·각 분기의 키를 확인하고, 근거 없는 내용을 새로 채우거나 정정·부정·시점을 없애지 마세요.'+
                 (reviewStage?' 이번 rejected_output은 검토기 자신의 이전 JSON 출력입니다. 검토 대상인 data의 초안과 혼동하지 마세요. 누락된 audits·필드·잘못된 형식은 검토 출력에서 고치고, 이 형식 오류를 초안 내용의 문제로 issues에 적지 마세요. issues는 현재 data의 주장에 실제로 남은 근거·내용 오류만 포함합니다.':'')}),
+            ...(reviewFormatRepair?{review_format_repair:reviewFormatRepair,
+              repair_task:'검토기 자신의 이전 repair가 길이 제한을 넘겨 해당 문구 대신 문제 항목·이유·길이 진단만 전달합니다. review_format_repair는 승인된 판단이 아닙니다. data의 현재 guide와 원문을 독립적으로 다시 대조하고 실제 남은 문제를 짧은 편집 지시로 작성하세요. 길이 때문에 지적을 삭제하거나 빈 improvements로 자동 승인하지 마세요. output_schema의 제한을 지킨 전체 검토 JSON을 반환하세요.'}:{}),
             ...(stateReviewFormatRepair?{
               required_audit_ids:stateReviewTarget.claims.map(claim=>claim.id),
               repair_task:'검토기 자신의 이전 JSON이 출력 형식을 지키지 않아 제외했습니다. data의 검토 대상 원문과 claims를 처음부터 독립적으로 검토하세요. state,questions,safety를 모두 반환하고, state.audits에는 required_audit_ids 각각을 정확히 한 번씩 작성하세요. 이전 검토 출력의 누락이나 형식 오류는 이 출력에서 고칠 문제이며 data의 초안 오류가 아니므로 issues에 넣지 마세요. 현재 초안의 근거·내용 오류는 계속 거절하고 구체적으로 기록하세요.',
