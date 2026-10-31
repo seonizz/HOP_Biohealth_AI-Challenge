@@ -6,6 +6,8 @@
 
 `e6a6d15`에서 재현한 아래 4개 문제를 수정하고 다시 적대적으로 검토했다.
 
+수정은 2026-11-01에 [`fe74405`](https://github.com/seonizz/HOP_Biohealth_AI-Challenge/commit/fe744052a879911adeeec118db5a59353c96c093)로 `main`에 반영했다. 푸시 직후 원격 `refs/heads/main`과 로컬 HEAD가 모두 `fe744052a879911adeeec118db5a59353c96c093`임을 확인했다. 해당 커밋은 수정 코드·회귀 테스트·문서 15개 파일만 포함하며, 다른 미커밋 작업은 포함하지 않았다.
+
 | 문제 | 수정·회귀 검증 |
 |---|---|
 | 상태 출력 `safety_signal.urgent:true`가 요약에서 0, CSV에서 빈칸 | 상태·최종 출력의 안전 필드를 구분. `true/false/null`과 적용 거절을 각각 검사하고, workflow 최종 실패 시 마지막 승인 상태 유지 확인 |
@@ -20,6 +22,8 @@ node --test ai/scripts/test_model_question_sets.test.mjs ai/scripts/model_test_*
 ```
 
 동일 검증본의 `npm --prefix app run check`도 통과했다. 독립 코드 검토에서는 추가로 재현된 결함이 없었고 별도 선택 검사 31개가 통과했다(위 109개와 중복되므로 합산하지 않음). 지정 LAN Ollama 검토 API는 연결 오류로 사용하지 못했다. 이번에는 합성 입력·모의 HTTP 응답으로 코드와 CLI 동작을 검증했으며, 새 라이브 모델 생성이나 DB E2E는 실행하지 않았다. 아래의 실제 모델 첫 턴 성공·최종 생성 미완료 범위는 그대로 유지한다.
+
+커밋 전 `python3 -B tools/audit_git_privacy.py --scope staged`는 15개 파일에서 발견 사항·파싱 오류 0으로 통과했다. 스테이징 경로와 파일 내용을 확인하고 모든 파일이 10MiB 미만임을 별도로 검사했다. 실제 입력·생성 보고서·학습 데이터·키는 이 커밋에 포함하지 않았다. 이 기록은 해당 커밋과 검증 범위에 대한 결과이며, 이후 변경이나 모든 입력에서의 무결함을 보증하지 않는다.
 
 ## 실사용 코드 재검토와 수정
 
