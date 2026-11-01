@@ -58,6 +58,25 @@ export function continuationCardContext(record, messages, reviewed, safety) {
   context.agent_state=null; context.relationship_state=null;
   delete context.safety_signal; delete context.safety_review_required;
   context.latest_answer=null; context.question_candidates=[]; context.clarification_candidates=[];
+  // Preserve the current communication task without promoting questions or
+  // hypothetical situations into factual evidence for the new cards.
+  const request=messages.findLast(message=>message.role==='user'&&!message.skipped&&message.text?.trim());
+  delete context.continuation_request;
+  if(request) {
+    const linked=[];let cursor=messages.indexOf(request);
+    // A short clarification answer is not a replacement for the task it
+    // answers. Follow only explicit earlier reply links; never copy AI prose.
+    while(messages[cursor]?.reply_to) {
+      const questionIndex=messages.findIndex((message,index)=>index<cursor&&message.id===messages[cursor].reply_to&&message.role==='assistant'&&message.clarification);
+      if(questionIndex<0)break;
+      const previous=messages.slice(0,questionIndex).findLastIndex(message=>message.role==='user'&&!message.skipped&&message.text?.trim());
+      if(previous<0)break;
+      linked.unshift({message_id:messages[previous].id,text:messages[previous].text,clarification:messages[questionIndex].clarification});
+      cursor=previous;
+    }
+    context.continuation_request={kind:'request_not_evidence',message_id:request.id,text:request.text,
+      ...(linked.length?{linked_requests:linked}:{})};
+  }
   const removed = input.original_sources.filter(s=>reviewed.superseded.includes(s.source_id));
   for (const source of removed) {
     if (context[source.subject]?.fields) delete context[source.subject].fields[source.question_id];

@@ -16,7 +16,7 @@ const cards=['script','care','doList','avoid','next','top'];
 const blocks=['patient_state','name_index','relationship_memory','questions'];
 export function modelStageRole(stage) {
   return /^referral_triage(?:_|$)/u.test(stage)?'classifier':
-    /^(?:turn_review|state_review|analysis_review|plan_review|speech_review|support_review|guide_review|speech_detail_review|safety_review|question_review|guide_quality)(?:_|$)/u.test(stage)?'reviewer':'writer';
+    /^(?:turn_review|state_review|analysis_review|plan_review|speech_review|support_review|guide_review|speech_detail_review|safety_review|question_review|guide_quality|continuation_context_review)(?:_|$)/u.test(stage)?'reviewer':'writer';
 }
 
 function familiesOf(stage,request) {
@@ -25,7 +25,7 @@ function familiesOf(stage,request) {
   if(modelStageRole(stage)==='reviewer') {
     const card=stage.match(/^(speech_review|support_review)_card_(script|care|doList|avoid|next)(?:_|$)/u);
     if(card)return [card[1]+'_card_'+card[2]];
-    return [stage.match(/^(turn_review|state_review|analysis_review|plan_review|speech_review|support_review|guide_review|speech_detail_review|safety_review|question_review|guide_quality)(?:_|$)/u)[1]];
+    return [stage.match(/^(turn_review|state_review|analysis_review|plan_review|speech_review|support_review|guide_review|speech_detail_review|safety_review|question_review|guide_quality|continuation_context_review)(?:_|$)/u)[1]];
   }
   const block=stage.match(/^turn_draft_block_(patient_state|name_index|relationship_memory|questions)(?:_|$)/u);
   if(block)return ['turn_'+block[1]];

@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ModelGateway } from '../src/model.js';
 import { HttpError } from '../src/errors.js';
+import {agentContext,validateSchema} from '../src/relationship-agent.js';
+import {focusedContextReviewRequest} from '../src/card-context-review.js';
 import { attemptMetrics } from '../../ai/scripts/evaluation_evidence.mjs';
 
 const REQUEST_ID = '9a281bfc-24e3-4fd5-a28a-bcf8a494870b';
@@ -394,7 +396,7 @@ test('internal recovery retries unavailable and transient upstream failures with
 
 test('exhausted content reviews cannot restart the whole guide with recovery enabled',async()=>{
   for(const reason of ['agent_analysis_review_rejected','agent_plan_review_rejected',
-    'agent_quality_review_rejected','agent_review_rejected','agent_detail_review_rejected','agent_review_stale','agent_review_noop']){
+    'agent_quality_review_rejected','agent_review_rejected','agent_detail_review_rejected','agent_review_stale','agent_review_noop','agent_context_audit']){
     const records=[],events=[];let operations=0,calls=0;
     const gateway=makeGateway(async()=>{calls++;return envelope(state());},
       {timeoutMs:0,retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>records.push(entry)});
@@ -496,4 +498,41 @@ test('an already cancelled call performs no discovery, generation or internal re
   const controller=new AbortController();controller.abort();let calls=0;
   const gateway=makeGateway(async()=>{calls++;return envelope(state());},{timeoutMs:0,retryFailures:true,discoverTokenLimits:true});
   await assert.rejects(gateway.updateState(context(),null,{signal:controller.signal}),{code:'MODEL_CANCELLED',status:499});assert.equal(calls,0);
+});
+
+
+test('focused review JSON, schema and stream failures exhaust three attempts without restarting the operation',async()=>{
+  const ctx=context(),id='continuation_0_0123456789abcdef';
+  ctx.supporter.fields[id]=field(id,'내일 저녁 통화할 수 있어요.');
+  const draft=guide().guide;
+  draft.avoid=['피할 말·행동: 답을 재촉하기. 이유: 상대가 답할 여유를 남겨야 합니다. 대신 편한 시간을 물어보세요.'];
+  const request=focusedContextReviewRequest({answers:agentContext(ctx),guide:draft,validateSchema});
+  for(const kind of ['json','schema','stream']) {
+    const records=[],inputs=[];let operations=0,validations=0;
+    const gateway=makeGateway(async(_url,options)=>{
+      inputs.push(JSON.parse(options.body));
+      if(kind==='stream') {
+        const content=JSON.stringify({source_events:[],checks:Array.from({length:request.payload.units.length+1},()=>({}))});
+        return new Response('data: '+JSON.stringify({choices:[{index:0,delta:{content},finish_reason:null}]})+'\n\n'+
+          'data: '+JSON.stringify({choices:[{index:0,delta:{},finish_reason:'stop'}]})+'\n\ndata: [DONE]\n\n',
+          {headers:{'content-type':'text/event-stream'}});
+      }
+      return envelope(kind==='json'?'{':{source_events:[],checks:[]});
+    },{baseUrl:'http://localhost:1234/v1',streamJson:kind==='stream',protocol:'relationship_agent',
+      retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>records.push(entry)});
+    await assert.rejects(gateway.operation({requestId:REQUEST_ID},operation=>{
+      assert.equal(++operations,1,'Focused review exhaustion must not restart earlier stages');
+      return gateway.agentComplete('continuation_context_review_after_repair_2',request.prompt,request.payload,request.schema,operation,
+        value=>{validations++;return request.validate(value);});
+    }),error=>{
+      assert.equal(error.code,'MODEL_INVALID_RESPONSE');assert.equal(error.modelReason,'agent_context_audit');
+      assert.equal(error.modelAttempts,3);assert.equal(error.modelRequestId,REQUEST_ID);
+      if(kind==='schema')assert.equal(JSON.parse(error.modelFeedback).path,'output.source_events');
+      if(kind==='stream')assert.equal(JSON.parse(error.modelFeedback).keyword,'streamArrayLimit');
+      return true;
+    });
+    assert.equal(inputs.length,3);assert.equal(operations,1);assert.equal(validations,kind==='schema'?3:0);
+    assert.equal(records.some(entry=>entry.event==='model_operation_retry'),false);
+    assert.deepEqual(inputs.map(body=>JSON.parse(body.messages.at(-1).content).data),[request.payload,request.payload,request.payload]);
+  }
 });

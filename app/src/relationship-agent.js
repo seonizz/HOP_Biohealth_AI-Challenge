@@ -6,6 +6,8 @@ import { modelResponseFormat, safetyEvidenceQuotes } from './model-schema.js';
 import { retrieveSources, retrievedContext, citedSources, citationsRetrieved } from './relationship-retrieval.js';
 import { COMMON, STATE, ANALYZE, PLAN, WRITE, REVIEW, QUALITY, QUALITY_CHECK, PLAN_REVIEW, speechReviewPrompt, SPEAK, SUPPORT_REVIEW, GUIDANCE_REVIEW_BOUNDARY, GUIDANCE_REVIEW_VERDICTS, PROMPT_VERSION, CARD_ROLE_CONTRACT, CARD_ROLES, AVOID_CARD_WIRE, SPEECH_PARTS, DETAIL, reuseFinalDraftPrompt } from './relationship-prompts.js';
 import { claimsOf, auditSchema, validateAudits, AUDIT_INSTRUCTION } from './grounding-audit.js';
+import {hasContinuationSources,focusedContextReviewRequest,validateContextPlanChange} from './card-context-review.js';
+import { avoidPartsProblem, avoidCardStructureIssue, avoidPartsRepair } from './avoid-card-structure.js';
 
 const string = (maxLength = 2000) => ({ type:'string', minLength:1, maxLength });
 const object = properties => ({ type:'object', properties, required:Object.keys(properties), additionalProperties:false });
@@ -211,10 +213,17 @@ export function avoidCardDraftSchema(schema) {
 
 export function canonicalAvoidCard(value,schema) {
   validateSchema(value,avoidCardDraftSchema(schema),'output',true);
+  for(const [index,item] of value.avoid.entries()) {
+    const problem=avoidPartsProblem(item);
+    if(problem)invalid('agent_avoid_structure',JSON.stringify({path:`output.avoid[${index}].${problem.field}`,
+      reason:problem.reason,repair:avoidPartsRepair}));
+  }
   // Roles are model-selected content, not approvals. Only role labels and
   // separators are added; original stored strings and their bounds stay intact.
   const canonical={avoid:value.avoid.map(item=>`피할 말·행동: ${item.avoid_phrase} 이유: ${item.reason} 대신 ${item.alternative}`)};
   validateSchema(canonical,schema,'output',true);
+  const issue=avoidCardStructureIssue(canonical.avoid,{requireBundle:true});
+  if(issue)invalid('agent_avoid_structure',JSON.stringify(issue));
   return canonical;
 }
 
@@ -727,6 +736,7 @@ export function agentContext(context) {
   }));
   return { patient:fields('patient'),supporter:fields('supporter'),user_goal:goals,
     supplied_user_goal:contextGoal(context),alias:context.patient?.alias||'그분',
+    ...(context.continuation_request?.kind==='request_not_evidence'?{current_request:structuredClone(context.continuation_request)}:{}),
     prior_relationship_memory:currentRelationshipMemory(context),
     ...(currentApprovedSafety(context)?{approved_safety:currentApprovedSafety(context)}:{}) };
 }
@@ -838,6 +848,8 @@ export function knownSpeechIssues(guide,context) {
         repair:'이름 또는 이용자님을 쓰고 형제자매라는 관계에서 성별이나 나이 순서를 추측하지 마세요.'});
     }
   }
+  const avoidIssue=avoidCardStructureIssue(guide.avoid);
+  if(avoidIssue)issues.push(avoidIssue);
   return issues;
 }
 
@@ -1049,11 +1061,10 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         else if(error.modelReason!=='agent_speech_specific'||!issues.length)throw error;
       }
     }
-    if(field==='avoid'&&value.some(text=>{
-      const match=text.trim().match(/^피할 말·행동:\s*([\s\S]+?)\s+이유:\s*([\s\S]+?)\s+대신\s+([\s\S]+)$/u);
-      return !match||match.slice(1).some(part=>!part.trim());
-    }))issues.push({field,reason:'피할 말·행동과 이유, 실제 대안이 한 항목 안에 완결된 묶음으로 구분되지 않았습니다.',
-      repair:'각 항목의 avoid_phrase, reason, alternative를 모두 작성하세요. 피할 예문과 대안을 다른 항목으로 나누지 마세요.'});
+    if(field==='avoid') {
+      const issue=avoidCardStructureIssue(value,{requireBundle:true});
+      if(issue&&!issues.some(existing=>existing.field==='avoid'&&existing.reason===issue.reason))issues.push(issue);
+    }
     return issues;
   };
   const guideClaims=guide=>Object.entries(guide).flatMap(([field,value])=>{
@@ -1086,6 +1097,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     const fixed=await generate(stage,
       prompt+(field==='avoid'?AVOID_CARD_WIRE:'')+(CARD_ROLES[field]?CARD_ROLE_CONTRACT:'')+'\n지적된 카드 하나의 오류만 고칩니다. 다른 카드는 작성하지 마세요.',
       {answers:data,plan,field,current,task:issues.map(issue=>issue.repair).join('\n'),issues,
+        ...(review.context_feedback?{context_feedback:review.context_feedback.filter(check=>check.field===field)}:{}),
         ...(review.claims?{review:{claims,audits:review.audits.filter(audit=>claimIds.has(audit.id))}}:{})},schema,value=>{
         const canonical=field==='avoid'?canonicalAvoidCard(value,storedSchema):validateSchema(value,schema);
         const candidate=validateDraft({...baseDraft,guide:{...baseDraft.guide,...canonical}},{checkSpeech:field==='script'});
@@ -1099,6 +1111,20 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   const reviewGuide=async (stage,draft,plan,revision)=>{
     const revisionData=revision?{revision}:{};
     if(!analysis.safety.urgent){
+      // Quality edits use the stored string format and may break a bundle.
+      // Repair that card before the focused reviewer parses its atomic roles.
+      if(hasContinuationSources(data)) {
+        const issue=avoidCardStructureIssue(draft.guide.avoid,{requireBundle:true});
+        if(issue)return {approved:false,issues:[issue]};
+      }
+      // Compare current assertions with raw reports before broad quality audits.
+      // Failed units use the same bounded card repair and fresh review loop.
+      const contextRequest=focusedContextReviewRequest({answers:data,guide:draft.guide,validateSchema});
+      if(contextRequest){
+        const contextReview=await generate(stage.replace('guide_review','continuation_context_review'),
+          contextRequest.prompt,contextRequest.payload,contextRequest.schema,contextRequest.validate);
+        if(!contextReview.approved)return contextReview;
+      }
       const speechClaims=guideClaims(Object.fromEntries(['script','doList','avoid','next','care'].map(field=>[field,draft.guide[field]])));
       const speechSchema=structuredClone(reviewSchema);speechSchema.properties.issues.items.properties.field.enum=['script','doList','avoid','next','care'];
       speechSchema.properties.issues.maxItems=speechSchema.properties.issues.items.properties.field.enum.length;
@@ -1140,6 +1166,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
       const planReviewSchema=structuredClone(reviewSchema);
       planReviewSchema.properties.issues.items.properties.field.enum=Object.keys(planSchema.properties);
       planReviewSchema.properties.issues.items.properties.repair.maxLength=180;
+      const contextPlan=hasContinuationSources(data);
       let planRevision;
       for(let repair=0;repair<2;repair++){
         const review=await generate((repair?'plan_review_after_repair':'plan_review')+suffix,PLAN_REVIEW,
@@ -1152,7 +1179,10 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         if(repair===1)invalid('agent_plan_review_rejected');
         const before=structuredClone(plan);
         plan=await generate('communication_plan_repair'+suffix,PLAN+'\n검토한 오류를 원문으로 바로잡아 전략 전체를 다시 작성하세요.',
-          {answers:data,analysis,draft:plan,review},groundedEvidenceSchema(planSchema,context),v=>validatePlan(v,context));
+          {answers:data,analysis,draft:plan,review},groundedEvidenceSchema(planSchema,context),value=>{
+            const fixed=validatePlan(value,context);
+            return contextPlan?validateContextPlanChange(fixed,before,review):fixed;
+          });
         planRevision={previous_review:structuredClone(review),before,after:structuredClone(plan)};
       }
     }

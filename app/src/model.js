@@ -23,7 +23,7 @@ const TRAINED_MODEL = 'malssi-gemma4-31b-step100';
 const EXHAUSTED_GUIDE_REVIEWS = new Set([
   'agent_analysis_review_rejected','agent_analysis_review_inconsistent','agent_plan_review_rejected',
   'agent_quality_review_rejected','agent_review_rejected','agent_detail_review_rejected',
-  'agent_review_stale','agent_review_noop','agent_speech_repeat',
+  'agent_review_stale','agent_review_noop','agent_speech_repeat','agent_avoid_structure','agent_context_audit',
 ]);
 function streamJsonHost(hostname) {
   if(['localhost','host.docker.internal','[::1]'].includes(hostname))return true;
@@ -877,8 +877,10 @@ export class ModelGateway {
     },stage,()=>streamSchema).catch(error=>{
       // The review response already exhausted its format-repair budget. Keep
       // the exact schema feedback, but do not restart all approved card stages.
-      if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelAttempts===MAX_ATTEMPTS&&
-        guideQualityRepairInstruction(stage,error.modelReason,error.modelFeedback))error.modelReason='agent_quality_review_rejected';
+      if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelAttempts===MAX_ATTEMPTS) {
+        if(/^continuation_context_review(?:_|$)/u.test(stage))error.modelReason='agent_context_audit';
+        else if(guideQualityRepairInstruction(stage,error.modelReason,error.modelFeedback))error.modelReason='agent_quality_review_rejected';
+      }
       throw error;
     });
   }

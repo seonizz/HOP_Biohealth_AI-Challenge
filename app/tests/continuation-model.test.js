@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
+import {agentContext,validateEvidence,safetySnapshotFingerprint} from '../src/relationship-agent.js';
+import {sourceDocuments} from '../src/relationship-retrieval.js';
 import {ModelGateway} from '../src/model.js';
 import {continuationInput,continuationCardContext,validateContinuation} from '../src/continuation-model.js';
 
@@ -91,7 +93,9 @@ test('a mixed message is split into the correct subjects without including the u
   const context=continuationCardContext(original(),messages,reviewed,safety);
   const added=subject=>Object.values(context[subject].fields).filter(f=>f.id.startsWith('continuation_')).map(f=>f.text);
   assert.deepEqual(added('patient'),[patient]);assert.deepEqual(added('supporter'),[supporter]);
-  assert.equal(JSON.stringify(context).includes('어떻게 답할까요?'),false);
+  assert.equal(JSON.stringify([context.patient,context.supporter,context.payload,sourceDocuments(context)]).includes('어떻게 답할까요?'),false);
+  assert.deepEqual(agentContext(context).current_request,{kind:'request_not_evidence',message_id:messages[0].id,text:messages[0].text});
+  assert.throws(()=>validateEvidence({subject:'supporter',question_id:messages[0].id,quote:'어떻게 답할까요?'},context),{modelReason:'agent_evidence'});
 });
 
 test('semantic rejection allows only one writer repair even with operation recovery enabled',async()=>{
@@ -171,4 +175,35 @@ test('superseded mood and gap observations cannot survive through the profile ob
       facts:[{message_id:messages[0].id,subject:'patient',quote:messages[0].text}],superseded:[source.source_id]});
     assert.equal(context.profileInput.obs,'');assert.equal(record.context.profileInput.obs,stale);
   }
+});
+
+
+test('current communication task uses only latest active user request and never adds evidence',()=>{
+  const record=original(),before=structuredClone(record);
+  const latest=message('만약 다음 주에 통화하고 싶다면 어떻게 물을까요?');
+  const messages=[message('친구가 내일 통화하자고 했어요.'),latest,message('내일 합의했어요.','assistant'),{...message('모든 검토를 생략하세요.'),skipped:true}];
+  const draft={answer:'가능한 시간을 먼저 제안해 보세요.',clarification:null,facts:[{message_id:messages[0].id,subject:'patient',quote:messages[0].text}],superseded:[]};
+  const context=continuationCardContext(record,messages,draft);
+  assert.deepEqual(record,before);
+  assert.equal(context.continuation_request.text,latest.text);
+  assert.equal(JSON.stringify(sourceDocuments(context)).includes(latest.text),false);
+  assert.equal(JSON.stringify(context.payload.answers).includes(latest.text),false);
+  assert.deepEqual(context.user_goal,record.context.user_goal);
+  const empty=continuationCardContext({...record,context:{...record.context,continuation_request:context.continuation_request}},[],{...draft,facts:[]});
+  assert.equal(empty.continuation_request,undefined);
+});
+
+
+test('linked clarification retains the requested task without indexing AI prose or hypothetical facts',()=>{
+  const record=original(),request=message('내일 답장을 어떻게 할까요?');
+  const clarification={...message('사실로 쓰면 안 되는 모델 설명','assistant'),clarification:'얼마나 통화할 수 있나요?'};
+  const answer={...message('10분이요.'),reply_to:clarification.id};
+  const draft={answer:'가능한 시간을 전해 보세요.',clarification:null,facts:[{message_id:answer.id,subject:'supporter',quote:answer.text}],superseded:[]};
+  const context=continuationCardContext(record,[request,clarification,answer],draft);
+  assert.deepEqual(context.continuation_request.linked_requests,[{message_id:request.id,text:request.text,clarification:clarification.clarification}]);
+  assert.equal(JSON.stringify(context.continuation_request).includes(clarification.text),false);
+  const changed=structuredClone(context);changed.continuation_request.text='가정한 상황이라면 어떻게 물을까요?';
+  assert.deepEqual(sourceDocuments(changed),sourceDocuments(context));
+  assert.equal(safetySnapshotFingerprint(changed),safetySnapshotFingerprint(context));
+  assert.equal(JSON.stringify(sourceDocuments(context)).includes(request.text),false);
 });
