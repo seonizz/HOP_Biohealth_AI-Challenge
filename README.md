@@ -9,6 +9,7 @@
 | 현재 테스트 실행본 | `app/` · 임시 Gemma4 12B · `relationship-v3.8-safety-source-selection` | [기술 구조와 사용자 흐름](app/docs/RELATIONSHIP_AGENT.md) |
 | 사용 흐름 | 질문 답변 → 원문에 근거한 상태 갱신 → 검토된 가이드 → 기록 | [질문 관리](app/docs/QUESTIONS.md) |
 | 실행 방법 | 프로젝트 루트의 공통 명령, 앱별 DB·모델 연결 설정 | [실행·검사 안내](docs/current/실행과_검증.md) |
+| AI 에이전트용 모델 테스트 | 질문셋 JSON → 앱 AI 호출 → 기대값·응답·토큰·오류 보고서 | [실행 규격과 예시](ai/docs/MODEL_QUESTION_TESTS.md) |
 | 검증 상태 | 로컬 검사는 통과. 실제 모델·웹 의미 검토는 보완 필요 | [확인된 결과와 할 일](docs/current/현황과_할일.md) |
 | 데이터·모델 연구 | 31B 전환을 위한 학습·평가 자료와 분류 데이터 | [데이터와 연구](docs/current/데이터와_연구.md) |
 | 발표 준비 | 근거정합 발표 기준본·실측 기록, 최종 31B 검증 진행 전 | [발표자료](presentation/README.md) |
