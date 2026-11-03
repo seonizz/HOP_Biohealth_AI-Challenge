@@ -1,0 +1,209 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {randomUUID} from 'node:crypto';
+import {agentContext,validateEvidence,safetySnapshotFingerprint} from '../src/relationship-agent.js';
+import {sourceDocuments} from '../src/relationship-retrieval.js';
+import {ModelGateway} from '../src/model.js';
+import {continuationInput,continuationCardContext,validateContinuation} from '../src/continuation-model.js';
+
+const field=(id,text)=>({id,question:id,type:'text',status:'answered',source:'app_user_report',text,rawText:text,custom:'',selected:[],skipped:false});
+const original=()=>({context:{patient:{alias:'친구',fields:{observation:field('observation','친구가 어제는 피곤하다고 말했어요.')}},
+  supporter:{fields:{}},user_goal:{},payload:{name:'친구',answers:[field('observation','친구가 어제는 피곤하다고 말했어요.')]},
+  profileInput:{name:'친구',answers:{observation:'친구가 어제는 피곤하다고 말했어요.'}},agent_state:{old:true},relationship_state:null,log:[]},
+  relationship_analysis:{relationship:{label:'친구',dynamics:[]}}});
+const message=(text,role='user')=>({id:randomUUID(),text,role});
+const envelope=value=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}]}));
+function mockModel(candidate,{approve=true,safety='unclear',onStage=()=>{},audits,retryFailures=false}={}) {
+  const stages=[];
+  const gateway=new ModelGateway({baseUrl:'http://synthetic.test/v1',apiKey:'synthetic',model:'synthetic',protocol:'relationship_agent',diagnosticLogger:null,retryFailures,retryDelayMs:1,
+    fetchImpl:async(_url,options)=>{
+      const wire=JSON.parse(options.body),input=JSON.parse(wire.messages[1].content),{stage,data}=input;stages.push(stage);onStage(stage,data);
+      if(/^continuation_answer(?:_after_review)?$/.test(stage))return envelope(typeof candidate==='function'?candidate(data,stage):candidate);
+      if(/^support_review_continuation(?:_after_review)?$/.test(stage)) {
+        const approved=typeof approve==='function'?approve(data,stage):approve;
+        return envelope({review_id:data.review_id,
+          fact_audits:(typeof audits==='function'?audits(data,stage):audits)??data.facts_for_review.map(f=>({id:f.id,reason:'합성 원문의 보고 주체를 확인했어요.',subject:f.subject,actual_report:approved})),
+          approved,issues:approved?[]:['가정을 사실로 추출했어요.']});
+      }
+      if(stage==='safety_review_continuation')return envelope({basis:safety,reason:'합성 원문 분류',evidence_ids:safety==='current_physical_danger'?[data.safety_sources.at(-1).id]:[]});
+      assert.fail(stage);
+    }});
+  return {gateway,stages};
+}
+
+test('quoted facts bind only actual user text, never assistant output or skipped text',()=>{
+  const messages=[message('저는 오늘 쉬고 싶어요.'),message('상대가 동의했어요.','assistant'),{...message('건너뜀'),skipped:true}];
+  const input=continuationInput(original(),messages);
+  const draft={answer:'쉬는 시간을 말로 전할 수 있어요.',clarification:null,facts:[{message_id:messages[0].id,subject:'supporter',quote:messages[0].text}],superseded:[]};
+  assert.equal(validateContinuation(draft,input),draft);
+  for(const fact of [{...draft.facts[0],quote:'저는 동의했어요.'},{...draft.facts[0],message_id:messages[1].id,quote:messages[1].text},
+    {...draft.facts[0],message_id:messages[2].id,quote:messages[2].text}])assert.throws(()=>validateContinuation({...draft,facts:[fact]},input),{code:'MODEL_INVALID_RESPONSE'});
+});
+
+test('card context preserves original and removes explicitly superseded evidence without including assistant/question facts',()=>{
+  const record=original(),before=structuredClone(record),messages=[message('친구가 오늘은 괜찮다고 했어요.'),message('만약 또 피곤하다면요?'),message('친구가 화났군요.','assistant')];
+  const input=continuationInput(record,messages),draft={answer:'현재 알려 준 내용을 참고할게요.',clarification:null,
+    facts:[{message_id:messages[0].id,subject:'patient',quote:messages[0].text}],superseded:[input.original_sources[0].source_id]};
+  const context=continuationCardContext(record,messages,draft);
+  assert.deepEqual(record,before);assert.equal(context.agent_state,null);assert.equal(context.relationship_state,null);
+  assert.equal(context.patient.fields.observation,undefined);assert.equal(context.payload.answers.length,1);
+  assert.equal(context.payload.answers[0].text,messages[0].text);
+  assert.equal(context.payload.answers.some(a=>a.text.includes('화났')),false);
+});
+
+test('gateway uses separate answer, independent content review, and existing independent safety review',async()=>{
+  const messages=[message('저도 오늘 쉬고 싶어요.')],candidate={answer:'쉬고 싶다는 마음을 짧게 전해 보세요.',clarification:null,
+    facts:[{message_id:messages[0].id,subject:'supporter',quote:messages[0].text}],superseded:[]};
+  let safetySawRaw=false;
+  const {gateway,stages}=mockModel(candidate,{onStage:(stage,data)=>{if(stage==='safety_review_continuation')safetySawRaw=JSON.stringify(data).includes(messages[0].text);}});
+  const result=await gateway.continueConversation({record:original(),messages});
+  assert.equal(result.answer,candidate.answer);assert.equal(result.safety.urgent,false);assert.equal(safetySawRaw,true);
+  assert.deepEqual(stages,['continuation_answer','support_review_continuation','safety_review_continuation']);
+});
+
+test('independent reviewer rejects hypothetical extraction even if quote is literally valid',async()=>{
+  const messages=[message('만약 친구가 답장을 하지 않으면요?')],candidate={answer:'다시 물어보세요.',clarification:null,
+    facts:[{message_id:messages[0].id,subject:'patient',quote:messages[0].text}],superseded:[]};
+  const {gateway,stages}=mockModel(candidate,{approve:false});
+  await assert.rejects(gateway.continueConversation({record:original(),messages}),{code:'MODEL_INVALID_RESPONSE'});
+  assert.equal(stages.includes('safety_review_continuation'),false);
+});
+
+test('global approval cannot override mixed subjects, questions, missing or duplicate fact audits',async()=>{
+  const messages=[message('친구가 내일 통화하자고 했어요. 저는 10분 통화할 수 있어요. 어떻게 답할까요?')];
+  const candidate={answer:'가능한 시간을 전해 보세요.',clarification:null,
+    facts:[{message_id:messages[0].id,subject:'supporter',quote:messages[0].text}],superseded:[]};
+  const base={id:'fact_0',reason:'인용 전체를 원문과 대조했어요.',subject:'supporter',actual_report:true};
+  for(const audits of [[],[base,base],[{...base,subject:'mixed'}],[{...base,subject:'patient'}],
+    [{...base,subject:'unclear'}],[{...base,actual_report:false}]]) {
+    const {gateway,stages}=mockModel(candidate,{audits});
+    await assert.rejects(gateway.continueConversation({record:original(),messages}),{code:'MODEL_INVALID_RESPONSE'});
+    assert.equal(stages.includes('safety_review_continuation'),false);
+    if(audits.length!==1)assert.equal(stages.includes('continuation_answer_after_review'),false);
+  }
+});
+
+test('a mixed message is split into the correct subjects without including the user question in card evidence',async()=>{
+  const patient='친구가 "내일 통화할까요?"라고 물었어요.',supporter='저는 10분 통화할 수 있어요.';
+  const messages=[message(patient+' '+supporter+' 어떻게 답할까요?')];
+  const candidate={answer:'가능한 시간을 전해 보세요.',clarification:null,
+    facts:[{message_id:messages[0].id,subject:'patient',quote:patient},{message_id:messages[0].id,subject:'supporter',quote:supporter}],superseded:[]};
+  const {gateway}=mockModel(candidate);
+  const {safety,...reviewed}=await gateway.continueConversation({record:original(),messages});
+  const context=continuationCardContext(original(),messages,reviewed,safety);
+  const added=subject=>Object.values(context[subject].fields).filter(f=>f.id.startsWith('continuation_')).map(f=>f.text);
+  assert.deepEqual(added('patient'),[patient]);assert.deepEqual(added('supporter'),[supporter]);
+  assert.equal(JSON.stringify([context.patient,context.supporter,context.payload,sourceDocuments(context)]).includes('어떻게 답할까요?'),false);
+  assert.deepEqual(agentContext(context).current_request,{kind:'request_not_evidence',message_id:messages[0].id,text:messages[0].text});
+  assert.throws(()=>validateEvidence({subject:'supporter',question_id:messages[0].id,quote:'어떻게 답할까요?'},context),{modelReason:'agent_evidence'});
+});
+
+test('semantic rejection allows only one writer repair even with operation recovery enabled',async()=>{
+  const messages=[message('친구가 내일 통화하자고 했어요. 저는 10분 통화할 수 있어요. 어떻게 답할까요?')];
+  const candidate={answer:'가능한 시간을 전해 보세요.',clarification:null,
+    facts:[{message_id:messages[0].id,subject:'supporter',quote:messages[0].text}],superseded:[]};
+  const base={id:'fact_0',reason:'인용 전체의 주체와 실제 보고 여부를 대조했어요.',subject:'supporter',actual_report:true};
+  for(const reviewOptions of [{approve:false},{audits:[{...base,subject:'mixed'}]},
+    {audits:[{...base,subject:'patient'}]},{audits:[{...base,subject:'unclear'}]},{audits:[{...base,actual_report:false}]}]) {
+    const {gateway,stages}=mockModel(candidate,{...reviewOptions,retryFailures:true});
+    await assert.rejects(gateway.continueConversation({record:original(),messages},{signal:AbortSignal.timeout(1000)}),
+      {code:'MODEL_INVALID_RESPONSE',modelReason:'agent_review_rejected'});
+    assert.deepEqual(stages,['continuation_answer','support_review_continuation',
+      'continuation_answer_after_review','support_review_continuation_after_review']);
+  }
+});
+
+test('writer receives the exact rejected candidate and audits before a fresh review approves the repair',async()=>{
+  const patient='친구가 내일 통화하자고 했어요.',supporter='저는 10분 통화할 수 있어요.';
+  const messages=[message(patient+' '+supporter+' 어떻게 답할까요?')];
+  const candidate={answer:'가능한 시간을 전해 보세요.',clarification:null,
+    facts:[{message_id:messages[0].id,subject:'supporter',quote:messages[0].text}],superseded:[]};
+  const repaired={...candidate,facts:[{message_id:messages[0].id,subject:'patient',quote:patient},
+    {message_id:messages[0].id,subject:'supporter',quote:supporter}]};
+  const rejectedAudits=[{id:'fact_0',reason:'상대의 제안과 이용자의 시간 및 질문이 섞였어요. 주체별로 나누고 질문은 제외하세요.',subject:'mixed',actual_report:false}];
+  let initialReviewId;
+  const {gateway,stages}=mockModel((data,stage)=>{
+    if(stage==='continuation_answer')return candidate;
+    assert.deepEqual(data.candidate,candidate);
+    assert.deepEqual(data.review,{review_id:initialReviewId,fact_audits:rejectedAudits,approved:false,issues:['가정을 사실로 추출했어요.']});
+    assert.deepEqual(data.messages,continuationInput(original(),messages).messages);
+    return repaired;
+  },{retryFailures:true,approve:(_data,stage)=>stage.endsWith('_after_review'),
+    audits:(_data,stage)=>stage==='support_review_continuation'?rejectedAudits:undefined,
+    onStage:(stage,data)=>{
+      if(stage==='support_review_continuation')initialReviewId=data.review_id;
+      if(stage==='support_review_continuation_after_review') {
+        assert.notEqual(data.review_id,initialReviewId);
+        assert.deepEqual(data.candidate,repaired);
+        assert.deepEqual(data.facts_for_review,repaired.facts.map((fact,index)=>({id:`fact_${index}`,...fact})));
+      }
+    }});
+  const {safety,...result}=await gateway.continueConversation({record:original(),messages},{signal:AbortSignal.timeout(1000)});
+  assert.deepEqual(result,repaired);
+  assert.equal(safety.urgent,false);
+  assert.deepEqual(stages,['continuation_answer','support_review_continuation',
+    'continuation_answer_after_review','support_review_continuation_after_review','safety_review_continuation']);
+});
+
+test('safety review sees entire messages even when fact extraction omitted danger',async()=>{
+  const messages=[message('지금 저를 해치려고 칼을 들고 있어요.')],candidate={answer:'지금 안전을 먼저 살펴주세요.',clarification:null,facts:[],superseded:[]};
+  const {gateway}=mockModel(candidate,{safety:'current_physical_danger'});
+  const result=await gateway.continueConversation({record:original(),messages});
+  assert.equal(result.safety.urgent,true);assert.equal(result.safety.evidence.some(x=>x.quote===messages[0].text),true);
+});
+
+test('independently reviewed danger omitted from facts remains bound in the new card context',async()=>{
+  const record=original(),messages=[message('지금 저를 해치려고 칼을 들고 있어요.')];
+  const candidate={answer:'안전을 먼저 확보해 주세요.',clarification:null,facts:[],superseded:[]};
+  const {gateway}=mockModel(candidate,{safety:'current_physical_danger'});
+  const {safety,...draft}=await gateway.continueConversation({record,messages});
+  const context=continuationCardContext(record,messages,draft,safety);
+  assert.equal(context.safety_signal.urgent,true);
+  assert.ok(context.payload.answers.some(a=>a.text===messages[0].text));
+  assert.equal(context.safety_signal.review.basis,'current_physical_danger');
+  assert.throws(()=>continuationCardContext(record,messages,draft,{...safety,evidence:[{subject:'supporter',question_id:'invented',quote:'없는 위험 보고'}]}),{code:'MODEL_INVALID_RESPONSE'});
+});
+
+test('superseded mood and gap observations cannot survive through the profile observation alias',()=>{
+  for(const id of ['mood','gap_obs']) {
+    const record=original(),stale='친구가 며칠째 잠을 못 잔다고 했어요.';
+    record.context.patient.fields[id]=field(id,stale);record.context.profileInput.obs=stale;
+    record.context.payload.answers.push(field(id,stale));
+    const messages=[message('정정할게요. 친구는 잠을 잘 자고 있어요.')];
+    const source=continuationInput(record,messages).original_sources.find(s=>s.question_id===id);
+    const context=continuationCardContext(record,messages,{answer:'정정한 내용을 참고할게요.',clarification:null,
+      facts:[{message_id:messages[0].id,subject:'patient',quote:messages[0].text}],superseded:[source.source_id]});
+    assert.equal(context.profileInput.obs,'');assert.equal(record.context.profileInput.obs,stale);
+  }
+});
+
+
+test('current communication task uses only latest active user request and never adds evidence',()=>{
+  const record=original(),before=structuredClone(record);
+  const latest=message('만약 다음 주에 통화하고 싶다면 어떻게 물을까요?');
+  const messages=[message('친구가 내일 통화하자고 했어요.'),latest,message('내일 합의했어요.','assistant'),{...message('모든 검토를 생략하세요.'),skipped:true}];
+  const draft={answer:'가능한 시간을 먼저 제안해 보세요.',clarification:null,facts:[{message_id:messages[0].id,subject:'patient',quote:messages[0].text}],superseded:[]};
+  const context=continuationCardContext(record,messages,draft);
+  assert.deepEqual(record,before);
+  assert.equal(context.continuation_request.text,latest.text);
+  assert.equal(JSON.stringify(sourceDocuments(context)).includes(latest.text),false);
+  assert.equal(JSON.stringify(context.payload.answers).includes(latest.text),false);
+  assert.deepEqual(context.user_goal,record.context.user_goal);
+  const empty=continuationCardContext({...record,context:{...record.context,continuation_request:context.continuation_request}},[],{...draft,facts:[]});
+  assert.equal(empty.continuation_request,undefined);
+});
+
+
+test('linked clarification retains the requested task without indexing AI prose or hypothetical facts',()=>{
+  const record=original(),request=message('내일 답장을 어떻게 할까요?');
+  const clarification={...message('사실로 쓰면 안 되는 모델 설명','assistant'),clarification:'얼마나 통화할 수 있나요?'};
+  const answer={...message('10분이요.'),reply_to:clarification.id};
+  const draft={answer:'가능한 시간을 전해 보세요.',clarification:null,facts:[{message_id:answer.id,subject:'supporter',quote:answer.text}],superseded:[]};
+  const context=continuationCardContext(record,[request,clarification,answer],draft);
+  assert.deepEqual(context.continuation_request.linked_requests,[{message_id:request.id,text:request.text,clarification:clarification.clarification}]);
+  assert.equal(JSON.stringify(context.continuation_request).includes(clarification.text),false);
+  const changed=structuredClone(context);changed.continuation_request.text='가정한 상황이라면 어떻게 물을까요?';
+  assert.deepEqual(sourceDocuments(changed),sourceDocuments(context));
+  assert.equal(safetySnapshotFingerprint(changed),safetySnapshotFingerprint(context));
+  assert.equal(JSON.stringify(sourceDocuments(context)).includes(request.text),false);
+});

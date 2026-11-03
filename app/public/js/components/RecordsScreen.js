@@ -154,12 +154,14 @@ const RecordsScreen={
       <details class="card conversation-history"><summary>대화 기록</summary>
       <div class="tlog">${r.log.map(m=>`<div class="t ${m.who==="me"?"me2":"ai"+(m.fu?" fu":"")}">${esc(m.text)}</div>`).join("")}</div></details>`;
     if(!shared){
+      $("rdetail").innerHTML+='<div class="actions" style="margin-top:18px"><button class="btn" id="recordContinue" type="button">추가 질문하기</button></div>';
       $("rdetail").innerHTML+=`<details class="card" style="margin-top:18px;padding:16px"><summary>이 기록의 보관키</summary>
         <p class="note">새 키를 만들면 이전 키는 사용할 수 없어요. 키를 가진 사람은 이 기록과 대화 내용을 볼 수 있어요.</p>
         <button class="ghost" id="createRecordKey">새 보관키 만들기</button>
         <button class="ghost" id="revokeRecordKey">보관키 해제</button>
         <p class="note" id="recordKeyNotice" role="status"></p>
         <textarea id="recordKeyOutput" aria-label="따로 보관할 보관키" readonly hidden rows="2" style="width:100%" autocomplete="off" spellcheck="false"></textarea></details>`;
+      $("recordContinue").onclick=()=>ContinuationScreen.start(r.id);
       $("createRecordKey").onclick=()=>this.manageAccessKey(r.id);
       $("revokeRecordKey").onclick=()=>this.manageAccessKey(r.id,true);
     }

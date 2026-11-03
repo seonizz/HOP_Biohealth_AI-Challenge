@@ -79,7 +79,7 @@ const ResultScreen={
     const button=document.createElement("button");button.className="ghost";button.type="button";button.textContent="다시 시도";button.onclick=retry;
     card.appendChild(heading);card.appendChild(detail);card.appendChild(button);
   },
-  open(p,g,saved,analysis,detail){
+  open(p,g,saved,analysis,detail,recordId){
     this.previewCards=new Map();
     $("rbody").innerHTML=`
      <div class="rside"><img src="${M.cheer}" alt="하트를 안은 말씨">
@@ -92,10 +92,11 @@ const ResultScreen={
        ${GuideCards.doAvoid(g)}
        ${GuideCards.next(g)}
        ${analysis?GuideCards.relationship(analysis):""}
-       <div class="actions"><span class="note" style="margin-right:auto;align-self:center">${saved?`"${esc(p.name||"그분")}" 기록으로 저장했어요.`:"기록을 저장하지 못했어요."}</span><button class="ghost" id="toCol">${esc(g.top)} 관련 칼럼</button><button class="ghost" id="toRec">내 기록 보기</button><button class="ghost" id="again">처음부터 다시</button></div>
+       <div class="actions"><span class="note" style="margin-right:auto;align-self:center">${saved?`"${esc(p.name||"그분")}" 기록으로 저장했어요.`:"기록을 저장하지 못했어요."}</span>${saved&&recordId?'<button class="btn" id="resultContinue" type="button">추가 질문하기</button>':""}<button class="ghost" id="toCol">${esc(g.top)} 관련 칼럼</button><button class="ghost" id="toRec">내 기록 보기</button><button class="ghost" id="again">처음부터 다시</button></div>
        ${CrisisLine("위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담 · <b>112 / 119</b>")}
      </div>`;
     show("result");this.animate();
+    if(saved&&recordId)$("resultContinue").onclick=()=>ContinuationScreen.start(recordId);
     $("toRec").onclick=()=>RecordsScreen.open();
     $("toCol").onclick=()=>ColumnsScreen.open(g.top);
     GuideCards.bindCopy($("rbody"),g.script);

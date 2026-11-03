@@ -248,7 +248,7 @@ async function finish(token=conversationToken){
     ChatScreen.think(false);
     S.revision=result.revision;
     rememberRec(result.record,id);
-    ResultScreen.open(result.record.profile,result.record.guide,true,result.record.relationship_analysis,result.record.conversation_detail);
+    ResultScreen.open(result.record.profile,result.record.guide,true,result.record.relationship_analysis,result.record.conversation_detail,result.record.id);
     if(typeof ReferralGuide!=="undefined")void ReferralGuide.observe(S);
   }catch(error){
     polling=false;clearTimeout(timer);

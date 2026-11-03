@@ -7,6 +7,10 @@ const AppRouter={
     window.addEventListener("popstate",()=>this.restore());
   },
   path(screen){
+    if(screen==="continuation"&&typeof ContinuationScreen!=="undefined"){
+      const id=ContinuationScreen.row?.id||ContinuationScreen.openingId;
+      return id?`/continuations/${encodeURIComponent(id)}`:ContinuationScreen.sourceRecord?`/records/${encodeURIComponent(ContinuationScreen.sourceRecord)}`:"/records";
+    }
     if((screen==="chat"||screen==="result")&&typeof S!=="undefined"&&S?.id){
       const target=screen==="result"||S.status==="ready"?"result":"chat";
       return `/${target}/${encodeURIComponent(S.id)}`;
@@ -38,6 +42,7 @@ const AppRouter={
     const [screen,id]=parts;
     if(parts.length>2)return {screen:"start"};
     if(["chat","result"].includes(screen)&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id||""))return {screen,id};
+    if(screen==="continuations"&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id||""))return {screen:"continuation",id};
     if(screen==="records"&&(!id||/^\d+$/.test(id)))return {screen,id:id?Number(id):undefined};
     if(screen==="columns")return {screen,id,category:url.searchParams.get("category"),only:url.searchParams.get("view")};
     return {screen:screen==="about"&&!id?"about":"start"};
@@ -56,6 +61,7 @@ const AppRouter={
     let pending;
     try{
       if(route.screen==="chat"||route.screen==="result")pending=resumeConversation(route.id);
+      else if(route.screen==="continuation"&&typeof ContinuationScreen!=="undefined")pending=ContinuationScreen.open(route.id);
       else if(route.screen==="records")pending=RecordsScreen.open(route.id);
       else if(route.screen==="about")AboutScreen.open();
       else if(route.screen==="columns"){

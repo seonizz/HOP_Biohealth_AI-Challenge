@@ -14,6 +14,8 @@ import qualify_cards31b_replica as probe
 
 ROOT = Path(__file__).resolve().parents[2]
 REFERENCE_DIR = ROOT / "runtime/gpu-lora31b-opt-20261101"
+REFERENCE_FILE = REFERENCE_DIR / "reference_train_cards_31b.py"
+REFERENCE_SKIP_REASON = "Local ignored reference_train_cards_31b.py artifact is required"
 
 
 def row(name, length, target, numerator=1, denominator=1):
@@ -57,8 +59,9 @@ class SelectionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "metadata"):
             probe.select_probes(data)
 
+    @unittest.skipUnless(REFERENCE_FILE.is_file(), REFERENCE_SKIP_REASON)
     def test_immutable_reference_matches_actual_source(self):
-        self.assertEqual(probe.sha(REFERENCE_DIR / "reference_train_cards_31b.py"), probe.REFERENCE_SHA)
+        self.assertEqual(probe.sha(REFERENCE_FILE), probe.REFERENCE_SHA)
 
 
 class FilesystemTests(unittest.TestCase):
@@ -93,6 +96,7 @@ class FilesystemTests(unittest.TestCase):
         probe.check_stop(work)
 
 
+@unittest.skipUnless(REFERENCE_FILE.is_file(), REFERENCE_SKIP_REASON)
 class RunTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -101,8 +105,7 @@ class RunTests(unittest.TestCase):
         self.work = self.root / "work"
         self.work.mkdir()
         self.args = SimpleNamespace(work=self.work, reference_dir=REFERENCE_DIR)
-        spec = importlib.util.spec_from_file_location("_test_original_reference",
-                                                     REFERENCE_DIR / "reference_train_cards_31b.py")
+        spec = importlib.util.spec_from_file_location("_test_original_reference", REFERENCE_FILE)
         original = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(original)
         self.data = datasets()

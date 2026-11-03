@@ -55,6 +55,7 @@ function fixture({reuseFinalDraft=true,compactReviewInputs=false,scopedQualityRe
         const key=Object.keys(schema.properties)[0];
         payload=key==='avoid'?{avoid:[structuredClone(avoid)]}:{[key]:structuredClone(validGuide.guide[key])};
       } else if(/^guide_quality(?:_|$)/u.test(stage))payload={improvements:[]};
+      else if(/^continuation_context_review(?:_|$)/u.test(stage))payload=null; // Supplied explicitly by continuation scenarios.
       else if(/^(?:analysis_review|speech_review|support_review|speech_detail_review)(?:_|$)/u.test(stage))payload={approved:true,issues:[],audits:audits(data.claims)};
       else if(/^(?:plan_review|guide_review)(?:_|$)/u.test(stage))payload={approved:true,issues:[]};
       else if(stage.startsWith('card_')) {
@@ -94,6 +95,52 @@ function assertDetail(output) {
     assert.deepEqual(part.evidence,[ref()]);
   }
 }
+
+for(const reuseFinalDraft of [false,true])for(const persistent of [false,true])
+test(`bundled final approvals still require fresh continuation review and bounded repair: reuse=${reuseFinalDraft}, persistent=${persistent}`,async()=>{
+  const ctx=context(),id='continuation_1_0123456789abcdef',candidate=guide();
+  ctx.supporter.fields[id]=field(id,'저는 내일 저녁에 통화할 여유가 있어요.');
+  candidate.guide.next='오늘 저녁 통화할 여유가 있다고 전하고 상대에게 가능한지 물어보세요.';
+  const fixed='내일 저녁 통화할 여유가 있다고 전하고 상대에게 가능한지 물어보세요.';
+  let checks=0,repairs=0;
+  const value=fixture({ctx,reuseFinalDraft,validGuide:candidate,response:input=>{
+    if(input.stage.startsWith('guide_repair')) {
+      repairs++;assert.equal(input.data.field,'next');
+      assert.ok(input.data.context_feedback.some(check=>check.field==='next'));
+      return {next:persistent?candidate.guide.next:fixed};
+    }
+    if(!input.stage.startsWith('continuation_context_review'))return;
+    const {sources,required_source_ids,units}=input.data,reject=persistent||++checks===1;
+    if(persistent)checks++;
+    assert.equal(units.find(unit=>unit.id==='next.0').text,checks===1||persistent?candidate.guide.next:fixed);
+    return {
+      source_events:required_source_ids.map(id=>({source_id:id,quote:sources.find(source=>source.id===id).text,
+        actor:'supporter',action:'통화할 여유가 있음',action_time:'내일 저녁',status:'availability'})),
+      checks:units.map(unit=>{
+        const availability=unit.field==='next',failed=availability&&reject;
+        return {id:unit.id,utterance_frame:unit.role==='direct_speech'||unit.role==='alternative'?'current_reply':'not_speech',
+          candidate_quote:unit.text,candidate_action_time:availability?(failed?'오늘 저녁':'내일 저녁'):'명시 없음',
+          source_action_time:availability?'내일 저녁':'명시 없음',source_ids:availability?required_source_ids:[],
+          relation:availability?(failed?'different':'same'):'not_applicable',statement:availability?'reported_fact':'other',
+          comparison:failed?'원문은 내일 저녁의 여유만 보고했지만 안내는 오늘 저녁을 단정합니다.':'원문의 시점과 합의를 유지합니다.',
+          verdict:failed?'conflict':'consistent',repair:failed?'통화할 여유의 시점을 원문의 내일 저녁으로 고치세요.':null};
+      }),
+    };
+  }});
+  if(persistent) {
+    await assert.rejects(value.run(),{modelReason:'agent_review_rejected'});
+    assert.equal(checks,3);assert.equal(repairs,2);
+    assert.ok(!value.stages().includes('speech_detail'));
+    assert.equal(value.events.at(-1).type,'reset');
+  } else {
+    const output=await value.run();
+    assert.equal(checks,2);assert.equal(repairs,1);
+    assert.deepEqual(output.guide,{...candidate.guide,next:fixed});assertDetail(output);
+    assert.ok(value.stages().indexOf('final_review_bundle_after_repair')>
+      value.stages().indexOf('continuation_context_review_after_repair'));
+  }
+  assert.ok(value.stages().some(stage=>stage==='final_review_bundle_initial'||stage==='final_review_bundle_quality'));
+});
 
 test('O4 bundles all eleven post-draft reviews into one independent request: 18 to 8 with the same stored content',async()=>{
   const legacy=fixture({bundleFinalReviews:false}),bundled=fixture();

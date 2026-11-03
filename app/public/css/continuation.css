@@ -1,0 +1,19 @@
+/* 후속 대화 전용 배치. 기존 결과 카드의 스타일은 그대로 사용해요. */
+.continuation-wrap{width:100%;max-width:960px;margin:24px auto;min-width:0}
+.continuation-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap}
+.continuation-heading h2{margin:0;font-family:var(--display);color:var(--stem)}
+.continuation-history{margin:20px 0}
+.continuation-history summary{cursor:pointer;color:var(--stem)}
+#continuationSessions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+.continuation-log{display:flex;flex-direction:column;gap:22px;margin:24px 0}
+.continuation-message{display:flex;flex-direction:column;gap:6px;min-width:0}
+.continuation-user{align-items:flex-end}
+.continuation-user>.ghost{font-size:14px;padding:5px 12px}
+.continuation-assistant .ai-row{max-width:90%}
+#continuation .msg p{margin:14px 0 0}
+#continuationForm{max-height:none;margin:20px 0}
+#continuationText{min-height:100px;width:100%}
+.continuation-actions{margin-top:16px}
+.continuation-summary{margin-top:24px;white-space:pre-wrap}
+.continuation-card-set{margin-top:32px}
+@media(max-width:600px){.continuation-heading{gap:12px}.continuation-assistant .ai-row{max-width:100%}.continuation-assistant .ai-row img{width:42px;height:42px}.continuation-user .me{max-width:90%}.continuation-actions>*{flex:1 1 160px}}

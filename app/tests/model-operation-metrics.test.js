@@ -89,3 +89,19 @@ test('an already-cancelled request does not create an HTTP attempt',async()=>{
     error=>error.code==='MODEL_CANCELLED');
   assert.equal(records.filter(row=>row.event==='model_attempt').length,0);
 });
+
+test('continuation context checks and rechecks use the configured reviewer with one bounded family',async()=>{
+  const records=[];let writerCalls=0,reviewCalls=0;
+  const writer=make(records,async()=>{writerCalls++;return response();});
+  writer.reviewGateway=make(records,async()=>{reviewCalls++;return response();});
+  await writer.operation({},async operation=>{
+    await stage(writer,operation,'continuation_context_review');
+    await stage(writer,operation,'continuation_context_review_after_repair_2');
+  });
+  assert.equal(writerCalls,0);assert.equal(reviewCalls,2);
+  const attempts=records.filter(row=>row.event==='model_attempt');
+  assert.deepEqual(attempts.map(row=>row.model_role),['reviewer','reviewer']);
+  assert.deepEqual(attempts.map(row=>row.family_http_attempts),[
+    {continuation_context_review:1},{continuation_context_review:2},
+  ]);
+});

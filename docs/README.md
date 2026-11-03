@@ -13,6 +13,7 @@
 | HTTP API | [API](../app/docs/API.md) · [OpenAPI](../app/docs/openapi.json) |
 | 질문 관리 | [질문은행 운영](../app/docs/QUESTIONS.md) |
 | 모델 성능 지표·평가셋·검증 계획 | [모델 성능평가 설계](current/모델_성능평가_설계와_검증계획_2026-11-01.md) |
+| 관계도 기반 추가 질문·답변·새 카드 (구현, 최종 검증 대기) | [추가 질문 기획·구현](current/관계도_기반_추가질문_기획.md) |
 | 모델 평가 명령 | [AI 평가 도구](../ai/local_api/RELATIONSHIP_AGENT.md) |
 | 데이터 처리 방법·출력 계약 | [데이터 파이프라인](../data/README.md) |
 | 대회 요구·제출 확인사항 | [대회 안내](competition/README.md) |

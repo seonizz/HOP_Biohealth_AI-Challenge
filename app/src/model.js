@@ -1,4 +1,5 @@
 import {finalEvidenceTransport} from './final-evidence-transport.js';
+import {generateContinuation} from './continuation-model.js';
 import { HttpError } from './errors.js';
 import { modelHttpFetch } from './model-http.js';
 import { JSON_STREAM_COMPLETE, ModelStreamError, streamJsonResponse, schemaArrayLimit, schemaPropertyArrayLimits, schemaArrayPaths, schemaStringLimit } from './model-stream.js';
@@ -22,7 +23,7 @@ const TRAINED_MODEL = 'malssi-gemma4-31b-step100';
 const EXHAUSTED_GUIDE_REVIEWS = new Set([
   'agent_analysis_review_rejected','agent_analysis_review_inconsistent','agent_plan_review_rejected',
   'agent_quality_review_rejected','agent_review_rejected','agent_detail_review_rejected',
-  'agent_review_stale','agent_review_noop',
+  'agent_review_stale','agent_review_noop','agent_speech_repeat','agent_avoid_structure','agent_context_audit',
 ]);
 function streamJsonHost(hostname) {
   if(['localhost','host.docker.internal','[::1]'].includes(hostname))return true;
@@ -236,7 +237,7 @@ function remainingOutputTokens(value, status, policy, requested) {
 
 function correction(reason, repair) {
   if (!reason) return '';
-  if(reason==='agent_speech_repeat')return '\n검증 실패: 지금 대화해도 되는지 묻는 허락 질문이 중복됐습니다. 허락은 첫 문장에 한 번만 묻고, 마지막에는 무엇이 걱정되는지 또는 어떤 도움이 필요한지를 물어보세요.';
+  if(reason==='agent_speech_repeat')return '\n검증 실패: 지금 대화해도 되는지 묻는 허락 질문이 중복됐습니다. validation_feedback의 permission_questions와 permission_question_count를 확인하고 최초의 허락 질문만 남기세요. parts는 미검증 초안이며 반복의 원인일 수 있습니다. parts.listening과 parts.offer의 open_question·small_invitation에 있는 중복 허락 질문을 다시 복사하지 말고 삭제하거나 상대 이야기를 듣는 실제 열린 질문·선택 가능한 작은 제안으로 수정하세요. 문장 표현만 바꾼 대화 허락 질문도 반복입니다. answers와 observations의 관찰 및 이용자의 마음·가능 범위는 보존하고 새로운 사실이나 동의를 만들지 마세요. 수정한 전체 JSON을 반환하세요.';
   if(reason==='agent_speech_address')return '\n검증 실패: 직접 말을 듣는 상대를 제삼자인 “그분”이나 “대상자”로 설명했습니다. 호칭을 생략하고 “요즘 어떤지 듣고 싶어요”처럼 상대에게 직접 건넬 말로 쓰세요.';
   if(reason==='agent_script_inference')return '\n검증 실패: script 또는 발화 부분에서 대상자의 마음·노력·원인을 알고 있는 것처럼 설명했습니다. validation_feedback의 field와 rejected_text, matched_text를 확인하고 “네가 얼마나 최선을 다하는지 다 알고 있어”, “완벽하게 하고 싶은 마음 때문에” 같은 단정을 삭제하세요. parts와 earlier_parts도 초안이며 사실 근거가 아닙니다. answers에 있는 관찰과 이용자 자신의 마음만 유지하고 대상자의 마음은 열린 질문으로 물으세요. 지정된 현재 단계의 전체 JSON만 다시 쓰고 원문에 없는 행동이나 다른 단계의 문장을 보태지 마세요.';
   if(reason==='agent_hypothesis_language')return '\n검증 실패: tentative 해석을 확정된 사실처럼 썼습니다. 원문이 뒷받침하는 하나의 관계 가설만 남기고 “일 수 있어요”, “가능성이 있어 확인이 필요해요”처럼 불확실성을 명시하세요. 원인·진단을 새로 만들어 표현만 완곡하게 바꾸면 안 됩니다.';
@@ -317,6 +318,14 @@ function safeSchemaDiagnostic(feedback) {
     if([...path.matchAll(/\.([a-zA-Z_]+)/g)].some(([,key])=>!SCHEMA_DIAGNOSTIC_KEYS.has(key)))return null;
     return {path,keyword};
   } catch { return null; }
+}
+
+function guideQualityRepairInstruction(stage,reason,feedback) {
+  if(reason!=='agent_schema'||!/^guide_quality(?:_check(?:_2)?)?(?:_after_analysis_repair)?$/.test(stage)||typeof feedback!=='string')return '';
+  let issue;
+  try { issue=JSON.parse(feedback); } catch { return ''; }
+  if(issue?.keyword!=='maxLength'||!/^output\.improvements\[\d+\]\.repair$/.test(issue.path))return '';
+  return '\n길이를 넘긴 것은 검토 JSON의 improvements[].repair이며 카드 본문이 아닙니다. 발화 전체를 복사하거나 일부를 잘라 붙이지 말고, 문제 위치·바꿀 동작·보존할 의미를 담은 짧은 편집 지시 1~2문장으로 작성하세요. 길이 때문에 지적을 삭제하거나 빈 improvements로 바꾸지 말고 원문과 현재 카드를 다시 대조하세요. output_schema의 maxLength 제한은 그대로 지키세요.';
 }
 
 function evidenceSelectionRepair(stage,schema,feedback,candidate) {
@@ -715,6 +724,10 @@ export class ModelGateway {
     }
   }
 
+  async continueConversation(input, options = {}) {
+    return generateContinuation(this, input, options);
+  }
+
   async respond(context, priorMemory = null, options = {}) {
     return this.operation(options, async operation => {
       if (this.protocol === 'relationship_agent') {
@@ -889,12 +902,20 @@ export class ModelGateway {
       const wireEvidenceRepair=wireEvidenceSelectionRepair(stage,transport,selectionRepairFeedback,rejectedOutput);
       const arrayLimits=relationshipArrayLimits(stage,requestSchema);
       const arrayRepair=relationshipArrayRepair(arrayLimits,feedback||payload?.combined_validation_feedback);
+      const qualityRepairInstruction=guideQualityRepairInstruction(stage,repairReason,selectionRepairFeedback);
+      // Do not seed another copied replacement speech from the malformed
+      // review. Retain its issues, while the complete current cards and sources
+      // remain in data for an independent review.
+      const reviewFormatRepair=qualityRepairInstruction?{error:JSON.parse(selectionRepairFeedback),
+        improvements:rejectedOutput.improvements.map((item,index)=>({index,
+          ...(typeof item?.field==='string'?{field:item.field}:{}),...(typeof item?.reason==='string'?{reason:item.reason}:{}),
+          repair_length:typeof item?.repair==='string'?item.repair.length:null}))}:null;
       return {
         model:this.model,stream:false,...(this.reasoningEffort==='omit'?{}:{reasoning_effort:this.reasoningEffort}),temperature:0.2,
         ...(this.agentFormat==='prompt'?{}:{response_format:this.agentFormat==='json_object'&&!stateSchemaRecovery?{type:'json_object'}:
           {type:'json_schema',json_schema:{name:stage,strict:true,schema:inferenceSchema(requestSchema,{preserveStringLimits:this.preserveStringLimits})}}}),
         messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+
-          (arrayLimits.length?RELATIONSHIP_ARRAY_INSTRUCTION:'')+questionCatalogInstruction(stage,requestSchema)},
+          (arrayLimits.length?RELATIONSHIP_ARRAY_INSTRUCTION:'')+questionCatalogInstruction(stage,requestSchema)+qualityRepairInstruction},
           {role:'user',content:JSON.stringify({stage,data,output_schema:requestSchema,...(feedback?{validation_feedback:feedback}:{}),
             ...(transport?{evidence_sources:transport.table}:{}),
             ...(arrayLimits.length?{array_limits:arrayLimits}:{}),
@@ -902,9 +923,11 @@ export class ModelGateway {
             ...(wireEvidenceRepair?{wire_evidence_selection_repair:wireEvidenceRepair}:{}),
             ...(evidenceRepair?{evidence_selection_repair:evidenceRepair}:{}),
             ...(questionRepair?{question_selection_repair:questionRepair}:{}),
-            ...(rejectedOutput===undefined?{}:{rejected_output:rejectedOutput,
+            ...(rejectedOutput===undefined||reviewFormatRepair?{}:{rejected_output:rejectedOutput,
               repair_task:'rejected_output은 검증에 실패한 직전 출력이며 사실이나 승인된 답안이 아닙니다. data의 원문과 output_schema를 기준으로 validation_feedback의 오류를 고쳐 완전한 출력 객체만 반환하세요. 필수 키·배열 상한·각 분기의 키를 확인하고, 근거 없는 내용을 새로 채우거나 정정·부정·시점을 없애지 마세요.'+
                 (reviewStage?' 이번 rejected_output은 검토기 자신의 이전 JSON 출력입니다. 검토 대상인 data의 초안과 혼동하지 마세요. 누락된 audits·필드·잘못된 형식은 검토 출력에서 고치고, 이 형식 오류를 초안 내용의 문제로 issues에 적지 마세요. issues는 현재 data의 주장에 실제로 남은 근거·내용 오류만 포함합니다.':'')}),
+            ...(reviewFormatRepair?{review_format_repair:reviewFormatRepair,
+              repair_task:'검토기 자신의 이전 repair가 길이 제한을 넘겨 해당 문구 대신 문제 항목·이유·길이 진단만 전달합니다. review_format_repair는 승인된 판단이 아닙니다. data의 현재 guide와 원문을 독립적으로 다시 대조하고 실제 남은 문제를 짧은 편집 지시로 작성하세요. 길이 때문에 지적을 삭제하거나 빈 improvements로 자동 승인하지 마세요. output_schema의 제한을 지킨 전체 검토 JSON을 반환하세요.'}:{}),
             ...(stateReviewFormatRepair?{
               required_audit_ids:stateReviewTarget.claims.map(claim=>claim.id),
               repair_task:'검토기 자신의 이전 JSON이 출력 형식을 지키지 않아 제외했습니다. data의 검토 대상 원문과 claims를 처음부터 독립적으로 검토하세요. state,questions,safety를 모두 반환하고, state.audits에는 required_audit_ids 각각을 정확히 한 번씩 작성하세요. 이전 검토 출력의 누락이나 형식 오류는 이 출력에서 고칠 문제이며 data의 초안 오류가 아니므로 issues에 넣지 마세요. 현재 초안의 근거·내용 오류는 계속 거절하고 구체적으로 기록하세요.',
@@ -946,7 +969,15 @@ export class ModelGateway {
         }
         throw error;
       }
-    },stage,()=>streamSchema);
+    },stage,()=>streamSchema).catch(error=>{
+      // The review response already exhausted its format-repair budget. Keep
+      // the exact schema feedback, but do not restart all approved card stages.
+      if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelAttempts===MAX_ATTEMPTS) {
+        if(/^continuation_context_review(?:_|$)/u.test(stage))error.modelReason='agent_context_audit';
+        else if(guideQualityRepairInstruction(stage,error.modelReason,error.modelFeedback))error.modelReason='agent_quality_review_rejected';
+      }
+      throw error;
+    });
   }
 
   async trainedState(context, memory, operation, finalProjection = false) {
