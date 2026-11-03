@@ -40,7 +40,7 @@ test('combined draft rejects three reported findings outside the normalization e
     return true;
   });
   assert.equal(calls,1);assert.deepEqual(value,before);
-  assert.match(TURN_PROMPT_VERSION,/-combined-turn-v50$/);
+  assert.match(TURN_PROMPT_VERSION,/-combined-turn-v56$/);
 });
 
 test('fact writing selects its quote enum while the complete long answer survives input and independent review',async()=>{
@@ -197,6 +197,7 @@ test('combined review schema failures also receive bounded feedback before any a
   const ctx=context(),value=draft(ctx);value.state.relationship_memory.patient=value.state.relationship_memory.patient.slice(0,2);
   const gateway={async agentComplete(stage,prompt,data,schema,operation,validate){
     if(stage==='turn_draft')return validate(value);
+    if(stage==='safety_review')return validate(safetyReviewFixture(data));
     return validate({state:{approved:true,issues:[],audits:data.review_target.claims.map(claim=>({id:claim.id,verdict:claim.kind==='unresolved_information'&&claim.certainty==='unknown'?'still_unknown':'supported',reason:'합성 원문 대조'}))},
       questions:{PRIVATE_UNKNOWN_KEY:'PRIVATE_RESPONSE_SENTINEL'},safety:null});
   }};
@@ -232,7 +233,7 @@ test('a misplaced review receives trusted sibling key names on repair and still 
       return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
     }});
   const output=await model.updateState(ctx);
-  assert.deepEqual(requests.map(input=>input.stage),['turn_draft','turn_review','turn_review','safety_review']);
+  assert.deepEqual(requests.map(input=>input.stage),['turn_draft','turn_review','safety_review','turn_review']);
   assert.deepEqual(logs.map(entry=>entry.reason),['success','agent_schema','success','success']);
   assert.equal(reviews,2);assert.equal(output.relationship_memory.patient.length,2);
   assert.ok(!JSON.stringify(logs).includes('PRIVATE_'));

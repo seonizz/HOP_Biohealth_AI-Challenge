@@ -103,3 +103,49 @@ role suite는 `schema="malssi-role-evaluation-suite-v1"`, `model_role`, `split="
 ## 참고한 구조
 
 평가 지표의 개선량과 patience, 체크포인트 관리 구조는 [Transformers EarlyStoppingCallback](https://huggingface.co/docs/transformers/v5.10.0/en/trainer_callbacks#earlystoppingcallback) 및 [Trainer](https://huggingface.co/docs/transformers/v5.10.0/en/main_classes/trainer) 설명을 참고했다. SDK callback을 직접 설치한 것은 아니며 문서는 v5.10.0에 고정했다. 개발 평가와 최종 시험 분리는 [Google ML 데이터 분할 안내](https://developers.google.com/machine-learning/crash-course/overfitting/dividing-datasets)를 따른다. 성능 목표 달성 즉시 종료하는 v2 규칙과 수치 임계값은 이 프로젝트의 운영 결정이며 이 문서들이 최적값을 보증하지 않는다.
+
+## 2026-11-01 A/B/C 변형 코스 연결
+
+기존 v2 정책과 `decide`·`score_role` API는 유지한다. 새 코스는 `bind`의 명시적인 `--chat-variant`로만 선택한다. 임의 단계 수·이름을 허용하지 않으며, COURSE의 variant·단계 순서와 **실제 train/validation 토큰 인덱스의 과제 목록**을 함께 검사한다. 같은 단계명이라도 생성 전용과 검토 전용의 과제 구성이 다르면 거절한다.
+
+| 선택값 | 허용한 단계 순서 | 단계별 자원 상한 |
+|---|---|---|
+| `A_generator` | `01_dialogue_warmup → 02_supporter_dialogue → 03_state_memory` | 3 / 3 / 2 |
+| `B_reviewer` | `01_dialogue_warmup → 02_supporter_dialogue → 04_result_review` | 3 / 3 / 2 |
+| `C_combined` | `01_dialogue_warmup → 02_supporter_dialogue → 03_state_memory → 04_result_review` | 3 / 3 / 2 / 2 |
+
+`04_result_review`의 2epoch는 이번 연결에 둔 **초기 보수적 자원 보호 설정**이며 실측 최적값이나 목표 학습 횟수가 아니다. 기존 상한을 낮춘 defaults는 보존하되 새 variant의 명시된 상한보다 크게 만들 수 없다. B/C 마지막 단계도 현재 체크포인트의 validation 개선과 역할 평가를 모두 요구한다. 중간 단계만 통과한 것을 모델 학습 완료로 표시하지 않는다. 이전 2단계 `B_question_reviewer`와 결과 검토가 없는 구형 C는 이 새 선택값으로 재표시하지 않는다.
+
+A의 대화 단계는 `conversation/supporter_chat/question_plan`, 상태 단계는 `state_observations/relationship_memory/turn_draft`다. B의 대화 단계는 `question_review`만, 결과 검토는 `answer_review/memory_review`다. C는 A의 대화에 `question_review`를 추가하고 마지막 결과 검토 단계를 둔다. 원상담 기초는 모두 `original_counselor_continuation`이다. 역할 평가의 `supporter_chat` 계약으로 주변인 다음 응답을 다루므로 `conversation`을 별도 독립 평가 과제로 중복 집계하지 않는다.
+
+예시는 저장소 루트에서 실행한다. 출력 폴더는 아직 존재하지 않는 `training_data` 직속 폴더여야 하며 원본 묶음·기존 정책을 덮어쓰지 않는다.
+
+```sh
+python3 -B ai/scripts/training_stop.py bind \
+  --chat-root training_data/gemma4_12b_review_versions_20261101_v2/gemma4_12b_B_reviewer_20261101_v2 \
+  --cards-root training_data/gemma4_31b_expanded_20261025 \
+  --chat-variant B_reviewer \
+  --evaluation-root training_data/role_evaluation_20261031 \
+  --app-root app \
+  --output training_data/training_completion_B_NEW
+```
+
+새 variant 정책은 `variant_completion_contract="task_coverage_and_current_app_contract_v1"`을 정책 해시에 포함한다. 이 계약 표식이 없는 이전 준비 정책은 새 variant 완료 증거로 재사용하지 않는다. Python 호출은 `bind(defaults, roots, output, *, chat_variant=None, evaluation_root=None, app_root=None)`다. `app_root`는 `src/`가 있는 저장소의 `app/` 디렉터리다. 기존 세 인자 호출은 기존 비variant 코스에서 그대로 동작한다. dataset에 variant가 있는데 명시 선택이 없거나 다른 variant를 선택하면 출력 생성 전에 거절한다.
+
+### 평가 과제 누락은 완료가 아닌 평가 대기
+
+`--evaluation-root`는 기존 평가 묶음의 SUITE·INPUTS·RUBRIC을 manifest에 대조하고, 실제 INPUTS 각 행의 canonical 해시를 SUITE의 `input_sha256`에 연결한다. task 이름만 따로 전달해 평가 범위를 주장할 수 없다. 연결된 원출처를 하나의 가족으로 합친 뒤 각 필수 역할 과제에 정책의 최소 출처 가족 수가 있는지 계산한다. 새 출력·정답·판정 라벨을 작성하지 않는다.
+
+기존 10월 31일 평가에는 `supporter_chat/question_plan/question_review/state_observations/relationship_memory/turn_draft`가 있다. A의 생성 과제 범위는 연결할 수 있지만, **B/C의 `answer_review/memory_review` 요청과 그 의미 판정 계약은 없다**. 입력에 새 task 이름을 추가하는 것만으로 기존 평가자의 의미 판단 지원 범위를 넓히지 않는다. 두 신규 과제는 명시적인 평가 입력·rubric·출력 검증·독립 판정 경로가 별도로 구현·검증되기 전까지 `unsupported_semantic_tasks`에 남는다.
+
+새 variant 정책의 `role_task_coverage`가 부족하면 `score_role`은 `role_acceptance_pending`을 반환한다. 마지막 epoch의 `decide`는 `stop_pending_evaluation`, reason `role_evaluation_task_coverage_missing`을 반환하며 phase/model 완료는 false다. 역할 손실이 좋아졌거나 기존 평가에서 모든 판정이 true여도 이 경계를 넘지 않는다. 평가 root를 생략한 variant도 같은 방식으로 대기한다. 기존 비variant 정책과 카드 평가 결과 형식·성능 기준은 유지한다.
+
+A의 과제 coverage가 충족돼도 실제 학습 전 baseline, 후보 출력, 출처 분리 및 독립 평가 판정이 생긴 것은 아니다. 첫 epoch 전 새 정책 해시·suite 해시·baseline 판정 해시를 다시 결합해야 한다. 기존 진행 중 실행에 새 정책을 소급 삽입하거나 기존 판정의 정책 해시만 고쳐 재사용하지 않는다.
+
+### 현재 앱 계약과의 차이는 별도 학습 준비 상태
+
+`--app-root`를 지정하면 `check_training_app_contract.py`를 읽기 전용으로 실행해 `APP_CONTRACT_CHECK.json`을 새 정책 폴더에 보존한다. policy에는 보고서의 canonical SHA-256, 앱 경로와 결과 상태를 결합한다. 메모리 검토 자료는 현재 앱 callback에 재생하지만 모델 호출·정답 수정·이전 의미 승인 갱신은 하지 않는다. 검사기와 Node helper도 정책의 `scripts/`에 복사하며 실행 때 해당 앱 소스가 필요하다.
+
+`STATUS.json`과 bind 반환값의 `training_readiness`는 **학습 시작 준비 상태**다. 앱 drift·비호환·검사 누락·실패는 pending이며, 실제 baseline·역할·의미 평가 준비도 별도로 필요하므로 단순 구조 검사가 통과해도 `training_ready=true`로 만들지 않는다. 이 준비 보고서를 학습 완료 결과로 해석하지 않는다. **새 variant의 최종 판정은 앱 계약도 추가 gate로 사용한다.** `review_required/check_failed/not_checked`는 역할 평가가 모두 true여도 `role_acceptance_pending → stop_pending_evaluation`, reason `app_contract_review_required`다. 과제 coverage가 부족하면 그 사유를 먼저 반환한다. 기존 비variant·31B 정책의 판정에는 이 새 gate를 적용하지 않는다. 앱 root를 생략하면 `not_checked`를 기록한다. 검사 중 실패 메시지에 원문이 섞이지 않도록 고정된 오류 코드만 저장한다.
+
+이 보고서는 bind 시점의 증거다. match 상태의 새 variant를 최종 채점할 때도 검사기를 다시 실행해 원래 보고서의 canonical 해시·상태와 일치하는지 확인한다. 따라서 앱이 바뀐 뒤 과거 match 보고서만 재사용하면 `changed_since_binding` 평가 대기다. 스냅샷 hash 일치만 확인한 과제는 callback·의미 품질 전체가 검증됐다고 표시하지 않는다. 이후 앱이나 데이터가 바뀌면 새 검사·새 정책 결속이 필요하며, drift를 해소하려고 기존 데이터·승인 메타데이터의 해시만 덮어쓰지 않는다. 새 판정 정책 생성은 GPU 접속·학습·배포를 실행하지 않으며, 과거 권한을 새 실행 권한으로 갱신하지 않는다.

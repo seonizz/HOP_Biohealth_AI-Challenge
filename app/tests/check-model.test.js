@@ -22,6 +22,34 @@ test('configuration check uses real writer/reviewer settings without network or 
   assert.doesNotMatch(JSON.stringify(report),/PRIVATE_|localhost|127\.0\.0\.1/);
 });
 
+test('configuration-only diagnostics distinguish requested flags from active block optimizations',async()=>{
+  for(const stateMode of ['combined','combined_blocks','staged']){
+    const report=await checkModelConnections({env:{...env,MODEL_STATE_MODE:stateMode,
+      MODEL_REUSE_FINAL_DRAFT:'true',MODEL_STAGE_SCOPED_QUESTION_RULES:'true',MODEL_BLOCK_SCOPED_INPUTS:'true',
+      MODEL_COMPACT_REVIEW_INPUTS:'true',MODEL_SCOPED_QUALITY_REFINEMENT:'true',MODEL_REUSE_TOKEN_POLICY:'true',
+      MODEL_DISCOVER_TOKEN_LIMITS:'true',MODEL_REVIEW_DISCOVER_TOKEN_LIMITS:'true'},fetchImpl:()=>assert.fail('No network')});
+    assert.equal(report.ok,true);
+    const [writer,reviewer]=report.checks;
+    assert.equal(writer.stateMode,stateMode);assert.equal(writer.serverGpuOnly,false);
+    assert.equal(writer.optimizations.reuseFinalDraft,true);assert.equal(writer.optimizations.skipFinalExtras,false);
+    assert.equal(writer.optimizations.stageScopedQuestionRules,stateMode==='combined_blocks');
+    assert.equal(writer.optimizations.blockScopedInputs,stateMode==='combined_blocks');
+    assert.equal(writer.optimizations.compactReviewInputs,true);assert.equal(writer.optimizations.scopedQualityRefinement,true);
+    assert.equal(writer.optimizations.tokenPolicyReuseRequested,true);assert.equal(reviewer.optimizations.tokenPolicyReuseRequested,true);
+    assert.equal(reviewer.optimizations.reuseFinalDraft,false);assert.equal(reviewer.optimizations.compactReviewInputs,false);
+    assert.deepEqual(writer.inactiveOptions,stateMode==='combined_blocks'?[]:['MODEL_STAGE_SCOPED_QUESTION_RULES','MODEL_BLOCK_SCOPED_INPUTS']);
+    assert.doesNotMatch(JSON.stringify(report),/PRIVATE_|localhost|127\.0\.0\.1/);
+  }
+});
+
+test('quality refinement is reported inactive when legacy extras skipping removes that stage',async()=>{
+  const report=await checkModelConnections({env:{...env,MODEL_SKIP_FINAL_EXTRAS:'true',MODEL_SCOPED_QUALITY_REFINEMENT:'true'},
+    fetchImpl:()=>assert.fail('No network')});
+  assert.equal(report.ok,true);
+  assert.equal(report.checks[0].optimizations.scopedQualityRefinement,false);
+  assert.deepEqual(report.checks[0].inactiveOptions,['MODEL_SCOPED_QUALITY_REFINEMENT']);
+});
+
 test('synthetic check verifies both independent endpoints with their own wire formats and validators',async()=>{
   const calls=[];
   const report=await checkModelConnections({env,generate:true,fetchImpl:async(url,options)=>{
@@ -133,4 +161,17 @@ test('a legacy writer and its independent reviewer retain their own actual proto
     {role:'writer',protocol:'json_prompt',format:'prompt'},
     {role:'reviewer',protocol:'relationship_agent',format:'json_object'},
   ]);
+});
+
+// Bundled turn reviews perform a fresh safety review inside the envelope.
+test('review bundles expose active calls and do not advertise unused safety reuse',async()=>{
+  const report=await checkModelConnections({env:{...env,MODEL_STATE_MODE:'combined_blocks',
+    MODEL_BUNDLE_FINAL_REVIEWS:'true',MODEL_BUNDLE_TURN_REVIEWS:'true',MODEL_REUSE_REVIEWED_NAME:'true',MODEL_REUSE_REVIEWED_SAFETY:'true'},
+    fetchImpl:()=>assert.fail('No network')});
+  assert.equal(report.ok,true);
+  const [writer,reviewer]=report.checks;
+  assert.equal(writer.optimizations.bundleFinalReviews,true);assert.equal(writer.optimizations.bundleTurnReviews,true);
+  assert.equal(writer.optimizations.reuseReviewedName,true);assert.equal(writer.optimizations.reuseReviewedSafety,false);
+  assert.deepEqual(writer.inactiveOptions,['MODEL_REUSE_REVIEWED_SAFETY']);
+  assert.equal(reviewer.optimizations.bundleFinalReviews,false);assert.equal(reviewer.optimizations.bundleTurnReviews,false);
 });

@@ -222,7 +222,7 @@ test('a third-attempt grammar whitespace stall can use four model-generated bloc
   const output=await model.operation({},operation=>runCombinedRelationshipState(model,ctx,null,operation));
   assert.equal(output.state_agent.reviewed,true);assert.equal(combined,3);
   assert.deepEqual(requests.map(({input})=>input.stage),['turn_draft','turn_draft','turn_draft',
-    'turn_draft_block_patient_state','turn_draft_block_name_index','turn_draft_block_relationship_memory','turn_draft_block_questions','turn_review','safety_review']);
+    'turn_draft_block_patient_state','turn_draft_block_questions','turn_draft_block_name_index','turn_draft_block_relationship_memory','turn_review','safety_review']);
   assert.deepEqual(requests.slice(0,3).map(({request})=>request.response_format.type),['json_object','json_object','json_schema']);
   assert.equal(output.patient_state.facts.find(fact=>fact.question_id==='mood').quote,reference.quote);
   assert.deepEqual(output.relationship_memory.patient[0].evidence,[reference]);secretFree(logs);

@@ -2,7 +2,10 @@
 from copy import deepcopy
 from pathlib import Path
 import tempfile
+import subprocess
+import sys
 import unittest
+from unittest.mock import patch
 
 import training_stop as stop
 
@@ -561,6 +564,303 @@ class DatasetBindingTests(unittest.TestCase):
         (self.root / "train.bin").write_bytes(b"bad!")
         with self.assertRaisesRegex(ValueError, "Dataset file changed"):
             stop.bound_indexes(self.policy, "cards_31b", "00_original_warmup")
+
+
+class VariantPolicyTests(StopFixture, unittest.TestCase):
+    """Metadata-only curricula and evaluation inputs; no model or source text."""
+    def make_dataset(self, role, variant=None):
+        root = self.root / (variant or role)
+        root.mkdir()
+        (root / "tokenizer").mkdir()
+        (root / "tokenizer/tokenizer.json").write_text("synthetic-tokenizer")
+        specs = (stop.VARIANT_PHASES[variant] if variant else
+                 [(p["id"], p["safety_max_epochs"], ("synthetic",))
+                  for p in self.policy["models"][role]["phases"]])
+        course = {"schema": "malssi-chat-variants-v1" if variant else "synthetic-course",
+                  "role": role, "model": {"family": "Gemma 4", "parameter_size": "12B" if role == "chat_12b" else "31B",
+                      "tokenizer_sha256": {"tokenizer.json": stop.file_hash(root / "tokenizer/tokenizer.json")}},
+                  "loss": {"reduction": "mean_target_token_CE_per_row", "weighting": "equal_task_then_connected_source_family"},
+                  "phases": [], **{key: False for key in ("truncation", "packing", "split_reassignment",
+                                    "validation_used_for_gradient", "cross_model_adapter_reuse")}}
+        if variant:
+            course["variant"] = variant
+        for phase, _, tasks in specs:
+            data = {}
+            for split in ("train", "validation"):
+                stem = phase + "-" + split
+                rows = [{"row_id": stem + "-" + task, "task": task, "split": split,
+                         "target_length": 2, "weight": {"numerator": 1, "denominator": 1},
+                         "source_group_ids": [stem], "source_root_ids": [stem]} for task in tasks]
+                (root / (stem + ".jsonl")).write_text("".join(stop.canonical(r) + "\n" for r in rows))
+                (root / (stem + ".bin")).write_bytes(b"synthetic")
+                data[split] = {"rows": len(rows), "tasks": {task: 1 for task in tasks},
+                               "path": stem + ".jsonl", "token_index": stem + ".jsonl", "token_binary": stem + ".bin"}
+            course["phases"].append({"id": phase, "data": data})
+        stop.save(root / "COURSE.json", course)
+        self.reseal(root)
+        return root
+
+    def reseal(self, root):
+        stop.save(root / "MANIFEST.json", {"schema": "malssi-prepared-role-evaluation-v1", "files": {
+            str(p.relative_to(root)): {"bytes": p.stat().st_size, "sha256": stop.file_hash(p)}
+            for p in root.rglob("*") if p.is_file() and p.name != "MANIFEST.json"}})
+
+    def make_evaluation(self, tasks=None, shared_origin=False):
+        root = self.root / "evaluation"
+        tasks = sorted(tasks or stop.SUPPORTED_ROLE_TASKS)
+        gates = self.policy["models"]["chat_12b"]["role_acceptance"]
+        for split in ("development", "test"):
+            folder = root / "chat_12b" / split
+            folder.mkdir(parents=True)
+            inputs = [{"case_id": f"q{i}", "requests": [{"request_id": f"q{i}-{task}", "task": task,
+                       "messages": [{"role": "user", "content": "synthetic"}]} for task in tasks]} for i in range(30)]
+            suite = {"schema": "malssi-role-evaluation-suite-v1", "model_role": "chat_12b", "split": split,
+                     "cases": [{"case_id": row["case_id"], "source_family_id": row["case_id"],
+                                "source_lineage_ids": ["shared" if shared_origin else "origin-" + row["case_id"]],
+                                "input_sha256": stop.fingerprint(row)} for row in inputs]}
+            stop.save(folder / "SUITE.json", suite)
+            stop.save(folder / "RUBRIC.json", {"model_role": "chat_12b",
+                "critical_all_pass": gates["critical_all_pass"], "quality_checks": gates["quality_checks"],
+                "family_aggregation": "all_applicable_requests_must_pass_each_check", "judgment_requires_actual_outputs": True})
+            (folder / "INPUTS.jsonl").write_text("".join(stop.canonical(row) + "\n" for row in inputs))
+        self.reseal(root)
+        return root
+
+    def bind_variant(self, variant, evaluation=None, output_name="new-policy", app_root=None):
+        chat = self.make_dataset("chat_12b", variant)
+        cards = self.make_dataset("cards_31b")
+        output = self.root / "training_data" / output_name
+        output.parent.mkdir()
+        result = stop.bind(Path(__file__).with_name("training_stop_defaults.json"),
+                           {"chat_12b": chat, "cards_31b": cards}, output,
+                           chat_variant=variant, evaluation_root=evaluation, app_root=app_root)
+        return stop.read_json(output / "POLICY.json"), output, result
+
+    def test_each_supported_variant_binds_exact_phases_tasks_and_indexes(self):
+        for variant in stop.VARIANT_PHASES:
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as temp:
+                original = self.root
+                self.root = Path(temp).resolve()
+                policy, _, result = self.bind_variant(variant)
+                model = policy["models"]["chat_12b"]
+                self.assertEqual([p["id"] for p in model["phases"]], [s[0] for s in stop.VARIANT_PHASES[variant]])
+                self.assertEqual(result["variant_role_evaluation"]["status"], "role_acceptance_pending")
+                for phase in model["phases"]:
+                    _, indexes = stop.bound_indexes(policy, "chat_12b", phase["id"])
+                    self.assertEqual({r["task"] for r in indexes["train"].values()}, set(phase["tasks"]))
+                self.root = original
+
+    def test_course_variant_requires_explicit_matching_selection(self):
+        chat = self.make_dataset("chat_12b", "A_generator")
+        cards = self.make_dataset("cards_31b")
+        output = self.root / "training_data/new"
+        output.parent.mkdir()
+        for variant in (None, "B_reviewer"):
+            with self.subTest(variant=variant), self.assertRaisesRegex(ValueError, "explicit selection"):
+                stop.bind(Path(__file__).with_name("training_stop_defaults.json"),
+                          {"chat_12b": chat, "cards_31b": cards}, output, chat_variant=variant)
+            self.assertFalse(output.exists())
+
+    def test_unknown_legacy_two_phase_reviewer_is_not_silently_supported(self):
+        with self.assertRaisesRegex(ValueError, "Unsupported curriculum variant"):
+            stop.bind(Path(__file__).with_name("training_stop_defaults.json"),
+                      {"chat_12b": self.root, "cards_31b": self.root}, self.root / "new", chat_variant="B_question_reviewer")
+
+    def test_variant_phase_order_task_and_cap_changes_are_rejected(self):
+        policy, _, _ = self.bind_variant("C_combined")
+        for change in ("order", "task", "cap", "boolean_cap", "missing_variant", "missing_completion_contract"):
+            changed = deepcopy(policy); model = changed["models"]["chat_12b"]
+            if change == "order": model["phases"].reverse()
+            if change == "task": model["phases"][-1]["tasks"] = ["question_review"]
+            if change == "cap": model["phases"][-1]["safety_max_epochs"] = 3
+            if change == "boolean_cap": model["phases"][-1]["safety_max_epochs"] = True
+            if change == "missing_variant": del model["curriculum_variant"]
+            if change == "missing_completion_contract": del model["variant_completion_contract"]
+            with self.subTest(change=change), self.assertRaises(ValueError): stop.validate_policy(changed)
+
+    def test_variant_requires_actual_index_tasks_not_only_declared_course(self):
+        chat = self.make_dataset("chat_12b", "B_reviewer"); cards = self.make_dataset("cards_31b")
+        path = chat / "04_result_review-train.jsonl"
+        rows = list(stop.read_rows(path)); rows[0]["task"] = "question_review"
+        path.write_text("".join(stop.canonical(row) + "\n" for row in rows)); self.reseal(chat)
+        output = self.root / "training_data/new"; output.parent.mkdir()
+        with self.assertRaisesRegex(ValueError, "index task inventory"):
+            stop.bind(Path(__file__).with_name("training_stop_defaults.json"),
+                      {"chat_12b": chat, "cards_31b": cards}, output, chat_variant="B_reviewer")
+        self.assertFalse(output.exists())
+
+    def test_existing_role_suite_covers_generator_but_not_new_reviews(self):
+        for variant in stop.VARIANT_PHASES:
+            with self.subTest(variant=variant), tempfile.TemporaryDirectory() as temp:
+                original = self.root; self.root = Path(temp).resolve()
+                evaluation = self.make_evaluation()
+                policy, _, result = self.bind_variant(variant, evaluation)
+                if variant == "A_generator":
+                    self.assertIsNone(result["variant_role_evaluation"])
+                else:
+                    gap = result["variant_role_evaluation"]
+                    self.assertEqual(gap["missing_tasks"], ["answer_review", "memory_review"])
+                    self.assertEqual(gap["unsupported_semantic_tasks"], gap["missing_tasks"])
+                self.root = original
+
+    def test_new_task_names_do_not_create_a_semantic_evaluation_contract(self):
+        evaluation = self.make_evaluation(tasks=stop.SUPPORTED_ROLE_TASKS | {"answer_review", "memory_review"})
+        policy, _, result = self.bind_variant("B_reviewer", evaluation)
+        gap = result["variant_role_evaluation"]
+        self.assertEqual(gap["missing_tasks"], [])
+        self.assertEqual(gap["unsupported_semantic_tasks"], ["answer_review", "memory_review"])
+        self.assertEqual(gap["status"], "role_acceptance_pending")
+
+    def test_connected_sources_do_not_inflate_task_coverage(self):
+        evaluation = self.make_evaluation(shared_origin=True)
+        policy, _, result = self.bind_variant("A_generator", evaluation)
+        coverage = policy["models"]["chat_12b"]["role_task_coverage"]
+        self.assertEqual(set(coverage["source_families_by_task"].values()), {1})
+        self.assertEqual(result["variant_role_evaluation"]["missing_tasks"], coverage["required_tasks"])
+
+    def test_rehashed_inputs_must_still_match_the_frozen_suite(self):
+        evaluation = self.make_evaluation()
+        path = evaluation / "chat_12b/development/INPUTS.jsonl"
+        rows = list(stop.read_rows(path)); rows[0]["requests"].pop()
+        path.write_text("".join(stop.canonical(row) + "\n" for row in rows)); self.reseal(evaluation)
+        with self.assertRaisesRegex(ValueError, "not bound to suite"):
+            self.bind_variant("A_generator", evaluation)
+
+    def test_forged_coverage_without_suite_binding_is_rejected(self):
+        policy, _, _ = self.bind_variant("A_generator")
+        coverage = policy["models"]["chat_12b"]["role_task_coverage"]
+        coverage["covered_tasks"] = coverage["required_tasks"]
+        with self.assertRaisesRegex(ValueError, "Unbound variant evaluation"):
+            stop.validate_policy(policy)
+
+    def test_review_variant_final_epoch_is_pending_even_with_passing_old_judgments(self):
+        self.policy, _, _ = self.bind_variant("C_combined")
+        self.configure_role("chat_12b")
+        previous = None
+        for position in range(len(self.phases) - 1):
+            history = self.history([1.0, 0.8], position, previous)
+            previous = stop.decide(self.policy, self.role, self.phases[position], history,
+                                   self.indexes, self.root, previous)
+            self.assertEqual(previous["status"], "stop_phase_accepted")
+        history = self.history([1.0, 0.8], len(self.phases) - 1, previous)
+        result = stop.decide(self.policy, self.role, self.phases[-1], history, self.indexes, self.root,
+                             previous, self.suite, {"training-family"})
+        self.assertEqual(result["status"], "stop_pending_evaluation")
+        self.assertEqual(result["reason"], "role_evaluation_task_coverage_missing")
+        self.assertFalse(result["phase_complete"])
+        self.assertFalse(result["model_training_criteria_satisfied_from_supplied_evidence"])
+        score = stop.score_role(self.policy, self.role, self.suite, self.role_evidence,
+                                checkpoint(9), checkpoint(0), stop.fingerprint(self.suite),
+                                stop.baseline_judgments_hash(self.role_evidence), {"training-family"})
+        self.assertEqual(score["status"], "role_acceptance_pending")
+
+    def test_generator_score_uses_bound_suite_and_current_app_contract(self):
+        evaluation = self.make_evaluation()
+        app = self.root / "app"; (app / "src").mkdir(parents=True)
+        report = {"status": "snapshot_match_unvalidated_tasks", "training_ready": False, "model_calls": 0,
+                  "semantic_quality_evaluated": False, "bundle_modified": False}
+        with patch("check_training_app_contract.check", return_value=report):
+            policy, _, _ = self.bind_variant("A_generator", evaluation, app_root=app)
+        suite = stop.read_json(evaluation / "chat_12b/development/SUITE.json")
+        gates = policy["models"]["chat_12b"]["role_acceptance"]
+        checks = {key: True for key in gates["critical_all_pass"] + gates["quality_checks"]}
+        evidence = {"policy_sha256": stop.fingerprint(policy), "suite_sha256": stop.fingerprint(suite),
+                    "candidate_checkpoint_sha256": checkpoint(9), "baseline_checkpoint_sha256": checkpoint(0),
+                    "cases": [{"case_id": row["case_id"], "input_sha256": row["input_sha256"],
+                               "candidate": deepcopy(checks), "baseline": deepcopy(checks)} for row in suite["cases"]]}
+        def score():
+            return stop.score_role(policy, "chat_12b", suite, evidence, checkpoint(9), checkpoint(0),
+                                   stop.fingerprint(suite), stop.baseline_judgments_hash(evidence), {"train"})
+        with patch("check_training_app_contract.check", return_value=report):
+            result = score()
+        self.assertEqual(result["status"], "role_acceptance_passed")
+        self.assertFalse(result["model_training_criteria_satisfied_from_supplied_evidence"])
+        with patch("check_training_app_contract.check", return_value={**report, "status": "review_required"}):
+            result = score()
+        self.assertEqual(result["status"], "role_acceptance_pending")
+        self.assertEqual(result["app_contract_status"], "changed_since_binding")
+        with patch("check_training_app_contract.check", side_effect=ValueError("private fixture")):
+            result = score()
+        self.assertEqual(result["app_contract_status"], "check_failed")
+        suite["cases"][0]["input_sha256"] = checkpoint(888)
+        evidence["suite_sha256"] = stop.fingerprint(suite)
+        with self.assertRaisesRegex(ValueError, "policy-bound"):
+            score()
+
+    def test_app_drift_blocks_final_acceptance_even_when_task_coverage_is_ready(self):
+        evaluation = self.make_evaluation()
+        self.policy, _, _ = self.bind_variant("A_generator", evaluation)
+        self.configure_role("chat_12b")
+        # Use the actual frozen synthetic suite instead of the default fixture suite.
+        self.suite = stop.read_json(evaluation / "chat_12b/development/SUITE.json")
+        previous = None
+        for position in range(2):
+            history = self.history([1.0, 0.8], position, previous)
+            previous = stop.decide(self.policy, self.role, self.phases[position], history,
+                                   self.indexes, self.root, previous)
+        history = self.history([1.0, 0.8], 2, previous)
+        result = stop.decide(self.policy, self.role, self.phases[-1], history, self.indexes, self.root,
+                             previous, self.suite, {"training-family"})
+        self.assertEqual(result["status"], "stop_pending_evaluation")
+        self.assertEqual(result["reason"], "app_contract_review_required")
+        self.assertFalse(result["model_training_criteria_satisfied_from_supplied_evidence"])
+
+    def test_cli_variant_and_evaluation_flags_create_a_fresh_pending_policy(self):
+        chat = self.make_dataset("chat_12b", "B_reviewer"); cards = self.make_dataset("cards_31b")
+        evaluation = self.make_evaluation()
+        output = self.root / "training_data/cli-policy"; output.parent.mkdir()
+        command = [sys.executable, "-B", str(Path(stop.__file__).resolve()), "bind",
+                   "--chat-root", str(chat), "--cards-root", str(cards), "--chat-variant", "B_reviewer",
+                   "--evaluation-root", str(evaluation), "--output", str(output)]
+        result = subprocess.run(command, capture_output=True, text=True, check=True)
+        value = stop.json.loads(result.stdout)
+        self.assertEqual(value["status"], "policy_ready")
+        self.assertEqual(value["variant_role_evaluation"]["missing_tasks"], ["answer_review", "memory_review"])
+        self.assertEqual(value["training_readiness"]["app_contract_status"], "not_checked")
+        self.assertTrue((output / "POLICY.json").is_file())
+
+    def test_app_drift_is_bound_as_training_readiness_not_a_completion_result(self):
+        app = self.root / "app"; (app / "src").mkdir(parents=True)
+        report = {"status": "review_required", "training_ready": False, "model_calls": 0,
+                  "semantic_quality_evaluated": False, "bundle_modified": False,
+                  "memory_review_current_callback": {"rows_checked": 800, "prompt_drift_rows": 800}}
+        with patch("check_training_app_contract.check", return_value=report) as check:
+            policy, output, result = self.bind_variant("B_reviewer", app_root=app)
+        check.assert_called_once_with(self.root / "B_reviewer", self.root)
+        self.assertEqual(stop.read_json(output / "APP_CONTRACT_CHECK.json"), report)
+        self.assertEqual(policy["models"]["chat_12b"]["app_contract_binding"]["canonical_report_sha256"], stop.fingerprint(report))
+        self.assertEqual(result["training_readiness"]["status"], "pending")
+        self.assertTrue(result["training_readiness"]["app_contract_review_required"])
+        for helper in ("check_training_app_contract.py", "check_training_memory_contract.mjs"):
+            self.assertEqual(stop.file_hash(output / "scripts" / helper), stop.file_hash(Path(__file__).with_name(helper)))
+
+    def test_app_check_failure_never_records_readiness_or_private_error(self):
+        app = self.root / "app"; (app / "src").mkdir(parents=True)
+        with patch("check_training_app_contract.check", side_effect=ValueError("private fixture source")):
+            _, output, result = self.bind_variant("A_generator", app_root=app)
+        self.assertEqual(result["training_readiness"]["app_contract_status"], "check_failed")
+        self.assertFalse(result["training_readiness"]["training_ready"])
+        self.assertNotIn("private fixture source", (output / "APP_CONTRACT_CHECK.json").read_text())
+
+    def test_matched_app_contract_still_requires_actual_baseline_and_semantics(self):
+        app = self.root / "app"; (app / "src").mkdir(parents=True)
+        report = {"status": "contract_match", "training_ready": False, "model_calls": 0,
+                  "semantic_quality_evaluated": False, "bundle_modified": False}
+        with patch("check_training_app_contract.check", return_value=report):
+            _, _, result = self.bind_variant("A_generator", self.make_evaluation(), app_root=app)
+        self.assertIsNone(result["variant_role_evaluation"])
+        self.assertFalse(result["training_readiness"]["app_contract_review_required"])
+        self.assertFalse(result["training_readiness"]["training_ready"])
+        self.assertTrue(result["training_readiness"]["actual_baseline_and_semantic_evaluation_required"])
+
+    def test_no_existing_policy_is_overwritten(self):
+        policy, output, _ = self.bind_variant("A_generator")
+        before = (output / "POLICY.json").read_bytes()
+        with self.assertRaisesRegex(ValueError, "new policy output"):
+            stop.bind(Path(__file__).with_name("training_stop_defaults.json"),
+                      {"chat_12b": self.root / "A_generator", "cards_31b": self.root / "cards_31b"},
+                      output, chat_variant="A_generator")
+        self.assertEqual((output / "POLICY.json").read_bytes(), before)
 
 
 if __name__ == "__main__":

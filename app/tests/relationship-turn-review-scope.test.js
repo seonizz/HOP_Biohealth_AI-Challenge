@@ -229,7 +229,7 @@ test('out-of-scope review output is rejected rather than stripped or treated as 
   const value=draft();value.questions.skip=[];
   const f=fixture(value,{review:output=>({...output,questions:{audits:[]}})});
   await assert.rejects(f.model.updateState(context()),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema'});
-  assert.deepEqual(f.calls.map(call=>call.stage),['turn_draft','turn_review','turn_review','turn_review']);
+  assert.deepEqual(f.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review','turn_review','turn_review']);
   assert.equal(f.calls.some(call=>call.stage==='question_review'),false);
 });
 
@@ -348,7 +348,7 @@ test('tentative plausible claims and uncertain unknowns receive distinct review 
     output.state.audits.forEach(audit=>{audit.verdict=call.data.review_target.claims.find(claim=>claim.id===audit.id).kind==='unresolved_information'?'review_uncertain':'plausible';});return output;
   }});
   await assert.rejects(rejected.model.updateState(context()),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_unknown_audit'});
-  assert.deepEqual(rejected.calls.map(call=>call.stage),['turn_draft','turn_review','turn_review','turn_review']);
+  assert.deepEqual(rejected.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review','turn_review','turn_review']);
 });
 
 test('a reported claim keeps its selected excerpt scope while review still receives the other answers and correction rules',async()=>{

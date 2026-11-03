@@ -202,5 +202,5 @@ test('capacity repair cannot bypass a missing independent audit for the preserve
   const f=fixture();f.value.state.relationship_memory.patient[0]={certainty:'reported',evidence:[f.ref(f.ids[0])]};
   const model=gateway(f,data=>{const output=approve(data);output.state.audits.shift();return output;});
   await assert.rejects(runCombinedRelationshipState(model,f.ctx,null,{}),{code:'MODEL_INVALID_RESPONSE'});
-  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review']);
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });

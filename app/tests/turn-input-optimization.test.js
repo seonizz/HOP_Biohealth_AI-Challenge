@@ -96,7 +96,7 @@ test('fixed null name is independent of scope opt-in and conditional question re
   const original=scopeProbe(ModelGateway,{ctx,value}),optimized=configured({ctx,value});
   assert.deepEqual(await optimized.run(),await original.run());
   assert.equal(original.requests.length,5);
-  assert.deepEqual(stages(original),['turn_draft_block_patient_state','turn_draft_block_relationship_memory','turn_draft_block_questions','turn_review','safety_review']);
+  assert.deepEqual(stages(original),['turn_draft_block_patient_state','turn_draft_block_questions','turn_draft_block_relationship_memory','turn_review','safety_review']);
 });
 
 test('combined structural fallback also resolves only schema-fixed null without applying block scoping',async()=>{
@@ -175,6 +175,9 @@ function directGateway(ctx,{enabled=true,fail=false}={}){
     async agentComplete(stage,prompt,data,schema,operation,validate){
       this.calls.push({stage,prompt,data,schema});
       if(fail&&data.output_block==='questions'){
+        // Let the immediate state chain finish so this fixture exercises full
+        // prefix reuse independently of parallel failure timing.
+        await new Promise(setImmediate);
         const error=new HttpError(502,'MODEL_INVALID_RESPONSE','synthetic');error.modelReason='agent_schema';
         error.modelFeedback=JSON.stringify({path:'output',keyword:'objectKeys'});throw error;
       }
@@ -192,7 +195,7 @@ test('structural prefix recovery revalidates a constant name and cannot reuse sc
   assert.deepEqual(operation.recovery,{});
   await assert.rejects(runCombinedRelationshipState(directGateway(ctx,{fail:true}),ctx,null,operation),{code:'MODEL_INVALID_RESPONSE'});
   const changed=directGateway(ctx,{enabled:false});await runCombinedRelationshipState(changed,ctx,null,operation);
-  assert.deepEqual(stages(changed),['turn_draft_block_patient_state','turn_draft_block_relationship_memory','turn_draft_block_questions','turn_review','question_review','safety_review']);
+  assert.deepEqual(stages(changed),['turn_draft_block_patient_state','turn_draft_block_questions','turn_draft_block_relationship_memory','turn_review','question_review','safety_review']);
 });
 
 test('a later answered name invalidates retained input and must be extracted by the model',async()=>{
@@ -202,7 +205,7 @@ test('a later answered name invalidates retained input and must be extracted by 
   const answered=scopeContext(),next=directGateway(answered);
   const result=await runCombinedRelationshipState(next,answered,null,operation);
   assert.equal(result.name_index.alias,'지민');
-  assert.deepEqual(stages(next),['turn_draft_block_patient_state','turn_draft_block_name_index','turn_draft_block_relationship_memory','turn_draft_block_questions','turn_review','question_review','safety_review']);
+  assert.deepEqual(stages(next),['turn_draft_block_patient_state','turn_draft_block_questions','turn_draft_block_name_index','turn_draft_block_relationship_memory','turn_review','question_review','safety_review']);
   assert.deepEqual(operation.recovery,{});
 });
 

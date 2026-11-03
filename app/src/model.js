@@ -1,7 +1,7 @@
 import {finalEvidenceTransport} from './final-evidence-transport.js';
 import { HttpError } from './errors.js';
 import { modelHttpFetch } from './model-http.js';
-import { JSON_STREAM_COMPLETE, ModelStreamError, streamJsonResponse, schemaArrayLimit, schemaPropertyArrayLimits, schemaStringLimit } from './model-stream.js';
+import { JSON_STREAM_COMPLETE, ModelStreamError, streamJsonResponse, schemaArrayLimit, schemaPropertyArrayLimits, schemaArrayPaths, schemaStringLimit } from './model-stream.js';
 import { discoverModelTokenPolicy } from './model-token-policy.js';
 import { randomUUID } from 'node:crypto';
 import {createOperationMetrics, operationMetrics, beginHttpAttempt, modelStageRole} from './model-operation-metrics.js';
@@ -419,7 +419,7 @@ function questionIdDiagnostic(stage,schema,feedback,candidate) {
 
 // This transport changes representation only. Each citation remains scoped to
 // its original schema node; decoding is followed by the original validators.
-export function relationshipEvidenceTransport(stage,schema) {
+export function relationshipEvidenceTransport(stage,schema,idsByReference=new Map()) {
   if(!/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage))return null;
   const supported=new Set(['type','properties','required','additionalProperties','items','anyOf','enum','const','maxItems','minItems','minLength','maxLength','description']);
   const known=node=>node&&typeof node==='object'&&!Array.isArray(node)&&Object.keys(node).every(key=>supported.has(key))&&
@@ -443,11 +443,15 @@ export function relationshipEvidenceTransport(stage,schema) {
         if(evidence.items.anyOf)return null;
         if(!Array.isArray(pool)||!pool.length||pool.some(ref=>!ref||typeof ref!=='object'||Array.isArray(ref)||
           Object.keys(ref).length!==3||!['subject','question_id','quote'].every(key=>typeof ref[key]==='string')))return null;
-        for(const [ordinal,ref] of pool.entries()) {
+        for(const ref of pool) {
           // Check all original restrictions before replacing the node.
           // Never discard a candidate silently.
           try { validateSchema(ref,evidence.items); } catch { return null; }
-          const id=`source_${group}_${index}_${ordinal}`;
+          // Identity belongs to the exact source, not its certainty branch.
+          // Every node still lists only the sources its original schema allowed.
+          const key=JSON.stringify([ref.subject,ref.question_id,ref.quote]);
+          let id=idsByReference.get(key);
+          if(id===undefined){id=`source_${idsByReference.size}`;idsByReference.set(key,id);}
           refs.set(id,structuredClone(ref));
         }
         evidence.items={type:'string',enum:[...refs.keys()]};
@@ -478,7 +482,46 @@ export function relationshipEvidenceTransport(stage,schema) {
     return decoded;
   }};
 }
-const EVIDENCE_WIRE_INSTRUCTION='\n이 관계 기억 블록에서 evidence_sources 대응표가 있는 위치의 evidence만 인용 객체 대신 output_schema의 해당 위치에 허용된 source ID 문자열 배열로 반환하세요. 대응표가 없는 위치는 output_schema의 기존 객체 형식을 그대로 유지하세요. evidence_sources는 각 스키마 위치의 전체 ID와 원래 근거 객체 대응표입니다. 다른 사람·certainty 분기의 ID를 가져오거나 ID·원문을 만들거나 수정하지 마세요. 원문과 전체 문맥으로 주장을 검토한 뒤 해당 위치의 근거 ID를 선택하세요. ID는 서버에서 원래 객체로 복원한 후 기존 원문 검증과 독립 검토를 거칩니다.';
+const EVIDENCE_WIRE_INSTRUCTION='\n이 관계 기억 블록에서 evidence_sources 대응표가 있는 위치의 evidence만 인용 객체 대신 output_schema의 해당 위치에 허용된 source ID 문자열 배열로 반환하세요. 대응표가 없는 위치는 output_schema의 기존 객체 형식을 그대로 유지하세요. evidence_sources는 각 스키마 위치의 전체 ID와 원래 근거 객체 대응표입니다. subject·question_id·quote가 모두 같은 원문은 certainty나 위치가 달라도 같은 ID입니다. 다만 각 위치의 허용 ID 목록은 별개이므로 목록을 합치거나 다른 위치에만 허용된 ID를 사용하지 마세요. ID·원문을 만들거나 수정하지 마세요. 원문과 전체 문맥으로 주장을 검토한 뒤 해당 위치의 근거 ID를 선택하세요. ID는 서버에서 원래 객체로 복원한 후 기존 원문 검증과 독립 검토를 거칩니다.';
+
+function relationshipArrayLimits(stage,schema) {
+  if(!/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage))return [];
+  const limits=[];
+  const add=(node,outputPath,schemaPath,certainty)=>{
+    if(node?.type!=='array'||node.anyOf||!Number.isSafeInteger(node.maxItems)||node.maxItems<0)return;
+    limits.push({output_path:outputPath,schema_path:schemaPath,max_items:node.maxItems,
+      ...(Number.isSafeInteger(node.minItems)&&node.minItems>=0?{min_items:node.minItems}:{}),
+      ...(certainty?{certainty}:{})});
+  };
+  for(const group of ['patient','supporter','relationship','unknowns']){
+    const rows=schema?.properties?.[group],path=`output_schema.properties.${group}`;
+    add(rows,`output.${group}`,path);
+    const branches=Array.isArray(rows?.items?.anyOf)?rows.items.anyOf:[rows?.items];
+    for(const [index,branch] of branches.entries()){
+      const certainty=branch?.properties?.certainty;
+      const choices=certainty?.const?[certainty.const]:certainty?.enum;
+      add(branch?.properties?.evidence,`output.${group}[*].evidence`,
+        path+'.items'+(Array.isArray(rows?.items?.anyOf)?`.anyOf[${index}]`:'')+'.properties.evidence',
+        Array.isArray(choices)&&choices.length===1?choices[0]:undefined);
+    }
+  }
+  return limits;
+}
+const RELATIONSHIP_ARRAY_INSTRUCTION='\n관계 기억의 array_limits는 현재 출력 스키마의 배열별 한도입니다. patient·supporter·relationship의 상한은 reported와 tentative를 합친 항목 수이며, evidence의 상한은 각 항목 안의 근거 수입니다. 원문을 대조해 핵심 사실과 필요한 해석을 구분하고, 정정·부정·시점·현재 위험을 판단하는 근거를 보존하면서 한도 안의 전체 블록을 작성하세요. 같은 근거를 중복 나열하지 마세요. 입력 원문을 삭제하거나 미확인 내용을 채우라는 지시가 아닙니다. 서버는 초과분을 잘라내거나 승인하지 않으며 전체 검증과 독립 검토를 유지합니다.';
+
+function relationshipArrayRepair(limits,feedback) {
+  if(!limits.length||typeof feedback!=='string'||feedback.length>16384)return null;
+  let issue;
+  try { issue=JSON.parse(feedback.trim().split('\n').at(-1)); } catch { return null; }
+  if(!['maxItems','streamArrayLimit'].includes(issue?.keyword)||typeof issue.path!=='string'||
+    !Number.isSafeInteger(issue.actual?.count)||!Number.isSafeInteger(issue.expected?.max_count)||
+    issue.expected.max_count<0||issue.actual.count<=issue.expected.max_count)return null;
+  const path=issue.path.replace(/\[\d+\]/g,'[*]');
+  const matching=limits.filter(limit=>issue.path==='output'||limit.output_path===path);
+  if(!matching.some(limit=>limit.max_items===issue.expected.max_count))return null;
+  return {output_path:issue.path,observed_count:issue.actual.count,allowed_limits:matching,
+    instruction:'직전 출력이 이 배열의 개수 한도를 넘었습니다. 원문과 output_schema를 다시 대조해 중복 없이 한도 안의 전체 관계 기억 블록을 새로 작성하세요. 다른 배열의 여유 개수를 이 배열에 더할 수 없습니다. 정정·부정·시점·현재 위험 근거를 보존하고, 무관한 사실이나 미확인 답변을 만들지 마세요. 서버가 초과 항목을 대신 선택·삭제하거나 승인하지 않으며 기존 검증과 독립 검토를 다시 거칩니다.'};
+}
 
 function wireEvidenceSelectionRepair(stage,transport,feedback,candidate) {
   if(!/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)||!transport||
@@ -509,7 +552,8 @@ function wireEvidenceSelectionRepair(stage,transport,feedback,candidate) {
 
 export class ModelGateway {
   constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, agentFormat = 'json_schema', reasoningEffort = 'none', stateMode = 'combined', skipFinalExtras = false, reuseFinalDraft = false, fetchImpl = modelHttpFetch,
-    stageScopedQuestionRules = false, blockScopedInputs = false,
+    stageScopedQuestionRules = false, blockScopedInputs = false, compactReviewInputs = false, scopedQualityRefinement = false, reuseTokenPolicy = false,
+    bundleFinalReviews = false, bundleTurnReviews = false, reuseReviewedName = false, reuseReviewedSafety = false,
     discoverTokenLimits = false, preserveStringLimits = false, streamJson = false, streamCompleteJson = false, retryFailures = false, retryDelayMs = 1000, reviewGateway = null, diagnosticLogger = entry => console.error(JSON.stringify(entry)) } = {}) {
     this.baseUrl = typeof baseUrl === 'string' ? baseUrl.replace(/\/+$/, '') : '';
     this.apiKey = apiKey;
@@ -523,6 +567,14 @@ export class ModelGateway {
     this.reuseFinalDraft = reuseFinalDraft;
     this.stageScopedQuestionRules = stageScopedQuestionRules;
     this.blockScopedInputs = blockScopedInputs;
+    this.compactReviewInputs = compactReviewInputs;
+    this.scopedQualityRefinement = scopedQualityRefinement;
+    this.reuseTokenPolicy = reuseTokenPolicy;
+    this.bundleFinalReviews = bundleFinalReviews;
+    this.bundleTurnReviews = bundleTurnReviews;
+    this.reuseReviewedName = reuseReviewedName;
+    this.reuseReviewedSafety = reuseReviewedSafety;
+    this.reviewedNameIdentity = randomUUID();
     this.fetchImpl = fetchImpl;
     this.discoverTokenLimits = discoverTokenLimits;
     this.preserveStringLimits = preserveStringLimits;
@@ -544,8 +596,15 @@ export class ModelGateway {
         typeof this.skipFinalExtras === 'boolean' && typeof this.reuseFinalDraft === 'boolean' &&
         (!this.reuseFinalDraft || this.protocol === 'relationship_agent' && !this.skipFinalExtras) &&
         typeof this.stageScopedQuestionRules === 'boolean' && typeof this.blockScopedInputs === 'boolean' &&
+        typeof this.compactReviewInputs === 'boolean' && typeof this.scopedQualityRefinement === 'boolean' && typeof this.reuseTokenPolicy === 'boolean' &&
+        typeof this.bundleTurnReviews === 'boolean' && typeof this.bundleFinalReviews === 'boolean' && typeof this.reuseReviewedName === 'boolean' && typeof this.reuseReviewedSafety === 'boolean' &&
+        (!this.bundleFinalReviews || this.protocol === 'relationship_agent' && !this.skipFinalExtras) &&
+        (!this.bundleTurnReviews || this.protocol === 'relationship_agent' && this.stateMode === 'combined_blocks') &&
+        (!this.reuseReviewedName || this.protocol === 'relationship_agent' && this.stateMode === 'combined_blocks') &&
+        (!this.reuseReviewedSafety || this.protocol === 'relationship_agent' && this.stateMode === 'combined_blocks') &&
         (!this.blockScopedInputs || this.stageScopedQuestionRules) &&
         (!(this.stageScopedQuestionRules || this.blockScopedInputs) || this.protocol === 'relationship_agent') &&
+        (!(this.compactReviewInputs || this.scopedQualityRefinement) || this.protocol === 'relationship_agent') &&
         typeof this.streamCompleteJson === 'boolean' && (!this.streamCompleteJson || this.streamJson) &&
         (this.reviewGateway === null || this.reviewGateway instanceof ModelGateway && this.reviewGateway !== this &&
           this.reviewGateway.reviewGateway === null && this.reviewGateway.configured) &&
@@ -580,20 +639,12 @@ export class ModelGateway {
           try{options?.onCard?.(event);}catch{ /* Display updates cannot stop generation. */ }
         };
         const operation={controller,deadline:this.timeoutMs===0?Infinity:performance.now()+this.timeoutMs,requestId,onProgress:options?.onProgress,onCard,recovery,
-          metrics,restart:parentOperation?.restart??retries};
+          metrics,restart:parentOperation?.restart??retries,tokenPolicies:parentOperation?.tokenPolicies||new Map()};
         const timer=this.timeoutMs>0?setTimeout(()=>controller.abort(timeout()),this.timeoutMs):undefined;
         let delay;
         try {
           ensureTime(operation);
-          if(this.discoverTokenLimits){
-            try {
-              operation.tokenPolicy=await discoverModelTokenPolicy({baseUrl:this.baseUrl,apiKey:this.apiKey,model:this.model,
-                fetchImpl:this.fetchImpl,signal:AbortSignal.any([controller.signal,AbortSignal.timeout(5000)])});
-            } catch {
-              ensureTime(operation);
-              throw unavailable('token_policy_unavailable');
-            }
-          }
+          await this.loadTokenPolicy(operation);
           const result=await generate(operation);
           ensureTime(operation);
           return result;
@@ -626,6 +677,41 @@ export class ModelGateway {
       // Retry-only working state belongs to this invocation, never the gateway,
       // a later request, diagnostics or persisted conversation state.
       for(const key of Object.keys(recovery))delete recovery[key];
+    }
+  }
+
+  async loadTokenPolicy(operation) {
+    if(!this.discoverTokenLimits)return;
+    ensureTime(operation);
+    const cache=operation.tokenPolicies;
+    let entry=this.reuseTokenPolicy&&!operation.tokenPolicyDirty?cache.get(this):null;
+    // Separate gateway instances never share authentication or model budgets.
+    // A changed target on a reused instance also invalidates the pending lookup.
+    if(entry&&(entry.baseUrl!==this.baseUrl||entry.apiKey!==this.apiKey||entry.model!==this.model||entry.fetchImpl!==this.fetchImpl))entry=null;
+    const joinedLookup=Boolean(entry);
+    if(!entry){
+      entry={baseUrl:this.baseUrl,apiKey:this.apiKey,model:this.model,fetchImpl:this.fetchImpl};
+      entry.promise=discoverModelTokenPolicy({...entry,signal:AbortSignal.any([operation.controller.signal,AbortSignal.timeout(5000)])});
+      if(this.reuseTokenPolicy)cache.set(this,entry);
+    }
+    try{
+      let policy=await entry.promise;
+      ensureTime(operation);
+      // Unsupported endpoints and legacy metadata are deliberately not cached.
+      if(!policy?.revision&&cache.get(this)===entry)cache.delete(this);
+      if(joinedLookup&&!policy?.revision){
+        // The first response may reveal that this is a legacy health endpoint.
+        // Concurrent children must then perform their own discovery as before.
+        policy=await discoverModelTokenPolicy({baseUrl:this.baseUrl,apiKey:this.apiKey,model:this.model,fetchImpl:this.fetchImpl,
+          signal:AbortSignal.any([operation.controller.signal,AbortSignal.timeout(5000)])});
+        ensureTime(operation);
+      }
+      operation.tokenPolicy=policy;
+      operation.tokenPolicyDirty=false;
+    }catch{
+      if(cache.get(this)===entry)cache.delete(this);
+      ensureTime(operation);
+      throw unavailable('token_policy_unavailable');
     }
   }
 
@@ -753,7 +839,11 @@ export class ModelGateway {
       return this.reviewGateway.operation({requestId:operation.requestId,signal:operation.controller.signal,onProgress:operation.onProgress,onCard:operation.onCard},reviewOperation=>
         this.reviewGateway.agentComplete(stage,prompt,payload,schema,reviewOperation,validate),{retryFailures:false,parentOperation:operation});
     }
-    let originalRequestSchema=schema, transport=relationshipEvidenceTransport(stage,schema)||finalEvidenceTransport(stage,schema);
+    // Literal repair may remove a branch-only source. Retain identities across
+    // retries so a rejected ID can never be reassigned to a different source.
+    // The registry does not grant access; every node still has its own enum.
+    const sourceIds=new Map();
+    let originalRequestSchema=schema, transport=relationshipEvidenceTransport(stage,schema,sourceIds)||finalEvidenceTransport(stage,schema);
     let requestSchema=transport?.schema||schema, literalState=false, stateSchemaRecovery=false;
     let streamSchema=requestSchema;
     if(/^turn_draft(?:_after_review)?$/u.test(stage)&&schema.properties?.state?.properties?.relationship_memory){
@@ -784,7 +874,7 @@ export class ModelGateway {
         originalRequestSchema=/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)
           ?literalStateRepairSchema({properties:{relationship_memory:schema}}).properties.relationship_memory
           :literalStateRepairSchema(schema,{combined:stage.startsWith('turn_draft')});
-        transport=relationshipEvidenceTransport(stage,originalRequestSchema);requestSchema=transport?.schema||originalRequestSchema;
+        transport=relationshipEvidenceTransport(stage,originalRequestSchema,sourceIds);requestSchema=transport?.schema||originalRequestSchema;
         if(transport)streamSchema=requestSchema;
       }
       const scope=literalState?(/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)
@@ -797,13 +887,18 @@ export class ModelGateway {
       const evidenceRepair=transport?null:evidenceSelectionRepair(stage,requestSchema,selectionRepairFeedback,rejectedOutput);
       const questionRepair=questionSelectionRepair(stage,requestSchema,selectionRepairFeedback,rejectedOutput);
       const wireEvidenceRepair=wireEvidenceSelectionRepair(stage,transport,selectionRepairFeedback,rejectedOutput);
+      const arrayLimits=relationshipArrayLimits(stage,requestSchema);
+      const arrayRepair=relationshipArrayRepair(arrayLimits,feedback||payload?.combined_validation_feedback);
       return {
         model:this.model,stream:false,...(this.reasoningEffort==='omit'?{}:{reasoning_effort:this.reasoningEffort}),temperature:0.2,
         ...(this.agentFormat==='prompt'?{}:{response_format:this.agentFormat==='json_object'&&!stateSchemaRecovery?{type:'json_object'}:
           {type:'json_schema',json_schema:{name:stage,strict:true,schema:inferenceSchema(requestSchema,{preserveStringLimits:this.preserveStringLimits})}}}),
-        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+questionCatalogInstruction(stage,requestSchema)},
+        messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+
+          (arrayLimits.length?RELATIONSHIP_ARRAY_INSTRUCTION:'')+questionCatalogInstruction(stage,requestSchema)},
           {role:'user',content:JSON.stringify({stage,data,output_schema:requestSchema,...(feedback?{validation_feedback:feedback}:{}),
             ...(transport?{evidence_sources:transport.table}:{}),
+            ...(arrayLimits.length?{array_limits:arrayLimits}:{}),
+            ...(arrayRepair?{array_count_repair:arrayRepair}:{}),
             ...(wireEvidenceRepair?{wire_evidence_selection_repair:wireEvidenceRepair}:{}),
             ...(evidenceRepair?{evidence_selection_repair:evidenceRepair}:{}),
             ...(questionRepair?{question_selection_repair:questionRepair}:{}),
@@ -890,8 +985,14 @@ export class ModelGateway {
     let repairReason = null; let repairs = 0; let repairFeedback = null; let schemaFallback = false;
     let structuralFailures=0;
     let outputTokens = operation.tokenPolicy?.maxOutputTokens;
+    let outputBudgetAdjusted=false;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       ensureTime(operation);
+      if(operation.tokenPolicyDirty){
+        await this.loadTokenPolicy(operation);
+        const discovered=operation.tokenPolicy?.maxOutputTokens;
+        outputTokens=outputBudgetAdjusted&&discovered!==undefined?Math.min(outputTokens,discovered):discovered;
+      }
       operation.onProgress?.({stage:generation,status:'started',attempt});
       let started = performance.now(); let attemptId = null;
       let status = null; let finishReason = null; let usage = null; let response; let attemptDiagnostic={};
@@ -909,6 +1010,7 @@ export class ModelGateway {
         const activeStreamSchema=typeof streamSchema==='function'?streamSchema():streamSchema;
         const arrayLimit=this.streamJson?schemaArrayLimit(activeStreamSchema):null;
         const propertyArrayLimits=this.streamJson?schemaPropertyArrayLimits(activeStreamSchema):null;
+        const arrayPaths=this.streamJson?schemaArrayPaths(activeStreamSchema):null;
         const stringLimit=this.streamJson?schemaStringLimit(activeStreamSchema):null;
         if(this.streamJson) {
           request.stream=true;request.stream_options={include_usage:true};
@@ -922,7 +1024,8 @@ export class ModelGateway {
           started=performance.now();attemptId=randomUUID();
           attemptDiagnostic=beginHttpAttempt(operation,this,generation,request);
           response = await this.fetchImpl(this.baseUrl + '/chat/completions', {
-            method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + this.apiKey },
+            method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + this.apiKey,
+              ...(this.reuseTokenPolicy&&operation.tokenPolicy?.revision?{'X-Malssi-Token-Policy-Revision':operation.tokenPolicy.revision}:{}) },
             signal, body: requestBody,
           });
         } catch (error) {
@@ -932,6 +1035,15 @@ export class ModelGateway {
         ensureTime(operation);
         status = Number.isInteger(response.status) ? response.status : null;
         if (!response.ok) {
+          if(status===409&&this.reuseTokenPolicy&&operation.tokenPolicy?.revision){
+            let detail;
+            try{detail=await response.json();}catch{/* Never retain upstream error bodies. */}
+            ensureTime(operation);
+            if(detail?.error?.code==='token_policy_changed'){
+              retry=true;
+              throw unavailable('token_policy_changed');
+            }
+          }
           if ([400, 422].includes(status)) {
             let detail;
             try { detail = await response.json(); } catch { /* Never log upstream error bodies. */ }
@@ -940,6 +1052,7 @@ export class ModelGateway {
               const remaining = remainingOutputTokens(detail, status, operation.tokenPolicy, outputTokens);
               if (remaining !== null) {
                 outputTokens = remaining;
+                outputBudgetAdjusted=true;
                 retry = true;
               }
               throw failure(502, 'MODEL_CONTEXT_TOO_LONG', '모델이 읽을 내용이 많아 답변을 만들지 못했어요. 입력 내용을 확인하고 다시 시도해 주세요.', 'context_budget');
@@ -955,7 +1068,7 @@ export class ModelGateway {
         }
         let payload;
         try {
-          if(this.streamJson)response=await streamJsonResponse(response,{signal,arrayLimit,propertyArrayLimits,stringLimit,
+          if(this.streamJson)response=await streamJsonResponse(response,{signal,arrayLimit,propertyArrayLimits,arrayPaths,stringLimit,
             completeJson:this.streamCompleteJson&&activeStreamSchema!==undefined,abort:error=>streamController.abort(error)});
           payload = await response.json();
         } catch (error) {
@@ -993,6 +1106,10 @@ export class ModelGateway {
         const stopped = operationFailure(operation);
         const known = error instanceof HttpError;
         const failure = stopped || (known ? error : unavailable('internal_failure'));
+        if(this.reuseTokenPolicy&&operation.tokenPolicy?.revision&&failure.code!=='MODEL_INVALID_RESPONSE'){
+          operation.tokenPolicies.delete(this);
+          operation.tokenPolicyDirty=true;
+        }
         this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, failure.modelReason || 'internal_failure',
           failure.modelReason==='agent_schema'?safeSchemaDiagnostic(failure.modelFeedback):null,
           failure.modelReason==='agent_schema'?failure.modelQuestionIdDiagnostic:null,attemptDiagnostic);

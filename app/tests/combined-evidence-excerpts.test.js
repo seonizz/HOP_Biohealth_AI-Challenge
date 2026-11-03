@@ -149,7 +149,7 @@ test('negation surrounding the clause reaches review unchanged and a rejected in
 test('all expanded claims still require independent audits',async()=>{
   const f=fixture(),model=gateway(f.value,data=>{const result=approve(data);result.state.audits.pop();return result;});
   await assert.rejects(runCombinedRelationshipState(model,f.ctx,null,{}),{code:'MODEL_INVALID_RESPONSE'});
-  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review']);
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });
 
 test('diagnostics run only after draft validation and cannot fail a validated draft',async()=>{

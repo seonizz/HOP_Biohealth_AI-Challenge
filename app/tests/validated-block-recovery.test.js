@@ -5,6 +5,7 @@ import {HttpError} from '../src/errors.js';
 import {safetyReviewFixture} from './helpers/safety-review.js';
 
 const blocks=['patient_state','name_index','relationship_memory','questions'];
+const dispatchBlocks=['patient_state','questions','name_index','relationship_memory'];
 const field=(id,text)=>({id,question:id,status:'answered',text,rawText:text,custom:''});
 const context=()=>({patient:{alias:'지민',fields:{name:field('name','지민'),mood:field('mood','저녁에 산책하고 싶다고 말했어요.')}},
   supporter:{fields:{feeling:field('feeling','함께 이야기를 듣고 싶어요.')}},user_goal:{message:field('want','원할 때 이야기를 듣고 싶어요.')},
@@ -36,7 +37,12 @@ function gateway(ctx,handler=()=>undefined){
 const operation=()=>({requestId:'test-request',recovery:{},controller:new AbortController()});
 const stages=g=>g.calls.map(call=>call.stage);
 async function retainPrefix(ctx,op,block='questions'){
-  const g=gateway(ctx,call=>{if(call.data.output_block===block)throw failure();});
+  const g=gateway(ctx,async call=>{if(call.data.output_block===block){
+    // Exercise a completed state prefix; separate parallel tests cover early
+    // question failures and late sibling results. Drain immediate state work.
+    if(block==='questions')await new Promise(setImmediate);
+    throw failure();
+  }});
   await assert.rejects(runCombinedRelationshipState(g,ctx,null,op),{code:'MODEL_INVALID_RESPONSE'});
   return g;
 }
@@ -49,7 +55,7 @@ test('same structural retry reuses only validated prefix and independently revie
   assert.deepEqual(stages(next),['turn_draft_block_questions','turn_review','safety_review']);
   assert.equal(result.state_agent.reviewed,true);
   assert.deepEqual(result.state_agent.stages,[...blocks.map(b=>'turn_draft_block_'+b),'turn_review','safety_review']);
-  assert.deepEqual(next.calls[0].data.question_input,first.calls.at(-1).data.question_input);
+  assert.deepEqual(next.calls[0].data.question_input,first.calls.find(call=>call.data.output_block==='questions').data.question_input);
   assert.deepEqual(op.recovery,{});
 });
 
@@ -57,9 +63,9 @@ test('a failing block is regenerated on every structural recovery, never cached'
   const ctx=context(),op=operation();await retainPrefix(ctx,op,'relationship_memory');
   const again=await retainPrefix(ctx,op,'relationship_memory');
   assert.deepEqual(stages(again),['turn_draft_block_relationship_memory']);
-  assert.deepEqual(Object.keys(op.recovery.combinedBlocks.blocks),['patient_state','name_index']);
+  assert.deepEqual(new Set(Object.keys(op.recovery.combinedBlocks.blocks)),new Set(['patient_state','name_index','questions']));
   const next=gateway(ctx);await runCombinedRelationshipState(next,ctx,null,op);
-  assert.deepEqual(stages(next),['turn_draft_block_relationship_memory','turn_draft_block_questions','turn_review','safety_review']);
+  assert.deepEqual(stages(next),['turn_draft_block_relationship_memory','turn_review','safety_review']);
 });
 
 for(const kind of ['source','schema','request','fresh operation'])test('cached prefix is not reused after '+kind+' changes',async()=>{
@@ -70,8 +76,8 @@ for(const kind of ['source','schema','request','fresh operation'])test('cached p
   if(kind==='request')op.requestId='different-request';
   if(kind==='fresh operation')nextOp=operation();
   const next=gateway(changed);await runCombinedRelationshipState(next,changed,null,nextOp);
-  assert.deepEqual(stages(next),[...blocks.map(b=>'turn_draft_block_'+b),'turn_review','safety_review']);
-  if(kind==='schema')assert.notDeepEqual(next.calls[3].schema,first.calls[3].schema);
+  assert.deepEqual(stages(next),[...dispatchBlocks.map(b=>'turn_draft_block_'+b),'turn_review','safety_review']);
+  if(kind==='schema')assert.notDeepEqual(next.calls.find(call=>call.data.output_block==='questions').schema,first.calls.find(call=>call.data.output_block==='questions').schema);
   assert.deepEqual(nextOp.recovery,{});
 });
 
@@ -81,7 +87,7 @@ test('semantic rejection changes repair phase and regenerates all blocks before 
   const next=gateway(ctx,call=>{if(call.stage.startsWith('turn_review'))return review(call.data,++reviews===1);});
   const result=await runCombinedRelationshipState(next,ctx,null,op);
   assert.deepEqual(stages(next),['turn_draft_block_questions','turn_review','safety_review',
-    ...blocks.map(b=>'turn_draft_block_'+b+'_after_review'),'turn_review_after_review','safety_review_after_review']);
+    ...dispatchBlocks.map(b=>'turn_draft_block_'+b+'_after_review'),'turn_review_after_review','safety_review_after_review']);
   assert.equal(reviews,2);assert.equal(result.state_agent.reviewed,true);assert.deepEqual(op.recovery,{});
 });
 
@@ -89,14 +95,15 @@ for(const [reason,code] of [['cancelled','MODEL_CANCELLED'],['http_transient','M
   test('a '+code+' failure discards previously retained blocks',async()=>{
     const ctx=context(),op=operation();await retainPrefix(ctx,op);
     const stopped=gateway(ctx,call=>{if(call.data.output_block==='questions'){
-      if(code==='MODEL_CANCELLED')op.controller.abort();
-      throw failure(reason,code);
+      const error=failure(reason,code);
+      if(code==='MODEL_CANCELLED')op.controller.abort(error);
+      throw error;
     }});
     await assert.rejects(runCombinedRelationshipState(stopped,ctx,null,op),{code});
     assert.equal(op.recovery.combinedBlocks,undefined);
     op.controller=new AbortController();
     const next=gateway(ctx);await runCombinedRelationshipState(next,ctx,null,op);
-    assert.deepEqual(stages(next),[...blocks.map(b=>'turn_draft_block_'+b),'turn_review','safety_review']);
+    assert.deepEqual(stages(next),[...dispatchBlocks.map(b=>'turn_draft_block_'+b),'turn_review','safety_review']);
   });
 
 test('reused values are cloned and revalidated, and full-draft validation still rejects name-only evidence',async()=>{
@@ -104,7 +111,7 @@ test('reused values are cloned and revalidated, and full-draft validation still 
   op.recovery.combinedBlocks.blocks.patient_state.value.facts='invalid';
   const rejected=gateway(ctx);
   await assert.rejects(runCombinedRelationshipState(rejected,ctx,null,op),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema'});
-  assert.deepEqual(stages(rejected),[]);
+  assert.deepEqual(stages(rejected),['turn_draft_block_questions']);
   assert.deepEqual(Object.keys(op.recovery.combinedBlocks.blocks),[]);
 
   const fullOp=operation();await retainPrefix(ctx,fullOp);

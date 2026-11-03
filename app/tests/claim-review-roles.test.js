@@ -48,7 +48,7 @@ test('mixed avoidance review keeps all canonical text, sources, IDs, bounds and 
   assert.deepEqual(result.audits.map(a=>a.reason),output.audits.map(a=>a.reason));
   assert.equal(result.approved,output.approved);assert.deepEqual(result.issues,output.issues);
   assert.deepEqual(output,original);assert.deepEqual({payload:f.payload,schema:f.schema},before);
-  assert.equal(PROMPT_VERSION,'relationship-v3.20-source-based-avoid-repair');
+  assert.equal(PROMPT_VERSION,'relationship-v3.25-source-attribution');
   assert.match(wire.prompt,/잘못된 회피 권고, 이유의 오류/u);assert.match(wire.prompt,/원문 밖 사실·마음·동의·지원 약속/u);
   assert.match(wire.prompt,/일반 발화의 sound_guidance\/problem_in_guidance 기준은 avoidance_guidance가 아닌 주장/u);
   assert.match(wire.prompt,/아래 안내 판정은 claim_kind=guidance인 항목에만 적용/u);

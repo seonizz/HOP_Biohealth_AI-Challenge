@@ -164,7 +164,33 @@ export function schemaPropertyArrayLimits(schema) {
   return uncertain?null:Object.fromEntries(Object.entries(limits));
 }
 
-export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,propertyArrayLimits=null,stringLimit=null,completeJson=false}={}) {
+const pathProperty=name=>typeof name==='string'&&/^[A-Za-z_][A-Za-z0-9_]*$/u.test(name);
+
+// This allowlist controls diagnostic text only, never the streaming bounds.
+// Unknown keys, references and tuple positions keep the generic feedback path.
+export function schemaArrayPaths(schema) {
+  const paths=new Set(),active=new Set();
+  const visit=(node,path)=>{
+    if(!node||typeof node!=='object'||Array.isArray(node)||active.has(node)||
+      node.$ref!==undefined||node.$dynamicRef!==undefined)return;
+    active.add(node);
+    try {
+      const types=Array.isArray(node.type)?node.type:[node.type];
+      if(types.includes('array')) {
+        paths.add(path);
+        if(!node.prefixItems&&!Array.isArray(node.items))visit(node.items,path+'[*]');
+      }
+      if(types.includes('object')&&node.properties&&typeof node.properties==='object'&&!Array.isArray(node.properties))
+        for(const [name,child] of Object.entries(node.properties))if(pathProperty(name))visit(child,path+'.'+name);
+      for(const key of ['anyOf','oneOf','allOf'])if(Array.isArray(node[key]))
+        for(const child of node[key])visit(child,path);
+    } finally {active.delete(node);}
+  };
+  visit(schema,'output');
+  return paths;
+}
+
+export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,propertyArrayLimits=null,arrayPaths=null,stringLimit=null,completeJson=false}={}) {
   let reader;
   const cancelled=()=>{void reader?.cancel().catch(()=>{});};
   try {
@@ -199,7 +225,8 @@ export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,
       if(frame?.type!=='array'||!frame.expectsValue)return;
       frame.expectsValue=false;
       if(++frame.count>frame.limit)throw new ModelStreamError('agent_schema',JSON.stringify({
-        path:'output',keyword:'streamArrayLimit',expected:{max_count:frame.limit},actual:{count:frame.count},
+        path:frame.path&&arrayPaths instanceof Set&&arrayPaths.has(frame.schemaPath)?frame.path:'output',
+        keyword:'streamArrayLimit',expected:{max_count:frame.limit},actual:{count:frame.count},
       }));
     };
     const guard=fragment=>{
@@ -255,8 +282,16 @@ export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,
             const property=owner?.type==='object'&&owner.state==='value'?owner.key:null;
             const specific=property!==null&&propertyArrayLimits&&Object.hasOwn(propertyArrayLimits,property)?propertyArrayLimits[property]:null;
             const limit=bounded?(Number.isSafeInteger(specific)&&specific>=0?Math.min(arrayLimit,specific):arrayLimit):Infinity;
+            let path=null,schemaPath=null;
+            if(!owner){path='output';schemaPath='output';}
+            else if(owner.path&&owner.type==='array'){
+              path=owner.path+'['+owner.count+']';schemaPath=owner.schemaPath+'[*]';
+            }else if(owner.path&&pathProperty(property)){
+              path=owner.path+'.'+property;schemaPath=owner.schemaPath+'.'+property;
+            }
             valueStart();
-            frames.push(char==='['?{type:'array',count:0,expectsValue:true,limit}:{type:'object',state:'key',key:null});
+            frames.push(char==='['?{type:'array',count:0,expectsValue:true,limit,path,schemaPath}:
+              {type:'object',state:'key',key:null,path,schemaPath});
           }
           else if(char==='}'||char===']'){
             frames.pop();

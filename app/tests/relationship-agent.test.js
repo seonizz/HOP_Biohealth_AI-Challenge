@@ -1454,6 +1454,109 @@ test('a model approval cannot override an observed mind-reading failure in an ac
   }
 });
 
+test('effort observation variants cannot establish an unreported degree of effort or distress',()=>{
+  for(const text of [
+    '당신이 얼마나 버티며 노력하는지 제가 보아왔어요.',
+    '네가 얼마나 힘든지 내가 봐 왔어.',
+    '그분이 얼마나 애쓰는지 제가 보아 온 거예요.',
+    '상대가 얼마나 최선을 다하는지 내가 봐 온 거야.',
+    '당신이 얼마나 노력하는지 제가 보아왔어요. 아무 걱정도 없어요.',
+  ]){
+    const value=guide().guide;value.avoid=['피할 말: 재촉하기. 이유: 답할 여유를 남기세요. 대신 “'+text+'”라고 말해 보세요.'];
+    const before=structuredClone(value);
+    assert.ok(knownSpeechIssues(value,context()).some(issue=>issue.field==='avoid'&&issue.reason==='대상자의 마음이나 행동 원인을 아는 것처럼 말합니다.'),text);
+    assert.deepEqual(value,before);
+  }
+});
+
+test('effort guard preserves objective observations, source-backed quantities, self-reports and avoided examples',()=>{
+  const ctx=context();ctx.patient.fields.scene=field('scene','친구가 지난주 두 시간 동안 발표 자료를 정리하는 모습을 봤어요.');
+  for(const text of [
+    '지난주 네가 두 시간 동안 발표 자료를 정리하는 모습을 봤어.',
+    '네가 얼마나 많은 자료를 정리했는지 내가 봐왔어.',
+    '내가 얼마나 노력했는지 스스로 돌아봐 왔어.',
+    '“당신이 얼마나 버티는지 제가 보아왔어요”라는 말은 하지 마세요.',
+    '‘당신이 얼마나 애쓰는지 제가 보아왔어요’라고 하지 마세요.',
+    '어려운 점이 있는지 물어보고 상대가 말하면 들어 보세요.',
+  ]){
+    const value=guide().guide;value.doList=[text];
+    assert.equal(knownSpeechIssues(value,ctx).some(issue=>issue.field==='doList'),false,text);
+  }
+  const value=guide().guide;
+  value.avoid=['피할 말: “당신이 얼마나 노력하는지 제가 보아왔어요.” 이유: 관찰하지 않은 노력을 확정하지 마세요. 대신 “요즘 어떤지 말해줄 수 있어?”라고 물어보세요.'];
+  assert.equal(knownSpeechIssues(value,ctx).some(issue=>issue.field==='avoid'),false);
+});
+
+test('unbounded listening and response promises remain invalid when a listener preference is the only condition',()=>{
+  for(const next of [
+    '“언제든지 네 이야기를 들어줄게.”라고 말해 보세요.',
+    '나는 언제든 이야기를 들을 준비가 되어 있어.',
+    '저는 언제든지 답장을 해 줄게요.',
+    '나는 언제든 응답할 수 있어.',
+    '상대가 원하면 “나는 언제든지 이야기를 들어줄 수 있어.”라고 말해 보세요.',
+    '내가 시간이 되면 이야기할게. 나는 언제든지 답장할게.',
+    '저녁 8시부터 9시까지 상담실이 열려 있으니 나는 언제든지 답장할게.',
+  ]){
+    const value=guide().guide;value.next=next;
+    assert.ok(knownSpeechIssues(value,context()).some(issue=>issue.field==='next'&&issue.reason==='이용자의 가능한 범위를 확인하지 않고 무제한 도움을 약속합니다.'),next);
+  }
+});
+
+test('listening guard preserves invitations, finite reported windows, actual availability conditions and negative examples',()=>{
+  const ctx=context();ctx.supporter.fields.availability=field('availability','저는 저녁 8시부터 9시까지 통화할 수 있어요.');
+  for(const next of [
+    '언제든 하고 싶은 말을 남겨줘. 가능한 시간에 읽을게.',
+    '저녁 8시부터 9시까지는 언제든지 이야기를 들어줄 수 있어.',
+    '내가 시간이 되면 언제든지 이야기를 들어줄 수 있어.',
+    '서로 시간이 맞으면 언제든지 이야기를 들어줄 수 있어.',
+    '가능한 시간에만 언제든지 답장할 수 있어.',
+    '“언제든지 답장할게”라는 약속은 하지 마세요.',
+    '‘나는 언제든 들을 준비가 되어 있어’라고 말하지 마세요.',
+    '나는 언제든 들을 준비가 되어 있지는 않아.',
+  ]){
+    const value=guide().guide;value.next=next;const before=structuredClone(value);
+    assert.equal(knownSpeechIssues(value,ctx).some(issue=>issue.field==='next'),false,next);
+    assert.deepEqual(value,before);
+  }
+  const value=guide().guide;
+  value.avoid=['피할 말: “언제든지 답장할게.” 이유: 무리한 약속을 피하세요. 대신 가능한 시간을 함께 정해 보세요.'];
+  assert.equal(knownSpeechIssues(value,ctx).some(issue=>issue.field==='avoid'),false);
+});
+
+for(const target of ['avoid','next'])for(const repaired of [true,false])
+test('new '+target+' guard keeps repair, independent reapproval and retry limits despite model approval: '+repaired,async()=>{
+  const initial=guide(),badAlternative='당신이 얼마나 버티며 노력하는지 제가 보아왔어요.';
+  const badAvoid={...avoidExample,alternative:badAlternative};
+  initial.guide[target]=target==='avoid'?['피할 말: 재촉하는 말. 이유: 대답할 여유를 남겨야 합니다. 대신 '+badAlternative]:
+    '나는 언제든지 답장할게.';
+  let repairs=0;
+  const outputs={...approvedCardOutputs(),guide_write:initial};
+  const model=gateway(body=>{
+    const input=JSON.parse(body.messages.at(-1).content);
+    if(input.stage.startsWith('guide_repair_card_'+target)){
+      repairs++;
+      return envelope(target==='avoid'?{avoid:[structuredClone(repaired?avoidExample:badAvoid)]}:
+        {next:repaired?guide().guide.next:initial.guide.next});
+    }
+    return fixtureEnvelope(outputs[input.stage]);
+  });
+  model.reuseFinalDraft=true;
+  if(repaired){
+    const output=await model.respond(context(),memory());
+    assert.deepEqual(output.guide[target],guide().guide[target]);assert.equal(repairs,1);
+    const reviewStage='speech_review_card_'+target+'_after_repair_1';
+    const review=model.transportInputs.find(input=>input.stage===reviewStage);
+    assert.ok(review);assert.deepEqual(review.data.guide[target],output.guide[target]);
+    assert.ok(model.transportStages.includes('guide_quality'));assert.ok(model.transportStages.includes('guide_review'));
+    assert.equal(output.agent.reviewed,true);assert.ok(output.conversation_detail);
+  }else{
+    await assert.rejects(model.respond(context(),memory()),{modelReason:'agent_speech_specific'});
+    assert.equal(repairs,3);
+    assert.equal(model.transportStages.includes('speech_review_card_'+target+'_after_repair_1'),false);
+    assert.equal(model.transportStages.includes('speech_detail'),false);
+  }
+});
+
 test('next narrator-promise detection preserves attributed supporter quotes and their original text',()=>{
   for(const next of [
     '원한다면 “제가 도와드릴 수 있는 일이 있을까요?”라고 물어보세요.',

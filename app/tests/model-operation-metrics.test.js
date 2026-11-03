@@ -8,6 +8,25 @@ const make=(records,fetchImpl=async()=>response())=>new ModelGateway({baseUrl:'h
   protocol:'relationship_agent',agentFormat:'prompt',reasoningEffort:'omit',timeoutMs:0,fetchImpl,diagnosticLogger:entry=>records.push(entry)});
 const stage=(gateway,operation,name,data={})=>gateway.agentComplete(name,'synthetic',data,schema,operation,value=>value);
 
+test('bundled review requests stay on the independent reviewer and count actual HTTP attempts',async()=>{
+  const records=[],writer=make(records,()=>assert.fail('review must not use the writer endpoint'));
+  writer.reviewGateway=make(records);
+  await writer.operation({},async operation=>{
+    await stage(writer,operation,'final_review_bundle');
+    await stage(writer,operation,'final_review_bundle_after_analysis_repair');
+    await stage(writer,operation,'card_review_bundle_care');
+    await stage(writer,operation,'card_review_bundle_next_after_review');
+    await stage(writer,operation,'turn_review_bundle');
+    await stage(writer,operation,'turn_review_bundle_after_review');
+  });
+  const attempts=records.filter(row=>row.event==='model_attempt');
+  assert.equal(attempts.length,6);
+  assert.deepEqual(attempts.map(row=>row.model_role),Array(6).fill('reviewer'));
+  assert.deepEqual(attempts.map(row=>row.http_attempt_index),[1,2,3,4,5,6]);
+  assert.deepEqual(attempts.map(row=>row.family_http_attempts),[
+    {final_review_bundle:1},{final_review_bundle:2},{card_review_bundle:1},{card_review_bundle:2},{turn_review_bundle:1},{turn_review_bundle:2}]);
+});
+
 test('writer, delegated reviewer and classifier share one operation but distinct attempt roles',async()=>{
   const records=[],writer=make(records);writer.reviewGateway=make(records);
   await writer.operation({},async operation=>{

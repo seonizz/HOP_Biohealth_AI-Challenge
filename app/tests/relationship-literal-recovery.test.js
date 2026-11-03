@@ -146,7 +146,7 @@ test('literal recovery still rejects missing unknown audits and unpreserved corr
     });
     await assert.rejects(runCombinedRelationshipState(next,ctx,null,operation),{code:'MODEL_INVALID_RESPONSE',
       modelReason:fault==='missing_audit'?'agent_schema':'state_review_rejected'});
-    assert.equal(next.calls.length,fault==='missing_audit'?2:6);
+    assert.equal(next.calls.length,fault==='missing_audit'?3:6);
   }
 });
 

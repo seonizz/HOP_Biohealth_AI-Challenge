@@ -13,11 +13,161 @@ import math
 from pathlib import Path
 import re
 import shutil
+import subprocess
 
 from role_dataset import canonical, digest, file_hash, read_rows, require, safe_path, save
 
 SCHEMA = "malssi-training-stop-policy-v2"
 CHECKPOINT = re.compile(r"^[0-9a-f]{64}$")
+
+# Explicit supported curricula, not an arbitrary number of caller-defined phases.
+LEGACY_PHASES = {
+    "chat_12b": ("01_dialogue_warmup", "02_supporter_dialogue", "03_state_memory"),
+    "cards_31b": ("00_original_warmup", "01_card_repair", "02_card_generation"),
+}
+GENERATOR_TASKS = ("conversation", "supporter_chat", "question_plan")
+STATE_TASKS = ("state_observations", "relationship_memory", "turn_draft")
+VARIANT_COMPLETION_CONTRACT = "task_coverage_and_current_app_contract_v1"
+VARIANT_PHASES = {
+    "A_generator": (("01_dialogue_warmup", 3, ("original_counselor_continuation",)),
+                    ("02_supporter_dialogue", 3, GENERATOR_TASKS),
+                    ("03_state_memory", 2, STATE_TASKS)),
+    "B_reviewer": (("01_dialogue_warmup", 3, ("original_counselor_continuation",)),
+                   ("02_supporter_dialogue", 3, ("question_review",)),
+                   ("04_result_review", 2, ("answer_review", "memory_review"))),
+    "C_combined": (("01_dialogue_warmup", 3, ("original_counselor_continuation",)),
+                   ("02_supporter_dialogue", 3, (*GENERATOR_TASKS, "question_review")),
+                   ("03_state_memory", 2, STATE_TASKS),
+                   ("04_result_review", 2, ("answer_review", "memory_review"))),
+}
+# Existing prepared role evaluator defines these six task contracts. It does not
+# yet define semantic judgments for answer_review/memory_review. Task names in a
+# caller's input cannot silently extend the evaluator's supported rubric.
+SUPPORTED_ROLE_TASKS = frozenset((*STATE_TASKS, "supporter_chat", "question_plan", "question_review"))
+
+
+def variant_role_tasks(variant):
+    tasks = {task for _, _, phase_tasks in VARIANT_PHASES[variant] for task in phase_tasks}
+    tasks.discard("original_counselor_continuation")
+    tasks.discard("conversation")  # Evaluated by the supporter_chat role contract.
+    return sorted(tasks)
+
+
+def evaluation_coverage(policy, role):
+    """Return a fail-closed coverage gap for newly bound variant policies."""
+    model = policy["models"][role]
+    variant = model.get("curriculum_variant")
+    if variant is None:
+        return None
+    coverage = model["role_task_coverage"]
+    required = set(variant_role_tasks(variant))
+    covered = set(coverage["covered_tasks"])
+    unsupported = required - SUPPORTED_ROLE_TASKS
+    missing = required - covered
+    if not missing and not unsupported and "role_evaluation_binding" in model:
+        return None
+    return {"status": "role_acceptance_pending", "reason": "role_evaluation_task_coverage_missing",
+            "required_tasks": sorted(required), "missing_tasks": sorted(missing),
+            "unsupported_semantic_tasks": sorted(unsupported),
+            "model_training_criteria_satisfied_from_supplied_evidence": False,
+            "automatic_deployment": False}
+
+
+def variant_completion_gap(policy, role):
+    """New curricula cannot complete with missing/stale/incompatible app evidence."""
+    gap = evaluation_coverage(policy, role)
+    if gap is not None:
+        return gap
+    model = policy["models"][role]
+    if model.get("curriculum_variant") is None:
+        return None
+    binding = model.get("app_contract_binding", {})
+    state = binding.get("status", "not_checked")
+    accepted = {"contract_match", "snapshot_match_unvalidated_tasks"}
+    if state in accepted:
+        try:
+            import check_training_app_contract as contract_check
+            app_root = Path(binding["app_root_at_binding"]).resolve(strict=True)
+            require(app_root.name == "app" and (app_root / "src").is_dir(), "Invalid current app root")
+            report = contract_check.check(Path(model["binding"]["root_at_binding"]), app_root.parent)
+            if report["status"] == state and fingerprint(report) == binding["canonical_report_sha256"]:
+                return None
+            state = "changed_since_binding"
+        except (ImportError, OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError):
+            # Never leak source-bearing errors or turn failed checks into success.
+            state = "check_failed"
+    return {"status": "role_acceptance_pending", "reason": "app_contract_review_required",
+            "app_contract_status": state,
+            "model_training_criteria_satisfied_from_supplied_evidence": False,
+            "automatic_deployment": False}
+
+
+def bind_variant_evaluation(settings, root):
+    """Bind existing evaluation inputs; never author outputs or semantic labels."""
+    variant = settings["curriculum_variant"]
+    coverage = settings["role_task_coverage"]
+    root = root.resolve(strict=True)
+    manifest = read_json(root / "MANIFEST.json")
+    require(manifest["schema"] == "malssi-prepared-role-evaluation-v1", "Unsupported prepared evaluation")
+    for split in ("development", "test"):
+        for name in ("SUITE.json", "INPUTS.jsonl", "RUBRIC.json"):
+            relative = "chat_12b/" + split + "/" + name
+            path = safe_path(root, relative)
+            metadata = manifest["files"][relative]
+            require(file_hash(path) == metadata["sha256"] and path.stat().st_size == metadata["bytes"],
+                    "Evaluation input/rubric changed")
+    test_suite = read_json(root / "chat_12b/test/SUITE.json")
+    require(test_suite["schema"] == "malssi-role-evaluation-suite-v1" and test_suite["model_role"] == "chat_12b"
+            and test_suite["split"] == "test", "Wrong reserved test suite")
+    suite = read_json(root / "chat_12b/development/SUITE.json")
+    require(suite["schema"] == "malssi-role-evaluation-suite-v1" and suite["model_role"] == "chat_12b"
+            and suite["split"] == "development", "Wrong variant evaluation suite")
+    rubric = read_json(root / "chat_12b/development/RUBRIC.json")
+    gates = settings["role_acceptance"]
+    require(rubric["model_role"] == "chat_12b"
+            and rubric["critical_all_pass"] == gates["critical_all_pass"]
+            and rubric["quality_checks"] == gates["quality_checks"]
+            and rubric["family_aggregation"] == "all_applicable_requests_must_pass_each_check"
+            and rubric["judgment_requires_actual_outputs"] is True, "Wrong variant evaluation rubric")
+    cases = {row["case_id"]: row for row in suite["cases"]}
+    require(cases and len(cases) == len(suite["cases"]), "Duplicate/empty variant evaluation")
+    # Merge connected families before counting task coverage, as score_role does.
+    parent = {key: key for key in cases}
+    owners = {}
+    def family(key):
+        while parent[key] != key:
+            parent[key] = parent[parent[key]]
+            key = parent[key]
+        return key
+    for identity, case in cases.items():
+        origins = [case["source_family_id"], *case["source_lineage_ids"]]
+        require(origins and all(isinstance(x, str) and x for x in origins), "Missing evaluation lineage")
+        for origin in origins:
+            if origin in owners:
+                parent[family(identity)] = family(owners[origin])
+            owners[origin] = identity
+    tasks_by_case = {}
+    for row in read_rows(root / "chat_12b/development/INPUTS.jsonl"):
+        identity = row["case_id"]
+        require(identity in cases and identity not in tasks_by_case
+                and fingerprint(row) == cases[identity]["input_sha256"], "Evaluation tasks are not bound to suite inputs")
+        requests = row["requests"]
+        require(requests and len({r["request_id"] for r in requests}) == len(requests)
+                and all(isinstance(r["task"], str) and r["task"] for r in requests), "Invalid evaluation request tasks")
+        tasks_by_case[identity] = {r["task"] for r in requests}
+    require(set(tasks_by_case) == set(cases), "Incomplete evaluation input coverage")
+    counts = {task: len({family(identity) for identity, tasks in tasks_by_case.items() if task in tasks})
+              for task in variant_role_tasks(variant)}
+    coverage.update(covered_tasks=sorted(task for task, count in counts.items()
+                                        if count >= gates["minimum_source_families"]),
+                    source_families_by_task=counts,
+                    suite_sha256=fingerprint(suite), evaluation_root_at_binding=str(root),
+                    inputs_sha256=file_hash(root / "chat_12b/development/INPUTS.jsonl"),
+                    rubric_sha256=file_hash(root / "chat_12b/development/RUBRIC.json"))
+    settings["role_evaluation_binding"] = {
+        "development_suite_sha256": fingerprint(suite),
+        "test_suite_sha256": fingerprint(test_suite),
+        "evaluation_manifest_sha256": file_hash(root / "MANIFEST.json")}
 
 
 def read_json(path):
@@ -77,7 +227,37 @@ def validate_policy(policy):
     for role, model in policy["models"].items():
         require(role in ("chat_12b", "cards_31b") and model["parameter_size"] == ("12B" if role == "chat_12b" else "31B"), "Wrong model role")
         ids = [p["id"] for p in model["phases"]]
-        require(len(ids) == len(set(ids)) == 3, "Invalid phase inventory")
+        variant = model.get("curriculum_variant")
+        if variant is None:
+            require(tuple(ids) == LEGACY_PHASES[role], "Invalid phase inventory")
+            require("role_task_coverage" not in model and "dataset_variant" not in model.get("binding", {}),
+                    "Variant policy contract missing")
+        else:
+            require(role == "chat_12b" and variant in VARIANT_PHASES, "Unsupported curriculum variant")
+            require(model.get("variant_completion_contract") == VARIANT_COMPLETION_CONTRACT,
+                    "Unsupported variant completion contract")
+            specs = VARIANT_PHASES[variant]
+            require(ids == [row[0] for row in specs], "Invalid variant phase order")
+            for phase, (_, cap, tasks) in zip(model["phases"], specs):
+                require(phase.get("tasks") == sorted(tasks), "Invalid variant task inventory")
+                require(type(phase["safety_max_epochs"]) is int and 1 <= phase["safety_max_epochs"] <= cap,
+                        "Invalid variant resource guard")
+            require(model.get("binding", {}).get("dataset_variant", variant) == variant,
+                    "Variant dataset binding differs")
+            coverage = model["role_task_coverage"]
+            required = variant_role_tasks(variant)
+            require(coverage["required_tasks"] == required and isinstance(coverage["covered_tasks"], list)
+                    and coverage["covered_tasks"] == sorted(set(coverage["covered_tasks"]))
+                    and set(coverage["covered_tasks"]) <= set(required), "Invalid variant evaluation coverage")
+            if coverage["covered_tasks"]:
+                require("role_evaluation_binding" in model
+                        and coverage["suite_sha256"] == model["role_evaluation_binding"]["development_suite_sha256"]
+                        and valid_hash(coverage["inputs_sha256"]) and valid_hash(coverage["rubric_sha256"])
+                        and set(coverage["source_families_by_task"]) == set(required)
+                        and all(type(n) is int and n >= 0 for n in coverage["source_families_by_task"].values())
+                        and coverage["covered_tasks"] == sorted(t for t, n in coverage["source_families_by_task"].items()
+                            if n >= model["role_acceptance"]["minimum_source_families"]),
+                        "Unbound variant evaluation coverage")
         require(all(type(p["safety_max_epochs"]) is int and p["safety_max_epochs"] >= 1
                     and "max_epochs" not in p for p in model["phases"]), "Invalid resource guard")
         gates = model["role_acceptance"]
@@ -89,9 +269,21 @@ def validate_policy(policy):
                     and all(valid_hash(v) for v in binding.values()), "Invalid frozen role evaluation binding")
 
 
-def bind(defaults, roots, output):
+def bind(defaults, roots, output, *, chat_variant=None, evaluation_root=None, app_root=None):
     policy = deepcopy(read_json(defaults))
     validate_policy(policy)
+    require(set(roots) == {"chat_12b", "cards_31b"}, "Both dataset roots required")
+    require(chat_variant is None or chat_variant in VARIANT_PHASES, "Unsupported curriculum variant")
+    require(evaluation_root is None or chat_variant is not None, "Variant evaluation requires explicit chat variant")
+    if chat_variant is not None:
+        settings = policy["models"]["chat_12b"]
+        old_rules = {p["id"]: p for p in settings["phases"]}
+        settings["phases"] = [{"id": name, "safety_max_epochs": min(cap, old_rules.get(name, {}).get("safety_max_epochs", cap)),
+                              "tasks": sorted(tasks)} for name, cap, tasks in VARIANT_PHASES[chat_variant]]
+        settings["curriculum_variant"] = chat_variant
+        settings["variant_completion_contract"] = VARIANT_COMPLETION_CONTRACT
+        settings.pop("role_evaluation_binding", None)
+        settings["role_task_coverage"] = {"required_tasks": variant_role_tasks(chat_variant), "covered_tasks": []}
     require(not output.exists(), "Use a new policy output directory")
     require(output.parent.resolve().name == "training_data", "Policy must be under ignored training_data")
     for role, root in roots.items():
@@ -106,10 +298,18 @@ def bind(defaults, roots, output):
         manifest = read_json(manifest_path)
         require(file_hash(course_path) == manifest["files"][str(course_path.relative_to(manifest_root))]["sha256"], "Unbound course")
         settings = policy["models"][role]
+        variant = settings.get("curriculum_variant")
+        require(course.get("variant") == variant, "Dataset variant requires matching explicit selection")
+        if variant is not None:
+            require(course["schema"] == "malssi-chat-variants-v1"
+                    and all(course[key] is False for key in ("truncation", "packing", "split_reassignment",
+                            "validation_used_for_gradient", "cross_model_adapter_reuse")), "Unsafe variant dataset contract")
         require([p["id"] for p in course["phases"]] == [p["id"] for p in settings["phases"]], "Phase order changed")
         settings["binding"] = {"root_at_binding": str(root), "course_sha256": file_hash(course_path),
                                "manifest_sha256": file_hash(manifest_path), "manifest_at_parent": manifest_root == root.parent,
                                "tokenizer_sha256": course["model"]["tokenizer_sha256"]}
+        if variant is not None:
+            settings["binding"]["dataset_variant"] = variant
         for rule, phase in zip(settings["phases"], course["phases"]):
             rule["data"] = {}
             for split in ("train", "validation"):
@@ -119,22 +319,62 @@ def bind(defaults, roots, output):
                 checksum = file_hash(path)
                 require(checksum == manifest["files"][str(path.relative_to(manifest_root))]["sha256"]
                         and len(index) == part["rows"] and all(r["split"] == split for r in index.values()), "Unbound index/split")
+                if variant is not None:
+                    actual_tasks = Counter(row["task"] for row in index.values())
+                    require(set(actual_tasks) == set(rule["tasks"]) and dict(actual_tasks) == part["tasks"],
+                            "Variant index task inventory differs")
                 rule["data"][split] = {"index": part["token_index"], "sha256": checksum, "rows": len(index),
                     "id_set_sha256": digest("\n".join(sorted(index))),
                     "files": {part[k]: manifest["files"][str((root / part[k]).relative_to(manifest_root))]
                               for k in ("path", "token_index", "token_binary")},
                     "source_groups": len({g for r in index.values() for g in r["source_group_ids"]}),
                     "source_roots": len({g for r in index.values() for g in r["source_root_ids"]})}
+    if evaluation_root is not None:
+        bind_variant_evaluation(policy["models"]["chat_12b"], evaluation_root)
+    app_report = None
+    readiness = None
+    if chat_variant is not None:
+        app_report = {"status": "not_checked", "training_ready": False, "model_calls": 0,
+                      "semantic_quality_evaluated": False, "bundle_modified": False}
+        if app_root is not None:
+            require(app_root.resolve(strict=True).name == "app" and (app_root / "src").is_dir(),
+                    "App root must be the repository app directory")
+            import check_training_app_contract as contract_check
+            try:
+                app_report = contract_check.check(roots["chat_12b"], app_root.resolve().parent)
+            except (OSError, ValueError, KeyError, TypeError, contract_check.subprocess.SubprocessError):
+                app_report = {"status": "check_failed", "error": "contract_check_failed", "training_ready": False,
+                              "model_calls": 0, "semantic_quality_evaluated": False, "bundle_modified": False}
+        require(app_report.get("model_calls") == 0 and app_report.get("bundle_modified") is False
+                and app_report.get("semantic_quality_evaluated") is False, "Invalid app contract check scope")
+        policy["models"]["chat_12b"]["app_contract_binding"] = {
+            "report": "APP_CONTRACT_CHECK.json", "canonical_report_sha256": fingerprint(app_report),
+            "status": app_report["status"], "app_root_at_binding": str(app_root.resolve()) if app_root else None}
+        gap = evaluation_coverage(policy, "chat_12b")
+        readiness = {"status": "pending", "training_ready": False,
+                     "app_contract_status": app_report["status"],
+                     "app_contract_review_required": app_report["status"] not in ("contract_match", "snapshot_match_unvalidated_tasks"),
+                     "role_evaluation_coverage": gap,
+                     "actual_baseline_and_semantic_evaluation_required": True,
+                     "scope": "training_preparation_not_completion_decision"}
+    validate_policy(policy)
     output.mkdir(mode=0o700)
     (output / "scripts").mkdir()
     save(output / "POLICY.json", policy)
+    if app_report is not None:
+        save(output / "APP_CONTRACT_CHECK.json", app_report)
     save(output / "STATUS.json", {"policy_sha256": fingerprint(policy), "training_started": False,
          "training_complete": False, "role_acceptance": "pending_actual_runs_and_frozen_evaluation_suite",
-         "automatic_training_hook_installed": False, "dataset_files_modified": False})
+         "automatic_training_hook_installed": False, "dataset_files_modified": False,
+         "variant_role_evaluation": evaluation_coverage(policy, "chat_12b"), "training_readiness": readiness})
     for name in ("training_stop.py", "training_stop_defaults.json", "role_dataset.py", "test_training_stop.py"):
         shutil.copyfile(Path(__file__).with_name(name), output / "scripts" / name)
+    if chat_variant is not None:
+        for name in ("check_training_app_contract.py", "check_training_memory_contract.mjs"):
+            shutil.copyfile(Path(__file__).with_name(name), output / "scripts" / name)
     shutil.copyfile(Path(__file__).with_name("training_stop_README.md"), output / "README.md")
-    return {"status": "policy_ready", "policy_sha256": fingerprint(policy), "training_started": False}
+    return {"status": "policy_ready", "policy_sha256": fingerprint(policy), "training_started": False,
+            "variant_role_evaluation": evaluation_coverage(policy, "chat_12b"), "training_readiness": readiness}
 
 
 def bound_indexes(policy, role, phase_id, root=None):
@@ -143,6 +383,9 @@ def bound_indexes(policy, role, phase_id, root=None):
     root = Path(root or model["binding"]["root_at_binding"]).resolve(strict=True)
     binding = model["binding"]
     require(file_hash(root / "COURSE.json") == binding["course_sha256"], "Dataset course changed")
+    if model.get("curriculum_variant") is not None:
+        course = read_json(root / "COURSE.json")
+        require(course.get("variant") == model["curriculum_variant"], "Dataset variant changed")
     manifest = (root.parent if binding["manifest_at_parent"] else root) / "MANIFEST.json"
     require(file_hash(manifest) == binding["manifest_sha256"], "Dataset manifest changed; rebind deliberately")
     for name, expected in binding["tokenizer_sha256"].items():
@@ -156,6 +399,9 @@ def bound_indexes(policy, role, phase_id, root=None):
         path = safe_path(root, part["index"])
         require(file_hash(path) == part["sha256"], "Index changed")
         indexes[split] = load_index(path)
+        if model.get("curriculum_variant") is not None:
+            require(set(row["task"] for row in indexes[split].values()) == set(phase["tasks"]),
+                    "Variant index task inventory differs")
         require(len(indexes[split]) == part["rows"]
                 and digest("\n".join(sorted(indexes[split]))) == part["id_set_sha256"], "Index inventory changed")
     require(not set(indexes["train"]) & set(indexes["validation"]), "Train/validation identity overlap")
@@ -289,6 +535,11 @@ def decide(policy, role, phase_id, history, indexes, evidence_base, previous=Non
         minimum = min(minimum, loss)
         improved = baseline - loss >= max(rules["min_delta_absolute"], abs(baseline) * rules["min_delta_relative"])
         if final_phase:
+            readiness_gap = variant_completion_gap(policy, role)
+            if readiness_gap is not None:
+                role_result = readiness_gap
+                reason, status = readiness_gap["reason"], "stop_pending_evaluation"
+                continue
             if role_suite is None or train_lineage is None or event.get("role_evaluation") is None:
                 reason, status = "role_evaluation_missing", "stop_pending_evaluation"
                 continue
@@ -348,6 +599,11 @@ def score_role(policy, role, suite, evidence, candidate, baseline, suite_sha256,
             and evidence["candidate_checkpoint_sha256"] == candidate and evidence["baseline_checkpoint_sha256"] == baseline,
             "Role evaluation bindings differ")
     require(baseline_judgments_hash(evidence) == baseline_sha256, "Baseline judgments changed after training started")
+    readiness_gap = variant_completion_gap(policy, role)
+    if readiness_gap is not None:
+        return {**readiness_gap, "policy_sha256": fingerprint(policy), "model_role": role,
+                "suite_sha256": fingerprint(suite), "candidate_checkpoint_sha256": candidate,
+                "unseen_test_passed": False}
     cases = {row["case_id"]: row for row in suite["cases"]}
     require(len(cases) == len(suite["cases"]) and cases, "Duplicate/empty role suite")
     parent, owners = {key: key for key in cases}, {}
@@ -414,6 +670,9 @@ def main():
     parser.add_argument("--defaults", type=Path, default=Path(__file__).with_name("training_stop_defaults.json"))
     parser.add_argument("--chat-root", type=Path)
     parser.add_argument("--cards-root", type=Path)
+    parser.add_argument("--chat-variant", choices=tuple(VARIANT_PHASES))
+    parser.add_argument("--evaluation-root", type=Path)
+    parser.add_argument("--app-root", type=Path, help="Repository app directory for a read-only contract drift check")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--policy", type=Path)
     parser.add_argument("--model", choices=("chat_12b", "cards_31b"))
@@ -428,7 +687,8 @@ def main():
     if args.command == "bind":
         if not all((args.chat_root, args.cards_root, args.output)):
             parser.error("bind requires --chat-root --cards-root --output")
-        result = bind(args.defaults, {"chat_12b": args.chat_root, "cards_31b": args.cards_root}, args.output)
+        result = bind(args.defaults, {"chat_12b": args.chat_root, "cards_31b": args.cards_root}, args.output,
+                      chat_variant=args.chat_variant, evaluation_root=args.evaluation_root, app_root=args.app_root)
     else:
         if not args.policy or not args.model:
             parser.error("--policy and --model required")

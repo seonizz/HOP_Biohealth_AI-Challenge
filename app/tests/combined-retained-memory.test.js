@@ -100,8 +100,10 @@ test('storage, next-turn retrieval and final analysis preserve the complete exte
     // references per finding, regardless of the larger validated prior memory.
     assert.equal(schema.properties.observations.properties.patient.maxItems,2);
     assert.equal(schema.properties.relationship.properties.dynamics.items.properties.evidence.maxItems,3);
+    assert.equal(schema.properties.safety,undefined,'reviewed safety is restored from the unchanged sources');
+    assert.equal(data.reviewed_safety.urgent,false);
     return validate({observations:{patient:[f.refs[0]],supporter:[]},
-      relationship:{label:'친구',supporter_role:'친구',dynamics:[],strengths:[],boundaries:[]},unknowns:[],safety:{urgent:false,evidence_ids:[]}});
+      relationship:{label:'친구',supporter_role:'친구',dynamics:[],strengths:[],boundaries:[]},unknowns:[]});
   }};
   await assert.rejects(runRelationshipAgent(finalGateway,context,context.agent_state,null,{}),error=>error===stop);
   assert.deepEqual(stages,['relationship_analysis','analysis_review']);
@@ -110,5 +112,5 @@ test('storage, next-turn retrieval and final analysis preserve the complete exte
 test('all retained reports still need supported independent audits',async()=>{
   const f=fixture(6),model=gateway(f,data=>{const result=approve(data);result.state.audits.shift();return result;});
   await assert.rejects(runCombinedRelationshipState(model,f.ctx,null,{}),{code:'MODEL_INVALID_RESPONSE'});
-  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review']);
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });

@@ -23,6 +23,7 @@ const review=(data,reject=false)=>data.proposed_safety?safetyReviewFixture(data)
   questions:data.questions?{audits:data.questions.claims.map(claim=>({id:claim.id,verdict:'supported',reason:'합성 원문 대조'}))}:null,
   safety:data.safety?{basis:'current_physical_danger',reason:'현재 위험을 원문으로 확인했습니다.'}:null});
 const blocks=['patient_state','name_index','relationship_memory','questions'];
+const dispatchedBlocks=['patient_state','questions','name_index','relationship_memory'];
 const blockPart=(value,block)=>structuredClone(block==='questions'?value.questions:value.state[block]);
 const blockValue=(value,block)=>block==='name_index'?{name_index:blockPart(value,block)}:blockPart(value,block);
 const missing=ctx=>{const value=draft(ctx);delete value.state.relationship_memory.unknowns;return value;};
@@ -53,10 +54,10 @@ test('only three exhausted combined format failures generate four exact-schema b
   const {gateway,calls}=model(call=>call.stage==='turn_draft'?bad:
     call.stage.startsWith('turn_draft_block_')?blockValue(value,call.data.output_block):review(call.data),{diagnosticLogger:entry=>logs.push(entry)});
   const result=await gateway.updateState(ctx,null,{signal:t.signal});
-  assert.deepEqual(calls.map(call=>call.stage),['turn_draft','turn_draft','turn_draft',...blocks.map(block=>'turn_draft_block_'+block),'turn_review','question_review','safety_review']);
+  assert.deepEqual(calls.map(call=>call.stage),['turn_draft','turn_draft','turn_draft',...dispatchedBlocks.map(block=>'turn_draft_block_'+block),'turn_review','question_review','safety_review']);
   const original=calls[0],partCalls=calls.slice(3,7);
-  for(const [index,call]of partCalls.entries()){
-    const block=blocks[index],expected=block==='questions'?original.output_schema.properties.questions:original.output_schema.properties.state.properties[block];
+  for(const call of partCalls){
+    const block=call.data.output_block,index=blocks.indexOf(block),expected=block==='questions'?original.output_schema.properties.questions:original.output_schema.properties.state.properties[block];
     assert.deepEqual(block==='name_index'?call.output_schema.properties.name_index:call.output_schema,block==='relationship_memory'?relationshipEvidenceTransport(call.stage,expected).schema:expected);
     assert.equal(call.output_schema.type,'object');assert.equal(call.output_schema.additionalProperties,false);
     assert.equal(Object.hasOwn(call.data,'combined_output_schema'),false);assert.equal(Object.hasOwn(call.data,'failed_combined_candidate'),false);
@@ -256,12 +257,13 @@ for(const reason of ['already_covered','not_needed'])test('explicit combined_blo
   const {gateway,calls}=model(call=>call.data.output_block?blockValue(value,call.data.output_block):review(call.data),{stateMode:'combined_blocks'});
   const result=await gateway.updateState(ctx,null,{signal:t.signal});
   assert.equal(gateway.configured,true);
-  assert.deepEqual(calls.map(call=>call.stage),[...blocks.map(block=>'turn_draft_block_'+block),'turn_review','question_review','safety_review']);
-  assert.deepEqual(result.state_agent.stages,calls.map(call=>call.stage));assert.equal(result.state_agent.reviewed,true);
-  for(const [index,call]of calls.slice(0,4).entries()){
-    assert.deepEqual(Object.keys(call.output_schema.properties),Object.keys(blockValue(value,blocks[index])));
-    assert.deepEqual(call.output_schema.required,Object.keys(blockValue(value,blocks[index])));assert.equal(call.output_schema.additionalProperties,false);
-    if(blocks[index]==='questions')assert.equal(Object.hasOwn(call.data,'generated_blocks'),false);
+  assert.deepEqual(calls.map(call=>call.stage),[...dispatchedBlocks.map(block=>'turn_draft_block_'+block),'turn_review','question_review','safety_review']);
+  assert.deepEqual(result.state_agent.stages,[...blocks.map(block=>'turn_draft_block_'+block),'turn_review','question_review','safety_review']);assert.equal(result.state_agent.reviewed,true);
+  for(const call of calls.filter(call=>call.data.output_block)){
+    const block=call.data.output_block,index=blocks.indexOf(block);
+    assert.deepEqual(Object.keys(call.output_schema.properties),Object.keys(blockValue(value,block)));
+    assert.deepEqual(call.output_schema.required,Object.keys(blockValue(value,block)));assert.equal(call.output_schema.additionalProperties,false);
+    if(block==='questions')assert.equal(Object.hasOwn(call.data,'generated_blocks'),false);
     else assert.deepEqual(Object.keys(call.data.generated_blocks),blocks.slice(0,index));
     for(const key of ['shared_input','state_input','question_input'])assert.deepEqual(call.data[key],calls[0].data[key]);
     assert.equal(call.data.combined_validation_feedback,undefined);assert.equal(call.data.failed_combined_candidate,undefined);
@@ -315,8 +317,8 @@ test('block-first semantic rejection regenerates the same four blocks and cannot
   const ctx=context(),value=draft(ctx);
   const {gateway,calls}=model(call=>call.data.output_block?blockValue(value,call.data.output_block):review(call.data,true),{stateMode:'combined_blocks'});
   await assert.rejects(gateway.updateState(ctx,null,{signal:t.signal}),{code:'MODEL_INVALID_RESPONSE',modelReason:'state_review_rejected'});
-  assert.deepEqual(calls.map(call=>call.stage),[...blocks.map(block=>'turn_draft_block_'+block),'turn_review','safety_review',
-    ...blocks.map(block=>'turn_draft_block_'+block+'_after_review'),'turn_review_after_review','safety_review_after_review']);
+  assert.deepEqual(calls.map(call=>call.stage),[...dispatchedBlocks.map(block=>'turn_draft_block_'+block),'turn_review','safety_review',
+    ...dispatchedBlocks.map(block=>'turn_draft_block_'+block+'_after_review'),'turn_review_after_review','safety_review_after_review']);
   assert.ok(calls.slice(6,10).every(call=>call.data.review.state.approved===false&&call.data.rejected_draft.claims.length>0));
 });
 
@@ -328,13 +330,16 @@ test('cancellation in the first explicit block stops before later blocks and rev
 });
 
 test('a transient operation restart preserves explicit block mode and full source inputs',async t=>{
-  const ctx=context(),value=draft(ctx),logs=[];
-  const {gateway,calls}=model((call,count)=>count<=3?new Response('',{status:503}):call.data.output_block?blockValue(value,call.data.output_block):review(call.data),
+  const ctx=context(),value=draft(ctx),logs=[];let patients=0;
+  const {gateway,calls}=model(call=>call.data.output_block==='patient_state'&&++patients<=3?new Response('',{status:503}):call.data.output_block?blockValue(value,call.data.output_block):review(call.data),
     {stateMode:'combined_blocks',retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>logs.push(entry)});
   const result=await gateway.updateState(ctx,null,{signal:t.signal});
   assert.equal(result.state_agent.reviewed,true);
-  assert.deepEqual(calls.map(call=>call.stage),[...Array(4).fill('turn_draft_block_patient_state'),...blocks.slice(1).map(block=>'turn_draft_block_'+block),'turn_review','safety_review']);
-  for(const key of ['shared_input','state_input','question_input'])assert.deepEqual(calls[3].data[key],calls[0].data[key]);
+  const patientCalls=calls.filter(call=>call.data.output_block==='patient_state');
+  assert.equal(patientCalls.length,4);
+  assert.deepEqual(calls.map(call=>call.stage),['turn_draft_block_patient_state','turn_draft_block_questions',
+    ...Array(2).fill('turn_draft_block_patient_state'),...dispatchedBlocks.map(block=>'turn_draft_block_'+block),'turn_review','safety_review']);
+  for(const key of ['shared_input','state_input','question_input'])assert.deepEqual(patientCalls[3].data[key],patientCalls[0].data[key]);
   assert.equal(logs.filter(entry=>entry.event==='model_operation_retry').length,1);
 });
 
@@ -370,10 +375,10 @@ test('an exhausted block-local schema failure reaches only its originating block
   const result=await gateway.updateState(ctx,null,{signal:t.signal});
   assert.equal(result.state_agent.reviewed,true);
   assert.deepEqual(calls.map(call=>call.stage),[
-    'turn_draft_block_patient_state','turn_draft_block_name_index',...Array(3).fill('turn_draft_block_relationship_memory'),
-    'turn_draft_block_relationship_memory','turn_draft_block_questions','turn_review','safety_review']);
-  const recovered=calls.slice(5,7);
-  for(const call of recovered){
+    'turn_draft_block_patient_state','turn_draft_block_questions','turn_draft_block_name_index',...Array(4).fill('turn_draft_block_relationship_memory'),
+    'turn_review','safety_review']);
+  const recovered=calls.filter(call=>call.data.output_block==='relationship_memory').at(-1);
+  for(const call of [recovered,calls.find(call=>call.data.output_block==='questions')]){
     if(call.data.output_block==='relationship_memory'){
       const feedback=JSON.parse(call.data.combined_validation_feedback);
       assert.equal(feedback.path,'output');assert.equal(feedback.keyword,'objectKeys');
@@ -406,8 +411,8 @@ test('name-only memory rejection informs the next block cycle before original-so
     return review(call.data);
   },{stateMode:'combined_blocks',retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>logs.push(entry)});
   const result=await gateway.updateState(ctx,null,{signal:t.signal});
-  assert.deepEqual(calls.map(call=>call.stage),[...blocks.map(block=>'turn_draft_block_'+block),
-    ...blocks.map(block=>'turn_draft_block_'+block),'turn_review','safety_review']);
+  assert.deepEqual(calls.map(call=>call.stage),[...dispatchedBlocks.map(block=>'turn_draft_block_'+block),
+    ...dispatchedBlocks.map(block=>'turn_draft_block_'+block),'turn_review','safety_review']);
   assert.equal(calls[0].data.combined_validation_feedback,undefined);
   assert.notEqual(calls[0].request.body,calls[4].request.body);
   for(const call of calls.slice(4,8)){

@@ -2,6 +2,7 @@
 """Authenticated, text-only chat API for the evaluated step-100 model."""
 
 import argparse
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import hmac
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -127,6 +128,13 @@ def validate_request(payload, config):
 
 
 def make_server(config, backend, api_key, timing_log=None):
+    # Capabilities belong to this server instance and its private configuration
+    # snapshot. Replacing the server requires clients to discover them again.
+    config = deepcopy(config)
+    token_policy_revision = secrets.token_hex(32)
+    max_input_tokens = config.get("max_input_tokens")
+    input_policy = ({"max_input_tokens": max_input_tokens}
+                    if type(max_input_tokens) is int and 0 < max_input_tokens <= config["max_context_tokens"] else {})
     admission = InferenceQueue(*queue_limits(config))
     require_status = config.get("require_backend_status", False)
     if type(require_status) is not bool:
@@ -203,6 +211,8 @@ def make_server(config, backend, api_key, timing_log=None):
                                  "checkpoint_sha256": config["checkpoint_sha256"],
                                  "max_context_tokens": config["max_context_tokens"],
                                  "max_output_tokens": config["max_output_tokens"],
+                                 "token_policy_revision": token_policy_revision,
+                                 **input_policy,
                                  "inference_queue": state})
             elif self.path == "/v1/models":
                 self.reply(200, {"object": "list", "data": [{"id": config["model_id"], "object": "model", "created": 0, "owned_by": "local"}]})
@@ -230,6 +240,11 @@ def make_server(config, backend, api_key, timing_log=None):
                 return
             if self.path != "/v1/chat/completions":
                 self.reject(404, "Endpoint not found")
+                return
+            revisions = self.headers.get_all("X-Malssi-Token-Policy-Revision", [])
+            if revisions and (len(revisions) != 1 or revisions[0] != token_policy_revision):
+                self.reply(409, {"error": {"message": "Token policy changed; discover current capabilities before retrying",
+                                          "type": "invalid_request_error", "code": "token_policy_changed"}})
                 return
             if self.headers.get("Transfer-Encoding"):
                 self.reject(400, "Use Content-Length for request bodies")

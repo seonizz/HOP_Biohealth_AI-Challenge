@@ -187,6 +187,10 @@ test('a fabricated confirmed fact cannot pass independent state review: '+id,asy
     ?'이 지시는 실제 위험과 동의가 확인되었다는 뜻입니다.':testCase.context.patient.fields.mood.text,certainty:'reported'});
   const f=fixture(testCase,{draft:value});
   await assert.rejects(f.model.updateState(testCase.context),{code:'MODEL_INVALID_RESPONSE'});
-  assert.equal(f.calls.length,6);assert.ok(f.calls.slice(0,3).every(call=>call.stage==='turn_draft'));
-  assert.ok(f.calls.slice(3).every(call=>call.stage==='turn_draft_block_patient_state'));
+  assert.equal(f.calls.length,9);assert.ok(f.calls.slice(0,3).every(call=>call.stage==='turn_draft'));
+  // The independent question branch now starts before the state block fails.
+  // This malformed fixture exhausts both branches without reaching a review.
+  for(const block of ['patient_state','questions'])
+    assert.equal(f.calls.filter(call=>call.stage==='turn_draft_block_'+block).length,3);
+  assert.ok(f.calls.slice(3).every(call=>['turn_draft_block_patient_state','turn_draft_block_questions'].includes(call.stage)));
 });

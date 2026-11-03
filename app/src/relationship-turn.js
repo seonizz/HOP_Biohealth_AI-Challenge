@@ -8,9 +8,10 @@ import { relationshipStateRequest, canonicalRelationshipState, assertRetrievedEv
 import { COMMON, STATE_REVIEW, PROMPT_VERSION } from './relationship-prompts.js';
 import { claimsOf, auditSchema, validateAudits } from './grounding-audit.js';
 import { literalStateRepairSchema, literalStateRepairInstruction } from './relationship-state-repair.js';
-import { scopedBlockInput, scopedBlockPrompt } from './turn-input-scope.js';
+import { scopedBlockInput, scopedBlockPrompt, reviewedNameInput, REVIEWED_NAME_PROMPT, reviewedSafetyRequest } from './turn-input-scope.js';
+import { finalReviewBundle } from './final-review-bundle.js';
 
-export const TURN_PROMPT_VERSION = PROMPT_VERSION + '-combined-turn-v50';
+export const TURN_PROMPT_VERSION = PROMPT_VERSION + '-combined-turn-v56';
 
 const object = properties => ({ type:'object', properties, required:Object.keys(properties), additionalProperties:false });
 const absent = {type:'null'};
@@ -106,23 +107,71 @@ function blockRevisionTargets(block,input) {
 const BLOCK_REVISION_INSTRUCTION=`
 이번 블록의 revision_targets는 같은 rejected_draft와 review에서 골라 표시한 수정 대상입니다. 검토자 판정도 틀릴 수 있는 수정 자료이며 새로운 사실이나 승인된 답안이 아닙니다. 전체 원문의 사람·시점·부정·정정·확인된 범위와 각각 직접 대조하세요.
 반려 문구에 이미 확인된 부분이 섞였다면 그 부분을 실제로 고쳐, 아직 확인되지 않았고 현재 판단에 필요한 범위만 모델이 원문에서 새로 작성하세요. 같은 문구를 그대로 복사하거나 '미확인'이라는 꼬리표만 붙이는 것은 수정이 아닙니다. 검토자의 reason을 원문 대신 근거로 쓰거나 내용을 새 사실로 저장하지 마세요.
-필요한 미확인 한계와 원문의 모름·거절·상충은 계속 보존하세요. 지적을 피하려고 unknowns 전체를 비우거나 관련 없는 항목을 삭제하지 마세요. 서버가 정답 문구를 선택하거나 내용을 삭제·승인하지 않습니다. 원본 output_schema에 맞는 현재 블록만 반환하고, 이 출력은 이후 전체 원문 검증과 새로운 독립 검토를 받아야 합니다.`;
+원문이 같은 사람·시점·범위의 항목 전체에 답했다면 그 항목을 재서술하지 말고 제거하세요. 모든 항목이 해결됐으면 unknowns=[]가 올바릅니다. 행동·사건이 없었다는 명시적 부정 답변과 그 여부를 모른다는 답변을 구분하세요. unknowns에는 아직 모르는 사항만 쓰고, 검토 이유·삭제 지시·수정 경과를 설명하는 문장을 넣지 마세요.
+필요한 미확인 한계와 원문의 모름·거절·상충은 계속 보존하세요. 실제로 남은 중요한 미확인까지 지적을 피하려고 삭제하지 말고, 일부만 확인된 항목은 남은 범위로 좁히세요. 서버가 정답 문구를 선택하거나 내용을 삭제·승인하지 않습니다. 원본 output_schema에 맞는 현재 블록만 반환하고, 이 출력은 이후 전체 원문 검증과 새로운 독립 검토를 받아야 합니다.`;
 
-async function generateDraftBlocks(gateway,state,questions,input,schema,operation,suffix,literalState,feedback,feedbackBlock,stages,context,contextKey) {
-  const parts={},validated={};
+const NAME_REUSE_VERSION='reviewed-name-v1';
+const SAFETY_REUSE_VERSION='reviewed-safety-v1';
+function reviewedRequestFingerprint(gateway,request,tokenPolicy,version) {
+  if(typeof gateway.reviewedNameIdentity!=='string'||!gateway.reviewedNameIdentity)return null;
+  // The instance nonce makes records from another gateway/process miss. Only
+  // the resulting digest is persisted; credentials/configuration remain local.
+  const settings=Object.fromEntries(['reviewedNameIdentity','baseUrl','model','apiKey','protocol','agentFormat','reasoningEffort',
+    'stateMode','preserveStringLimits','streamJson','streamCompleteJson','discoverTokenLimits','reuseTokenPolicy'].map(key=>[key,gateway[key]]));
+  return createHash('sha256').update(JSON.stringify({version,turn:TURN_PROMPT_VERSION,settings,
+    token_policy:tokenPolicy??null,request})).digest('hex');
+}
+
+async function requestReusableSafetyReview(gateway,context,request,operation,suffix,reuse,eligible) {
+  const reviewer=gateway.reviewGateway||gateway,stage='safety_review'+suffix;
+  const execute=async activeOperation=>{
+    activeOperation.controller?.signal.throwIfAborted();
+    const exactRequest={stage,prompt:request.prompt,payload:request.data,schema:request.schema};
+    const fingerprint=eligible?reviewedRequestFingerprint(reviewer,exactRequest,activeOperation.tokenPolicy,SAFETY_REUSE_VERSION):null;
+    const prior=context.state_execution,attemptsBefore=activeOperation.metrics?.families?.get('reviewer:safety_review')??0;
+    let output,reused=false;
+    if(fingerprint&&prior?.reviewed===true&&prior.prompt_version===TURN_PROMPT_VERSION&&
+      prior.safety_reuse?.version===SAFETY_REUSE_VERSION&&prior.safety_reuse.fingerprint===fingerprint&&context.safety_signal) {
+      try {
+        const candidate=structuredClone(prior.safety_reuse.output);
+        const signal=validateSafetyReview(candidate,context,request);
+        if(JSON.stringify(signal)===JSON.stringify(context.safety_signal)){output=candidate;reused=true;}
+      }catch(error) {if(!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE')throw error;}
+    }
+    if(reused) {
+      try {gateway.diagnosticLogger?.({event:'model_result_reused',generation:stage,source:'reviewed_safety',
+        ...(operation.requestId?{request_id:operation.requestId}:{})});}catch { /* Diagnostics do not approve the result. */ }
+    } else output=await reviewer.agentComplete(stage,request.prompt,request.data,request.schema,activeOperation,payload=>{
+      validateSafetyReview(payload,context,request);return payload;
+    });
+    activeOperation.controller?.signal.throwIfAborted();
+    const attempts=(activeOperation.metrics?.families?.get('reviewer:safety_review')??0)-attemptsBefore;
+    if(fingerprint&&(reused||attempts===1)&&
+      fingerprint===reviewedRequestFingerprint(reviewer,exactRequest,activeOperation.tokenPolicy,SAFETY_REUSE_VERSION))
+      reuse.entry={version:SAFETY_REUSE_VERSION,fingerprint,output:structuredClone(output),reused};
+    return output;
+  };
+  // Match ordinary reviewer delegation: discover that reviewer's own policy,
+  // share cancellation/metrics, and leave whole-operation retries to the writer.
+  return reviewer===gateway?execute(operation):reviewer.operation({requestId:operation.requestId,
+    signal:operation.controller.signal,onProgress:operation.onProgress,onCard:operation.onCard},execute,
+    {retryFailures:false,parentOperation:operation});
+}
+
+async function generateDraftBlocks(gateway,state,questions,input,schema,operation,suffix,literalState,feedback,feedbackBlock,stages,context,contextKey,nameReuse) {
+  const parts={},validated={},stateStages=[],questionStages=[];
   const recovery=operation.recovery;
   const retained=recovery?.combinedBlocks;
-  // Only a validated prefix from a structural failure can be reused. Exact
-  // request inputs below include the repair phase and all generated predecessors.
+  // Only blocks validated before cancellation can survive a structural failure.
+  // Exact inputs include the repair phase and each state's generated predecessors;
+  // questions depend solely on the original inputs, never on generated state.
   const cached=retained?.contextKey===contextKey&&retained.requestId===operation.requestId&&
     !operation.controller?.signal.aborted?retained.blocks:{};
   if(recovery)delete recovery.combinedBlocks;
   const scopedRules=gateway.stateMode==='combined_blocks'&&gateway.stageScopedQuestionRules===true;
   const scopedInputs=scopedRules&&gateway.blockScopedInputs===true;
-  for(const block of ['patient_state','name_index','relationship_memory','questions']) {
-    // An inactive question stage has a fixed null contract, with no decision
-    // for the model to make. Keep every actual request rooted in an object.
-    if(block==='questions'&&!questions){parts.questions=null;continue;}
+  const generateBlock=async(block,branchOperation,blockStages)=>{
+    branchOperation.controller?.signal.throwIfAborted();
     const valueSchema=block==='questions'?schema.properties.questions:schema.properties.state.properties[block];
     // Name extraction can legitimately return null; retain its existing
     // wrapper rather than exposing a root anyOf to object-only APIs.
@@ -130,15 +179,16 @@ async function generateDraftBlocks(gateway,state,questions,input,schema,operatio
     const stage='turn_draft_block_'+block+suffix;
     const revisionTargets=blockRevisionTargets(block,input);
     const scopedFeedback=!feedbackBlock||feedbackBlock===block?feedback:undefined;
+    const normalizedName=block==='name_index'&&gateway.stateMode==='combined_blocks'&&gateway.reuseReviewedName===true;
     const basePrompt=draftPrompt(state,questions,block,scopedRules);
-    const prompt=(scopedInputs?scopedBlockPrompt(block,basePrompt):basePrompt)+
+    const prompt=(normalizedName?REVIEWED_NAME_PROMPT:scopedInputs?scopedBlockPrompt(block,basePrompt):basePrompt)+
       (literalState?literalStateRepairInstruction({combined:true}):'')+
       (revisionTargets.length?BLOCK_REVISION_INSTRUCTION:'');
     const payload={
-      ...(scopedInputs?scopedBlockInput(block,input):input),output_block:block,
+      ...(normalizedName?reviewedNameInput(context,input):scopedInputs?scopedBlockInput(block,input):input),output_block:block,
       // Keep source inputs and scoped feedback, never a failed draft template.
       ...(scopedFeedback?{combined_validation_feedback:scopedFeedback}:{}),
-      ...(block==='questions'?{}:{generated_blocks:structuredClone(parts)}),
+      ...(block==='questions'||normalizedName?{}:{generated_blocks:structuredClone(parts)}),
       ...(revisionTargets.length?{revision_targets:revisionTargets}:{}),
     };
     const cacheKey=createHash('sha256').update(JSON.stringify({contextKey,context,requestId:operation.requestId,
@@ -146,36 +196,79 @@ async function generateDraftBlocks(gateway,state,questions,input,schema,operatio
     const validateBlock=value=>{
       validateSchema(value,blockSchema,'output',true);
       if(block==='questions')validateRelationshipQuestions(value,context,questions);
+      if(normalizedName)validateNameIndex(value.name_index,context);
       return structuredClone(wrapped?value.name_index:value);
     };
     // No inference or cross-turn cache is needed when null is the sole value
     // allowed by the current name schema. Still use the block and full-state
     // validators, and do not report this constant as a model generation stage.
     if(block==='name_index'&&valueSchema.type==='null'&&Object.keys(valueSchema).length===1) {
-      operation.controller?.signal.throwIfAborted();
-      parts[block]=validateBlock({name_index:null});
-      continue;
+      return validateBlock({name_index:null});
     }
     try {
-      if(cached?.[block]?.key===cacheKey){
-        const value=structuredClone(cached[block].value);
-        parts[block]=validateBlock(wrapped?{name_index:value}:value);
-      }else parts[block]=await gateway.agentComplete(stage,prompt,payload,blockSchema,operation,validateBlock);
-      validated[block]={key:cacheKey,value:structuredClone(parts[block])};
+      let value,reusedName=false;
+      // Rejected/repair work never mints a reusable approval. The current
+      // whole-state independent review still runs after an eligible hit.
+      const nameRequest={stage,prompt,payload,schema:blockSchema};
+      const nameKey=normalizedName&&!suffix&&!literalState&&!feedback&&!input.review
+        ?reviewedRequestFingerprint(gateway,nameRequest,branchOperation.tokenPolicy,NAME_REUSE_VERSION):null;
+      const nameAttemptsBefore=branchOperation.metrics?.families?.get('writer:turn_name_index')??0;
+      const prior=context.state_execution;
+      if(nameKey&&prior?.reviewed===true&&prior.prompt_version===TURN_PROMPT_VERSION&&
+        prior.name_reuse?.version===NAME_REUSE_VERSION&&prior.name_reuse.fingerprint===nameKey&&
+        JSON.stringify(prior.name_reuse.name_index)===JSON.stringify(context.name_index)) {
+        try {value=validateBlock({name_index:structuredClone(prior.name_reuse.name_index)});reusedName=true;}
+        catch(error) {if(!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE')throw error;}
+      }
+      if(reusedName) {
+        try {gateway.diagnosticLogger?.({event:'model_result_reused',generation:stage,source:'reviewed_name',
+          ...(operation.requestId?{request_id:operation.requestId}:{})});}catch { /* Diagnostics do not approve the result. */ }
+      }else if(cached?.[block]?.key===cacheKey){
+        const retainedValue=structuredClone(cached[block].value);
+        value=validateBlock(wrapped?{name_index:retainedValue}:retainedValue);
+      }else value=await gateway.agentComplete(stage,prompt,payload,blockSchema,branchOperation,validateBlock);
+      branchOperation.controller?.signal.throwIfAborted();
+      const nameAttempts=(branchOperation.metrics?.families?.get('writer:turn_name_index')??0)-nameAttemptsBefore;
+      // An internally repaired response saw a different prompt/feedback. Do
+      // not register that response under the original first-attempt request.
+      if(nameKey&&(reusedName||nameAttempts===1)&&
+        nameKey===reviewedRequestFingerprint(gateway,nameRequest,branchOperation.tokenPolicy,NAME_REUSE_VERSION))
+        nameReuse.entry={version:NAME_REUSE_VERSION,fingerprint:nameKey,name_index:structuredClone(value),reused:reusedName};
+      validated[block]={key:cacheKey,value:structuredClone(value)};
+      blockStages.push(stage);
+      return value;
     } catch(error) {
       // Paths in a block validator start at output, not the full draft root.
       // Retain their origin so a later operation cannot apply them elsewhere.
       if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE') {
         Object.defineProperty(error,'modelFeedbackBlock',{value:block,configurable:true});
-        if(recovery&&!operation.controller?.signal.aborted&&
-          ['agent_schema','content_json','stream_whitespace_stall'].includes(error.modelReason))
-          recovery.combinedBlocks={contextKey,requestId:operation.requestId,blocks:validated};
       }
       throw error;
     }
-    stages.push(stage);
+  };
+  const generateState=async branchOperation=>{
+    for(const block of ['patient_state','name_index','relationship_memory'])
+      parts[block]=await generateBlock(block,branchOperation,stateStages);
+  };
+  let questionResult=null;
+  try {
+    if(questions){
+      // Keep question results out of the state prefix regardless of completion
+      // order, so prompts and cache keys remain identical to sequential drafting.
+      [,questionResult]=await parallelTurnTasks(operation,[generateState,
+        branchOperation=>generateBlock('questions',branchOperation,questionStages)]);
+    }else await generateState(operation);
+  } catch(error) {
+    // Siblings are drained before recording recovery. Never retain a late result
+    // or let a sibling's cancellation replace the first structural failure.
+    if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&recovery&&
+      !operation.controller?.signal.aborted&&
+      ['agent_schema','content_json','stream_whitespace_stall'].includes(error.modelReason))
+      recovery.combinedBlocks={contextKey,requestId:operation.requestId,blocks:validated};
+    throw error;
   }
-  return {state:{patient_state:parts.patient_state,name_index:parts.name_index,relationship_memory:parts.relationship_memory},questions:parts.questions};
+  stages.push(...stateStages,...questionStages);
+  return {state:{patient_state:parts.patient_state,name_index:parts.name_index,relationship_memory:parts.relationship_memory},questions:questionResult};
 }
 
 export function reviewPrompt({typedUnknowns=false}={}) {
@@ -267,7 +360,7 @@ function uniqueReviewClaims(claims) {
   return {claims:unique,aliases};
 }
 
-export async function requestCombinedStateReview(gateway,payload,operation,suffix='') {
+function combinedStateReviewRequest(payload,suffix='') {
   const claims=payload.review_target.claims,reviewClaims=uniqueReviewClaims(claims);
   const schema=object({state:stateReviewSchema(claims),questions:absent,safety:absent});
   const canonicalSchema=object({state:stateReviewSchema(reviewClaims.claims),questions:absent,safety:absent});
@@ -287,10 +380,10 @@ export async function requestCombinedStateReview(gateway,payload,operation,suffi
     ...(reviewClaims.claims.length===unknownIds.size?[]:[{...audit,properties:{...audit.properties,
       id:{type:'string',enum:reviewClaims.claims.filter(claim=>!unknownIds.has(claim.id)).map(claim=>claim.id)}}}]),
   ]};
-  return gateway.agentComplete('turn_review'+suffix,reviewPrompt({typedUnknowns:true})+
-    '\n각 claim의 원문 근거와 판정을 audits에 먼저 기록하고, 남은 구체적 오류를 issues에 적은 뒤 그 결과에 맞게 approved를 결정하세요.',{
+  return {key:'state',stage:'turn_review'+suffix,prompt:reviewPrompt({typedUnknowns:true})+
+    '\n각 claim의 원문 근거와 판정을 audits에 먼저 기록하고, 남은 구체적 오류를 issues에 적은 뒤 그 결과에 맞게 approved를 결정하세요.',payload:{
     ...payload,review_target:{...payload.review_target,claims:reviewClaims.claims},
-  },reviewSchema,operation,output=>{
+  },schema:reviewSchema,validate:output=>{
     validateSchema(output,reviewSchema,'output',true);
     const actualIds=new Set(output.state.audits.map(audit=>audit.id));
     if(actualIds.size!==reviewClaims.claims.length||reviewClaims.claims.some(claim=>!actualIds.has(claim.id)))invalid('agent_claim_audit');
@@ -304,7 +397,52 @@ export async function requestCombinedStateReview(gateway,payload,operation,suffi
       ...audits.get(reviewClaims.aliases.get(claim.id)??claim.id),id:claim.id,
     }))}};
     return validateCombinedStateReview(expanded,schema,claims);
-  });
+  }};
+}
+
+export async function requestCombinedStateReview(gateway,payload,operation,suffix='') {
+  const request=combinedStateReviewRequest(payload,suffix);
+  return gateway.agentComplete(request.stage,request.prompt,request.payload,request.schema,operation,request.validate);
+}
+
+// Independent draft/review tasks share cancellation, never intermediate output.
+// A semantic rejection is a complete result, not an operational failure:
+// question decisions and confirmed danger must survive state repair.
+async function parallelTurnTasks(operation,tasks) {
+  const controller=new AbortController(),parentSignal=operation.controller?.signal;
+  const abort=()=>controller.abort(parentSignal.reason);
+  parentSignal?.addEventListener('abort',abort,{once:true});
+  if(parentSignal?.aborted)abort();
+  const branchOperation={...operation,controller,onProgress:event=>{
+    if(!controller.signal.aborted)operation.onProgress?.(event);
+  }};
+  let failed=false,failure;
+  try {
+    const results=await Promise.allSettled(tasks.map(async task=>{
+      try {
+        controller.signal.throwIfAborted();
+        // Policy refresh/retry state belongs to this branch. Share cancellation,
+        // metrics and the guarded cache, not a sibling's active token budget.
+        const value=await task({...branchOperation});
+        controller.signal.throwIfAborted();
+        return value;
+      } catch(error) {
+        if(!failed){
+          failed=true;failure=error;
+          // Do not abort the owning operation: its existing retry policy needs
+          // the original failure, not a cancellation manufactured by a sibling.
+          controller.abort(new HttpError(499,'MODEL_CANCELLED','답변 처리를 중단했어요.'));
+        }
+        throw error;
+      }
+    }));
+    // Drain every branch before retrying, applying results, or allowing a save.
+    parentSignal?.throwIfAborted();
+    if(failed)throw failure;
+    return results.map(result=>result.value);
+  } finally {
+    parentSignal?.removeEventListener('abort',abort);
+  }
 }
 
 function validateStateAudits(audits,claims,approved) {
@@ -563,7 +701,7 @@ function normalizeReportedOverflow(payload,context,request,draftSchema) {
 }
 
 // Keep the existing state and question evidence scopes independent, even though
-// their two drafts share a model request. Only the second call can approve them.
+// their two drafts share a model request. Only independent reviews can approve them.
 export async function runCombinedRelationshipState(gateway,context,memory,operation,final=false) {
   const stateRequest=relationshipStateRequest(context,memory,final);
   const questions=context.adaptive_questions&&!final?relationshipQuestionRequest(context):null;
@@ -575,6 +713,9 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
   if(recovery?.combinedTurn?.contextKey!==contextKey&&recovery)delete recovery.combinedTurn;
   if(recovery?.combinedDraft?.contextKey!==contextKey&&recovery)delete recovery.combinedDraft;
   if(recovery?.combinedBlocks?.contextKey!==contextKey&&recovery)delete recovery.combinedBlocks;
+  if(recovery?.turnReviewBundlesDisabled?.contextKey!==contextKey&&recovery)delete recovery.turnReviewBundlesDisabled;
+  const bundleReviews=gateway.bundleTurnReviews===true&&gateway.stateMode==='combined_blocks';
+  let useReviewBundles=bundleReviews&&!recovery?.turnReviewBundlesDisabled;
   const retained=recovery?.combinedTurn;
   let blockDraft=gateway.stateMode==='combined_blocks'||Boolean(recovery?.combinedDraft),failedCandidate=recovery?.combinedDraft?.candidate,
     blockFeedback=recovery?.combinedDraft?.feedback,feedbackBlock=recovery?.combinedDraft?.feedbackBlock;
@@ -587,6 +728,7 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
     previousDanger=retained?.danger?structuredClone(retained.danger):null;
   for(let repair=0;repair<2;repair++) {
     const suffix=repair?'_after_review':'';
+    const nameReuse={},safetyReuse={};
     const input={
       ...draftInputs,
       ...(previousReview?{review:previousReview,rejected_draft:previousDraft}:{}),
@@ -626,7 +768,7 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
     }
     if(blockDraft) {
       try {
-        const candidate=await generateDraftBlocks(gateway,stateRequest,questions,input,draftSchema,operation,suffix,literalState,blockFeedback,feedbackBlock,stages,context,contextKey);
+        const candidate=await generateDraftBlocks(gateway,stateRequest,questions,input,draftSchema,operation,suffix,literalState,blockFeedback,feedbackBlock,stages,context,contextKey,nameReuse);
         drafted=validateDraft(candidate);
       } catch(error) {
         if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE') {
@@ -651,26 +793,62 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
       ].map(ref=>[JSON.stringify(ref),ref])).values()],
     }:null;
     if(safetyProposal) validateSafetyEvidence(safetyProposal,context);
-    const safetyRequest=safetyProposal?safetyReviewRequest(questions,{safety_signal:safetyProposal}):null;
+    let safetyRequest=safetyProposal?safetyReviewRequest(questions,{safety_signal:safetyProposal}):null;
+    const reusableSafety=gateway.stateMode==='combined_blocks'&&gateway.reuseReviewedSafety===true;
+    if(safetyRequest&&reusableSafety)safetyRequest=reviewedSafetyRequest(context,safetyRequest);
     // Foreign decisions cannot become reasons to reject otherwise valid state.
     // Each reviewer receives only its own proposal, claims and retrieval scope.
-    const review=await requestCombinedStateReview(gateway,{
+    const stateReviewRequest=combinedStateReviewRequest({
       shared_input:{},review_target:{input:raw,state:reviewState(result),claims,reference_roles:reviewReferenceRoles(result,raw)},
       questions:null,safety:null,
-    },operation,suffix);
-    stages.push('turn_review'+suffix);
+    },suffix);
+    const requests=[stateReviewRequest];
     if(questionRequest) {
-      review.questions=await gateway.agentComplete('question_review'+suffix,questionRequest.prompt,questionRequest.data,questionRequest.schema,operation,payload=>{
+      requests.push({key:'questions',stage:'question_review'+suffix,prompt:questionRequest.prompt,payload:questionRequest.data,schema:questionRequest.schema,validate:payload=>{
         applyQuestionReview(payload,decision,questionRequest);return payload;
-      });
-      stages.push('question_review'+suffix);
+      }});
     }
     if(safetyRequest) {
-      review.safety=await gateway.agentComplete('safety_review'+suffix,safetyRequest.prompt,safetyRequest.data,safetyRequest.schema,operation,payload=>{
+      requests.push({key:'safety',stage:'safety_review'+suffix,prompt:safetyRequest.prompt,payload:safetyRequest.data,schema:safetyRequest.schema,validate:payload=>{
         validateSafetyReview(payload,context,safetyRequest);return payload;
-      });
-      stages.push('safety_review'+suffix);
+      }});
     }
+    let reviewed;
+    if(useReviewBundles&&requests.length>1) {
+      const stage='turn_review_bundle'+suffix,bundle=finalReviewBundle(requests,validateSchema);
+      try {
+        const output=await gateway.agentComplete(stage,bundle.prompt+
+          '\n이번 tasks는 상태·질문·안전 검토입니다. 각 task의 원래 입력 경계를 그대로 적용하세요. 상태의 원문은 review_target.input이고, 질문과 안전의 원문은 각 task 입력의 patient/supporter/user_goal입니다. 서로 다른 task의 retrieval·proposal·판정을 섞지 마세요. state task 출력의 questions/safety=null은 그 task 안의 계약이며 독립 questions/safety task를 생략한다는 뜻이 아닙니다.',
+          bundle.payload,bundle.schema,operation,bundle.validate);
+        operation.controller?.signal.throwIfAborted();
+        reviewed=requests.map(request=>output[request.key]);stages.push(stage);
+      } catch(error) {
+        operation.controller?.signal.throwIfAborted();
+        const exhausted=error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelAttempts===3&&
+          ['agent_schema','content_json','stream_whitespace_stall','state_review_schema','agent_claim_audit','agent_unknown_audit','agent_review_stale'].includes(error.modelReason);
+        const contextLimit=error instanceof HttpError&&error.code==='MODEL_CONTEXT_TOO_LONG'&&error.modelReason==='context_budget';
+        if(!exhausted&&!contextLimit)throw error;
+        // No partial approval survives a failed envelope. Original requests
+        // restore their own schema/scope repair behavior and retry limits.
+        useReviewBundles=false;
+        if(recovery)recovery.turnReviewBundlesDisabled={contextKey};
+        try {gateway.diagnosticLogger?.({event:'model_review_bundle_fallback',generation:stage,reason:error.modelReason,
+          ...(operation.requestId?{request_id:operation.requestId}:{})});}catch { /* Diagnostics do not approve reviews. */ }
+      }
+    }
+    if(!reviewed)reviewed=await parallelTurnTasks(operation,requests.map(request=>activeOperation=>
+      // An envelope changes the actual reviewer request. Never read or mint a
+      // standalone safety fingerprint from its result, including its fallback.
+      request.key==='safety'&&reusableSafety&&!bundleReviews
+        ?requestReusableSafetyReview(gateway,context,safetyRequest,activeOperation,suffix,safetyReuse,
+          !suffix&&!literalState&&!blockFeedback&&!input.review)
+        :gateway.agentComplete(request.stage,request.prompt,request.payload,request.schema,activeOperation,request.validate)));
+    const [review,...independent]=reviewed;
+    // Keep persisted stage order and application precedence independent of
+    // network completion order. No partial review becomes approved state.
+    stages.push('turn_review'+suffix);
+    if(questionRequest){review.questions=independent.shift();stages.push('question_review'+suffix);}
+    if(safetyRequest){review.safety=independent.shift();stages.push('safety_review'+suffix);}
     const reviewedSafety=safetyRequest?validateSafetyReview(review.safety,context,safetyRequest):null;
     if(reviewedSafety) previousDanger=reviewedSafety.urgent?reviewedSafety:null;
     if(!review.state.approved) {
@@ -691,7 +869,9 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
       if(decision.finish_early) { decision.question_plan={skip:[]};decision.clarification=null; }
     }
     if(decision) Object.assign(result,decision);
-    result.state_agent={prompt_version:TURN_PROMPT_VERSION,stages,reviewed:true};
+    result.state_agent={prompt_version:TURN_PROMPT_VERSION,stages,reviewed:true,
+      ...(nameReuse.entry&&JSON.stringify(nameReuse.entry.name_index)===JSON.stringify(result.name_index)
+        ?{name_reuse:nameReuse.entry}:{}),...(safetyReuse.entry?{safety_reuse:safetyReuse.entry}:{})};
     if(recovery){delete recovery.combinedTurn;delete recovery.combinedDraft;}
     return result;
   }

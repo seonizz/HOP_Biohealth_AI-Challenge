@@ -2,7 +2,7 @@ import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getEventListeners } from 'node:events';
-import { JSON_STREAM_COMPLETE, ModelStreamError, schemaArrayLimit, schemaPropertyArrayLimits, schemaStringLimit, streamJsonResponse } from '../src/model-stream.js';
+import { JSON_STREAM_COMPLETE, ModelStreamError, schemaArrayLimit, schemaArrayPaths, schemaPropertyArrayLimits, schemaStringLimit, streamJsonResponse } from '../src/model-stream.js';
 import { ModelGateway } from '../src/model.js';
 import { HttpError } from '../src/errors.js';
 import { validateSchema } from '../src/relationship-agent.js';
@@ -477,6 +477,76 @@ test('an unbounded schema keeps accepting a productive array longer than other s
 const closed=properties=>({type:'object',properties,additionalProperties:false});
 const list=(maxItems,items={type:'string'})=>({type:'array',maxItems,items});
 
+test('array diagnostic paths follow known properties and homogeneous indexes without changing the schema',()=>{
+  const definition=closed({patient:list(2,{anyOf:[{type:'null'},closed({evidence:list(3)})]}),
+    state:{oneOf:[closed({facts:list(3)}),{type:'null'}]},
+    combined:{allOf:[closed({items:list(2)}),{}]},
+    tuple:{type:'array',maxItems:1,prefixItems:[closed({facts:list(3)})],items:false},
+    legacy:{type:'array',items:[closed({facts:list(3)})],additionalItems:false},
+    'unsafe.path':list(2),'unsafe[*]':list(2),'한글':list(2),
+    reference:{$ref:'#/$defs/rows',type:'array'},dynamic:{$dynamicRef:'#rows',type:'array'}});
+  const before=structuredClone(definition);
+  assert.deepEqual([...schemaArrayPaths(definition)].sort(),['output.patient','output.patient[*].evidence',
+    'output.state.facts','output.combined.items','output.tuple','output.legacy'].sort());
+  assert.deepEqual(definition,before);
+  assert.deepEqual([...schemaArrayPaths(list(2,list(3)))],['output','output[*]']);
+  const cyclic=closed({});cyclic.properties.self=cyclic;cyclic.properties.facts=list(3);
+  assert.deepEqual([...schemaArrayPaths(cyclic)],['output.facts']);
+  for(const value of [undefined,true,{},{$ref:'#/$defs/rows'}])assert.equal(schemaArrayPaths(value).size,0);
+});
+
+test('trusted nested array feedback includes the actual zero-based item index and retains the original bound', {timeout:1000},async()=>{
+  const definition=closed({patient:list(2,closed({evidence:list(1)})),other:list(9)});
+  let cancelled=0,aborted;
+  const incoming=response([event(chunk({content:'{"patient":[{"evidence":[]},{"evidence":["PRIVATE_FIRST",'})),
+    event(chunk({content:'"PRIVATE_SECOND"'}))],{open:true,onCancel:()=>cancelled++});
+  await assert.rejects(streamJsonResponse(incoming,{arrayLimit:schemaArrayLimit(definition),
+    propertyArrayLimits:schemaPropertyArrayLimits(definition),arrayPaths:schemaArrayPaths(definition),
+    abort:error=>{aborted=error;}}),error=>{
+    assert.equal(error.reason,'agent_schema');
+    assert.deepEqual(JSON.parse(error.feedback),{path:'output.patient[1].evidence',keyword:'streamArrayLimit',expected:{max_count:1},actual:{count:2}});
+    assert.doesNotMatch(error.feedback,/PRIVATE_|other/);return true;
+  });
+  assert.equal(aborted.reason,'agent_schema');assert.equal(cancelled,1);assert.equal(incoming.body.locked,false);
+});
+
+test('trusted root-array feedback distinguishes nested indexes while preserving global limits',async()=>{
+  const definition=list(2,list(2,{type:'number'}));
+  for(const [content,path] of [['[[],[1,2,3','output[1]'],['[[],[],[]','output']]){
+    await assert.rejects(streamJsonResponse(response([event(chunk({content}))],{open:true}),{
+      arrayLimit:schemaArrayLimit(definition),arrayPaths:schemaArrayPaths(definition),
+    }),error=>{
+      assert.deepEqual(JSON.parse(error.feedback),{path,keyword:'streamArrayLimit',expected:{max_count:2},actual:{count:3}});
+      return true;
+    });
+  }
+});
+
+test('trusted escaped property paths survive every delta and byte boundary',async()=>{
+  const definition=closed({state:closed({facts:list(1)})});
+  const content='{"sta\\u0074e":{"fa\\u0063ts":["PRIVATE_FIRST","PRIVATE_SECOND"';
+  const wire=Array.from(content,char=>event(chunk({content:char}))).join('');
+  const parts=Array.from(encoder.encode(wire),byte=>Uint8Array.of(byte));
+  await assert.rejects(streamJsonResponse(response(parts,{open:true}),{arrayLimit:schemaArrayLimit(definition),
+    propertyArrayLimits:schemaPropertyArrayLimits(definition),arrayPaths:schemaArrayPaths(definition)}),error=>{
+    assert.deepEqual(JSON.parse(error.feedback),{path:'output.state.facts',keyword:'streamArrayLimit',expected:{max_count:1},actual:{count:2}});
+    assert.doesNotMatch(error.feedback,/PRIVATE_/);return true;
+  });
+});
+
+test('unknown and forged property paths cannot expose generated keys in array feedback',async()=>{
+  const definition=closed({patient:list(1,closed({evidence:list(1)})),facts:list(1)});
+  for(const value of [{PRIVATE_KEY:[1,2]},{PRIVATE_KEY:{facts:[1,2]}},
+    {'patient[0].evidence':[1,2]},{patient:{'*':{evidence:[1,2]}}},
+    {'PRIVATE_KEY.facts':[1,2]},{'PRIVATE_KEY\"\n':{facts:[1,2]}}]){
+    await assert.rejects(streamJsonResponse(completion(value),{arrayLimit:schemaArrayLimit(definition),
+      propertyArrayLimits:schemaPropertyArrayLimits(definition),arrayPaths:schemaArrayPaths(definition)}),error=>{
+      assert.deepEqual(JSON.parse(error.feedback),{path:'output',keyword:'streamArrayLimit',expected:{max_count:1},actual:{count:2}});
+      assert.doesNotMatch(error.feedback,/PRIVATE_|patient|facts|evidence/);return true;
+    });
+  }
+});
+
 test('property bounds merge the largest outer bound across paths, unions and tuple items',()=>{
   const definition=closed({facts:list(3),safety_ids:list(9),
     other:{anyOf:[{type:'null'},closed({facts:list(7)})]},
@@ -518,12 +588,12 @@ test('larger same-name variants and anonymous nested arrays retain their valid b
     closed({facts:list(7,{type:'number'}),safety_ids:list(9)})]};
   const value={facts:Array.from({length:7},(_,i)=>i),safety_ids:Array(9).fill('safe')};
   const output=await (await streamJsonResponse(completion(value),{arrayLimit:schemaArrayLimit(definition),
-    propertyArrayLimits:schemaPropertyArrayLimits(definition)})).json();
+    propertyArrayLimits:schemaPropertyArrayLimits(definition),arrayPaths:schemaArrayPaths(definition)})).json();
   assert.deepEqual(JSON.parse(output.choices[0].message.content),value);
   const nestedDefinition=closed({facts:list(1,list(9,{type:'number'}))});
   const nested={facts:[Array.from({length:9},(_,i)=>i)]};
   const restored=await (await streamJsonResponse(completion(nested),{arrayLimit:schemaArrayLimit(nestedDefinition),
-    propertyArrayLimits:schemaPropertyArrayLimits(nestedDefinition)})).json();
+    propertyArrayLimits:schemaPropertyArrayLimits(nestedDefinition),arrayPaths:schemaArrayPaths(nestedDefinition)})).json();
   assert.deepEqual(JSON.parse(restored.choices[0].message.content),nested);
 });
 
@@ -549,7 +619,7 @@ test('literal-array uncertainty disables precision and preserves a valid larger 
   const definition={anyOf:[closed({facts:list(3)}),{const:value}]};
   assert.equal(schemaPropertyArrayLimits(definition),null);
   const output=await (await streamJsonResponse(completion(value),{arrayLimit:schemaArrayLimit(definition),
-    propertyArrayLimits:schemaPropertyArrayLimits(definition)})).json();
+    propertyArrayLimits:schemaPropertyArrayLimits(definition),arrayPaths:schemaArrayPaths(definition)})).json();
   assert.deepEqual(JSON.parse(output.choices[0].message.content),value);
 });
 
@@ -565,8 +635,8 @@ test('gateway cancels an overfull array and repairs with sanitized feedback befo
       {open:true,onCancel:()=>cancelled++});
     assert.deepEqual(input.data,source);assert.deepEqual(input.output_schema,definition);
     assert.equal(input.rejected_output,undefined);
-    assert.deepEqual(JSON.parse(input.validation_feedback),{path:'output',keyword:'streamArrayLimit',expected:{max_count:3},actual:{count:4}});
-    assert.doesNotMatch(input.validation_feedback,/PRIVATE_|facts/);
+    assert.deepEqual(JSON.parse(input.validation_feedback),{path:'output.facts',keyword:'streamArrayLimit',expected:{max_count:3},actual:{count:4}});
+    assert.doesNotMatch(input.validation_feedback,/PRIVATE_/);
     return completion(valid);
   },{agentFormat:'prompt',diagnosticLogger:entry=>logs.push(entry)});
   const result=await model.operation({},operation=>model.agentComplete('synthetic_array_stage','Return the required object.',
@@ -626,7 +696,8 @@ test('three partial array overflows retain the existing structural recovery meta
     {source:'PRIVATE_SOURCE_SENTINEL'},definition,operation,value=>{validated++;return validateSchema(value,definition,'output',true);})),error=>{
     assert.equal(error.code,'MODEL_INVALID_RESPONSE');assert.equal(error.modelReason,'agent_schema');
     assert.equal(error.modelAttempts,3);assert.equal(error.modelStructuralFailures,3);
-    assert.doesNotMatch(error.modelFeedback,/PRIVATE_|facts/);return true;
+    assert.deepEqual(JSON.parse(error.modelFeedback),{path:'output.facts',keyword:'streamArrayLimit',expected:{max_count:3},actual:{count:4}});
+    assert.doesNotMatch(error.modelFeedback,/PRIVATE_/);return true;
   });
   assert.equal(attempts,3);assert.equal(cancelled,3);assert.equal(validated,0);
 });
@@ -801,7 +872,7 @@ test('combined streaming fallback still requires an independently audited state 
     else await assert.rejects(model.updateState(ctx),{code:'MODEL_INVALID_RESPONSE'});
     assert.deepEqual(requests.slice(0,3).map(body=>JSON.parse(body.messages.at(-1).content).stage),['turn_draft','turn_draft','turn_review']);
     assert.deepEqual(requests.slice(0,3).map(body=>body.response_format.type),['json_schema','json_object','json_schema']);
-    assert.equal(requests.length,validReview?4:5);
+    assert.equal(requests.length,validReview?4:6); // Safety starts alongside the independently retried state review.
   }
 });
 

@@ -35,7 +35,7 @@ async function probe(state,{finalUrgent=true,legacyBasis='current_physical_dange
  fetchImpl:async (_url,options)=>{
   const input=JSON.parse(JSON.parse(options.body).messages.at(-1).content),{stage,data,output_schema:schema}=input;stages.push(stage);let output;
   if(stage==='safety_review_final')output={basis:legacyBasis,reason:'현재 원문 전체를 다시 검토',evidence_ids:[safetySources(context).find(x=>x.question_id==='mood').id]};
-  else if(stage==='relationship_analysis')output={observations:{patient:[ref],supporter:[]},relationship:{label:'친구',supporter_role:'친구',dynamics:[],strengths:[],boundaries:[]},unknowns:[],safety:{urgent:false,evidence_ids:false?[safetySources(context).find(x=>x.question_id==='mood').id]:[]}};
+  else if(stage==='relationship_analysis')output={observations:{patient:[ref],supporter:[]},relationship:{label:'친구',supporter_role:'친구',dynamics:[],strengths:[],boundaries:[]},unknowns:[],...(schema.properties.safety?{safety:{urgent:false,evidence_ids:[]}}:{})};
   else if(stage==='communication_plan')output=plan;
   else if(stage==='guide_write')output={guide,assessment:{safety:finalUrgent}};
   else if(stage==='guide_quality')output={improvements:[]};

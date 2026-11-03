@@ -22,10 +22,18 @@ const draft=ctx=>({state:{patient_state:{facts:[{subject:'patient',question_id:'
 const unknown=claim=>claim.kind==='unresolved_information'&&claim.certainty==='unknown';
 const blockValue=(value,block)=>structuredClone(block==='name_index'?{name_index:value.state.name_index}:block==='questions'?value.questions:value.state[block]);
 
-function fixture({repair=true,aliases=false,rejectedClaim=null,forceRejection=false,badRepair=false,questionVerdict=null}={}) {
-  const ctx=context(),initial=draft(ctx),fixed=structuredClone(initial),calls=[];
+function fixture({repair=true,aliases=false,rejectedClaim=null,forceRejection=false,badRepair=false,questionVerdict=null,unknownRepair=null}={}) {
+  const ctx=context();
+  if(unknownRepair)ctx.patient.fields.mood={...field('mood','이번 주 정기 모임에는 참석하지 않았다고 말했어요.'),question:'이번 주 정기 모임에 참석했나요?'};
+  if(unknownRepair==='partial')ctx.supporter.fields.availability={...field('availability','다음 주 함께할 수 있는 시간은 아직 모르겠어요.'),status:'unknown'};
+  const initial=draft(ctx),fixed=structuredClone(initial),calls=[];
   fixed.state.patient_state.unknowns=['휴식 이후 원하는 지원의 구체적인 범위','지원 요청을 확인할 수 있는 상황',initial.state.patient_state.unknowns[2]];
   fixed.state.relationship_memory.unknowns=['휴식 이후 함께할 수 있는 활동의 범위','도움을 나눌 수 있는 구체적인 역할',initial.state.relationship_memory.unknowns[2]];
+  if(unknownRepair)for(const group of groups){
+    initial.state[group].unknowns=['이번 주 정기 모임 참석 여부',...(unknownRepair==='partial'?['다음 주에 함께할 수 있는 시간']:[])];
+    fixed.state[group].unknowns=unknownRepair==='all'?[]:unknownRepair==='partial'?['다음 주에 함께할 수 있는 시간']:
+      [unknownRepair==='explanation'?'모임에 불참했다고 답했으므로 참석 여부는 확인되지 않음':'이번 주 정기 모임 참석 여부(미확인)'];
+  }
   if(aliases){
     initial.state.relationship_memory.unknowns[0]=initial.state.patient_state.unknowns[0];
     fixed.state.relationship_memory.unknowns[0]=fixed.state.patient_state.unknowns[0];
@@ -37,7 +45,9 @@ function fixture({repair=true,aliases=false,rejectedClaim=null,forceRejection=fa
     const skip={question_id:'rest',reason:'already_covered',explanation:'퇴근 후 하고 싶은 일을 직접 전한 답변이 있습니다.',evidence:[evidence]};
     initial.questions.skip=[structuredClone(skip)];fixed.questions.skip=[structuredClone(skip)];
   }
-  const rejectedStrings=new Set(groups.flatMap(group=>initial.state[group].unknowns.slice(0,2)));
+  const rejectedStrings=new Set(groups.flatMap(group=>initial.state[group].unknowns.slice(0,unknownRepair?1:2)));
+  if(['explanation','suffix'].includes(unknownRepair))for(const group of groups)
+    fixed.state[group].unknowns.forEach(value=>rejectedStrings.add(value));
   const model={stateMode:'combined_blocks',async agentComplete(stage,prompt,data,schema,operation,validate){
     const call={stage,prompt,data:structuredClone(data),schema:structuredClone(schema)};calls.push(call);
     let output;
@@ -120,6 +130,53 @@ test('rejected block unknowns receive only their own exact repair targets and ke
   assert.equal(result.state_agent.reviewed,true);assert.deepEqual({ctx:f.ctx,initial:f.initial,fixed:f.fixed},before);
 });
 
+for(const unknownRepair of ['all','partial'])
+test('model-authored unknown repair '+(unknownRepair==='all'?'may remove every resolved item':'preserves the actual remaining gap')+' before fresh review',async()=>{
+  const f=fixture({unknownRepair}),before=structuredClone(f.ctx),result=await f.run();
+  const expected=unknownRepair==='all'?[]:['다음 주에 함께할 수 있는 시간'];
+  const first=f.calls.find(call=>call.stage==='turn_review'),fresh=f.calls.find(call=>call.stage==='turn_review_after_review');
+  assert.equal(first.validated.state.approved,false);assert.equal(fresh.validated.state.approved,true);
+  assert.deepEqual(fresh.data.review_target.input,first.data.review_target.input);
+  assert.equal(fresh.data.review,undefined);
+  if(unknownRepair==='partial'){
+    const remaining=fresh.data.review_target.input.supporter.find(row=>row.question_id==='availability');
+    assert.equal(remaining.status,'unknown');assert.equal(remaining.answers[0].text,f.ctx.supporter.fields.availability.rawText);
+  }
+  for(const group of groups){
+    const writer=f.calls.find(call=>call.stage==='turn_draft_block_'+group+'_after_review');
+    assert.deepEqual(writer.data.revision_targets.map(target=>target.claim),['이번 주 정기 모임 참석 여부']);
+    assert.equal(writer.schema.properties.unknowns.minItems,0);
+    assert.match(writer.prompt,/항목 전체에 답했다면 그 항목을 재서술하지 말고 제거/u);
+    assert.match(writer.prompt,/모든 항목이 해결됐으면 unknowns=\[\]가 올바릅니다/u);
+    assert.match(writer.prompt,/행동·사건이 없었다는 명시적 부정 답변과 그 여부를 모른다는 답변을 구분/u);
+    assert.match(writer.prompt,/실제로 남은 중요한 미확인.*삭제하지 말고, 일부만 확인된 항목은 남은 범위로 좁히세요/u);
+    assert.match(writer.prompt,/새로운 독립 검토를 받아야 합니다/u);
+    assert.deepEqual(writer.output.unknowns,expected);
+    assert.deepEqual(writer.validated.unknowns,expected,'the server preserves the writer output');
+    assert.deepEqual(result[group].unknowns,expected);
+  }
+  assert.deepEqual(fresh.data.review_target.claims.filter(unknown).map(claim=>claim.claim),expected,'identical unknowns share one audit, without losing their original slots');
+  assert.equal(result.patient_state.facts[0].quote,f.ctx.patient.fields.mood.rawText);
+  assert.equal(result.state_agent.reviewed,true);assert.deepEqual(f.ctx,before);
+});
+
+for(const unknownRepair of ['explanation','suffix'])
+test('an answered unknown rewritten as '+unknownRepair+' remains subject to rejection',async()=>{
+  const f=fixture({unknownRepair}),before=structuredClone(f.ctx);
+  await assert.rejects(f.run(),{code:'MODEL_INVALID_RESPONSE',modelReason:'state_review_rejected'});
+  const fresh=f.calls.find(call=>call.stage==='turn_review_after_review');
+  assert.equal(f.calls.filter(call=>call.stage.startsWith('turn_review')).length,2);
+  assert.equal(fresh.validated.state.approved,false);
+  assert.ok(fresh.validated.state.audits.filter(audit=>audit.id.includes('.unknowns.')).every(audit=>audit.verdict==='unsupported'));
+  for(const group of groups){
+    const writer=f.calls.find(call=>call.stage==='turn_draft_block_'+group+'_after_review');
+    assert.match(writer.prompt,/검토 이유·삭제 지시·수정 경과를 설명하는 문장을 넣지 마세요/u);
+    assert.deepEqual(writer.validated.unknowns,f.fixed.state[group].unknowns,'schema validation does not silently delete semantic errors');
+  }
+  assert.deepEqual(fresh.data.review_target.claims.filter(unknown).map(claim=>claim.claim),f.fixed.state.patient_state.unknowns);
+  assert.deepEqual(f.ctx,before);assert.equal(f.ctx.state_agent,undefined);
+});
+
 test('a shared rejected unknown audit expands into each original block target without mixing their other claims',async()=>{
   const f=fixture({aliases:true}),result=await f.run();
   assert.equal(f.calls.find(call=>call.stage==='turn_review').data.review_target.claims.some(claim=>claim.id==='relationship_memory.unknowns.0'),false);
@@ -158,8 +215,10 @@ for(const repair of [false,true])test('revision targets never override a fresh r
 test('a targeted rewrite still fails its original block schema before another independent review',async()=>{
   const f=fixture({badRepair:true});
   await assert.rejects(f.run(),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema'});
-  assert.ok(f.calls.at(-1).data.revision_targets.length);
-  assert.equal(f.calls.at(-1).stage,'turn_draft_block_patient_state_after_review');
+  const rejected=f.calls.find(call=>call.stage==='turn_draft_block_patient_state_after_review');
+  assert.ok(rejected.data.revision_targets.length);
+  assert.equal(rejected.validated,undefined);
+  assert.equal(f.calls.some(call=>call.stage==='turn_draft_block_name_index_after_review'),false);
   assert.equal(f.calls.filter(call=>call.stage.startsWith('turn_review')).length,1);
 });
 

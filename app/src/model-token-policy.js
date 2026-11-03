@@ -35,6 +35,10 @@ export async function discoverModelTokenPolicy({ baseUrl, apiKey, model, signal,
     return {
       maxOutputTokens: output, maxContextTokens: context,
       ...(positiveInteger(input) && input <= context ? { maxInputTokens: input } : {}),
+      // Only servers that reject stale revisions before dispatch may advertise
+      // this contract. Readiness itself is never cached.
+      ...(typeof metadata.token_policy_revision === 'string' && /^[a-f0-9]{64}$/u.test(metadata.token_policy_revision)
+        ? { revision: metadata.token_policy_revision } : {}),
     };
   } finally {
     // Release unsupported/error responses without reading or retaining details.

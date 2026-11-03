@@ -58,6 +58,12 @@ test('optional input budget is included only when valid and within the server co
   assert.equal((await discover({ ...metadata, max_input_tokens: 32768 })).maxInputTokens, 32768);
 });
 
+test('only an opaque well-formed guarded policy revision may enable reuse',async()=>{
+  for(const token_policy_revision of [undefined,null,42,'','a'.repeat(63),'A'.repeat(64),'private arbitrary text'])
+    assert.equal(Object.hasOwn(await discover({...metadata,token_policy_revision}),'revision'),false);
+  assert.equal((await discover({...metadata,token_policy_revision:'a'.repeat(64)})).revision,'a'.repeat(64));
+});
+
 test('HTTP and transport failures do not silently use a small default or expose response details', async () => {
   for (const status of [301, 302, 307, 308, 400, 401, 403, 429, 500, 503]) {
     await assert.rejects(discover(null, { fetchImpl: async () => new Response('private server detail', { status }) }),

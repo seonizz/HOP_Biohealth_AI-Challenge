@@ -84,6 +84,30 @@ function assertDetail(output) {
   }
 }
 
+test('guarded policy reuse reduces normal O4 capability GETs from 15 to 2 without changing its 18 POSTs or saved output',async()=>{
+  const run=async reuseTokenPolicy=>{
+    const value=fixture(),transport=value.gateway.fetchImpl;
+    let gets=0;
+    const fetchImpl=async(url,request)=>{
+      if(request.method==='GET'){
+        gets++;return new Response(JSON.stringify({model:'synthetic-model',max_output_tokens:8192,max_context_tokens:32768,
+          token_policy_revision:'c'.repeat(64)}));
+      }
+      return transport(url,request);
+    };
+    Object.assign(value.gateway,{fetchImpl,discoverTokenLimits:true,reuseTokenPolicy});
+    value.gateway.reviewGateway=new ModelGateway({baseUrl:'https://reviewer.invalid/v1',apiKey:'synthetic-review-key',model:'synthetic-model',
+      protocol:'relationship_agent',agentFormat:'prompt',reasoningEffort:'omit',timeoutMs:0,diagnosticLogger:null,
+      fetchImpl,discoverTokenLimits:true,reuseTokenPolicy});
+    const output=await value.run();
+    assertDetail(output);assert.equal(value.requests.length,18);
+    return {output,gets,requests:value.requests};
+  };
+  const before=await run(false),after=await run(true);
+  assert.equal(before.gets,15);assert.equal(after.gets,2);
+  assert.deepEqual(after.output,before.output);assert.deepEqual(after.requests,before.requests);
+});
+
 test('O4 uses 18 HTTP calls and retains all 14 independent reviews plus the full storage payload',async()=>{
   const reused=fixture(),legacy=fixture({reuseFinalDraft:false});
   const output=await reused.run(),baseline=await legacy.run();

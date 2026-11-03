@@ -62,6 +62,12 @@ function turnInputSettings(env) {
   return options;
 }
 
+function optInSetting(env, key, scope = 'MODEL') {
+  if(env[key]===undefined||env[key]==='false')return false;
+  if(env[key]==='true')return true;
+  throw invalid(scope);
+}
+
 function endpoint(env, prefix) {
   try {
     return resolveModelBaseUrl(env[prefix + '_BASE_URL'], {
@@ -135,6 +141,7 @@ export function configuredReviewGateway({env = process.env, defaultModel = DEFAU
     timeoutMs:0, retryFailures,
     preserveStringLimits:env.MODEL_REVIEW_SCHEMA_STRING_LIMITS === 'true',
     discoverTokenLimits:discoverSetting(env, 'MODEL_REVIEW_DISCOVER_TOKEN_LIMITS', 'MODEL_REVIEW'),
+    reuseTokenPolicy:optInSetting(env, 'MODEL_REUSE_TOKEN_POLICY'),
     diagnosticLogger, fetchImpl,
   });
   if (!gateway.configured) throw invalid('MODEL_REVIEW');
@@ -164,7 +171,14 @@ export function configuredModelGateway({env = process.env, diagnosticLogger, fet
     skipFinalExtras:skipFinalExtrasSetting(env),
     reuseFinalDraft:reuseFinalDraftSetting(env),
     ...turnInputSettings(env),
+    compactReviewInputs:optInSetting(env, 'MODEL_COMPACT_REVIEW_INPUTS'),
+    scopedQualityRefinement:optInSetting(env, 'MODEL_SCOPED_QUALITY_REFINEMENT'),
+    reuseTokenPolicy:optInSetting(env, 'MODEL_REUSE_TOKEN_POLICY'),
     preserveStringLimits:env.MODEL_SCHEMA_STRING_LIMITS === 'true',
+    bundleFinalReviews:optInSetting(env, 'MODEL_BUNDLE_FINAL_REVIEWS'),
+    bundleTurnReviews:optInSetting(env, 'MODEL_BUNDLE_TURN_REVIEWS'),
+    reuseReviewedName:optInSetting(env, 'MODEL_REUSE_REVIEWED_NAME'),
+    reuseReviewedSafety:optInSetting(env, 'MODEL_REUSE_REVIEWED_SAFETY'),
     discoverTokenLimits:discoverSetting(env, 'MODEL_DISCOVER_TOKEN_LIMITS', 'MODEL'),
     diagnosticLogger, fetchImpl,
   });

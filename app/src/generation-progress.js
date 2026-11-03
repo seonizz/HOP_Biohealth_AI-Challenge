@@ -14,12 +14,13 @@ const labels = [
   [/^speech_detail_review/, '단계별 설명과 원문 근거 검토'], [/^speech_detail/, '말하기 단계와 이유 정리'],
   [/^speech_review/, '건넬 말과 행동의 근거 검토'], [/^support_review/, '사용자 돌봄과 다음 단계 검토'],
   [/^guide_repair/, '검토에서 발견한 내용 수정'], [/^guide_review/, '최종 답안 검토'],
+  [/^card_review_bundle/, '건넬 말과 행동의 근거 검토'], [/^final_review_bundle/, '최종 답안 검토'],
 ];
 const phases = [
   {label:'이야기 살펴보기',matches:/^(?:state|turn_|relationship_|analysis_)/},
   {label:'안내 방향 정하기',matches:/^(?:communication_plan|plan_review)/},
   {label:'말과 행동 정리하기',matches:/^(?:card_|(?:speech_review|support_review|guide_repair)_card_|guide$|guide_write|guide_quality|guide_refine|speech_opening|speech_listening|speech_offer|speech_write)/},
-  {label:'원문과 안내 확인하기',matches:/^(?:guide_repair|guide_review|speech_review|support_review|speech_detail)/},
+  {label:'원문과 안내 확인하기',matches:/^(?:guide_repair|guide_review|speech_review|support_review|speech_detail|final_review_bundle)/},
   {label:'결과 저장하기',matches:null},
 ];
 export function generationProgress() {

@@ -6,6 +6,27 @@ import {configuredModelGateway, configuredReviewGateway, resolveModelBaseUrl} fr
 import {createApp} from '../src/server.js';
 import {Store} from '../src/store.js';
 
+test('review batching and reviewed-name reuse retain independent reviewer configuration and reject incompatible modes',()=>{
+  const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_PROTOCOL:'relationship_agent',MODEL_STATE_MODE:'combined_blocks',
+    MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435'};
+  const plain=configuredModelGateway({env});
+  assert.equal(plain.bundleTurnReviews,false);assert.equal(plain.bundleFinalReviews,false);assert.equal(plain.reuseReviewedName,false);assert.equal(plain.reuseReviewedSafety,false);
+  const enabled=configuredModelGateway({env:{...env,MODEL_BUNDLE_TURN_REVIEWS:'true',MODEL_BUNDLE_FINAL_REVIEWS:'true',MODEL_REUSE_REVIEWED_NAME:'true',MODEL_REUSE_REVIEWED_SAFETY:'true'}});
+  assert.equal(enabled.bundleTurnReviews,true);assert.equal(enabled.reviewGateway.bundleTurnReviews,false);assert.equal(enabled.bundleFinalReviews,true);assert.equal(enabled.reuseReviewedName,true);
+  assert.equal(enabled.skipFinalExtras,false);
+  assert.equal(enabled.reviewGateway.bundleFinalReviews,false);assert.equal(enabled.reviewGateway.reuseReviewedName,false);
+  assert.equal(enabled.reuseReviewedSafety,true);assert.equal(enabled.reviewGateway.reuseReviewedSafety,false);
+  assert.notEqual(enabled.reviewedNameIdentity,plain.reviewedNameIdentity);
+  for(const key of ['MODEL_BUNDLE_TURN_REVIEWS','MODEL_BUNDLE_FINAL_REVIEWS','MODEL_REUSE_REVIEWED_NAME','MODEL_REUSE_REVIEWED_SAFETY']){
+    for(const value of ['yes','TRUE','1',true,null])assert.throws(()=>configuredModelGateway({env:{...env,[key]:value}}),/Invalid MODEL configuration/);
+    assert.throws(()=>configuredModelGateway({env:{...env,[key]:'true',MODEL_PROTOCOL:'json_schema'}}),/Invalid MODEL configuration/);
+  }
+  assert.throws(()=>configuredModelGateway({env:{...env,MODEL_BUNDLE_FINAL_REVIEWS:'true',MODEL_SKIP_FINAL_EXTRAS:'true'}}),/Invalid MODEL configuration/);
+  assert.throws(()=>configuredModelGateway({env:{...env,MODEL_BUNDLE_TURN_REVIEWS:'true',MODEL_STATE_MODE:'combined'}}),/Invalid MODEL configuration/);
+  assert.throws(()=>configuredModelGateway({env:{...env,MODEL_REUSE_REVIEWED_NAME:'true',MODEL_STATE_MODE:'combined'}}),/Invalid MODEL configuration/);
+  assert.throws(()=>configuredModelGateway({env:{...env,MODEL_REUSE_REVIEWED_SAFETY:'true',MODEL_STATE_MODE:'combined'}}),/Invalid MODEL configuration/);
+});
+
 test('native model roots, compatible completion URLs and custom prefixes resolve without a network request',()=>{
   for(const [source,expected] of [
     ['http://localhost:11434','http://localhost:11434/v1'],
@@ -209,4 +230,24 @@ test('turn input slimming is strict writer-only opt-in without changing state mo
     assert.throws(()=>configuredModelGateway({env:{...env,MODEL_PROTOCOL:protocol,MODEL_STAGE_SCOPED_QUESTION_RULES:'true'}}),/Invalid MODEL configuration/);
   for(const options of [{stageScopedQuestionRules:'true'},{blockScopedInputs:1},{blockScopedInputs:true}])
     assert.equal(new ModelGateway({baseUrl:env.MODEL_BASE_URL,apiKey:'synthetic',protocol:'relationship_agent',...options}).configured,false);
+});
+
+test('remaining optimizations are strict opt-in and policy reuse keeps independent reviewer capacity',()=>{
+  const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435'};
+  const options={MODEL_COMPACT_REVIEW_INPUTS:'compactReviewInputs',MODEL_SCOPED_QUALITY_REFINEMENT:'scopedQualityRefinement',MODEL_REUSE_TOKEN_POLICY:'reuseTokenPolicy'};
+  const defaults=configuredModelGateway({env});
+  for(const option of Object.values(options))assert.equal(defaults[option],false);
+  const gateway=configuredModelGateway({env:{...env,...Object.fromEntries(Object.keys(options).map(key=>[key,'true']))}});
+  for(const option of Object.values(options))assert.equal(gateway[option],true);
+  assert.equal(gateway.reviewGateway.compactReviewInputs,false);
+  assert.equal(gateway.reviewGateway.scopedQualityRefinement,false);
+  assert.equal(gateway.reviewGateway.reuseTokenPolicy,true);
+  assert.equal(gateway.skipFinalExtras,false);assert.equal(gateway.timeoutMs,0);
+  for(const [key,option] of Object.entries(options)){
+    for(const value of ['', 'TRUE', '1', 'yes', true, null])
+      assert.throws(()=>configuredModelGateway({env:{...env,[key]:value}}),/Invalid MODEL configuration/);
+    assert.equal(new ModelGateway({baseUrl:env.MODEL_BASE_URL,apiKey:'synthetic',protocol:'relationship_agent',[option]:'true'}).configured,false);
+  }
+  for(const MODEL_PROTOCOL of ['json_prompt','json_schema'])for(const key of ['MODEL_COMPACT_REVIEW_INPUTS','MODEL_SCOPED_QUALITY_REFINEMENT'])
+    assert.throws(()=>configuredModelGateway({env:{...env,MODEL_PROTOCOL,[key]:'true'}}),/Invalid MODEL configuration/);
 });

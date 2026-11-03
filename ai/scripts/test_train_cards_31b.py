@@ -242,5 +242,71 @@ class LatestCheckpointTests(unittest.TestCase):
             runner.latest_checkpoint(self.work, self.binding)
 
 
+class EvaluationJournalTests(unittest.TestCase):
+    def test_smoke_covers_largest_pair_and_oversized_singleton(self):
+        entries=[{'row_id':str(i),'sequence_length':n,'target_length':t}
+                 for i,(n,t) in enumerate([(100,2),(7000,10),(7100,50),(8000,3),(8100,4),(25000,5)])]
+        chosen=runner.validation_smoke_indices(entries,16384,2)
+        self.assertEqual(set(chosen),{0,2,3,5})
+        self.assertEqual(len(chosen),len(set(chosen)))
+
+    def test_rounding_near_phase_gate_requires_reference(self):
+        self.assertTrue(runner.near_decision_boundary(4.0,[3.981]))
+        self.assertTrue(runner.near_decision_boundary(4.0,[4.119]))
+        self.assertFalse(runner.near_decision_boundary(4.0,[3.5]))
+
+    def test_sorted_resume_is_bound_to_row_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'eval.jsonl'
+            entries={r['row_id']:r for r in [row('a',target_length=3),row('b',target_length=8)]}
+            record={'row_id':'b','target_tokens':8,'adapter_sha256':'adapter','evaluator_sha256':'evaluator','mean_target_ce':2.}
+            path.write_text(json.dumps(record)+'\n')
+            self.assertEqual(set(runner.read_evaluation_journal(path,entries,'adapter','evaluator')),{'b'})
+            for key,value in [('target_tokens',3),('adapter_sha256','old'),('evaluator_sha256','old'),('row_id','missing'),('mean_target_ce',float('nan'))]:
+                path.write_text(json.dumps({**record,key:value})+'\n')
+                with self.subTest(key=key),self.assertRaises(ValueError):
+                    runner.read_evaluation_journal(path,entries,'adapter','evaluator')
+
+    def test_duplicate_completed_row_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)/'eval.jsonl';entries={'a':row('a')}
+            record={'row_id':'a','target_tokens':1,'adapter_sha256':'a','evaluator_sha256':'e','mean_target_ce':1.}
+            path.write_text((json.dumps(record)+'\n')*2)
+            with self.assertRaises(ValueError):runner.read_evaluation_journal(path,entries,'a','e')
+
+    def test_qualification_cannot_launch_different_optimizer_or_code(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp).resolve();(root/'code').mkdir();(root/'benchmark').mkdir()
+            names=['train_cards_31b.py','cards31b_compute.py','cards31b_pipeline.py','cards31b_profile.py','bootstrap.py','boundary.py','reference_train_cards_31b.py']
+            for name in names:(root/'code'/name).write_text('# fixture\n')
+            hashes={name:runner.sha(root/'code'/name) for name in names}
+            semantic={key:key for key in runner.SEMANTIC_BINDING_KEYS}
+            warmup={'protocol':'three_original_forwards_v1','row_id':'warmup-fixture'}
+            semantic['evaluation_warmup']=warmup
+            bp=root/'benchmark/BINDING.json';bp.write_text(json.dumps(semantic))
+            journal=root/'benchmark/BASELINE_COMPARE.jsonl';journal.write_text('{}\n')
+            evidence={'baseline_comparison':{'passed':True,'rows':8,'journal_sha256':runner.sha(journal)},'selected_eval_max_batch':2,'selected_eval_backend':'serial','selected_eval_token_budget':16384,
+                      'training_optimization_passed':True,'execution_proof_rechecked':True,'compute_cpu_tests':30,
+                      'evaluation_warmup':{'status':'passed',**warmup},
+                      'execution_proof':{'learning_rate':2e-5,'accumulation':8,'code_sha256':hashes,'reference_binding_sha256':runner.sha(bp)},
+                      'evaluation':{'target_batch2':{'comparison':{'passed':True}}}}
+            ep=root/'benchmark/BENCHMARK.json';ep.write_text(json.dumps(evidence))
+            q={'status':'passed','compute_profile':'optimized','eval_max_batch':2,'eval_token_budget':16384,'eval_backend':'serial',
+               'learning_rate':2e-5,'accumulation':8,'code_sha256':hashes,'benchmark_sha256':runner.sha(ep)}
+            q['evaluation_warmup']=warmup
+            qp=root/'QUALIFICATION.json';qp.write_text(json.dumps(q))
+            self.assertEqual(runner.validate_qualification(qp,'optimized',2,16384,2e-5,8,semantic),runner.sha(qp))
+            with self.assertRaises(ValueError):runner.validate_qualification(qp,'optimized',2,16384,3e-5,8,semantic)
+            with self.assertRaises(ValueError):runner.validate_qualification(qp,'optimized',4,16384,2e-5,8,semantic)
+            with self.assertRaisesRegex(ValueError,'warmup'):
+                runner.validate_qualification(qp,'optimized',2,16384,2e-5,8,{**semantic,'evaluation_warmup':{**warmup,'row_id':'different'}})
+            journal.write_text('{"changed":true}\n')
+            with self.assertRaisesRegex(ValueError,'journal changed'):
+                runner.validate_qualification(qp,'optimized',2,16384,2e-5,8,semantic)
+            journal.write_text('{}\n')
+            (root/'code/cards31b_compute.py').write_text('# changed\n')
+            with self.assertRaises(ValueError):runner.validate_qualification(qp,'optimized',2,16384,2e-5,8,semantic)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -13,7 +13,25 @@ export async function checkModelConnections({env=process.env,generate=false,fetc
   const checks=[];
   for(const [role,gateway] of [['writer',writer],...(writer.reviewGateway?[['reviewer',writer.reviewGateway]]:[])]) {
     const format=gateway.protocol==='json_prompt'?'prompt':gateway.protocol==='json_schema'?'json_schema':gateway.agentFormat;
-    const configuration={role,protocol:gateway.protocol,format,stream:gateway.streamJson,discovery:gateway.discoverTokenLimits};
+    const writerRole=role==='writer',agent=gateway.protocol==='relationship_agent';
+    const scoped=writerRole&&agent&&gateway.stateMode==='combined_blocks';
+    const configuration={role,protocol:gateway.protocol,format,stream:gateway.streamJson,discovery:gateway.discoverTokenLimits,
+      serverGpuOnly:gateway.serverGpuOnly,stateMode:gateway.stateMode,
+      optimizations:{reuseFinalDraft:writerRole&&agent&&gateway.reuseFinalDraft,skipFinalExtras:gateway.skipFinalExtras,
+        stageScopedQuestionRules:scoped&&gateway.stageScopedQuestionRules,blockScopedInputs:scoped&&gateway.blockScopedInputs,
+        compactReviewInputs:writerRole&&agent&&gateway.compactReviewInputs,
+        scopedQualityRefinement:writerRole&&agent&&!gateway.skipFinalExtras&&gateway.scopedQualityRefinement,
+        bundleFinalReviews:writerRole&&agent&&!gateway.skipFinalExtras&&gateway.bundleFinalReviews,
+        bundleTurnReviews:scoped&&gateway.bundleTurnReviews,
+        reuseReviewedName:scoped&&gateway.reuseReviewedName,
+        reuseReviewedSafety:scoped&&!gateway.bundleTurnReviews&&gateway.reuseReviewedSafety,
+        tokenPolicyReuseRequested:gateway.discoverTokenLimits&&gateway.reuseTokenPolicy},
+      inactiveOptions:writerRole?[
+        ...(scoped&&gateway.bundleTurnReviews&&gateway.reuseReviewedSafety?['MODEL_REUSE_REVIEWED_SAFETY']:[]),
+        ...(!scoped&&gateway.stageScopedQuestionRules?['MODEL_STAGE_SCOPED_QUESTION_RULES']:[]),
+        ...(!scoped&&gateway.blockScopedInputs?['MODEL_BLOCK_SCOPED_INPUTS']:[]),
+        ...(gateway.skipFinalExtras&&gateway.scopedQualityRefinement?['MODEL_SCOPED_QUALITY_REFINEMENT']:[]),
+      ]:[]};
     if(!generate){checks.push({...configuration,ok:true,mode:'configuration_only'});continue;}
     const schema={type:'object',properties:{ok:{type:'boolean',const:true}},required:['ok'],additionalProperties:false};
     try {

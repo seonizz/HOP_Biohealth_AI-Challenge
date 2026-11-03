@@ -6,6 +6,23 @@ const finishStage=(progress,stage,attempt=1)=>{
   progress.event({stage,status:'started',attempt});
   progress.event({stage,status:'completed',attempt});
 };
+
+test('bundled reviews use existing public phases and repair still invalidates downstream completion',()=>{
+  const progress=generationProgress();
+  finishStage(progress,'guide_write');
+  finishStage(progress,'card_review_bundle_care');
+  assert.equal(progress.state.step_index,2);
+  finishStage(progress,'final_review_bundle');
+  assert.equal(progress.state.step_index,3);
+  assert.equal(progress.state.current,'최종 답안 검토');
+  progress.event({stage:'guide_repair_card_care',status:'started'});
+  assert.equal(progress.state.step_index,2);
+  assert.equal(progress.state.completed.some(item=>item.label==='최종 답안 검토'),false);
+  finishStage(progress,'final_review_bundle_after_review');
+  progress.finish('saving');assert.equal(progress.state.step_index,4);
+  progress.finish('complete');assert.equal(progress.state.progress,100);
+  assert.doesNotMatch(JSON.stringify(progress.state),/bundle|schema|prompt/);
+});
 const statuses=progress=>progress.state.steps.map(step=>step.status);
 
 test('generation advances at real phase boundaries and reaches 100 only after storage completes',()=>{

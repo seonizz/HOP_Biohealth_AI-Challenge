@@ -3,7 +3,7 @@ import { initialQuestionSet, conditionMatches, followMatches, mergeFollow, branc
 import { HttpError } from './errors.js';
 import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { clarificationQuestions, clarificationCandidates } from './clarifications.js';
-import { validateRelationshipMemory, validateSafetyEvidence, safetySnapshotFingerprint, currentApprovedSafety } from './relationship-agent.js';
+import { validateRelationshipMemory, validateSafetyEvidence, safetySnapshotFingerprint, currentApprovedSafety, currentReviewedSafety } from './relationship-agent.js';
 import { normalizeAnswerField } from './answer-sources.js';
 
 const SKIP = '(건너뛰었어요)';
@@ -486,14 +486,16 @@ export function buildContext(state) {
       tags: [...state.tags], answers: Object.fromEntries(Object.entries(state.ans).map(([id, answer]) => [id, answer.text])),
     },
     agent_state: state.agentMemory || null,
+    ...(state.agentStateExecution?.name_reuse||state.agentStateExecution?.safety_reuse
+      ?{state_execution:structuredClone(state.agentStateExecution)}:{}),
     relationship_state: state.agentRelationshipMemory || null,
     log: structuredClone(state.log), followUps: state.fuCount, model_status: state.modelStatus || 'not_connected',
   };
-  if(state.safetySignal?.urgent===true) {
-    try {context.safety_signal=currentApprovedSafety({...context,safety_signal:state.safetySignal});}
+  if(state.safetySignal) {
+    try {context.safety_signal=currentReviewedSafety({...context,safety_signal:state.safetySignal});}
     catch(error) {
       if(!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE')throw error;
-      // Old records remain readable. Their unbound/stale approval must be
+      // Old records remain readable. Either unbound/stale verdict must be
       // independently rechecked before another final guide can use it.
       context.safety_review_required=true;
     }

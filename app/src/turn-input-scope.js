@@ -1,4 +1,5 @@
 import {COMMON} from './relationship-prompts.js';
+import {answerComponents} from './answer-sources.js';
 
 const STATE_BLOCKS = new Set(['patient_state', 'name_index', 'relationship_memory']);
 
@@ -26,4 +27,49 @@ review와 rejected_draft가 있으면 같은 직전 초안과 독립 검토의 �
 
 export function scopedBlockPrompt(block, prompt) {
   return block === 'name_index' ? NAME_PROMPT : prompt;
+}
+
+// Name extraction depends on every actual report (including corrections from
+// another field), but not on question routing, prior model memory or draft
+// selection order. Empty skipped/unasked rows contribute no reported content.
+function reportedSourceInput(context) {
+  const rows=(subject,fields)=>Object.values(fields||{}).flatMap(field=>{
+    if(!field||!['answered','unknown','refused'].includes(field.status))return [];
+    const answers=answerComponents(field);
+    if(!answers.length)return [];
+    return [{subject,question_id:field.id,question:field.question||'',status:field.status,
+      ...(field.selection_status?{selection_status:field.selection_status}:{}),
+      ...(field.follow_up_pending?{follow_up_pending:true}:{}),answers}];
+  });
+  return {patient:rows('patient',context.patient?.fields),supporter:rows('supporter',context.supporter?.fields),
+    user_goal:rows('user_goal',context.user_goal)};
+}
+
+export function reviewedNameInput(context,input) {
+  const source_input=reportedSourceInput(context);
+  const documents=source_input.patient.filter(row=>row.question_id==='name'&&row.status==='answered')
+    .flatMap(row=>row.answers.map(answer=>({subject:row.subject,question_id:row.question_id,...answer})));
+  return {source_input,retrieval:{documents},
+    ...(input.review?{review:structuredClone(input.review),rejected_draft:structuredClone(input.rejected_draft)}:{})};
+}
+
+export const REVIEWED_NAME_PROMPT=COMMON+`
+역할: source_input의 전체 실제 원문을 대조하여 대상자의 이름·호칭만 추출하는 기록자.
+source_input.patient/supporter/user_goal에는 원문·직접 입력·후속 답변·의미 있는 모름이 보존되어 있습니다. 전체 문항에서 이름의 화자·귀속·부정·정정을 확인하세요. 다른 문항의 정정도 무시하지 마세요. 질문 진행 상태와 이전 모델의 선택·요약은 이름의 근거가 아닙니다.
+retrieval.documents는 이름 문항의 실제 원문입니다. name_index의 quote는 name 문항의 원문 또는 후속 직접 입력에서 그대로 선택하고, alias는 그 quote 안의 20자 이하 정확한 호칭이어야 합니다. 다른 사람의 이름을 대상자의 이름으로 옮기거나 이름으로 성별·상태·관계를 추정하지 마세요. 이름의 근거가 없거나 대상자 귀속이 확인되지 않으면 name_index=null입니다.
+review와 rejected_draft가 있으면 같은 직전 초안과 독립 검토의 짝입니다. 검토의 지적·repair 예문은 새 사실이나 승인된 답안이 아닙니다. 현재 전체 원문에서 이름의 출처·화자·정정을 직접 대조해 수정하고 이후 독립 검토를 받아야 합니다.
+이름 추출 블록만 작성하세요. 최상위 키는 name_index 하나이며 그 값은 output_schema가 허용하는 이름 객체 또는 null입니다. 다른 블록·state 부모·설명은 출력하지 마세요. 들여쓰기·코드블록 없는 한 줄 JSON만 출력하고 스스로 승인하지 마세요.`;
+
+export function reviewedSafetyRequest(context,request) {
+  const sources=reportedSourceInput(context);
+  const safetySources=structuredClone(request.data.safety_sources);
+  const rows=subject=>sources[subject].map(row=>({...row,safety_source_id:safetySources.find(source=>
+    source.subject===subject&&source.question_id===row.question_id)?.id??null}));
+  const documents=safetySources.flatMap(source=>source.components.map(component=>({
+    subject:source.subject,question_id:source.question_id,...component})));
+  return {...request,data:{patient:rows('patient'),supporter:rows('supporter'),user_goal:rows('user_goal'),
+    proposed_safety:structuredClone(request.data.proposed_safety),safety_sources:safetySources,retrieval:{documents}},
+    prompt:request.prompt+`
+안전 검토 전용 입력 경계: patient/supporter/user_goal은 전체 실제 원문과 의미 있는 모름·거절·후속 정정입니다. 질문 후보·진행 순서·이전 모델 메모리는 사실 근거가 아니므로 포함하지 않습니다. 빈 건너뛰기는 새 사실이나 안전 확인이 아닙니다.
+이 요청의 retrieval.documents는 safety_sources의 전체 answered 원문이며 일부 질문만 검색한 결과가 아닙니다. 모든 실제 원문을 직접 대조하고, unknown의 원문도 판단의 한계를 확인하는 데 읽되 확인된 사실이나 위험 부재의 증명으로 바꾸지 마세요. safety_sources에 없는 미확인 답변을 evidence_ids로 만들지 마세요. false에 해당하는 분류도 현재 안전이 확인됐다는 뜻으로 바꾸지 말고 기존 basis·reason 계약을 유지하세요.`};
 }

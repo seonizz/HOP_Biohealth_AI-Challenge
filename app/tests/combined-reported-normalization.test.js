@@ -142,7 +142,7 @@ test('reported rows in the relationship hypothesis group are not normalized',asy
 test('normalization still fails closed if the new complete independent audit is missing',async()=>{
   const f=fixture(),model=gateway(f.value,data=>{const result=approve(data);result.state.audits.pop();return result;});
   await assert.rejects(runCombinedRelationshipState(model,f.ctx,null,{}),{code:'MODEL_INVALID_RESPONSE'});
-  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review']);
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });
 
 test('a normalized state rejected twice by the independent reviewer is never accepted',async()=>{

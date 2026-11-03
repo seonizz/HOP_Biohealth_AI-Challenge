@@ -41,7 +41,7 @@ test('known local streaming state stages repair structural failures before recei
   assert.deepEqual(second.data,first.data);assert.deepEqual(second.output_schema,first.output_schema);assert.deepEqual(second.output_schema,requestSchema);
   assert.deepEqual(third.data,first.data);assert.deepEqual(third.output_schema,requestSchema);
   const feedback=JSON.parse(second.validation_feedback);
-  if(stage==='turn_draft')assert.deepEqual(feedback,{path:'output',keyword:'streamArrayLimit',expected:{max_count:3},actual:{count:4}});
+  if(stage==='turn_draft')assert.deepEqual(feedback,{path:'output.state.patient_state.facts',keyword:'streamArrayLimit',expected:{max_count:3},actual:{count:4}});
   else assert.deepEqual(feedback.actual.missing_keys,isDraft?['questions']:['questions','safety']);
   assert.ok(!second.validation_feedback.includes('PRIVATE_'));assert.ok(!JSON.stringify(logs).includes('PRIVATE_'));
   await generate(model,{stage,requestSchema});assert.equal(requests[3].response_format.type,'json_object');

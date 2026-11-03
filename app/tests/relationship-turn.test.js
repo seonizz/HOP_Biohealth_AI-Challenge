@@ -47,7 +47,12 @@ test('a normal turn independently validates state and safety and existing output
   const ctx=context(),operation={id:'test-only'},model=fixtureGateway(draft(ctx));
   const output=await runCombinedRelationshipState(model,ctx,null,operation);
   assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
-  assert.ok(model.calls.every(call=>call.operation===operation));
+  assert.equal(model.calls[0].operation,operation);
+  assert.notEqual(model.calls[1].operation,model.calls[2].operation);
+  assert.equal(model.calls[1].operation.controller,model.calls[2].operation.controller);
+  assert.notEqual(model.calls[1].operation,operation);
+  assert.equal(model.calls[1].operation.id,operation.id);
+  assert.equal(model.calls[1].operation.controller.signal.aborted,false);
   assert.deepEqual(output.question_plan,{skip:[]});assert.equal(output.clarification,null);assert.equal(output.finish_early,false);
   assert.deepEqual(output.state_agent,{prompt_version:TURN_PROMPT_VERSION,stages:['turn_draft','turn_review','safety_review'],reviewed:true});
   assert.equal(output.patient_state.facts[0].quote,ctx.patient.fields.mood.rawText);
@@ -184,7 +189,7 @@ for(const verdict of ['missing','plausible','unsupported']) test('a preserved la
     return result;
   });
   await assert.rejects(runCombinedRelationshipState(model,ctx,null,{}),{code:'MODEL_INVALID_RESPONSE'});
-  assert.equal(model.calls.length,2);
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });
 
 test('shared draft input preserves both current inputs and historical source references without truncation or shared retrieval permissions',async()=>{
@@ -271,7 +276,7 @@ for(const [label,edit] of [
 ]) test(label+' cannot become reviewed state',async()=>{
   const model=fixtureGateway(draft(),value=>{edit(value);return value;});
   await assert.rejects(runCombinedRelationshipState(model,context(),null,{}),{code:'MODEL_INVALID_RESPONSE'});
-  assert.equal(model.calls.length,2);
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });
 
 test('a rejected state regenerates the draft once and requires a fresh independent review',async()=>{
@@ -377,7 +382,12 @@ test('whole-operation retry keeps only the latest validated rejection pair and s
   const output=await model.updateState(ctx);
   assert.equal(output.state_agent.reviewed,true);assert.equal(drafts,3);assert.equal(reviews,3);
   assert.deepEqual(requests.map(input=>input.stage),['turn_draft','turn_review','safety_review','turn_draft_after_review','turn_review_after_review','safety_review_after_review','turn_draft','turn_review','safety_review']);
-  assert.equal(signals[0],signals[5]);assert.notEqual(signals[5],signals[6]);
+  assert.equal(signals[0],signals[3]);assert.notEqual(signals[0],signals[6]);
+  for(const start of [0,3,6]){
+    assert.equal(signals[start+1],signals[start+2]);
+    assert.notEqual(signals[start],signals[start+1]);
+  }
+  assert.notEqual(signals[1],signals[4]);assert.notEqual(signals[4],signals[7]);
   assert.equal(recoveryStates.length,2);assert.equal(recoveryStates[0],recoveryStates[1]);assert.deepEqual(recoveryStates[0],{});
   assert.equal(logs.filter(entry=>entry.event==='model_operation_retry').length,1);
   assert.ok(!JSON.stringify(logs).includes('합성 검토'));assert.ok(!JSON.stringify(logs).includes(ctx.patient.fields.mood.text));
@@ -430,7 +440,8 @@ test('changed source context discards an earlier operation recovery pair before 
 test('a malformed review never enters retry recovery as a validated rejection pair',async()=>{
   const operation={recovery:{}},model=fixtureGateway(draft(),value=>{delete value.state.audits;return value;});
   await assert.rejects(runCombinedRelationshipState(model,context(),null,operation),{modelReason:'agent_schema'});
-  assert.deepEqual(operation.recovery,{});assert.equal(model.calls.length,2);
+  assert.deepEqual(operation.recovery,{});
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });
 
 test('disabled whole-operation retries still reject after two reviews and release the request recovery pair',async()=>{
@@ -497,7 +508,7 @@ test('identical cross-array unknowns share a model audit and retain distinct com
   assert.equal(model.calls.length,3);
   assert.match(prompt,/review_target\.claims에 나열된 각 id만/u);
   assert.match(prompt,/보이지 않는 다른 배열의 항목·id를 재구성하거나 추가하지 마세요/u);
-  assert.match(output.state_agent.prompt_version,/-combined-turn-v50$/);
+  assert.match(output.state_agent.prompt_version,/-combined-turn-v56$/);
 });
 
 test('rejected review history keeps all original unknown IDs and arrays after shared-audit expansion',async()=>{
@@ -536,7 +547,7 @@ for(const verdict of ['review_uncertain','already_answered','not_needed']) test(
   await assert.rejects(runCombinedRelationshipState(model,context(),null,{}),{
     code:'MODEL_INVALID_RESPONSE',modelReason:verdict==='review_uncertain'?'agent_unknown_audit':'agent_claim_audit',
   });
-  assert.equal(model.calls.length,2);
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });
 
 test('a reported request already answers willingness; rejected broad unknowns are repaired while real gaps remain',async()=>{
@@ -863,7 +874,7 @@ for(const key of ['approved','issues','audits'])test('combined state review stil
     assert.equal(feedback.expected.key_count,3);assert.equal(feedback.actual.missing_key_count,1);
     return true;
   });
-  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review']);
+  assert.deepEqual(model.calls.map(call=>call.stage),['turn_draft','turn_review','safety_review']);
 });
 
 for(const scenario of ['ordinary','skip-supported','skip-rejected','clarification-rejected','urgent-accepted','urgent-rejected','state-only']) {

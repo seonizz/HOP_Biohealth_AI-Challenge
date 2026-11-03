@@ -26,15 +26,15 @@ function readyState(){
     safety_signal:{urgent:true,evidence:[ref],review:{basis:'current_physical_danger',reason:'현재 폭력 보고'}},finish_early:true});
 }
 
-for(const kind of ['current_approval','legacy_approval','corrected_legacy_approval']){
+for(const kind of ['current_approval','current_nonurgent','legacy_approval','corrected_legacy_approval']){
   test(`final generation restores and persists safety from saved intake: ${kind}`,{skip:!databaseUrl},async t=>{
     const admin=new pg.Pool({connectionString:databaseUrl}),schema='final_safety_'+randomBytes(8).toString('hex');
     await admin.query(`CREATE SCHEMA ${schema}`);
     let observed;
-    const urgent=kind!=='corrected_legacy_approval';
+    const urgent=!['current_nonurgent','corrected_legacy_approval'].includes(kind);
     const gateway={protocol:'relationship_agent',model:'synthetic-boundary-test',respond:async context=>{
       observed=context;
-      if(kind==='current_approval')assert.equal(context.safety_signal.urgent,true);
+      if(kind==='current_approval'||kind==='current_nonurgent')assert.equal(context.safety_signal.urgent,urgent);
       else {assert.equal(context.safety_review_required,true);assert.equal(context.safety_signal,undefined);}
       const signal={urgent,evidence:urgent?[{subject:'patient',question_id:'mood',quote:danger}]:[],
         review:{basis:urgent?'current_physical_danger':'negated',reason:'합성 독립 검토 결과'},source_snapshot:safetySnapshotFingerprint(context)};
@@ -48,8 +48,10 @@ for(const kind of ['current_approval','legacy_approval','corrected_legacy_approv
     const bootstrap=await fetch(base+'/api/bootstrap'),cookie=bootstrap.headers.get('set-cookie').split(';')[0],data=await bootstrap.json();
     const owner=await app.store.browser(cookie.slice('malssi_session='.length));
     const state=readyState();
-    if(kind!=='current_approval')delete state.safetySignal.source_snapshot;
-    if(kind==='corrected_legacy_approval')Object.assign(state.ans.mood,{text:negation,rawText:negation,custom:negation});
+    if(kind==='legacy_approval'||kind==='corrected_legacy_approval')delete state.safetySignal.source_snapshot;
+    if(kind==='current_nonurgent'||kind==='corrected_legacy_approval')Object.assign(state.ans.mood,{text:negation,rawText:negation,custom:negation});
+    if(kind==='current_nonurgent')state.safetySignal={urgent:false,evidence:[{subject:'patient',question_id:'mood',quote:negation}],
+      review:{basis:'negated',reason:'현재 원문의 정정 보고'},source_snapshot:safetySnapshotFingerprint(buildContext(state))};
     const row=await app.store.createIntake(owner.id,state);
     // Simulate the cached context written before the safety envelope existed.
     const oldContext=buildContext(state);delete oldContext.safety_signal;delete oldContext.safety_review_required;
@@ -63,7 +65,8 @@ for(const kind of ['current_approval','legacy_approval','corrected_legacy_approv
     assert.equal(saved.state.safetySignal.source_snapshot,safetySnapshotFingerprint(buildContext(saved.state)));
     const restored=await(await fetch(`${base}/api/records/${result.record.id}`,{headers:{cookie}})).json();
     assert.equal(restored.record.profile.safety,urgent);
-    if(urgent)assert.equal(restored.record.context.safety_signal.urgent,true);
-    else {assert.equal(restored.record.context.safety_signal,undefined);assert.equal(restored.record.context.safety_review_required,undefined);}
+    assert.equal(restored.record.context.safety_signal.urgent,urgent);
+    assert.equal(restored.record.context.safety_signal.review.basis,urgent?'current_physical_danger':'negated');
+    assert.equal(restored.record.context.safety_review_required,undefined);
   });
 }

@@ -114,7 +114,7 @@ test('combined reviewer failure retains pending source and prompt; retry commits
   assert.equal(completed.status,200);assert.equal(completed.data.question.id,'want');assert.equal(completed.data.revision,2);
   assert.equal(completed.data.model_pending,undefined);
   assert.equal(completed.data.log.filter(item=>item.who==='me'&&item.text===source).length,1);
-  assert.deepEqual(model.stages,['turn_draft','turn_review','turn_draft','turn_review','safety_review']);
+  assert.deepEqual(model.stages,['turn_draft','turn_review','safety_review','turn_draft','turn_review','safety_review']);
   const history=await f.store.pool.query('SELECT revision,reason FROM patient_state_revisions WHERE intake_id=$1 ORDER BY revision',[f.row.id]);
   assert.deepEqual(history.rows,[{revision:0,reason:'created'},{revision:1,reason:'user_answer'},{revision:2,reason:'model_update'}]);
   assert.equal((await f.request(path+'/answers','POST',input)).status,409);
@@ -135,5 +135,5 @@ test('back during the second combined call invalidates its late reviewed state',
   assert.equal(current.revision,2);assert.equal(current.state.agentMemory,undefined);
   assert.equal(current.state.agentRelationshipMemory,undefined);assert.equal(current.state.modelPending,undefined);
   assert.equal(context.patient.fields.reflection_note.status,'not_asked');assert.equal(context.agent_state,null);
-  assert.deepEqual(model.stages,['turn_draft','turn_review']);
+  assert.deepEqual(model.stages,['turn_draft','turn_review','safety_review']);
 });
