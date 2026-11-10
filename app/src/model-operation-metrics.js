@@ -33,6 +33,7 @@ function familiesOf(stage,request) {
   if(block)return ['turn_'+block[1]];
   if(/^turn_draft(?:_|$)/u.test(stage))return blocks.map(value=>'turn_'+value);
   if(/^state_observations(?:_|$)/u.test(stage))return ['turn_patient_state','turn_name_index'];
+  if(stage==='final_analysis_plan_draft')return ['final_analysis','communication_plan'];
   if(/^relationship_memory(?:_|$)/u.test(stage))return ['turn_relationship_memory'];
   if(stage==='question_plan')return ['turn_questions'];
   if(stage==='state')return ['turn_patient_state','turn_name_index','turn_questions'];

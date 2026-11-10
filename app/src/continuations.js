@@ -29,18 +29,7 @@ export function createContinuations({store,gateway,sharedRun,subscribeRun}) {
     if(typeof gateway?.continueConversation!=='function')throw new HttpError(503,'MODEL_NOT_CONNECTED','모델 연결 설정을 확인해 주세요.');
   };
   async function sources(owner,row) {
-    const record=await store.record(owner,row.source_record_id);
-    const sessions=await store.listContinuations(owner,row.source_record_id);
-    // Creation order prevents an older session from incorporating its future.
-    const ordered=sessions; // Store orders by the database sequence, not rounded JS dates.
-    const index=ordered.findIndex(s=>s.id===row.id);
-    if(index<0)throw missing();
-    const history=[];
-    for(const session of ordered.slice(0,index)) {
-      const previous=await store.getContinuation(owner,session.id);
-      history.push(...previous.state.messages);
-    }
-    const messages=[...history,...row.state.messages];
+    const {record,messages}=await store.continuationSources(owner,row.id,row.revision);
     continuationInput(record,messages); // Fail closed on legacy records with no source context.
     return {record,messages};
   }

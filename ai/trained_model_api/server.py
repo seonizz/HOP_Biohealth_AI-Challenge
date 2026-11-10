@@ -20,7 +20,7 @@ import time
 import uuid
 
 from backend import ModelBackend, RequestError, BackendUnavailableError
-from inference_queue import (InferenceQueue, queue_limits, QueueFull, QueueClosed,
+from inference_queue import (InferenceQueue, queue_limits, parallel_slots, QueueFull, QueueClosed,
                              RequestCancelled, BackendUnavailable)
 
 HERE = Path(__file__).resolve().parent
@@ -53,6 +53,9 @@ def make_timing_logger(path):
 
 def validate_config(config):
     queue_limits(config)
+    slots = parallel_slots(config)
+    if slots > 1 and config.get("require_backend_status") is not True:
+        raise ValueError("Parallel inference requires require_backend_status")
     if type(config.get("require_backend_status", False)) is not bool:
         raise ValueError("Invalid require_backend_status")
     if config.get("host") != "127.0.0.1":
@@ -135,10 +138,17 @@ def make_server(config, backend, api_key, timing_log=None):
     max_input_tokens = config.get("max_input_tokens")
     input_policy = ({"max_input_tokens": max_input_tokens}
                     if type(max_input_tokens) is int and 0 < max_input_tokens <= config["max_context_tokens"] else {})
-    admission = InferenceQueue(*queue_limits(config))
+    slots = parallel_slots(config)
+    admission = InferenceQueue(*queue_limits(config), max_active=slots)
     require_status = config.get("require_backend_status", False)
     if type(require_status) is not bool:
         raise ValueError("Invalid require_backend_status")
+    if slots > 1:
+        capacity = getattr(backend, "parallel_capacity", None)
+        if not require_status:
+            raise ValueError("Parallel inference requires require_backend_status")
+        if type(capacity) is not int or capacity < slots:
+            raise ValueError("Backend parallel_capacity is insufficient")
     if require_status and not callable(getattr(backend, "inference_status", None)):
         raise ValueError("Backend inference_status is required")
 
@@ -203,7 +213,7 @@ def make_server(config, backend, api_key, timing_log=None):
                 state = admission.snapshot()
                 if state["closed"]:
                     status = "unavailable"
-                elif status == "ready" and state["active"]:
+                elif status == "ready" and state["active_count"] >= state["capacity"]:
                     status = "busy"
                 self.reply(200 if status in {"ready", "busy"} else 503,
                                 {"status": status, "model": config["model_id"],

@@ -27,6 +27,10 @@ async function fixture(t, action) {
       const row = rows.get(id); if (!row || row.owner !== owner) throw notFound();
       store.onIntake?.(row); return structuredClone(row);
     },
+    async intakeMetadata(owner, id) {
+      const row = rows.get(id); if (!row || row.owner !== owner) throw notFound();
+      return {id,revision:row.revision};
+    },
     async updateIntake(owner, id, revision, update) {
       const row = rows.get(id); if (!row || row.owner !== owner) throw notFound();
       if (row.revision !== revision) throw new HttpError(409, 'REVISION_CONFLICT', '바뀌었어요.');

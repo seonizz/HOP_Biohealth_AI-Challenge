@@ -70,4 +70,4 @@ GET 감소와 모델 호출 감소는 다른 지표다. 검토 14회를 포함�
 - 실제 모델 결과가 필요한 선택: `combined` 비교 후 상태 모드 채택, 단계별 출력 예산 조정. 이번 변경으로 통합 모드 채택이나 토큰 상한을 강제하지 않는다.
 - 계속 보류: O5 검토 제거·승인 재사용, 턴 간 이름/분석 추론 재사용, 독립 GPU 용량이 필요한 병렬화. 기존 검토·저장 요구를 근거 없이 줄이지 않는다.
 
-관련 문서: [입력 최적화](MODEL_INPUT_OPTIMIZATION.md), [O4](FINAL_DRAFT_REUSE.md), [GPU P0](SERVER_GPU_P0.md), [추가 최적화 기획](../../docs/current/모델_호출_추가_최적화_검토_2026-10-31.md).
+관련 문서: [입력 최적화](MODEL_INPUT_OPTIMIZATION.md), [O4](FINAL_DRAFT_REUSE.md), [GPU P0](SERVER_GPU_P0.md), [추가 최적화 기획](../../docs/archive/2026-10/모델_호출_추가_최적화_검토_2026-10-31.md).

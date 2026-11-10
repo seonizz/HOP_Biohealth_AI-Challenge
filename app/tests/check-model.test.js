@@ -175,3 +175,22 @@ test('review bundles expose active calls and do not advertise unused safety reus
   assert.deepEqual(writer.inactiveOptions,['MODEL_REUSE_REVIEWED_SAFETY']);
   assert.equal(reviewer.optimizations.bundleFinalReviews,false);assert.equal(reviewer.optimizations.bundleTurnReviews,false);
 });
+
+test('new final transport flags are reported on the writer without making a model request',async()=>{
+  const report=await checkModelConnections({env:{...env,MODEL_BUNDLE_FINAL_REVIEWS:'true',MODEL_SHARE_REVIEW_SOURCES:'true',
+    MODEL_REPAIR_REVIEW_BUNDLE_TASKS:'true',MODEL_EXTENDED_FINAL_EVIDENCE_IDS:'true'},fetchImpl:()=>assert.fail('No network')});
+  assert.equal(report.ok,true);
+  for(const key of ['shareReviewSources','repairReviewBundleTasks','extendedFinalEvidenceIds']) {
+    assert.equal(report.checks[0].optimizations[key],true);assert.equal(report.checks[1].optimizations[key],false);
+  }
+});
+
+test('the two/six-call profile and effective reviewer output format are reported without inference',async()=>{
+  const report=await checkModelConnections({env:{...env,MODEL_STATE_MODE:'combined',MODEL_BUNDLE_COMBINED_TURN_REVIEWS:'true',
+    MODEL_BUNDLE_FINAL_REVIEWS:'true',MODEL_BUNDLE_ANALYSIS_PLAN:'true',MODEL_REVIEW_COMPACT_REVIEW_OUTPUT:'true'},fetchImpl:()=>assert.fail('No network')});
+  assert.equal(report.ok,true);
+  assert.equal(report.checks[0].optimizations.bundleCombinedTurnReviews,true);
+  assert.equal(report.checks[0].optimizations.bundleAnalysisPlan,true);
+  assert.equal(report.checks[0].optimizations.compactReviewOutput,false);
+  assert.equal(report.checks[1].optimizations.compactReviewOutput,true);
+});

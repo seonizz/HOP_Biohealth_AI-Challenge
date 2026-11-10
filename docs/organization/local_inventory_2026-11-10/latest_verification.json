@@ -1,0 +1,98 @@
+{
+  "date": "2026-11-10",
+  "moved_documents": 10,
+  "detail_documents_preserved": 8,
+  "move_checks": [
+    {
+      "file": "최신/Gemma4_31B_모델_학습과_추론_검증_2026-11-10.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "1164f75f02d984492bd80d298eb6dac56d7a4e18a25e41fadac9d2565a33e070",
+      "detail_body_preserved_except_links": true,
+      "intentional_content_update": false
+    },
+    {
+      "file": "최신/관계도_기반_추가질문_기획.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "e38ff047978c5c5dda4d16bab603498b4ec203c6ef6b8b028a8cd1fd004f68c9",
+      "detail_body_preserved_except_links": true,
+      "intentional_content_update": false
+    },
+    {
+      "file": "최신/대화_실시간응답과_카드_10분이내_생성_기획_2026-11-10.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "a274f6f1d2220e5039a9d2b6c6cbe865612eb66eb78b733f6339aa7be13a47db",
+      "detail_body_preserved_except_links": true,
+      "intentional_content_update": false
+    },
+    {
+      "file": "최신/모델_성능평가_설계와_검증계획_2026-11-01.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "1829b25ce48493ff2f5aeab03516570fcff0f8aadf87f8ff9ba3fdf618950c7c",
+      "detail_body_preserved_except_links": true,
+      "intentional_content_update": false
+    },
+    {
+      "file": "최신/앱_학습계약과_완료판정_로컬수정_2026-11-01.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "d71059ccf293e77d32676e33b967243655f02e4b00f3b294c592bb6fca1c2f75",
+      "detail_body_preserved_except_links": true,
+      "intentional_content_update": false
+    },
+    {
+      "file": "최신/응답시간_추가단축_수정기획_2026-11-10.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "03d95fe2dd041f46cc8d848f81b4bd8fa93238b01b93242c42643de14d4e44d7",
+      "detail_body_preserved_except_links": true,
+      "intentional_content_update": false
+    },
+    {
+      "file": "최신/FINAL_CARD_PROGRESSIVE_DELIVERY.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "a801d249eab928a1ac86c8602892e3551f9489f262865041381b5168af88756f",
+      "detail_body_preserved_except_links": true,
+      "intentional_content_update": false
+    },
+    {
+      "file": "최신/RESPONSE_LATENCY_OPTIMIZATION_2026-11-10.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "df4d428e16d0857fcc3b30c0da991e712202cdc53eca7214d4e4820c27f07fbf",
+      "detail_body_preserved_except_links": true,
+      "intentional_content_update": false
+    },
+    {
+      "file": "최신/최신자료.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "b43ac46a23dc686bcc1b52f99993c6eb87162ef0cbfa00360a708692c8e3f063",
+      "detail_body_preserved_except_links": false,
+      "intentional_content_update": true
+    },
+    {
+      "file": "최신/미완료목록.md",
+      "original_backup_hash_matches": true,
+      "source_removed": true,
+      "final_sha256": "1dac6a1939969ac372d11d6b8f8c78ca3e249b04d5de8bfd5c79c681119a46ea",
+      "detail_body_preserved_except_links": false,
+      "intentional_content_update": true
+    }
+  ],
+  "new_files": [
+    "최신/README.md",
+    "최신/모델_학습과_추론_요약.md"
+  ],
+  "checked_local_link_occurrences": 640,
+  "new_broken_links": [],
+  "remaining_old_moved_links": [],
+  "preexisting_unresolved_matches": 0,
+  "model_summary_review": "Independent read-only comparison with local model-status summary, 31B RESULT and REMOTE_RESULTS: key counts, status and timings agree. No new model/GPU execution.",
+  "training_rows_or_weights_copied": false,
+  "validation_scope": "Document paths, preserved bodies, JSON parsing, git diff --check. App tests not rerun; executable sources unchanged by this task."
+}

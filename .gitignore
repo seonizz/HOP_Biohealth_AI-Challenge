@@ -92,3 +92,6 @@ source_dialogues.*
 
 # Local UI verification captures can include private conversation answers.
 /output/
+
+# Archived broken references may point to private local bundles.
+/docs/archive/missing_links_2026-11-10/links/

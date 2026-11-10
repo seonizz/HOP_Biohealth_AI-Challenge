@@ -366,22 +366,42 @@ test('progress counts only validated calls while retry feedback stays out of dia
   assert.equal(new Set(records.map(entry=>entry.attempt_id)).size,2);
 });
 
-test('internal operation recovery restarts exhausted validation with a fresh controller and preserves sources',async()=>{
+test('internal recovery stops exhausted JSON validation without restarting or changing sources',async()=>{
   const records=[],events=[],signals=[],bodies=[];
   const gateway=makeGateway(async(_url,request)=>{
     signals.push(request.signal);bodies.push(JSON.parse(request.body));return envelope(bodies.length<=3?'{':state());
   },{timeoutMs:0,retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>records.push(entry)});
-  const output=await gateway.updateState(context(),null,{requestId:REQUEST_ID,onProgress:event=>events.push(event)});
-  assert.deepEqual(output.patient_state,memory());assert.equal(bodies.length,4);
-  assert.equal(signals[0],signals[2]);assert.notEqual(signals[2],signals[3]);
+  await assert.rejects(gateway.updateState(context(),null,{requestId:REQUEST_ID,onProgress:event=>events.push(event)}),
+    {code:'MODEL_INVALID_RESPONSE',modelReason:'content_json',modelAttempts:3,modelRequestId:REQUEST_ID});
+  assert.equal(bodies.length,3);
+  assert.equal(new Set(signals).size,1);
   assert.equal(new Set(bodies.map(body=>body.messages.at(-1).content)).size,1);
-  const retries=records.filter(entry=>entry.event==='model_operation_retry');assert.equal(retries.length,1);
-  const {operation_id,operation_restart,operation_elapsed_ms,...retry}=retries[0];
-  assert.deepEqual(retry,{event:'model_operation_retry',request_id:REQUEST_ID,attempt:1,code:'MODEL_INVALID_RESPONSE',reason:'content_json',delay_ms:1});
-  assert.equal(operation_id,records.find(entry=>entry.event==='model_attempt').operation_id);
-  assert.equal(operation_restart,0);assert.ok(Number.isSafeInteger(operation_elapsed_ms)&&operation_elapsed_ms>=0);
-  assert.ok(events.some(event=>event.stage==='retry'&&event.status==='started'));
-  assert.equal(JSON.stringify(retries).includes(context().patient.fields.mood.text),false);
+  assert.equal(records.some(entry=>entry.event==='model_operation_retry'),false);
+  assert.equal(events.some(event=>event.stage==='retry'),false);
+  assert.ok(records.every(entry=>entry.operation_restart===0&&entry.request_id===REQUEST_ID));
+});
+
+test('exhausted review schema validation does not regenerate a successful draft',async()=>{
+  const records=[],events=[],bodies=[];let operations=0;
+  const schema={type:'object',properties:{ok:{type:'boolean'}},required:['ok'],additionalProperties:false};
+  const source={context:context()};
+  const gateway=makeGateway(async(_url,request)=>{
+    const body=JSON.parse(request.body),payload=JSON.parse(body.messages.at(-1).content);
+    bodies.push(payload);
+    return envelope(payload.stage==='turn_draft'?{ok:true}:{unexpected:true});
+  },{protocol:'relationship_agent',timeoutMs:0,retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>records.push(entry)});
+  await assert.rejects(gateway.operation({requestId:REQUEST_ID,onProgress:event=>events.push(event)},async operation=>{
+    assert.equal(++operations,1,'An exhausted review must not regenerate a successful draft');
+    const validate=value=>{validateSchema(value,schema);return value;};
+    await gateway.agentComplete('turn_draft','초안 생성',source,schema,operation,validate);
+    return gateway.agentComplete('turn_review','독립 검토',source,schema,operation,validate);
+  }),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema',modelAttempts:3,modelRequestId:REQUEST_ID});
+  assert.equal(operations,1);
+  assert.deepEqual(bodies.map(body=>body.stage),['turn_draft','turn_review','turn_review','turn_review']);
+  assert.ok(bodies.every(body=>JSON.stringify(body.data)===JSON.stringify(source)));
+  assert.deepEqual(events.filter(event=>event.status==='completed').map(event=>event.stage),['turn_draft']);
+  assert.equal(records.some(entry=>entry.event==='model_operation_retry'),false);
+  assert.equal(events.some(event=>event.stage==='retry'),false);
 });
 
 test('internal recovery retries unavailable and transient upstream failures without returning them to callers',async()=>{
@@ -482,13 +502,13 @@ test('external cancellation ends request and operation retry waits before anothe
     const controller=new AbortController(),records=[];let calls=0,waiting;
     const ready=new Promise(resolve=>{waiting=resolve;});
     const gateway=makeGateway(async()=>{
-      calls++;return operationWait?envelope('{'):new Response('',{status:503,headers:{'Retry-After':'1'}});
+      calls++;return operationWait?new Response('',{status:500}):new Response('',{status:503,headers:{'Retry-After':'1'}});
     },{timeoutMs:0,retryFailures:true,retryDelayMs:60000,diagnosticLogger:entry=>{
       records.push(entry);if(entry.event===(operationWait?'model_operation_retry':'model_attempt'))waiting();
     }});
     const work=gateway.updateState(context(),null,{signal:controller.signal});
     await ready;await new Promise(resolve=>setImmediate(resolve));controller.abort();
-    await assert.rejects(work,{code:'MODEL_CANCELLED',status:499});assert.equal(calls,operationWait?3:1);
+    await assert.rejects(work,{code:'MODEL_CANCELLED',status:499});assert.equal(calls,1);
     if(operationWait)assert.equal(records.find(entry=>entry.event==='model_operation_retry').delay_ms,30000);
     else assert.equal(records.at(-1).reason,'cancelled');
   }

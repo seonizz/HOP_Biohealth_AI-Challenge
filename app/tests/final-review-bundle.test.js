@@ -5,96 +5,11 @@ import {ModelGateway} from '../src/model.js';
 import {safetySources,urgentGuideActions,currentReviewedSafety,safetySnapshotFingerprint,agentContext} from '../src/relationship-agent.js';
 import {COMMON} from '../src/relationship-prompts.js';
 import {evidenceWireFixture} from './evidence-wire.fixture.js';
+import {restoreReviewSources} from '../src/final-review-bundle.js';
 
 // Synthetic conversation only. Every response passes the real HTTP parser,
 // schema/evidence validators, card gates and final-detail contract.
-const field=(id,text)=>({id,text,rawText:text,custom:'',status:'answered',question:id});
-const ref=()=>({subject:'patient',question_id:'mood',quote:'밤에 계획표를 고쳐요'});
-const name=()=>({alias:'지민',source_question_id:'name',quote:'지민'});
-const memory=()=>({summary:'대상자와 이용자의 상황입니다.',facts:[{...ref(),interpretation:'이용자가 관찰했습니다.',certainty:'reported'}],unknowns:[],user_goal:'이해하고 싶어요'});
-const context=()=>({patient:{alias:'지민',fields:{name:field('name','지민'),rel:field('rel','자녀'),mood:field('mood','밤에 계획표를 고쳐요')}},
-  supporter:{fields:{feeling:field('feeling','무력하고 걱정돼요')}},user_goal:{message:field('want','이해하고 싶어요')},
-  relationship_state:{patient:[{interpretation:'밤에 계획표를 고친다는 관찰입니다.',evidence:[ref()],certainty:'reported'}],supporter:[],relationship:[],unknowns:[]},
-  agent_state:memory(),name_index:name(),answered_count:4,question_candidates:[]});
-const analysis=()=>({observations:{patient:[ref()],supporter:[{subject:'supporter',question_id:'feeling',quote:'무력하고 걱정돼요'}]},
-  relationship:{label:'자녀',supporter_role:'부모',dynamics:[{interpretation:'걱정에 응답하는 방식을 살펴볼 수 있어요.',evidence:[ref()],certainty:'tentative'}],strengths:[],boundaries:[]},
-  unknowns:['대상자의 도움 의향은 미확인입니다.'],safety:{urgent:false,evidence_ids:[]}});
-const plan=()=>({voice:'부모가 자녀에게 건네는 말',opening_evidence:[ref()],user_intent:'이해하고 싶어요',patient_choice:'원할 때 이야기해 주세요.',
-  supporter_care:['자신의 휴식도 살펴보세요.'],avoid_patterns:['재촉 대신 허락 구하기'],next_step:'다음 대화 시간을 함께 정하기'});
-const avoid={avoid_phrase:'재촉하는 말.',reason:'대답할 여유를 남겨야 합니다.',alternative:'편한 시간을 물어보세요.'};
-const guide=()=>({guide:{top:'통합',script:'지민아, 밤에 계획표를 고치는 모습을 봤어. 네 마음을 이해하고 싶어. 지금 이야기해도 괜찮을까?',
-  doList:['편한 시간을 물어보세요.'],avoid:['피할 말·행동: 재촉하는 말. 이유: 대답할 여유를 남겨야 합니다. 대신 편한 시간을 물어보세요.'],
-  next:'다음 대화 시간을 함께 정하고 자신도 쉬어 보세요.',care:{feel:'무력하고 걱정된 마음을 들려주셨어요.',tips:['잠시 쉬어 보세요.']}},assessment:{safety:false}});
-const reviewStages=['analysis_review','plan_review',
-  ...['script','care','doList','avoid','next'].map(key=>'speech_review_card_'+key),
-  'support_review_card_care','support_review_card_next','guide_quality','speech_review','support_review','guide_review','speech_detail_review'];
-const audits=claims=>(claims||[]).map(claim=>({id:claim.id,
-  verdict:claim.claim_kind==='avoidance_guidance'?'sound_avoidance':claim.claim_kind==='guidance'?'sound_guidance':claim.certainty==='tentative'?'plausible':'supported',
-  reason:'합성 원문과 선택 가능한 제안입니다.'}));
-const envelope=value=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}]}));
-
-function fixture({reuseFinalDraft=true,compactReviewInputs=false,scopedQualityRefinement=false,bundleFinalReviews=true,ctx=context(),validGuide=guide(),response:override,httpOverride}={}) {
-  const requests=[],events=[],logicalRequests=[];
-  const gateway=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'synthetic-key',model:'synthetic-model',
-    protocol:'relationship_agent',agentFormat:'prompt',reasoningEffort:'omit',stateMode:'combined',reuseFinalDraft,compactReviewInputs,scopedQualityRefinement,bundleFinalReviews,
-    timeoutMs:0,retryFailures:false,diagnosticLogger:null,fetchImpl:async (_url,request)=>{
-      const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);
-      requests.push({body,input:structuredClone(input)});
-      const intercepted=await httpOverride?.(input,body);
-      if(intercepted!==undefined)return intercepted;
-      const produce=async task=>{
-      const {stage,data,output_schema:schema}=task;
-      logicalRequests.push(task);
-      let payload;
-      if(/^(?:relationship_analysis|analysis_repair)(?:_|$)/u.test(stage)) {
-        payload=analysis();if(!schema.properties.safety)delete payload.safety;
-      }
-      else if(/^communication_plan(?:_|$)/u.test(stage))payload=plan();
-      else if(/^guide_(?:write|refine)(?:_|$)/u.test(stage))payload=structuredClone(validGuide);
-      else if(/^guide_repair(?:_|$)/u.test(stage)) {
-        const key=Object.keys(schema.properties)[0];
-        payload=key==='avoid'?{avoid:[structuredClone(avoid)]}:{[key]:structuredClone(validGuide.guide[key])};
-      } else if(/^guide_quality(?:_|$)/u.test(stage))payload={improvements:[]};
-      else if(/^continuation_context_review(?:_|$)/u.test(stage))payload=null; // Supplied explicitly by continuation scenarios.
-      else if(/^(?:analysis_review|speech_review|support_review|speech_detail_review)(?:_|$)/u.test(stage))payload={approved:true,issues:[],audits:audits(data.claims)};
-      else if(/^(?:plan_review|guide_review)(?:_|$)/u.test(stage))payload={approved:true,issues:[]};
-      else if(stage.startsWith('card_')) {
-        const key=Object.keys(schema.properties)[0];
-        payload=key==='avoid'?{avoid:[structuredClone(avoid)]}:{[key]:structuredClone(validGuide.guide[key])};
-      } else if(/^speech_(?:opening|listening|offer)(?:_|$)/u.test(stage))payload=Object.fromEntries(Object.keys(schema.properties).map(key=>[key,'원문을 확인하고 이야기를 듣고 싶어.']));
-      else if(/^speech_write(?:_|$)/u.test(stage))payload={script:validGuide.guide.script};
-      else if(/^speech_detail(?:_|$)/u.test(stage))payload={opening_end:1,listening_end:data.script_units.length-1,
-        ...Object.fromEntries(['opening','listening','offer'].map(key=>[key,{why:'보고한 행동을 되짚으며 듣고 싶다는 뜻을 전하는 제안이에요.',evidence:[ref()]}]))};
-      else assert.fail('Unexpected stage '+stage);
-      const replaced=await override?.(task,body,payload);
-      return replaced===undefined?payload:replaced;
-      };
-      let payload;
-      if(input.data.tasks){
-        payload={};
-        for(const task of input.data.tasks){
-          const data={...task.input,...Object.fromEntries(Object.entries(task.shared_input_keys).map(([key,id])=>[key,input.data.shared_inputs[id]]))};
-          const instructions=task.instructions.map(rule=>rule.text??input.data.shared_instructions[rule.shared_instruction]).join('\n');
-          payload[task.id]=await produce({stage:task.stage,data,output_schema:input.output_schema.properties[task.id],prompt:COMMON+'\n'+instructions,bundle_stage:input.stage,key:task.id});
-        }
-      }else payload=await produce(input);
-      return envelope(evidenceWireFixture(input,payload));
-    }});
-  return {gateway,requests,events,logicalRequests,ctx,
-    stages:()=>requests.map(({input})=>input.stage),
-    run:options=>gateway.respond(ctx,ctx.agent_state,{onCard:event=>events.push(structuredClone(event)),...options})};
-}
-
-function assertDetail(output) {
-  assert.equal(output.agent.reviewed,true);
-  assert.equal(output.agent.quality_reviewed,true);
-  assert.deepEqual(Object.keys(output.conversation_detail),['opening','listening','offer']);
-  assert.equal(Object.values(output.conversation_detail).map(part=>part.excerpt).join(''),output.guide.script);
-  for(const part of Object.values(output.conversation_detail)) {
-    assert.ok(part.why.length>0);
-    assert.deepEqual(part.evidence,[ref()]);
-  }
-}
+import {field,ref,name,memory,context,analysis,plan,avoid,guide,reviewStages,audits,envelope,fixture,assertDetail} from './helpers/final-flow-fixture.js';
 
 for(const reuseFinalDraft of [false,true])for(const persistent of [false,true])
 test(`bundled final approvals still require fresh continuation review and bounded repair: reuse=${reuseFinalDraft}, persistent=${persistent}`,async()=>{
@@ -193,6 +108,112 @@ const reject=(input,field)=>({approved:false,issues:[{field,reason:'이 카드�
     verdict:input.data.claims[index].claim_kind==='avoidance_guidance'?'problem_in_recommended_content':'problem_in_guidance'}:audit)}:{})});
 const refinedCare={feel:'무력하고 걱정된 마음을 들려주셨어요. 자신의 여유도 살펴보세요.',tips:['잠시 쉬어 보세요.']};
 
+test('shared source transport keeps every logical task and saved value while reducing complete request bytes',async t=>{
+  const baseline=fixture(),compact=fixture({shareReviewSources:true});
+  const before=await baseline.run(),after=await compact.run();
+  assert.equal(compact.requests.length,8);
+  for(const key of ['guide','assessment','patient_state','name_index','relationship_analysis','relationship_memory','conversation_detail'])assert.deepEqual(after[key],before[key],key);
+  for(const stage of reviewStages)assert.deepEqual(compact.logicalRequests.find(task=>task.stage===stage).data,baseline.logicalRequests.find(task=>task.stage===stage).data,stage);
+  const original=baseline.requests.find(({input})=>input.stage==='final_review_bundle_initial'),encoded=compact.requests.find(({input})=>input.stage==='final_review_bundle_initial');
+  assert.ok(encoded.input.data.shared_sources);
+  const a=Buffer.byteLength(JSON.stringify(original.body)),b=Buffer.byteLength(JSON.stringify(encoded.body));
+  assert.ok(b<a);t.diagnostic(JSON.stringify({metric:'complete_bundle_request_bytes',baseline:a,compact:b,saved:a-b,model_posts:8}));
+});
+
+test('task-local repair requests only one missing audit and retains exact sibling gates',async t=>{
+  const response=input=>input.bundle_stage&&input.stage==='speech_review_card_care'?{approved:true,issues:[]}:undefined;
+  const baseline=fixture({response}),value=fixture({repairReviewBundleTasks:true,response});
+  const before=await baseline.run(),output=await value.run();assertDetail(output);
+  assert.deepEqual(output.guide,before.guide);
+  assert.equal(value.stages().filter(stage=>stage==='final_review_bundle_initial').length,1);
+  assert.equal(value.stages().filter(stage=>stage==='speech_review_card_care').length,1);
+  assert.equal(value.requests.length,9);
+  assert.equal(value.stages().some(stage=>stage==='speech_review_card_script'),false,'valid sibling is not regenerated');
+  assert.ok(baseline.requests.length>value.requests.length);
+  t.diagnostic(JSON.stringify({metric:'one_missing_audit_posts',baseline:baseline.requests.length,task_repair:value.requests.length}));
+});
+
+test('all new final transport flags preserve the eight-POST output and exact logical citations',async()=>{
+  const baseline=fixture(),value=fixture({shareReviewSources:true,repairReviewBundleTasks:true,extendedFinalEvidenceIds:true});
+  const before=await baseline.run(),output=await value.run();assertDetail(output);assert.equal(value.requests.length,8);
+  for(const key of ['guide','relationship_analysis','relationship_memory','conversation_detail'])assert.deepEqual(output[key],before[key]);
+  for(const stage of ['communication_plan','speech_detail']) {
+    const request=value.requests.find(({input})=>input.stage===stage);
+    assert.ok(request.input.evidence_sources.locations.length>0,stage);
+    const schema=stage==='communication_plan'?request.input.output_schema.properties.opening_evidence:
+      request.input.output_schema.properties.opening.properties.evidence;
+    assert.equal(schema.items.type,'string',stage);
+  }
+});
+
+for(const point of ['initial','task_repair'])test('review contract is captured before dispatch and rejects in-flight changes: '+point,async()=>{
+  const value=fixture({repairReviewBundleTasks:true,response:input=>{
+    if(point==='initial'&&input.bundle_stage==='final_review_bundle_initial'&&input.stage==='guide_review')value.gateway.model='changed-in-flight';
+    if(point==='task_repair'&&input.bundle_stage==='final_review_bundle_initial'&&input.stage==='speech_review_card_care')return {approved:true,issues:[]};
+    if(point==='task_repair'&&!input.bundle_stage&&input.stage==='speech_review_card_care')value.gateway.model='changed-in-flight';
+  }});
+  await assert.rejects(value.run(),{modelReason:'agent_review_stale'});
+  assert.equal(value.stages().includes('speech_detail'),false);
+  assert.equal(value.events.some(event=>event.id==='care'&&event.type==='upsert'),false);
+});
+
+test('card rejection repairs before a malformed later quality or guide task and discards old approvals',async()=>{
+  const value=fixture({repairReviewBundleTasks:true,response:input=>{
+    if(input.bundle_stage==='final_review_bundle_initial'&&input.stage==='speech_review_card_care')return reject(input,'care');
+    if(input.bundle_stage==='final_review_bundle_initial'&&['guide_quality','guide_review'].includes(input.stage))return {};
+    if(input.stage==='guide_repair_card_care_1')return {care:refinedCare};
+  }});
+  const output=await value.run();assert.deepEqual(output.guide.care,refinedCare);assertDetail(output);
+  assert.equal(value.stages().includes('guide_quality'),false,'do not repair invalidated speculative quality');
+  assert.equal(value.stages().includes('guide_review'),false,'do not repair invalidated speculative guide');
+  const fresh=value.logicalRequests.filter(input=>input.bundle_stage==='final_review_bundle_quality');
+  assert.ok(fresh.length);assert.ok(fresh.every(input=>input.data.guide.care.feel===refinedCare.feel));
+});
+
+test('quality improvements run before recovery of malformed whole-guide tasks',async()=>{
+  const value=fixture({repairReviewBundleTasks:true,scopedQualityRefinement:true,response:input=>{
+    if(input.bundle_stage==='final_review_bundle_initial'&&input.stage==='guide_quality')return {improvements:[{field:'care',reason:'추가 돌봄 제안을 넣어 주세요.',repair:'자신의 여유도 살펴보세요.'}]};
+    if(input.bundle_stage==='final_review_bundle_initial'&&input.stage==='guide_review')return {};
+    if(input.stage==='guide_refine')return {care:refinedCare};
+  }});
+  const output=await value.run();assertDetail(output);assert.deepEqual(output.guide.care,refinedCare);
+  assert.equal(value.stages().includes('guide_review'),false);
+  assert.ok(value.stages().includes('final_review_bundle_after_quality'));
+  const guide=value.logicalRequests.filter(task=>task.stage==='guide_review').at(-1);
+  assert.deepEqual(guide.data.guide.care,refinedCare);
+});
+
+test('local card rejection also precedes repair of missing speculative whole-guide output',async()=>{
+  const bad=guide();bad.guide.script='네가 얼마나 노력하는지 다 알고 있어. 네 마음을 이해하고 싶어. 지금 이야기해도 괜찮을까?';
+  const value=fixture({validGuide:bad,repairReviewBundleTasks:true,response:input=>{
+    if(input.bundle_stage==='final_review_bundle_initial'&&input.stage==='guide_review')return {};
+    if(input.stage==='guide_repair_card_script_1')return {script:guide().guide.script};
+  }});
+  const output=await value.run();assertDetail(output);assert.equal(output.guide.script,guide().guide.script);
+  assert.equal(value.stages().includes('guide_review'),false);
+  assert.equal(value.events.some(event=>event.id==='script'&&event.value===bad.guide.script),false);
+});
+
+test('exhausted task-local repair restores the original gates and cannot publish an unreviewed card',async()=>{
+  const value=fixture({repairReviewBundleTasks:true,response:input=>input.stage==='speech_review_card_care'?{approved:true,issues:[]}:undefined});
+  await assert.rejects(value.run(),{code:'MODEL_INVALID_RESPONSE'});
+  assert.equal(value.stages().filter(stage=>stage==='final_review_bundle_initial').length,1);
+  assert.equal(value.stages().filter(stage=>stage==='speech_review_card_care').length,6,'three local attempts then three original fallback attempts');
+  assert.equal(value.events.some(event=>event.id==='care'&&event.type==='upsert'),false);
+  assert.equal(value.stages().includes('speech_detail'),false);
+});
+
+for(const malformed of ['duplicate_keys','truncated','extra_key'])test('task repair refuses unsafe envelope '+malformed,async()=>{
+  const value=fixture({repairReviewBundleTasks:true,httpOverride:input=>{
+    if(input.stage!=='final_review_bundle_initial')return;
+    const content=malformed==='duplicate_keys'?'{"guide":{},"gu\\u0069de":{}}':malformed==='truncated'?'{':JSON.stringify({unknown_task:{approved:true}});
+    return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content}}]}));
+  }});
+  assertDetail(await value.run());
+  assert.equal(value.stages().filter(stage=>stage==='final_review_bundle_initial').length,3);
+  for(const field of ['script','care','doList','avoid','next'])assert.ok(value.stages().includes('speech_review_card_'+field));
+});
+
 test('exhausted malformed future review resumes card repairs before quality and whole-guide reviews',async()=>{
   const response=input=>{
     if(input.stage==='speech_review_card_care'&&input.data.guide.care.feel===guide().guide.care.feel)return reject(input,'care');
@@ -262,11 +283,13 @@ test('a standalone card bundle failure restores both original card gates without
   assert.equal(output.agent.review_bundles?.some(bundle=>bundle.stage==='card_review_bundle_care')??false,false);
 });
 
-test('fallback survives whole-operation recovery but does not disable batching for a new request',async()=>{
+test('fallback survives transport recovery but does not disable batching for a new request',async()=>{
   let broken=true,detailAttempts=0;
   const value=fixture({response:input=>{
     if(broken&&input.bundle_stage&&input.stage==='guide_review')return {approved:true};
-    if(broken&&input.stage==='speech_detail'&&++detailAttempts<=3)return {};
+  },httpOverride:input=>{
+    if(broken&&input.stage==='speech_detail'&&++detailAttempts<=3)
+      return new Response('{}',{status:503,headers:{'Retry-After':'0'}});
   }});
   value.gateway.retryFailures=true;value.gateway.retryDelayMs=1;
   const output=await value.run();assertDetail(output);
@@ -544,4 +567,47 @@ test('a reported request for the same help retains the eight-POST bundle and ori
   const probe=fixture({ctx,validGuide}),result=await probe.run();
   assertDetail(result);assert.deepEqual(result.guide.doList,validGuide.guide.doList);
   assert.equal(probe.requests.length,8);assert.equal(probe.stages().some(stage=>stage.startsWith('guide_repair')),false);
+});
+
+test('shared sources and task recovery preserve every original input across context partitions',async()=>{
+  const legacy=fixture({bundleFinalReviews:false});
+  const value=fixture({shareReviewSources:true,repairReviewBundleTasks:true,
+    httpOverride:input=>input.data.tasks?.length>4?contextLimit():undefined});
+  const expected=await legacy.run(),output=await value.run();
+  assertDetail(output);assert.deepEqual(output.guide,expected.guide);
+  assert.equal(value.requests.length,14);
+  for(const stage of reviewStages) {
+    const parts=value.logicalRequests.filter(task=>task.stage===stage);
+    assert.equal(parts.length,1,stage+' must not repeat a successful partition');
+    assert.deepEqual(parts[0].data,legacy.logicalRequests.find(task=>task.stage===stage).data,stage+' retains its original scope');
+  }
+});
+
+test('cancelling task-local review recovery never publishes its unresolved card or completes detail',async()=>{
+  const controller=new AbortController();
+  const value=fixture({repairReviewBundleTasks:true,
+    response:input=>input.bundle_stage&&input.stage==='speech_review_card_care'?{}:undefined,
+    httpOverride:input=>{if(input.stage==='speech_review_card_care')controller.abort();}});
+  await assert.rejects(value.run({signal:controller.signal}),{code:'MODEL_CANCELLED'});
+  assert.equal(value.stages().filter(stage=>stage==='speech_review_card_care').length,1);
+  assert.equal(value.events.some(event=>event.type==='upsert'&&event.id==='care'),false);
+  assert.equal(value.stages().includes('speech_detail'),false);
+  assert.equal(value.events.at(-1).type,'reset');
+});
+
+test('late analysis rejection renews every downstream bundled gate with source sharing and task recovery',async()=>{
+  const value=fixture({shareReviewSources:true,repairReviewBundleTasks:true,response:input=>
+    input.stage==='guide_review'?{approved:false,issues:[{field:'relationship_analysis',
+      reason:'현재 해석 범위를 확인하세요.',repair:'원문의 범위를 유지하세요.'}]}:undefined});
+  const output=await value.run();assertDetail(output);
+  assert.ok(value.stages().includes('analysis_repair_after_guide_review'));
+  assert.ok(value.stages().includes('communication_plan_after_analysis_repair'));
+  assert.ok(value.stages().includes('plan_review_after_analysis_repair'));
+  const stage='final_review_bundle_initial_after_analysis_repair';
+  assert.equal(value.stages().filter(item=>item===stage).length,1);
+  const fresh=value.logicalRequests.filter(task=>task.bundle_stage===stage);
+  assert.equal(fresh.length,11);
+  assert.deepEqual(new Set(fresh.map(task=>task.key)),new Set(value.logicalRequests
+    .filter(task=>task.bundle_stage==='final_review_bundle_initial').map(task=>task.key)));
+  assert.ok(fresh.every(task=>task.stage.endsWith('_after_analysis_repair')));
 });

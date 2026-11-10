@@ -1030,15 +1030,24 @@ test('generation progress is owner-only, shared by duplicate requests, and conta
   const row=await f.store.createIntake(owner,{...createIntake(),status:'ready'},0);
   const path=`/api/intakes/${row.id}`;
   const first=f.request(a,path+'/result','POST',{revision:0});await entered;
+  let decrypted=0;
+  const open=f.store.open.bind(f.store);
+  t.mock.method(f.store,'open',(...args)=>{decrypted++;return open(...args);});
+  await f.store.pool.query("UPDATE browsers SET last_active_at=clock_timestamp()-INTERVAL '1 day' WHERE id=$1",[owner]);
   const status=await f.request(a,path+'/progress');
   assert.equal(status.status,200);assert.equal(status.data.progress.completed.length,1);assert.equal(status.data.progress.attempt,2);
   assert.equal(JSON.stringify(status.data).includes(guide.script),false);
+  for(let index=0;index<3;index++)assert.deepEqual((await f.request(a,path+'/progress')).data,status.data);
+  assert.equal(decrypted,0,'active progress must not decrypt the intake');
+  const activity=await f.store.pool.query("SELECT last_active_at>clock_timestamp()-INTERVAL '1 minute' AS refreshed FROM browsers WHERE id=$1",[owner]);
+  assert.equal(activity.rows[0].refreshed,true,'progress authentication still refreshes activity');
   assert.equal((await f.request(b,path+'/progress')).status,404);
   const duplicate=f.request(a,path+'/result','POST',{revision:0});
   release();const results=await Promise.all([first,duplicate]);
   assert.equal(calls,1);assert.ok(results.every(result=>result.status===200));
   assert.deepEqual(results[0].data.record.conversation_detail,detail);
   assert.equal((await f.request(a,path+'/progress')).data.progress.status,'complete');
+  assert.ok(decrypted>0,'persisted progress retains the decrypted record validation path');
 });
 
 for (const deleted of [false,true]) test(`progress cannot survive a ${deleted?'deleted intake':'failed generation'} or restore its result`, {skip:!databaseUrl},async t=>{

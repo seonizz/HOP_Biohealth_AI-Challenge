@@ -79,4 +79,4 @@ flowchart TD
 - [호출 흐름·검증](../src/relationship-agent.js), [통합 초안 프롬프트](../src/relationship-prompts.js)
 - [Gateway 옵션](../src/model.js), [환경 설정](../src/model-config.js), [기본 Compose](../compose.yaml), [GPU overlay](../compose.gpu.yaml)
 - [O4 회귀 검사](../tests/final-draft-reuse.test.js), [프롬프트 검사](../tests/o4-prompt.test.js), [설정 검사](../tests/model-config.test.js)
-- [기존 대비 전체 순서도·호출 수](../../docs/current/모델_호출_흐름_비교_2026-10-31.md)
+- [기존 대비 전체 순서도·호출 수](../../docs/archive/2026-10/모델_호출_흐름_비교_2026-10-31.md)

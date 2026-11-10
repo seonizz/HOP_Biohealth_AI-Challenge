@@ -1,0 +1,107 @@
+{
+  "date": "2026-11-10",
+  "moved_files": 22,
+  "all_moves_verified": true,
+  "unchanged_binary_json_artifacts": 7,
+  "markdown_body_preserved_except_link_destinations": true,
+  "move_checks": [
+    {
+      "file": "docs/archive/2026-10/수정내역_종합정리_2026-10-16.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/GPU_서버_데이터이관_아카이브_검증_2026-10-17.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/GPU_서버_v11_실모델_학습가능성_검증_2026-10-17.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/GPU_서버_v11_본학습_재개_서비스검증_2026-10-17.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/GPU_서버_v11_수정데이터_학습재검증_2026-10-17.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/GPU_서버_31B_본학습_품질검증_진행.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/GPU_서버_31B_지속품질검증_수정기준.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/실서비스_전체흐름_검증_2026-10-18.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/24개_입력_개선검증_2026-10-18.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/API_로컬모델_안정화_수정정리_2026-10-25.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/CSR_URL_단위_페이지전환_작업정리_2026-10-25.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/모델_호출_최적화_검토_2026-10-31.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/모델_호출_추가_최적화_검토_2026-10-31.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/모델_호출_흐름_비교_2026-10-31.md",
+      "passed": true
+    },
+    {
+      "file": "docs/archive/2026-10/전체_모델_사용량_재조사_2026-10-31.md",
+      "passed": true
+    },
+    {
+      "file": "presentation/archive/final_v2-v5/말씨_결선_실전발표_v3.json",
+      "passed": true
+    },
+    {
+      "file": "presentation/archive/final_v2-v5/말씨_결선_실전발표_v3.pptx",
+      "passed": true
+    },
+    {
+      "file": "presentation/archive/final_v2-v5/말씨_결선_근거정합본_v2.pptx",
+      "passed": true
+    },
+    {
+      "file": "presentation/archive/final_v2-v5/말씨_결선_실전발표_v5.json",
+      "passed": true
+    },
+    {
+      "file": "presentation/archive/final_v2-v5/말씨_결선_실전발표_v4.pptx",
+      "passed": true
+    },
+    {
+      "file": "presentation/archive/final_v2-v5/말씨_결선_실전발표_v5.pptx",
+      "passed": true
+    },
+    {
+      "file": "presentation/archive/final_v2-v5/말씨_결선_실전발표_v4.json",
+      "passed": true
+    }
+  ],
+  "checked_local_link_occurrences_in_changed_docs": 1185,
+  "new_broken_links": [],
+  "preexisting_unresolved_matches_in_changed_docs": 39,
+  "private_inventory_git_ignored": true,
+  "preexisting_git_work_status_preserved": true,
+  "deleted_source_materials": 0,
+  "app_tests": "not run: no executable source or configuration modified",
+  "scope_limit": "HOP-Final only; dependency/cache exclusions in local inventory; symlinks not followed; existing missing archive targets not restored",
+  "review": "Read-only document audit; Ollama gemma4:12b request reached token limit before final answer, not counted as completed review",
+  "independent_review": "22 moves independently checked against originals: 15 Markdown files changed only link destinations; 7 PPTX/JSON files byte-identical. Index classification accepted. Missing verification.json observed during concurrent review is now present."
+}

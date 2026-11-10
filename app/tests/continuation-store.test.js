@@ -121,6 +121,7 @@ databaseTest('another owner cannot list, read, update or delete a continuation',
   const other = (await store.createBrowser()).id;
   await assert.rejects(store.listContinuations(other, record.id), {status:404});
   await assert.rejects(store.getContinuation(other, row.id), {status:404});
+  await assert.rejects(store.continuationSources(other, row.id, row.revision), {status:404});
   await assert.rejects(store.updateContinuation(other, row.id, 0, state => state), {status:404});
   await assert.rejects(store.deleteContinuation(other, row.id), {status:404});
   assert.equal((await store.getContinuation(owner, row.id)).revision, 0);
@@ -195,6 +196,7 @@ databaseTest('original record/intake/all-conversations deletion cascade to sessi
     if (kind === 'intake') await store.deleteIntake(owner, intake.id);
     if (kind === 'all') await store.deleteConversations(owner);
     await assert.rejects(store.getContinuation(owner, row.id), {status:404});
+    await assert.rejects(store.continuationSources(owner, row.id, row.revision), {status:404});
     await assert.rejects(store.updateContinuation(owner, row.id, 0, state => state), {status:404});
     const count = await store.pool.query('SELECT count(*)::integer AS count FROM continuation_creation_requests WHERE owner=$1', [owner]);
     assert.equal(count.rows[0].count, 0);
@@ -207,6 +209,7 @@ databaseTest('retention blocks all continuation access before cleanup and remove
   const row = await store.createContinuation(owner, record.id, 0, randomUUID());
   await store.pool.query("UPDATE browsers SET last_active_at=clock_timestamp()-INTERVAL '31 days' WHERE id=$1", [owner]);
   await assert.rejects(store.getContinuation(owner, row.id), {status:404});
+  await assert.rejects(store.continuationSources(owner, row.id, row.revision), {status:404});
   await assert.rejects(store.listContinuations(owner, record.id), {status:404});
   await assert.rejects(store.createContinuation(owner, record.id, 0, randomUUID()), {status:404});
   await assert.rejects(store.updateContinuation(owner, row.id, 0, state => state), {status:404});
@@ -215,4 +218,70 @@ databaseTest('retention blocks all continuation access before cleanup and remove
   for (const table of ['continuation_sessions', 'continuation_creation_requests']) {
     assert.equal((await store.pool.query(`SELECT count(*)::integer AS count FROM ${table}`)).rows[0].count, 0);
   }
+});
+
+databaseTest('source snapshots preserve sequence, owner and record scope in one fixed-cost read',async t=>{
+  const {store,owner,source}=await fixture(t),{record}=await source();
+  const foreign=await source(),other=(await store.createBrowser()).id;
+  let current=await store.createContinuation(owner,record.id,0,randomUUID());
+  const expected=[];
+  const queryCounts=[];
+  const transaction=store.transaction.bind(store);
+  let measured=null;
+  t.mock.method(store,'transaction',operation=>transaction(client=>operation({query:(sql,...values)=>{
+    if(measured)measured.push(sql);return client.query(sql,...values);
+  }})));
+  for(let index=0;index<4;index++) {
+    const message={id:`round-${index}`,role:'user',text:`합성 회차 ${index}`};
+    current=await store.updateContinuation(owner,current.id,current.revision,state=>({...state,messages:[message]}));
+    expected.push(message);
+    measured=[];
+    const snapshot=await store.continuationSources(owner,current.id,current.revision);
+    queryCounts.push(measured.length);measured=null;
+    assert.deepEqual(snapshot.record,record);
+    assert.deepEqual(snapshot.messages,expected);
+    await assert.rejects(store.continuationSources(other,current.id,current.revision),{status:404});
+    await assert.rejects(store.continuationSources(owner,current.id,current.revision-1),{code:'REVISION_CONFLICT'});
+    if(index<3){
+      await store.updateContinuation(owner,current.id,current.revision,complete);
+      current=await store.createContinuation(owner,record.id,0,randomUUID());
+    }
+  }
+  assert.deepEqual(queryCounts,[3,3,3,3]); // owner, current+record, all prior rounds
+  const older=(await store.listContinuations(owner,record.id))[1];
+  const old=await store.getContinuation(owner,older.id);
+  assert.deepEqual((await store.continuationSources(owner,old.id,old.revision)).messages,expected.slice(0,2));
+  const unrelated=await store.createContinuation(owner,foreign.record.id,0,randomUUID());
+  await store.updateContinuation(owner,unrelated.id,0,state=>({...state,messages:[{role:'user',text:'다른 기준 기록'}]}));
+  assert.deepEqual((await store.continuationSources(owner,current.id,current.revision)).messages,expected);
+});
+
+databaseTest('snapshot owner lock holds a consistent history and later correction fences its completion',async t=>{
+  const {store,owner,source}=await fixture(t),{record}=await source();
+  let first=await store.createContinuation(owner,record.id,0,randomUUID());
+  first=await store.updateContinuation(owner,first.id,0,state=>({...state,status:'completed',messages:[{role:'user',text:'정정 전 합성 보고'}]}));
+  const current=await store.createContinuation(owner,record.id,0,randomUUID());
+  let release,entered;
+  const gate=new Promise(resolve=>release=resolve),locked=new Promise(resolve=>entered=resolve);
+  const lockOwner=store.lockOwner.bind(store);
+  t.mock.method(store,'lockOwner',async(client,id,mode)=>{
+    const result=await lockOwner(client,id,mode);
+    if(mode==='SHARE'){entered();await gate;}
+    return result;
+  });
+  const pending=store.continuationSources(owner,current.id,current.revision);
+  await locked;
+  let changed=false;
+  const correction=store.updateContinuation(owner,first.id,first.revision,state=>({...state,messages:[{role:'user',text:'정정 후 합성 보고'}]}),{invalidateLater:true}).then(row=>{changed=true;return row;});
+  try{
+    await new Promise(resolve=>setTimeout(resolve,15));assert.equal(changed,false);
+  }finally{release();}
+  assert.deepEqual((await pending).messages,[{role:'user',text:'정정 전 합성 보고'}]);
+  await correction;
+  await assert.rejects(store.updateContinuation(owner,current.id,current.revision,state=>state),{code:'REVISION_CONFLICT'});
+  await assert.rejects(store.continuationSources(owner,current.id,current.revision),{code:'REVISION_CONFLICT'});
+  const latest=await store.getContinuation(owner,current.id);
+  assert.deepEqual((await store.continuationSources(owner,current.id,latest.revision)).messages,[{role:'user',text:'정정 후 합성 보고'}]);
+  await store.deleteContinuation(owner,first.id);
+  await assert.rejects(store.continuationSources(owner,current.id,latest.revision),{code:'REVISION_CONFLICT'});
 });

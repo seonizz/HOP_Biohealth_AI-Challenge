@@ -79,6 +79,26 @@ export async function getContinuation(store, owner, id) {
   });
 }
 
+export async function continuationSources(store, owner, id, revision) {
+  return store.transaction(async client => {
+    // Corrections, deletion and saves take the exclusive owner lock. Keep the
+    // record, current revision and ordered history in one consistent read.
+    await store.lockOwner(client, owner, 'SHARE');
+    const current = await client.query(`SELECT s.*,r.content AS record_content FROM continuation_sessions s
+      JOIN records r ON r.owner=s.owner AND r.id=s.source_record_id WHERE s.owner=$1 AND s.id=$2`, [owner, id]);
+    if (!current.rowCount) throw notFound();
+    const row = current.rows[0];
+    if (row.revision !== revision) throw conflict();
+    const previous = await client.query(`SELECT id,owner,content FROM continuation_sessions
+      WHERE owner=$1 AND source_record_id=$2 AND sequence<$3 ORDER BY sequence`, [owner, row.source_record_id, row.sequence]);
+    return {
+      record:store.openRecord(row.record_content, owner, row.source_record_id),
+      messages:[...previous.rows.flatMap(session => store.open(session.content, aad(owner, session.id)).messages),
+        ...store.open(row.content, aad(owner, id)).messages],
+    };
+  });
+}
+
 export async function updateContinuation(store, owner, id, revision, mutate, {invalidateLater = false} = {}) {
   return store.transaction(async client => {
     await store.lockOwner(client, owner);

@@ -6,6 +6,23 @@ import {configuredModelGateway, configuredReviewGateway, resolveModelBaseUrl} fr
 import {createApp} from '../src/server.js';
 import {Store} from '../src/store.js';
 
+test('two-request turns, joint analysis/plan and compact output are explicit valid opt-ins',()=>{
+  const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_PROTOCOL:'relationship_agent',MODEL_STATE_MODE:'combined',MODEL_BUNDLE_FINAL_REVIEWS:'true'};
+  const keys={MODEL_BUNDLE_COMBINED_TURN_REVIEWS:'bundleCombinedTurnReviews',MODEL_BUNDLE_ANALYSIS_PLAN:'bundleAnalysisPlan',MODEL_COMPACT_REVIEW_OUTPUT:'compactReviewOutput'};
+  for(const [key,option]of Object.entries(keys)){
+    assert.equal(configuredModelGateway({env})[option],false);
+    assert.equal(configuredModelGateway({env:{...env,[key]:'true'}})[option],true);
+    for(const value of ['yes','TRUE','1',true,null])assert.throws(()=>configuredModelGateway({env:{...env,[key]:value}}),/Invalid MODEL configuration/);
+    assert.throws(()=>configuredModelGateway({env:{...env,[key]:'true',MODEL_PROTOCOL:'json_schema'}}),/Invalid MODEL configuration/);
+  }
+  assert.throws(()=>configuredModelGateway({env:{...env,MODEL_BUNDLE_COMBINED_TURN_REVIEWS:'true',MODEL_STATE_MODE:'combined_blocks'}}),/Invalid MODEL configuration/);
+  assert.throws(()=>configuredModelGateway({env:{...env,MODEL_BUNDLE_ANALYSIS_PLAN:'true',MODEL_BUNDLE_FINAL_REVIEWS:'false'}}),/Invalid MODEL configuration/);
+  const writer=configuredModelGateway({env:{...env,MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435',MODEL_COMPACT_REVIEW_OUTPUT:'true'}});
+  assert.equal(writer.reviewGateway.compactReviewOutput,false);
+  const reviewer=configuredReviewGateway({env:{...env,MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435',MODEL_REVIEW_COMPACT_REVIEW_OUTPUT:'true'}});
+  assert.equal(reviewer.compactReviewOutput,true);
+});
+
 test('review batching and reviewed-name reuse retain independent reviewer configuration and reject incompatible modes',()=>{
   const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_PROTOCOL:'relationship_agent',MODEL_STATE_MODE:'combined_blocks',
     MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435'};
@@ -25,6 +42,19 @@ test('review batching and reviewed-name reuse retain independent reviewer config
   assert.throws(()=>configuredModelGateway({env:{...env,MODEL_BUNDLE_TURN_REVIEWS:'true',MODEL_STATE_MODE:'combined'}}),/Invalid MODEL configuration/);
   assert.throws(()=>configuredModelGateway({env:{...env,MODEL_REUSE_REVIEWED_NAME:'true',MODEL_STATE_MODE:'combined'}}),/Invalid MODEL configuration/);
   assert.throws(()=>configuredModelGateway({env:{...env,MODEL_REUSE_REVIEWED_SAFETY:'true',MODEL_STATE_MODE:'combined'}}),/Invalid MODEL configuration/);
+});
+
+test('review source sharing, task repair and extended final evidence are strict isolated opt-ins',()=>{
+  const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_PROTOCOL:'relationship_agent',MODEL_BUNDLE_FINAL_REVIEWS:'true',MODEL_REVIEW_BASE_URL:'http://127.0.0.1:11435'};
+  const keys={MODEL_SHARE_REVIEW_SOURCES:'shareReviewSources',MODEL_REPAIR_REVIEW_BUNDLE_TASKS:'repairReviewBundleTasks',MODEL_EXTENDED_FINAL_EVIDENCE_IDS:'extendedFinalEvidenceIds'};
+  for(const [key,option] of Object.entries(keys)) {
+    assert.equal(configuredModelGateway({env})[option],false);
+    const gateway=configuredModelGateway({env:{...env,[key]:'true'}});
+    assert.equal(gateway[option],true);assert.equal(gateway.reviewGateway[option],false);
+    for(const value of ['1','TRUE',true,null])assert.throws(()=>configuredModelGateway({env:{...env,[key]:value}}),/Invalid MODEL configuration/);
+    assert.throws(()=>configuredModelGateway({env:{...env,[key]:'true',MODEL_PROTOCOL:'json_schema'}}),/Invalid MODEL configuration/);
+    if(key!=='MODEL_EXTENDED_FINAL_EVIDENCE_IDS')assert.throws(()=>configuredModelGateway({env:{...env,[key]:'true',MODEL_BUNDLE_FINAL_REVIEWS:'false'}}),/Invalid MODEL configuration/);
+  }
 });
 
 test('native model roots, compatible completion URLs and custom prefixes resolve without a network request',()=>{

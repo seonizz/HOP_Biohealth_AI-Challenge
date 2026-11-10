@@ -93,21 +93,23 @@ test('delegated transient failures keep the request retry ceiling without nested
   assert.equal(records.some(entry=>entry.event==='model_operation_retry'),false);
 });
 
-test('only the writer operation restarts an exhausted delegated review when recovery is enabled',async()=>{
+test('an exhausted delegated review cannot restart either operation with recovery enabled',async()=>{
   let calls=0,operations=0;const writerRecords=[],reviewRecords=[];
   const reviewer=gateway('http://192.0.2.2:11434/v1',async()=>response({ok:++calls>3}),
     {retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>reviewRecords.push(entry)});
   const writer=gateway('http://127.0.0.1:11434/v1',async()=>assert.fail('No writer request expected'),
     {reviewGateway:reviewer,retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>writerRecords.push(entry)});
-  const result=await writer.operation({},operation=>{
+  const run=()=>writer.operation({},operation=>{
     operations++;
     return writer.agentComplete('speech_review','Synthetic instructions',{},schema,operation,value=>{
       if(!value.ok){const error=new HttpError(502,'MODEL_INVALID_RESPONSE','Synthetic rejection');error.modelReason='agent_claim_audit';throw error;}
       return value;
     });
   });
-  assert.deepEqual(result,{ok:true});assert.equal(calls,4);assert.equal(operations,2);
-  assert.equal(writerRecords.filter(entry=>entry.event==='model_operation_retry').length,1);
+  await assert.rejects(run(),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_claim_audit',modelAttempts:3});
+  assert.equal(calls,3);assert.equal(operations,1);
+  assert.deepEqual(await run(),{ok:true});assert.equal(calls,4);assert.equal(operations,2);
+  assert.equal(writerRecords.filter(entry=>entry.event==='model_operation_retry').length,0);
   assert.equal(reviewRecords.some(entry=>entry.event==='model_operation_retry'),false);
   assert.equal(reviewer.retryFailures,true);
 });

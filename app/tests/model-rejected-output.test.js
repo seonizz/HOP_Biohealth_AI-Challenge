@@ -103,12 +103,14 @@ test('successful normalized output cannot become repair state in a later stage o
   assert.ok(requests.every(input=>!JSON.stringify(input).includes('PRIVATE_ACCEPTED_SENTINEL')));
 });
 
-test('a whole-operation restart starts clean even when the previous three parsed candidates were rejected',async()=>{
+test('exhausted candidates terminate and an explicit new operation starts clean',async()=>{
   const requests=[],logs=[],model=gateway(async(_url,options)=>{requests.push(body(options));return envelope(requests.length<=3?invalid:valid);},
     {retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>logs.push(entry)});
+  await assert.rejects(generate(model),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_schema',modelAttempts:3});
+  assert.equal(requests.length,3);
   assert.deepEqual(await generate(model),valid);assert.equal(requests.length,4);clean(requests[0]);clean(requests[3]);
   assert.deepEqual(requests[2].rejected_output,invalid);
-  assert.equal(logs.filter(entry=>entry.event==='model_operation_retry').length,1);secretFree(logs);
+  assert.equal(logs.filter(entry=>entry.event==='model_operation_retry').length,0);secretFree(logs);
 });
 
 for(const candidate of [null,false,0,'',[],{}])test('falsy or empty parsed candidates remain exact rejected outputs: '+JSON.stringify(candidate),async()=>{

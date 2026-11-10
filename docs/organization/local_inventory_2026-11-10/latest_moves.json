@@ -1,0 +1,120 @@
+{
+  "date": "2026-11-10",
+  "moves": [
+    {
+      "from": "docs/current/Gemma4_31B_모델_학습과_추론_검증_2026-11-10.md",
+      "to": "최신/Gemma4_31B_모델_학습과_추론_검증_2026-11-10.md",
+      "before_sha256": "0194c3434776eb2a53045d92d8f25ed37104bea4123c5c333ad9797bd8874886",
+      "after_relink_sha256": "1164f75f02d984492bd80d298eb6dac56d7a4e18a25e41fadac9d2565a33e070",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "1164f75f02d984492bd80d298eb6dac56d7a4e18a25e41fadac9d2565a33e070",
+      "content_updated_after_move": false
+    },
+    {
+      "from": "docs/current/관계도_기반_추가질문_기획.md",
+      "to": "최신/관계도_기반_추가질문_기획.md",
+      "before_sha256": "b97427aa6a0ed147ea89681a9e12ef8dfe6092f069cf422bc4864224972562b6",
+      "after_relink_sha256": "e38ff047978c5c5dda4d16bab603498b4ec203c6ef6b8b028a8cd1fd004f68c9",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "e38ff047978c5c5dda4d16bab603498b4ec203c6ef6b8b028a8cd1fd004f68c9",
+      "content_updated_after_move": false
+    },
+    {
+      "from": "docs/current/대화_실시간응답과_카드_10분이내_생성_기획_2026-11-10.md",
+      "to": "최신/대화_실시간응답과_카드_10분이내_생성_기획_2026-11-10.md",
+      "before_sha256": "5a287d7aa91350aaf6d49bc113fbab8d3fce2fffaf8590397fd15fabffdd7cf7",
+      "after_relink_sha256": "a274f6f1d2220e5039a9d2b6c6cbe865612eb66eb78b733f6339aa7be13a47db",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "a274f6f1d2220e5039a9d2b6c6cbe865612eb66eb78b733f6339aa7be13a47db",
+      "content_updated_after_move": false
+    },
+    {
+      "from": "docs/current/모델_성능평가_설계와_검증계획_2026-11-01.md",
+      "to": "최신/모델_성능평가_설계와_검증계획_2026-11-01.md",
+      "before_sha256": "403aea4a98f3c4a1536e3f4fd98bf5633da89f3c4827bd7717cb307ca63c7889",
+      "after_relink_sha256": "1829b25ce48493ff2f5aeab03516570fcff0f8aadf87f8ff9ba3fdf618950c7c",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "1829b25ce48493ff2f5aeab03516570fcff0f8aadf87f8ff9ba3fdf618950c7c",
+      "content_updated_after_move": false
+    },
+    {
+      "from": "docs/current/앱_학습계약과_완료판정_로컬수정_2026-11-01.md",
+      "to": "최신/앱_학습계약과_완료판정_로컬수정_2026-11-01.md",
+      "before_sha256": "f6d9de8fdb956cad180b318d7a43bbe9972095c131c6f3d8ff547c7fcc3d4ba6",
+      "after_relink_sha256": "d71059ccf293e77d32676e33b967243655f02e4b00f3b294c592bb6fca1c2f75",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "d71059ccf293e77d32676e33b967243655f02e4b00f3b294c592bb6fca1c2f75",
+      "content_updated_after_move": false
+    },
+    {
+      "from": "docs/current/응답시간_추가단축_수정기획_2026-11-10.md",
+      "to": "최신/응답시간_추가단축_수정기획_2026-11-10.md",
+      "before_sha256": "429fa896226e5a31f684ce70415791c9fcbe3b939f5a8f1792f14b087939da64",
+      "after_relink_sha256": "03d95fe2dd041f46cc8d848f81b4bd8fa93238b01b93242c42643de14d4e44d7",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "03d95fe2dd041f46cc8d848f81b4bd8fa93238b01b93242c42643de14d4e44d7",
+      "content_updated_after_move": false
+    },
+    {
+      "from": "app/docs/FINAL_CARD_PROGRESSIVE_DELIVERY.md",
+      "to": "최신/FINAL_CARD_PROGRESSIVE_DELIVERY.md",
+      "before_sha256": "375dcc8832a282b702a1be7b597b083d5e494f1e7d04881ea2aa952d65b2aed4",
+      "after_relink_sha256": "a801d249eab928a1ac86c8602892e3551f9489f262865041381b5168af88756f",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "a801d249eab928a1ac86c8602892e3551f9489f262865041381b5168af88756f",
+      "content_updated_after_move": false
+    },
+    {
+      "from": "app/docs/RESPONSE_LATENCY_OPTIMIZATION_2026-11-10.md",
+      "to": "최신/RESPONSE_LATENCY_OPTIMIZATION_2026-11-10.md",
+      "before_sha256": "9c47310350811e1e919051a3e3701cd0f266b5655839909e9ccbfa03aab19e81",
+      "after_relink_sha256": "df4d428e16d0857fcc3b30c0da991e712202cdc53eca7214d4e4820c27f07fbf",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "df4d428e16d0857fcc3b30c0da991e712202cdc53eca7214d4e4820c27f07fbf",
+      "content_updated_after_move": false
+    },
+    {
+      "from": "docs/organization/local_inventory_2026-11-10/최신자료.md",
+      "to": "최신/최신자료.md",
+      "before_sha256": "92a514e1da1065e9e5ff2338f10625d7bfebcd516951e9f3900927d3f9d7053e",
+      "after_relink_sha256": "050523f13c456e5397ac7bb6ca7fb114d5eb76f763b5d24ef39998f89e1198ce",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "b43ac46a23dc686bcc1b52f99993c6eb87162ef0cbfa00360a708692c8e3f063",
+      "content_updated_after_move": true
+    },
+    {
+      "from": "docs/organization/local_inventory_2026-11-10/미완료목록.md",
+      "to": "최신/미완료목록.md",
+      "before_sha256": "b6b48db734ecd797877339f42fbad00e40aec5930f83fcf30038de6a0d03021d",
+      "after_relink_sha256": "66b0be4ddffa99684962a201e4e827b14ac537c01f2b4df29fc17f75c2fa86b9",
+      "only_link_targets_changed_during_move": true,
+      "final_sha256": "1dac6a1939969ac372d11d6b8f8c78ca3e249b04d5de8bfd5c79c681119a46ea",
+      "content_updated_after_move": true
+    }
+  ],
+  "link_updated_files": [
+    "app/docs/API.md",
+    "최신/FINAL_CARD_PROGRESSIVE_DELIVERY.md",
+    "app/docs/RELATIONSHIP_AGENT.md",
+    "최신/RESPONSE_LATENCY_OPTIMIZATION_2026-11-10.md",
+    "docs/README.md",
+    "docs/archive/README.md",
+    "최신/Gemma4_31B_모델_학습과_추론_검증_2026-11-10.md",
+    "최신/관계도_기반_추가질문_기획.md",
+    "최신/대화_실시간응답과_카드_10분이내_생성_기획_2026-11-10.md",
+    "최신/모델_성능평가_설계와_검증계획_2026-11-01.md",
+    "최신/앱_학습계약과_완료판정_로컬수정_2026-11-01.md",
+    "최신/응답시간_추가단축_수정기획_2026-11-10.md",
+    "docs/current/현황과_할일.md",
+    "docs/model_training_review_2026-11-01/01_학습_데이터_구성.md",
+    "docs/model_training_review_2026-11-01/04_남은_모델_학습과_최적화.md",
+    "docs/model_training_review_2026-11-01/README.md",
+    "docs/organization/local_inventory_2026-11-10/README.md",
+    "최신/미완료목록.md",
+    "최신/최신자료.md",
+    "docs/organization/local_inventory_2026-11-10/확인필요.md",
+    "로컬자료_안내.md"
+  ],
+  "content_deleted": false,
+  "original_backups": "runtime/local-organization-20261110/latest/originals/"
+}

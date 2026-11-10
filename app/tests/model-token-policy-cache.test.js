@@ -120,7 +120,7 @@ test('operation restart and target credential changes invalidate the cache',asyn
   await writer.operation({},async operation=>{
     runs++;
     await complete(writer,operation);
-    if(runs===1){const error=new HttpError(502,'MODEL_INVALID_RESPONSE','Synthetic rejection');throw error;}
+    if(runs===1){const error=new HttpError(503,'MODEL_UNAVAILABLE','Synthetic interruption');throw error;}
     reviewer.apiKey='changed-synthetic-key';
     await complete(writer,operation);
   });

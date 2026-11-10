@@ -1,0 +1,181 @@
+{
+  "date": "2026-11-10",
+  "scope": "HOP-Final only",
+  "file_moves": 34,
+  "pptx_moves": 32,
+  "companion_files": 2,
+  "all_files_byte_identical": true,
+  "file_checks": [
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_추가연구와_검증결과반영.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_슬라이드별_간결문안.txt",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/.DS_Store",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_6단_4단_추가학습강화.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_기대효과_원형템플릿_설명초록색.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_학습방식구체화.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_기대효과_원형템플릿_제목배경.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_학습분석계획_색상통일.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_수치화_감정파악_사용자검증.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_답변품질비교.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_방법론_2페이지_수정본.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_결선문안수정.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_스타일통일.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_방법론_2페이지_연구근거.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_데이터처리과정_2페이지.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_학습분석계획.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_대화분석지표.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_데이터_모델_실사용.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_추가학습.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_디자인수정.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_기대효과_원형템플릿.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_기대효과_원형템플릿_전체제목배경.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_추가연구반영_6단_4단.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_데이터_모델_실사용_6단_4단.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_전처리와_상담사답변비교.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_데이터처리과정_2페이지_하단문구삭제.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_진행내용연결.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_최종.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_6단계_4단계.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_다른구성_A안_B안.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_6단_4단.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_검증계획수정.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_팀소개스타일.pptx",
+      "passed": true
+    },
+    {
+      "path": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_방법론_2페이지_간단문안.pptx",
+      "passed": true
+    }
+  ],
+  "symlink_moves": 4,
+  "symlink_checks": [
+    {
+      "path": "docs/archive/missing_links_2026-11-10/links/ai/outputs/handoff",
+      "passed": true,
+      "git_ignored": true,
+      "original_target_preserved": true
+    },
+    {
+      "path": "docs/archive/missing_links_2026-11-10/links/data/deliverables",
+      "passed": true,
+      "git_ignored": true,
+      "original_target_preserved": true
+    },
+    {
+      "path": "docs/archive/missing_links_2026-11-10/links/data/데이터셋/학습용_3종_v1_20261009.zip",
+      "passed": true,
+      "git_ignored": true,
+      "original_target_preserved": true
+    },
+    {
+      "path": "docs/archive/missing_links_2026-11-10/links/presentation/outputs/presentation_collection_FT31_STEP100_20261009T192608Z.zip",
+      "passed": true,
+      "git_ignored": true,
+      "original_target_preserved": true
+    }
+  ],
+  "checked_local_link_occurrences": 487,
+  "new_broken_links": [],
+  "preexisting_unresolved_matches": 3,
+  "old_slide_links_remaining": [],
+  "no_source_materials_deleted": true,
+  "missing_originals_restored": false,
+  "review": "gemma4:12b plan review completed; hash integrity, preserved absolute symlink targets and git exclusion concerns verified here. Independent code/document audit corrected stale continuation status.",
+  "app_tests": "Not rerun: only documentation, archive locations and archive .gitignore changed."
+}

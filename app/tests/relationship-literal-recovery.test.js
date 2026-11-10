@@ -39,7 +39,7 @@ const prime=async(ctx,operation,final=false)=>{
   return model;
 };
 
-test('two validated semantic rejections narrow only the next operation and retain raw inputs, repair pair and independent decisions',async t=>{
+test('two validated semantic rejections stop without restarting and a new request retains full inputs and independent decisions',async t=>{
   const ctx=context(),requests=[],logs=[];let drafts=0,reviews=0,questionReviews=0,recovery;
   const controller=new AbortController(),signal=AbortSignal.any([t.signal,controller.signal]);let fixtureError;
   const model=new ModelGateway({baseUrl:'http://model.test/v1',apiKey:'synthetic-key',model:'synthetic-model',protocol:'relationship_agent',
@@ -50,10 +50,8 @@ test('two validated semantic rejections narrow only the next operation and retai
         drafts++;value=draft(ctx,drafts<3);
         const state=input.output_schema.properties.state.properties,memory=state.relationship_memory.properties;
         if(drafts===3){
-          assert.equal(recovery.combinedTurn.semanticRejections,2);assert.equal(recovery.combinedTurn.literalState,true);
-          assert.equal(memory.relationship.maxItems,0);assert.equal(memory.patient.items.anyOf,undefined);
-          assert.deepEqual(Object.keys(memory.patient.items.properties),['evidence','certainty']);
-          assert.deepEqual(memory.patient.items.properties.certainty.enum,['reported']);
+          assert.deepEqual(recovery,{});assert.ok(memory.patient.items.anyOf);
+          assert.deepEqual(memory,requests[0].output_schema.properties.state.properties.relationship_memory.properties);
           assert.deepEqual(input.data.state_input,requests[0].data.state_input);
           assert.deepEqual(input.data.shared_input,requests[0].data.shared_input);
           assert.deepEqual(input.data.question_input,requests[0].data.question_input);
@@ -61,10 +59,16 @@ test('two validated semantic rejections narrow only the next operation and retai
           assert.deepEqual(state.name_index,requests[0].output_schema.properties.state.properties.name_index);
           assert.deepEqual(memory.unknowns,requests[0].output_schema.properties.state.properties.relationship_memory.properties.unknowns);
           assert.deepEqual(input.output_schema.properties.questions,requests[0].output_schema.properties.questions);
-          assert.equal(input.data.review.state.approved,false);assert.ok(input.data.rejected_draft.state.relationship_memory.relationship.length);
+          assert.equal(input.data.review,undefined);assert.equal(input.data.rejected_draft,undefined);
           value.questions.skip=[{question_id:'daily',reason:'already_covered',explanation:'현재 답변에 포함되었습니다.',evidence:[ref(ctx)]}];
           value.questions.clarify=['support_requested'];
-        }else assert.ok(memory.patient.items.anyOf);
+        }else {
+          assert.ok(memory.patient.items.anyOf);
+          if(drafts===2){
+            assert.equal(input.data.review.state.approved,false);
+            assert.ok(input.data.rejected_draft.state.relationship_memory.relationship.length);
+          }
+        }
       }else if(input.stage.startsWith('turn_review')){
         reviews++;assert.equal(input.data.questions,null);assert.equal(input.data.safety,null);
         value=review(input.data,reviews<=2);
@@ -79,8 +83,16 @@ test('two validated semantic rejections narrow only the next operation and retai
       } catch(error){fixtureError=error;controller.abort();throw error;}
     }});
   const execute=model.operation.bind(model);model.operation=(options,generate)=>execute(options,operation=>{recovery=operation.recovery;return generate(operation);});
+  try{await assert.rejects(model.updateState(ctx,null,{signal}),{code:'MODEL_INVALID_RESPONSE',modelReason:'state_review_rejected'});}
+  catch(error){throw fixtureError||error;}
+  assert.equal(drafts,2);assert.equal(reviews,2);assert.equal(questionReviews,0);assert.deepEqual(recovery,{});
+  assert.deepEqual(requests.map(request=>request.stage),['turn_draft','turn_review','safety_review','turn_draft_after_review',
+    'turn_review_after_review','safety_review_after_review']);
+  assert.equal(logs.some(entry=>entry.event==='model_operation_retry'),false);
+  const failedRecovery=recovery;
   let output;
   try{output=await model.updateState(ctx,null,{signal});}catch(error){throw fixtureError||error;}
+  assert.notEqual(recovery,failedRecovery);
   assert.equal(drafts,3);assert.equal(reviews,3);assert.equal(questionReviews,1);assert.equal(output.state_agent.reviewed,true);
   assert.deepEqual(requests.map(request=>request.stage),['turn_draft','turn_review','safety_review','turn_draft_after_review',
     'turn_review_after_review','safety_review_after_review','turn_draft','turn_review','question_review','safety_review']);

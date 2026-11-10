@@ -1,6 +1,6 @@
 // 완료 기록의 맥락으로 이어가는 별도 대화. 원래 결과 카드는 변경하지 않아요.
 const ContinuationScreen={
-  row:null,sourceRecord:null,sequence:0,busy:false,controller:null,retryAction:null,editing:null,draft:'',sessions:[],
+  row:null,sourceRecord:null,sequence:0,busy:false,controller:null,retryAction:null,editing:null,draft:'',sessions:[],listSequence:0,listController:null,listError:'',
   render(){return `<section class="screen" id="continuation" hidden>
     ${NavBar("records")}
     <div class="continuation-wrap">
@@ -79,7 +79,8 @@ const ContinuationScreen={
     if(!current)return;
     this.row=null;this.sourceRecord=null;this.openingId=null;this.draft='';this.sessions=[];this.retryAction=null;
   },
-  leave(){this.saveDraft();this.sequence++;this.controller?.abort();this.controller=null;this.busy=false;},
+  cancelList(){this.listSequence++;this.listController?.abort();this.listController=null;this.listError='';},
+  leave(){this.saveDraft();this.sequence++;this.controller?.abort();this.controller=null;this.busy=false;this.cancelList();},
   active(sequence){return sequence===this.sequence&&!$("continuation").hidden;},
   notice(message){$("continuationNotice").textContent=message||'';},
   async start(recordId){
@@ -88,25 +89,25 @@ const ContinuationScreen={
     const sequence=this.sequence;show("continuation");this.busy=true;this.draw();
     const same=this.startRequest?.recordId===this.sourceRecord;
     const request=same?this.startRequest:{recordId:this.sourceRecord,body:{request_id:crypto.randomUUID(),conversation_epoch:conversationEpoch}};
-    this.startRequest=request;this.controller=new AbortController();
+    this.startRequest=request;this.controller=new AbortController();let refreshList=false;
     try{
       const data=await API.request(`/api/records/${encodeURIComponent(this.sourceRecord)}/continuations`,{method:"POST",body:request.body,signal:this.controller.signal});
       if(!this.active(sequence))return;
       this.startRequest=null;this.accept(data.continuation,true);this.notice('');
-      AppRouter.sync("continuation",{replace:true});await this.list(sequence);
+      AppRouter.sync("continuation",{replace:true});refreshList=true;
     }catch(error){if(this.active(sequence)){this.notice(error.message);this.retryAction={action:"start",recordId};}}
-    finally{if(this.active(sequence)){this.busy=false;this.controller=null;this.draw();}}
+    finally{if(this.active(sequence)){this.busy=false;this.controller=null;this.draw();if(refreshList)void this.list(sequence);}}
   },
   async open(id){
     this.leave();this.row=null;this.draft='';this.editing=null;this.sessions=[];this.retryAction=null;this.deleteConfirmed=false;
     // Retain the route ID while the owning record is fetched.
-    this.openingId=id;const sequence=this.sequence;show("continuation");this.busy=true;this.draw();this.controller=new AbortController();
+    this.openingId=id;const sequence=this.sequence;show("continuation");this.busy=true;this.draw();this.controller=new AbortController();let refreshList=false;
     try{
       const data=await API.request(`/api/continuations/${encodeURIComponent(id)}`,{signal:this.controller.signal});
       if(!this.active(sequence))return;
-      this.accept(data.continuation,true);this.notice('');await this.list(sequence);
+      this.accept(data.continuation,true);this.notice('');refreshList=true;
     }catch(error){if(this.active(sequence)){this.notice(error.message);this.retryAction=error.status===404?null:{action:"open",id};}}
-    finally{if(this.active(sequence)){this.openingId=null;this.busy=false;this.controller=null;this.draw();}}
+    finally{if(this.active(sequence)){this.openingId=null;this.busy=false;this.controller=null;this.draw();if(refreshList)void this.list(sequence);}}
   },
   accept(row,restoreDraft=false){
     this.row=row;this.sourceRecord=String(row.source_record_id);
@@ -118,13 +119,20 @@ const ContinuationScreen={
     }
   },
   async list(sequence=this.sequence){
+    if(!this.active(sequence)||!this.sourceRecord||!this.row)return;
+    this.cancelList();
+    const request=this.listSequence,recordId=this.sourceRecord,id=this.row?.id,revision=this.row?.revision,controller=new AbortController();
+    this.listController=controller;
+    const current=()=>this.active(sequence)&&request===this.listSequence&&!controller.signal.aborted&&
+      this.sourceRecord===recordId&&this.row?.id===id&&this.row?.revision===revision;
     try{
-      const data=await API.request(`/api/records/${encodeURIComponent(this.sourceRecord)}/continuations`);
-      if(this.active(sequence)){this.sessions=data.continuations||[];this.drawSessions();}
-    }catch(error){if(this.active(sequence))this.notice(error.message);}
+      const data=await API.request(`/api/records/${encodeURIComponent(recordId)}/continuations`,{signal:controller.signal});
+      if(current()){this.sessions=data.continuations||[];this.listError='';this.drawSessions();}
+    }catch(error){if(current()){this.listError=error.message;this.drawSessions();}}
+    finally{if(this.listController===controller)this.listController=null;}
   },
   drawSessions(){
-    $("continuationSessions").innerHTML=this.sessions.map(session=>`<button class="ghost" type="button" data-continuation-id="${esc(session.id)}"${this.busy?' disabled':''}>${esc(fmt(session.created_at||session.updated_at))} · ${session.status==='completed'?'마친 대화':'이어가기'}</button>`).join('');
+    $("continuationSessions").innerHTML=this.sessions.map(session=>`<button class="ghost" type="button" data-continuation-id="${esc(session.id)}"${this.busy?' disabled':''}>${esc(fmt(session.created_at||session.updated_at))} · ${session.status==='completed'?'마친 대화':'이어가기'}</button>`).join('')+(this.listError?`<p class="note" role="status">${esc(this.listError)}</p>`:'');
     $("continuationSessions").querySelectorAll('[data-continuation-id]').forEach(button=>button.onclick=()=>this.open(button.dataset.continuationId));
   },
   latestClarification(){const last=this.row?.messages?.at(-1);return last?.role==='assistant'&&typeof last.clarification==='string'&&last.clarification?last:null;},
@@ -166,6 +174,7 @@ const ContinuationScreen={
   correct(id){
     if(this.busy)return;
     const message=this.row?.messages.find(m=>m.id===id&&m.role==='user');if(!message)return;
+    this.cancelList();
     this.editing=id;this.draft=message.text;this.retryAction=null;this.deleteConfirmed=false;this.saveDraft();this.draw();$("continuationText").focus();
   },
   async send(skipped=false){
@@ -188,12 +197,13 @@ const ContinuationScreen={
   async perform(action,input={},retryBody){
     if(this.busy||!this.row)return;
     if(action==='cards'&&hasAnswerContent(this.draft)){this.notice('작성한 내용을 먼저 보내면 새 카드에 반영할 수 있어요.');return;}
+    this.cancelList();
     const sequence=this.sequence,id=this.row.id;
     const body=retryBody?{...retryBody,revision:this.row.revision}:{revision:this.row.revision,request_id:crypto.randomUUID(),...input};
     this.retryAction={action,body};this.action=action;this.busy=true;this.deleteConfirmed=false;this.controller=new AbortController();this.notice('');
     const submitted=action==='messages'?body.text:action==='corrections'?body.replacement:null;
     if(submitted!==null&&this.draft===submitted){this.draft='';this.saveDraft();}
-    this.draw();
+    this.draw();let refreshList=false;
     try{
       const data=await API.request(`/api/continuations/${encodeURIComponent(id)}/${action}`,{method:'POST',body,signal:this.controller.signal});
       if(!this.active(sequence))return;
@@ -201,19 +211,19 @@ const ContinuationScreen={
       this.notice('');
       if(action==='cards')this.notice('추가로 들려주신 상황을 반영한 카드를 저장했어요.');
       if(action==='complete')this.notice('여기까지의 대화를 저장했어요.');
-      await this.list(sequence);
+      refreshList=true;
     }catch(error){
       if(!this.active(sequence))return;
       if(submitted!==null&&!this.draft)this.draft=submitted;
       try{const current=await API.request(`/api/continuations/${encodeURIComponent(id)}`);if(this.active(sequence))this.accept(current.continuation);}catch(recovery){if(recovery.status===404&&this.active(sequence)){this.row=null;this.retryAction=null;this.clearDraft(id);}}
       if(this.active(sequence)){if(error.status===409&&!this.row?.pending)this.retryAction=null;this.notice(error.message);this.saveDraft();}
-    }finally{if(this.active(sequence)){this.busy=false;this.controller=null;this.draw();}}
+    }finally{if(this.active(sequence)){this.busy=false;this.controller=null;this.draw();if(refreshList)void this.list(sequence);}}
   },
   async finish(){
     if(!this.row||this.row.status==='completed'||(this.busy&&this.action==='complete'))return;
     if(hasAnswerContent(this.draft)){this.notice('아직 보내지 않은 내용이 있어요. 보내거나 입력을 지운 뒤 마칠 수 있어요.');return;}
     if(this.busy){
-      this.controller?.abort();this.sequence++;this.busy=true;this.action='complete';this.draw();
+      this.controller?.abort();this.sequence++;this.cancelList();this.busy=true;this.action='complete';this.draw();
       const sequence=this.sequence,id=this.row.id;
       try{
         const data=await API.request(`/api/continuations/${encodeURIComponent(id)}`);
@@ -232,6 +242,7 @@ const ContinuationScreen={
   },
   async remove(){
     if(this.busy||!this.row)return;
+    this.cancelList();
     if(!this.deleteConfirmed){this.deleteConfirmed=true;this.notice('이 추가 대화와 여기서 만든 카드를 삭제해요. 원래 기록은 남아요.');this.draw();return;}
     const id=this.row.id,recordId=this.sourceRecord,sequence=this.sequence;
     this.busy=true;this.draw();

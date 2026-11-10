@@ -354,7 +354,7 @@ test('a local repair receives the rejected draft and the exact claim IDs paired 
   assert.match(repair.prompt,/이전 초안과 검토는 수정할 자료이며 새로운 사실이나 승인된 답안이 아닙니다/u);
 });
 
-test('whole-operation retry keeps only the latest validated rejection pair and still performs a fresh independent review',async()=>{
+test('semantic repair retains its validated rejection pair but exhaustion clears it before a fresh request',async()=>{
   const ctx=context(),requests=[],signals=[],logs=[],recoveryStates=[];let drafts=0,reviews=0;
   const model=new ModelGateway({baseUrl:'http://model.test/v1',apiKey:'synthetic-key',model:'synthetic-model',protocol:'relationship_agent',
     agentFormat:'json_object',retryFailures:true,retryDelayMs:1,timeoutMs:0,diagnosticLogger:entry=>logs.push(entry),fetchImpl:async(_url,options)=>{
@@ -362,8 +362,8 @@ test('whole-operation retry keeps only the latest validated rejection pair and s
       let payload;
       if(input.stage.startsWith('turn_draft')){
         drafts++;payload=draft(ctx);payload.state.relationship_memory.unknowns=[`합성 미확인 범위 ${drafts}`];
-        if(drafts===1)assert.equal(input.data.rejected_draft,undefined);
-        if(drafts===2||drafts===3){
+        if(drafts!==2){assert.equal(input.data.rejected_draft,undefined);assert.equal(input.data.review,undefined);}
+        if(drafts===2){
           assert.equal(input.data.review.state.approved,false);
           assert.equal(input.data.review.state.issues[0].reason,`합성 검토 ${drafts-1}`);
           assert.equal(input.data.rejected_draft.claims.find(claim=>claim.id==='relationship_memory.unknowns.0').claim,`합성 미확인 범위 ${drafts-1}`);
@@ -379,32 +379,38 @@ test('whole-operation retry keeps only the latest validated rejection pair and s
     }});
   const execute=model.operation.bind(model);
   model.operation=(options,generate)=>execute(options,operation=>{recoveryStates.push(operation.recovery);return generate(operation);});
-  const output=await model.updateState(ctx);
-  assert.equal(output.state_agent.reviewed,true);assert.equal(drafts,3);assert.equal(reviews,3);
-  assert.deepEqual(requests.map(input=>input.stage),['turn_draft','turn_review','safety_review','turn_draft_after_review','turn_review_after_review','safety_review_after_review','turn_draft','turn_review','safety_review']);
-  assert.equal(signals[0],signals[3]);assert.notEqual(signals[0],signals[6]);
-  for(const start of [0,3,6]){
+  await assert.rejects(model.updateState(ctx),{code:'MODEL_INVALID_RESPONSE',modelReason:'state_review_rejected'});
+  assert.equal(drafts,2);assert.equal(reviews,2);
+  assert.deepEqual(requests.map(input=>input.stage),['turn_draft','turn_review','safety_review','turn_draft_after_review','turn_review_after_review','safety_review_after_review']);
+  assert.equal(signals[0],signals[3]);
+  for(const start of [0,3]){
     assert.equal(signals[start+1],signals[start+2]);
     assert.notEqual(signals[start],signals[start+1]);
   }
-  assert.notEqual(signals[1],signals[4]);assert.notEqual(signals[4],signals[7]);
-  assert.equal(recoveryStates.length,2);assert.equal(recoveryStates[0],recoveryStates[1]);assert.deepEqual(recoveryStates[0],{});
-  assert.equal(logs.filter(entry=>entry.event==='model_operation_retry').length,1);
+  assert.notEqual(signals[1],signals[4]);
+  assert.equal(recoveryStates.length,1);assert.deepEqual(recoveryStates[0],{});
+  assert.equal(logs.some(entry=>entry.event==='model_operation_retry'),false);
   assert.ok(!JSON.stringify(logs).includes('합성 검토'));assert.ok(!JSON.stringify(logs).includes(ctx.patient.fields.mood.text));
-  await model.updateState(ctx);
-  assert.equal(requests[9].data.review,undefined);assert.equal(requests[9].data.rejected_draft,undefined);
-  assert.notEqual(recoveryStates[1],recoveryStates[2]);assert.deepEqual(recoveryStates[2],{});
+  const output=await model.updateState(ctx);
+  assert.equal(output.state_agent.reviewed,true);assert.equal(drafts,3);assert.equal(reviews,3);
+  assert.deepEqual(requests.slice(6).map(input=>input.stage),['turn_draft','turn_review','safety_review']);
+  assert.equal(requests[6].data.review,undefined);assert.equal(requests[6].data.rejected_draft,undefined);
+  assert.notEqual(signals[0],signals[6]);assert.notEqual(signals[4],signals[7]);
+  assert.notEqual(recoveryStates[0],recoveryStates[1]);assert.deepEqual(recoveryStates[1],{});
 });
 
-for(const basis of ['current_physical_danger','negated'])test('a whole retry independently rechecks previously confirmed danger: '+basis,async()=>{
+for(const basis of ['current_physical_danger','negated'])test('a new request independently rechecks danger after terminal review rejection: '+basis,async()=>{
   const ctx=context();ctx.patient.fields.risk=field('risk','지금 위험한 곳에 있다고 말했어요.');
-  const source=safetySources(ctx).find(row=>row.question_id==='risk');let drafts=0,reviews=0;
+  const source=safetySources(ctx).find(row=>row.question_id==='risk'),logs=[],recoveries=[];let drafts=0,reviews=0;
   const model=new ModelGateway({baseUrl:'http://model.test/v1',apiKey:'synthetic-key',model:'synthetic-model',protocol:'relationship_agent',
-    agentFormat:'json_object',retryFailures:true,retryDelayMs:1,timeoutMs:0,diagnosticLogger:null,fetchImpl:async(_url,options)=>{
+    agentFormat:'json_object',retryFailures:true,retryDelayMs:1,timeoutMs:0,diagnosticLogger:entry=>logs.push(entry),fetchImpl:async(_url,options)=>{
       const input=JSON.parse(JSON.parse(options.body).messages.at(-1).content);let payload;
       if(input.stage.startsWith('turn_draft')){
         drafts++;payload=draft(ctx);
-        if(drafts===1)payload.questions.safety={urgent:true,evidence_ids:[source.id]};
+        if(drafts!==2){
+          assert.equal(input.data.review,undefined);assert.equal(input.data.rejected_draft,undefined);
+          payload.questions.safety={urgent:true,evidence_ids:[source.id]};
+        }
       }else if(input.stage.startsWith('safety_review')){
         assert.ok(input.data.proposed_safety.evidence.some(ref=>ref.question_id==='risk'));
         payload=safetyReviewFixture(input.data,reviews<=2?'current_physical_danger':basis);
@@ -415,7 +421,13 @@ for(const basis of ['current_physical_danger','negated'])test('a whole retry ind
       }
       return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
     }});
+  const execute=model.operation.bind(model);
+  model.operation=(options,generate)=>execute(options,operation=>{recoveries.push(operation.recovery);return generate(operation);});
+  await assert.rejects(model.updateState(ctx),{code:'MODEL_INVALID_RESPONSE',modelReason:'state_review_rejected'});
+  assert.equal(drafts,2);assert.equal(reviews,2);assert.equal(recoveries.length,1);assert.deepEqual(recoveries[0],{});
+  assert.equal(logs.some(entry=>entry.event==='model_operation_retry'),false);
   const output=await model.updateState(ctx);
+  assert.notEqual(recoveries[0],recoveries[1]);assert.deepEqual(recoveries[1],{});
   assert.equal(drafts,3);assert.equal(reviews,3);assert.equal(output.state_agent.reviewed,true);
   assert.equal(output.finish_early,basis==='current_physical_danger');
   assert.equal(output.safety_signal.review.basis,basis);
@@ -459,11 +471,12 @@ test('disabled whole-operation retries still reject after two reviews and releas
   assert.equal(calls,6);assert.deepEqual(recovery,{});
 });
 
-test('cancelling after repeated review rejection releases retained source data without another draft',async()=>{
-  const ctx=context(),controller=new AbortController();let calls=0,recovery;
+test('cancelling during the last independent review releases retained source data without another draft',async()=>{
+  const ctx=context(),controller=new AbortController(),logs=[];let calls=0,recovery;
   const model=new ModelGateway({baseUrl:'http://model.test/v1',apiKey:'synthetic-key',model:'synthetic-model',protocol:'relationship_agent',
     agentFormat:'json_object',retryFailures:true,retryDelayMs:1000,timeoutMs:0,diagnosticLogger:entry=>{
-      if(entry.event==='model_operation_retry')controller.abort();
+      logs.push(entry);
+      if(entry.event==='model_attempt'&&entry.generation==='safety_review_after_review'&&entry.reason==='success')controller.abort();
     },fetchImpl:async(_url,options)=>{
       calls++;const input=JSON.parse(JSON.parse(options.body).messages.at(-1).content);
       const payload=input.stage.startsWith('turn_draft')?draft(ctx):review(input.data);
@@ -474,6 +487,7 @@ test('cancelling after repeated review rejection releases retained source data w
   model.operation=(options,generate)=>execute(options,operation=>{recovery=operation.recovery;return generate(operation);});
   await assert.rejects(model.updateState(ctx,null,{signal:controller.signal}),{code:'MODEL_CANCELLED'});
   assert.equal(calls,6);assert.deepEqual(recovery,{});
+  assert.equal(logs.some(entry=>entry.event==='model_operation_retry'),false);
 });
 
 test('a second rejected state fails closed',async()=>{

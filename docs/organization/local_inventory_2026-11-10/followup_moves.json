@@ -1,0 +1,252 @@
+{
+  "date": "2026-11-10",
+  "authorization": "사용자: 현 프로젝트만 HOP-Final; 발표 후보는 과거; 미완료 별도 안내; 옛 연결 이동",
+  "file_moves": [
+    {
+      "from": "presentation/slides/말씨_결선발표_추가연구와_검증결과반영.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_추가연구와_검증결과반영.pptx",
+      "sha256": "cc35c8e0771e81f943dd2995f0924dd3737c3e6f770a6b664858b7709988d7f2",
+      "bytes": 29872
+    },
+    {
+      "from": "presentation/slides/말씨_슬라이드별_간결문안.txt",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_슬라이드별_간결문안.txt",
+      "sha256": "0843182edd4642a2d62f5e62f432b5114d8cce7a60d6a2a877103b8ab3703b10",
+      "bytes": 1710
+    },
+    {
+      "from": "presentation/slides/.DS_Store",
+      "to": "presentation/archive/slide_candidates_2026-10-10/.DS_Store",
+      "sha256": "e616655daba6f99e8692da451d5e91920b8cb474136710053a84f5447a4caab2",
+      "bytes": 10244
+    },
+    {
+      "from": "presentation/slides/말씨_결선준비_로드맵_6단_4단_추가학습강화.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_6단_4단_추가학습강화.pptx",
+      "sha256": "33c88a3194abcbfcc3ec2e92c9b8d6802eeaad8d5f68395ddd63b9c010040307",
+      "bytes": 28503
+    },
+    {
+      "from": "presentation/slides/말씨_기대효과_원형템플릿_설명초록색.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_기대효과_원형템플릿_설명초록색.pptx",
+      "sha256": "097614f51826e341343729df29552030c3e1a6f7b378079bc2d290fb93a6c8b9",
+      "bytes": 36178
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_학습방식구체화.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_학습방식구체화.pptx",
+      "sha256": "3aa60c6a4b7ce0411bfe32833b13e5769f76c37cd325cd1866ce5402ac74f690",
+      "bytes": 583973
+    },
+    {
+      "from": "presentation/slides/말씨_기대효과_원형템플릿_제목배경.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_기대효과_원형템플릿_제목배경.pptx",
+      "sha256": "58790835229daea8e8f1607f01d318805ca96eee8072d73f2c6148f019298f3c",
+      "bytes": 36169
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_학습분석계획_색상통일.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_학습분석계획_색상통일.pptx",
+      "sha256": "c0322ea3875e8808e5360f448c12e52632b13455ac8f5564dc717749a42698a8",
+      "bytes": 583742
+    },
+    {
+      "from": "presentation/slides/말씨_결선준비_로드맵_수치화_감정파악_사용자검증.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_수치화_감정파악_사용자검증.pptx",
+      "sha256": "b320dec2a2b6d4a43cbe4a96f5b6ecb9be587bb011d0d5e6639a44aa26afaea9",
+      "bytes": 29740
+    },
+    {
+      "from": "presentation/slides/말씨_결선준비_로드맵_답변품질비교.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_답변품질비교.pptx",
+      "sha256": "fa4103488bdf5795aa91d067cb7c7be7da0f7b334f492ba3297b88da75077443",
+      "bytes": 29961
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_방법론_2페이지_수정본.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_방법론_2페이지_수정본.pptx",
+      "sha256": "eaa42f1e24e08a64d461179f3531d54e1462fd0953bb18b6ea86d3cbd10b9144",
+      "bytes": 584272
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_결선문안수정.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_결선문안수정.pptx",
+      "sha256": "82a5276be76f6995f9d453a448ade8b1cf16a6d3a7d417319d8390111fcbb7c5",
+      "bytes": 583642
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_스타일통일.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_스타일통일.pptx",
+      "sha256": "346dd8bc5618748085de25c6b6b7353ca2dc5611a567da5e099282810d283102",
+      "bytes": 583891
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_방법론_2페이지_연구근거.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_방법론_2페이지_연구근거.pptx",
+      "sha256": "ffe66b69349e6c90dd46dfc47d3645f1268d24ccadff2ce816e26ab9cb9f5102",
+      "bytes": 584447
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_데이터처리과정_2페이지.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_데이터처리과정_2페이지.pptx",
+      "sha256": "ab86a43f4fd5c84fb79fb79315fd4d96a0b86c06bfcaf3f35983b5b72b5277de",
+      "bytes": 584053
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_학습분석계획.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_학습분석계획.pptx",
+      "sha256": "f41701f0bac55b2d3c649383b93d8bf4505208fd5e9da1788ce7440d2eaf68e9",
+      "bytes": 583772
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_대화분석지표.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_대화분석지표.pptx",
+      "sha256": "9058c59bb6b4d68476fb563870ee8eb9f8e374d55ffe87767257eb96d7edc12a",
+      "bytes": 583849
+    },
+    {
+      "from": "presentation/slides/말씨_결선발표_데이터_모델_실사용.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_데이터_모델_실사용.pptx",
+      "sha256": "c292d9f6e40ae767f2a5a40df267dc851fb73a3dcdbdda3a71f3a6f671783edd",
+      "bytes": 29729
+    },
+    {
+      "from": "presentation/slides/말씨_결선준비_로드맵_추가학습.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_추가학습.pptx",
+      "sha256": "3a41f38b0ea932fcd6eeb8e98a2cd3a5470063fa86b02ee9e9156e51fc70e867",
+      "bytes": 28498
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_디자인수정.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_디자인수정.pptx",
+      "sha256": "eb0d6dd59816b6657a41efe3e9c34a6fc2a25da8ee9d50e7018914a02a91ace3",
+      "bytes": 583859
+    },
+    {
+      "from": "presentation/slides/말씨_기대효과_원형템플릿.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_기대효과_원형템플릿.pptx",
+      "sha256": "d4fe531ce32b8ccbd9af45e31bcf61e39d8c3110036e6979d081e537fa42328a",
+      "bytes": 36115
+    },
+    {
+      "from": "presentation/slides/말씨_기대효과_원형템플릿_전체제목배경.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_기대효과_원형템플릿_전체제목배경.pptx",
+      "sha256": "ec65faa94078b88c907a4b84d43381076fff3c9e22a710c347e75bc8002d4d8a",
+      "bytes": 36170
+    },
+    {
+      "from": "presentation/slides/말씨_결선발표_추가연구반영_6단_4단.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_추가연구반영_6단_4단.pptx",
+      "sha256": "37e311255d5368ec20e6d58e6ae39a9c8c2d8c9d86a743353df022817115247d",
+      "bytes": 29822
+    },
+    {
+      "from": "presentation/slides/말씨_결선발표_데이터_모델_실사용_6단_4단.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_데이터_모델_실사용_6단_4단.pptx",
+      "sha256": "f9a801da82599f7936b8164ed6e5d5bd75c23cddb8989cdde55051d4d40037a1",
+      "bytes": 29667
+    },
+    {
+      "from": "presentation/slides/말씨_결선발표_전처리와_상담사답변비교.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_전처리와_상담사답변비교.pptx",
+      "sha256": "9ee63d99ec7ed62609b52d5927c126d2d76b50c06d04945a469e46db5cf69564",
+      "bytes": 30147
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_데이터처리과정_2페이지_하단문구삭제.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_데이터처리과정_2페이지_하단문구삭제.pptx",
+      "sha256": "0bf5df5ae302766e5a101dbffd9b016efc4cde180fabd26bb5c22fa7c361a421",
+      "bytes": 584021
+    },
+    {
+      "from": "presentation/slides/말씨_결선준비_로드맵_진행내용연결.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_진행내용연결.pptx",
+      "sha256": "85bc529589a8a121e2646d345d031fa4569a714f3351c18fbd4d8fd1023140ff",
+      "bytes": 28662
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_최종.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_최종.pptx",
+      "sha256": "a3ed60d8c1241dd8ca8d52f95d572aa831db9f21cae48ff71e83d30478b2a103",
+      "bytes": 31593
+    },
+    {
+      "from": "presentation/slides/말씨_결선준비_로드맵_6단계_4단계.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_6단계_4단계.pptx",
+      "sha256": "ce4ec5509d470e1dbe351d29d734470a05cad870c92f253a34e9461664313c44",
+      "bytes": 27982
+    },
+    {
+      "from": "presentation/slides/말씨_결선발표_다른구성_A안_B안.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선발표_다른구성_A안_B안.pptx",
+      "sha256": "12e155ce05988516215da9361a872ad1fda53715e133a91ca6a22c651d5f9c23",
+      "bytes": 27963
+    },
+    {
+      "from": "presentation/slides/말씨_결선준비_로드맵_6단_4단.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_6단_4단.pptx",
+      "sha256": "2535568bdd5447711d9f29ba6105e1b222866950ed8a832e69fd400982745f1a",
+      "bytes": 28331
+    },
+    {
+      "from": "presentation/slides/말씨_결선준비_로드맵_검증계획수정.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_결선준비_로드맵_검증계획수정.pptx",
+      "sha256": "d3f602ef2f17ad7813fa2047d824fd8afffcd93f4e24fa40182ce1b77d09d960",
+      "bytes": 29742
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_결선계획_2페이지_팀소개스타일.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_결선계획_2페이지_팀소개스타일.pptx",
+      "sha256": "7ef39dbc251a1a1468f46fb2a831c524f57eb674fee244e4c0d47439f6a3c23f",
+      "bytes": 583942
+    },
+    {
+      "from": "presentation/slides/말씨_차별점과_방법론_2페이지_간단문안.pptx",
+      "to": "presentation/archive/slide_candidates_2026-10-10/말씨_차별점과_방법론_2페이지_간단문안.pptx",
+      "sha256": "88d1058260164b4b747474926cc1777d8c7e700b191080487e4d219bfa3d7ff4",
+      "bytes": 584286
+    }
+  ],
+  "symlink_moves": [
+    {
+      "from": "ai/outputs/handoff",
+      "to": "docs/archive/missing_links_2026-11-10/links/ai/outputs/handoff",
+      "original_link_text": "../../archive/02_배포와_인수인계/HOP_agent/outputs/handoff",
+      "original_absolute_target": "/Users/chihun/Documents/ChatGPT/HOP-Final/archive/02_배포와_인수인계/HOP_agent/outputs/handoff",
+      "archived_link_text": "../../../../../../archive/02_배포와_인수인계/HOP_agent/outputs/handoff",
+      "target_exists": false
+    },
+    {
+      "from": "data/deliverables",
+      "to": "docs/archive/missing_links_2026-11-10/links/data/deliverables",
+      "original_link_text": "../archive/02_배포와_인수인계/HOP_data/deliverables",
+      "original_absolute_target": "/Users/chihun/Documents/ChatGPT/HOP-Final/archive/02_배포와_인수인계/HOP_data/deliverables",
+      "archived_link_text": "../../../../../archive/02_배포와_인수인계/HOP_data/deliverables",
+      "target_exists": false
+    },
+    {
+      "from": "data/데이터셋/학습용_3종_v1_20261009.zip",
+      "to": "docs/archive/missing_links_2026-11-10/links/data/데이터셋/학습용_3종_v1_20261009.zip",
+      "original_link_text": "../../archive/02_배포와_인수인계/HOP_data/데이터셋/학습용_3종_v1_20261009.zip",
+      "original_absolute_target": "/Users/chihun/Documents/ChatGPT/HOP-Final/archive/02_배포와_인수인계/HOP_data/데이터셋/학습용_3종_v1_20261009.zip",
+      "archived_link_text": "../../../../../../archive/02_배포와_인수인계/HOP_data/데이터셋/학습용_3종_v1_20261009.zip",
+      "target_exists": false
+    },
+    {
+      "from": "presentation/outputs/presentation_collection_FT31_STEP100_20261009T192608Z.zip",
+      "to": "docs/archive/missing_links_2026-11-10/links/presentation/outputs/presentation_collection_FT31_STEP100_20261009T192608Z.zip",
+      "original_link_text": "../../archive/02_배포와_인수인계/HOP_pptdata/outputs/presentation_collection_FT31_STEP100_20261009T192608Z.zip",
+      "original_absolute_target": "/Users/chihun/Documents/ChatGPT/HOP-Final/archive/02_배포와_인수인계/HOP_pptdata/outputs/presentation_collection_FT31_STEP100_20261009T192608Z.zip",
+      "archived_link_text": "../../../../../../archive/02_배포와_인수인계/HOP_pptdata/outputs/presentation_collection_FT31_STEP100_20261009T192608Z.zip",
+      "target_exists": false
+    }
+  ],
+  "link_updated_files": [
+    "docs/competition/03_발표주장과_PPT검토.md",
+    "docs/organization/local_inventory_2026-11-10/전체목록.md",
+    "docs/organization/프로젝트통합_결과.md",
+    "presentation/README.md"
+  ],
+  "source_materials_deleted": 0,
+  "missing_originals_restored": false
+}

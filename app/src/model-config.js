@@ -142,6 +142,7 @@ export function configuredReviewGateway({env = process.env, defaultModel = DEFAU
     preserveStringLimits:env.MODEL_REVIEW_SCHEMA_STRING_LIMITS === 'true',
     discoverTokenLimits:discoverSetting(env, 'MODEL_REVIEW_DISCOVER_TOKEN_LIMITS', 'MODEL_REVIEW'),
     reuseTokenPolicy:optInSetting(env, 'MODEL_REUSE_TOKEN_POLICY'),
+    compactReviewOutput:optInSetting(env, 'MODEL_REVIEW_COMPACT_REVIEW_OUTPUT','MODEL_REVIEW'),
     diagnosticLogger, fetchImpl,
   });
   if (!gateway.configured) throw invalid('MODEL_REVIEW');
@@ -176,7 +177,13 @@ export function configuredModelGateway({env = process.env, diagnosticLogger, fet
     reuseTokenPolicy:optInSetting(env, 'MODEL_REUSE_TOKEN_POLICY'),
     preserveStringLimits:env.MODEL_SCHEMA_STRING_LIMITS === 'true',
     bundleFinalReviews:optInSetting(env, 'MODEL_BUNDLE_FINAL_REVIEWS'),
+    shareReviewSources:optInSetting(env, 'MODEL_SHARE_REVIEW_SOURCES'),
+    repairReviewBundleTasks:optInSetting(env, 'MODEL_REPAIR_REVIEW_BUNDLE_TASKS'),
+    extendedFinalEvidenceIds:optInSetting(env, 'MODEL_EXTENDED_FINAL_EVIDENCE_IDS'),
     bundleTurnReviews:optInSetting(env, 'MODEL_BUNDLE_TURN_REVIEWS'),
+    bundleCombinedTurnReviews:optInSetting(env, 'MODEL_BUNDLE_COMBINED_TURN_REVIEWS'),
+    bundleAnalysisPlan:optInSetting(env, 'MODEL_BUNDLE_ANALYSIS_PLAN'),
+    compactReviewOutput:optInSetting(env, 'MODEL_COMPACT_REVIEW_OUTPUT'),
     reuseReviewedName:optInSetting(env, 'MODEL_REUSE_REVIEWED_NAME'),
     reuseReviewedSafety:optInSetting(env, 'MODEL_REUSE_REVIEWED_SAFETY'),
     discoverTokenLimits:discoverSetting(env, 'MODEL_DISCOVER_TOKEN_LIMITS', 'MODEL'),

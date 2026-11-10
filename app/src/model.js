@@ -1,4 +1,6 @@
 import {finalEvidenceTransport} from './final-evidence-transport.js';
+import {PARTIAL_REVIEW} from './final-review-bundle.js';
+import {compactReviewTransport} from './compact-review-transport.js';
 import {generateContinuation} from './continuation-model.js';
 import { HttpError } from './errors.js';
 import { modelHttpFetch } from './model-http.js';
@@ -16,15 +18,6 @@ import { literalStateRepairSchema, literalStateRepairInstruction } from './relat
 import { runRelationshipAgent, assertRetrievedEvidence, relationshipStateRequest, canonicalRelationshipState, canonicalPatientState, currentRelationshipMemory, relationshipQuestionRequest, validateRelationshipQuestions, questionReviewRequest, applyQuestionReview, safetyReviewRequest, validateSafetyReview, validateSchema } from './relationship-agent.js';
 
 const TRAINED_MODEL = 'malssi-gemma4-31b-step100';
-// These errors exhaust content repair/review or bounded review-response attempts.
-// Restarting the entire generation loses that budget and loops forever on a
-// semantic rejection. Transport/schema recovery and turn-state repair retain
-// their separate retry policies.
-const EXHAUSTED_GUIDE_REVIEWS = new Set([
-  'agent_analysis_review_rejected','agent_analysis_review_inconsistent','agent_plan_review_rejected',
-  'agent_quality_review_rejected','agent_review_rejected','agent_detail_review_rejected',
-  'agent_review_stale','agent_review_noop','agent_speech_repeat','agent_avoid_structure','agent_context_audit',
-]);
 function streamJsonHost(hostname) {
   if(['localhost','host.docker.internal','[::1]'].includes(hostname))return true;
   if(!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(hostname))return false;
@@ -150,13 +143,35 @@ function modelContext(context) {
   };
 }
 
-function parseContent(content) {
+function parseContent(content,uniqueKeys=false) {
   if (typeof content !== 'string' || !content.trim()) throw invalidResponse('content_json');
   let json = content.trim();
   // A single complete fenced object is accepted; mixed prose/partial JSON is not repaired locally.
   const fenced = /^```(?:json)?\s*\n?([\s\S]*?)\n?```$/i.exec(json);
   if (fenced) json = fenced[1].trim();
-  try { return JSON.parse(json); } catch { throw invalidResponse('content_json'); }
+  try {
+    const value=JSON.parse(json);
+    if(uniqueKeys) {
+      const stack=[];
+      for(let index=0;index<json.length;index++) {
+        const char=json[index],frame=stack.at(-1);
+        if(char==='"') {
+          let end=index+1;
+          for(;end<json.length;end++){if(json[end]==='\\'){end++;continue;}if(json[end]==='"')break;}
+          if(frame?.key) {
+            const key=JSON.parse(json.slice(index,end+1));
+            if(frame.keys.has(key))throw new SyntaxError('Duplicate JSON key');
+            frame.keys.add(key);frame.key=false;
+          }
+          index=end;
+        } else if(char==='{')stack.push({keys:new Set(),key:true});
+        else if(char==='[')stack.push(null);
+        else if(char==='}'||char===']')stack.pop();
+        else if(char===','&&frame)frame.key=true;
+      }
+    }
+    return value;
+  } catch { throw invalidResponse('content_json'); }
 }
 
 function invalidResponse(reason = 'output_schema') {
@@ -217,6 +232,9 @@ function validMemory(value, context) {
 
 function contextBudgetError(value, status) {
   if (status === 422) return value?.error?.code === 'context_budget_exceeded';
+  // The 31B worker supplies a stable code; its message is not a token-count contract.
+  if (status === 400 && value?.error?.type === 'invalid_request_error' &&
+      value.error.code === 'context_length_exceeded') return true;
   return status === 400 && value?.error?.type === 'invalid_request_error' && typeof value.error.message === 'string' &&
     (/^Prompt \(\d+\) plus max_tokens \(\d+\) exceeds the \d+-token context budget; no text was truncated$/.test(value.error.message) ||
      /^Prompt \(\d+\) exceeds the \d+-token input budget; no text was truncated$/.test(value.error.message) ||
@@ -225,6 +243,9 @@ function contextBudgetError(value, status) {
 }
 
 function remainingOutputTokens(value, status, policy, requested) {
+  // Let the caller partition complete review tasks while preserving the output
+  // reservation. A coded capacity rejection must not silently shorten it.
+  if (value?.error?.code === 'context_length_exceeded') return null;
   if (!policy || status !== 400 || value?.error?.type !== 'invalid_request_error') return null;
   const match = /^Prompt \((\d+)\) plus max_tokens \((\d+)\) exceeds the (\d+)-token context budget; no text was truncated$/.exec(value.error.message);
   if (!match) return null;
@@ -562,7 +583,9 @@ function wireEvidenceSelectionRepair(stage,transport,feedback,candidate) {
 export class ModelGateway {
   constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, agentFormat = 'json_schema', reasoningEffort = 'none', stateMode = 'combined', skipFinalExtras = false, reuseFinalDraft = false, fetchImpl = modelHttpFetch,
     stageScopedQuestionRules = false, blockScopedInputs = false, compactReviewInputs = false, scopedQualityRefinement = false, reuseTokenPolicy = false,
-    bundleFinalReviews = false, bundleTurnReviews = false, reuseReviewedName = false, reuseReviewedSafety = false,
+    bundleFinalReviews = false, bundleTurnReviews = false, bundleCombinedTurnReviews = false, bundleAnalysisPlan = false,
+    compactReviewOutput = false, reuseReviewedName = false, reuseReviewedSafety = false,
+    shareReviewSources = false, repairReviewBundleTasks = false, extendedFinalEvidenceIds = false,
     discoverTokenLimits = false, preserveStringLimits = false, streamJson = false, streamCompleteJson = false, retryFailures = false, retryDelayMs = 1000, reviewGateway = null, diagnosticLogger = entry => console.error(JSON.stringify(entry)) } = {}) {
     this.baseUrl = typeof baseUrl === 'string' ? baseUrl.replace(/\/+$/, '') : '';
     this.apiKey = apiKey;
@@ -581,6 +604,12 @@ export class ModelGateway {
     this.reuseTokenPolicy = reuseTokenPolicy;
     this.bundleFinalReviews = bundleFinalReviews;
     this.bundleTurnReviews = bundleTurnReviews;
+    this.bundleCombinedTurnReviews = bundleCombinedTurnReviews;
+    this.bundleAnalysisPlan = bundleAnalysisPlan;
+    this.compactReviewOutput = compactReviewOutput;
+    this.shareReviewSources = shareReviewSources;
+    this.repairReviewBundleTasks = repairReviewBundleTasks;
+    this.extendedFinalEvidenceIds = extendedFinalEvidenceIds;
     this.reuseReviewedName = reuseReviewedName;
     this.reuseReviewedSafety = reuseReviewedSafety;
     this.reviewedNameIdentity = randomUUID();
@@ -607,7 +636,14 @@ export class ModelGateway {
         typeof this.stageScopedQuestionRules === 'boolean' && typeof this.blockScopedInputs === 'boolean' &&
         typeof this.compactReviewInputs === 'boolean' && typeof this.scopedQualityRefinement === 'boolean' && typeof this.reuseTokenPolicy === 'boolean' &&
         typeof this.bundleTurnReviews === 'boolean' && typeof this.bundleFinalReviews === 'boolean' && typeof this.reuseReviewedName === 'boolean' && typeof this.reuseReviewedSafety === 'boolean' &&
+        typeof this.bundleCombinedTurnReviews === 'boolean' && typeof this.bundleAnalysisPlan === 'boolean' && typeof this.compactReviewOutput === 'boolean' &&
+        (!this.bundleCombinedTurnReviews || this.protocol === 'relationship_agent' && this.stateMode === 'combined') &&
+        (!this.bundleAnalysisPlan || this.bundleFinalReviews) &&
+        (!this.compactReviewOutput || this.protocol === 'relationship_agent') &&
         (!this.bundleFinalReviews || this.protocol === 'relationship_agent' && !this.skipFinalExtras) &&
+        typeof this.shareReviewSources === 'boolean' && typeof this.repairReviewBundleTasks === 'boolean' && typeof this.extendedFinalEvidenceIds === 'boolean' &&
+        (!(this.shareReviewSources || this.repairReviewBundleTasks) || this.bundleFinalReviews) &&
+        (!this.extendedFinalEvidenceIds || this.protocol === 'relationship_agent') &&
         (!this.bundleTurnReviews || this.protocol === 'relationship_agent' && this.stateMode === 'combined_blocks') &&
         (!this.reuseReviewedName || this.protocol === 'relationship_agent' && this.stateMode === 'combined_blocks') &&
         (!this.reuseReviewedSafety || this.protocol === 'relationship_agent' && this.stateMode === 'combined_blocks') &&
@@ -662,9 +698,11 @@ export class ModelGateway {
           if(hasCards)try{options?.onCard?.({type:'reset'});}catch{ /* Discard failed drafts even when recovery is disabled. */ }
           const failed=operationFailure(operation)||error;
           if(failed instanceof HttpError)failed.modelRequestId=requestId;
-          const retryable=['MODEL_INVALID_RESPONSE','MODEL_UNAVAILABLE','MODEL_TIMEOUT'].includes(failed.code)||
+          // Invalid output has already used the request/semantic repair budgets.
+          // Restarting here repeats successful stages and can loop indefinitely.
+          const retryable=['MODEL_UNAVAILABLE','MODEL_TIMEOUT'].includes(failed.code)||
             failed.code==='MODEL_UPSTREAM_ERROR'&&failed.modelReason==='http_transient';
-          if(!retryFailures||!retryable||failed.modelReason==='retry_after_limit'||EXHAUSTED_GUIDE_REVIEWS.has(failed.modelReason))throw failed;
+          if(!retryFailures||!retryable||failed.modelReason==='retry_after_limit')throw failed;
           retries++;
           delay=Math.min(30000,this.retryDelayMs*2**Math.min(retries-1,20));
           try{this.diagnosticLogger?.({event:'model_operation_retry',request_id:requestId,attempt:retries,code:failed.code,reason:failed.modelReason||null,delay_ms:delay,
@@ -842,21 +880,29 @@ export class ModelGateway {
     return result;
   }
 
-  async agentComplete(stage,prompt,payload,schema,operation,validate) {
+  async agentComplete(stage,prompt,payload,schema,operation,validate,requestOptions={}) {
     const reviewStage=modelStageRole(stage)==='reviewer';
+    const compactOutput=requestOptions.compactReviewOutput??this.compactReviewOutput;
+    const compactPartial=requestOptions.compactReviewPartial??this.repairReviewBundleTasks;
     const stateReviewTarget=/^turn_review(?:_after_review)?$/u.test(stage)?payload?.review_target||payload?.state:null;
     if(this.reviewGateway&&reviewStage) {
       // Keep the same validator and cancellation boundary. Each endpoint discovers
       // its own token policy; the writer's capacity must not constrain the reviewer.
       // request() keeps its three attempts; only the writer owns operation recovery.
       return this.reviewGateway.operation({requestId:operation.requestId,signal:operation.controller.signal,onProgress:operation.onProgress,onCard:operation.onCard},reviewOperation=>
-        this.reviewGateway.agentComplete(stage,prompt,payload,schema,reviewOperation,validate),{retryFailures:false,parentOperation:operation});
+        this.reviewGateway.agentComplete(stage,prompt,payload,schema,reviewOperation,validate,
+          {...requestOptions,...(compactOutput?{compactReviewOutput:true}:{}),compactReviewPartial:compactPartial}),{retryFailures:false,parentOperation:operation});
     }
     // Literal repair may remove a branch-only source. Retain identities across
     // retries so a rejected ID can never be reassigned to a different source.
     // The registry does not grant access; every node still has its own enum.
     const sourceIds=new Map();
-    let originalRequestSchema=schema, transport=relationshipEvidenceTransport(stage,schema,sourceIds)||finalEvidenceTransport(stage,schema);
+    const finalIds=this.extendedFinalEvidenceIds?(operation.finalEvidenceIds??=new Map()):undefined;
+    const reviewTransport=reviewStage&&compactOutput?compactReviewTransport({stage,schema,payload,
+      partial:compactPartial&&/^(?:final_review_bundle|card_review_bundle)(?:_|$)/u.test(stage)}):null;
+    if(reviewTransport)requestOptions={...requestOptions,uniqueJsonKeys:true};
+    let originalRequestSchema=schema, transport=(reviewTransport?{...reviewTransport,decode:reviewTransport.hydrate}:null)||relationshipEvidenceTransport(stage,schema,sourceIds)||
+      finalEvidenceTransport(stage,schema,{extended:this.extendedFinalEvidenceIds,registry:finalIds});
     let requestSchema=transport?.schema||schema, literalState=false, stateSchemaRecovery=false;
     let streamSchema=requestSchema;
     if(/^turn_draft(?:_after_review)?$/u.test(stage)&&schema.properties?.state?.properties?.relationship_memory){
@@ -955,7 +1001,7 @@ export class ModelGateway {
           selectionRepairFeedback=error.modelReason==='agent_schema'?error.modelFeedback:undefined;
           const questionFailure=questionIdDiagnostic(stage,requestSchema,selectionRepairFeedback,candidate);
           if(questionFailure)Object.defineProperty(error,'modelQuestionIdDiagnostic',{value:questionFailure,configurable:true});
-          if(['agent_schema','state_review_schema'].includes(error.modelReason)&&Array.isArray(stateReviewTarget?.claims)) {
+          if(!reviewTransport&&['agent_schema','state_review_schema'].includes(error.modelReason)&&Array.isArray(stateReviewTarget?.claims)) {
             stateReviewFormatRepair=true;rejectedOutput=undefined;
           }
           if(error.modelReason==='agent_review_stale'&&payload.revision&&/^(?:speech_review|support_review)(?:_|$)/u.test(stage)) {
@@ -969,7 +1015,7 @@ export class ModelGateway {
         }
         throw error;
       }
-    },stage,()=>streamSchema).catch(error=>{
+    },stage,()=>streamSchema,requestOptions).catch(error=>{
       // The review response already exhausted its format-repair budget. Keep
       // the exact schema feedback, but do not restart all approved card stages.
       if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelAttempts===MAX_ATTEMPTS) {
@@ -1011,7 +1057,7 @@ export class ModelGateway {
     }), operation, validate, final ? 'guide' : 'state');
   }
 
-  async request(body, operation, validate, generation, streamSchema) {
+  async request(body, operation, validate, generation, streamSchema,{uniqueJsonKeys=false}={}) {
     const generationId=randomUUID();
     let repairReason = null; let repairs = 0; let repairFeedback = null; let schemaFallback = false;
     let structuralFailures=0;
@@ -1125,10 +1171,11 @@ export class ModelGateway {
         const localComplete=response[JSON_STREAM_COMPLETE]===true&&choice.finish_reason===null;
         finishReason = localComplete?'json_complete':(['stop', 'length', 'content_filter', 'tool_calls', 'function_call'].includes(choice.finish_reason) ? choice.finish_reason : 'other');
         if (choice.finish_reason !== 'stop'&&!localComplete) throw invalidResponse('finish_reason');
-        const result = validate(parseContent(choice.message.content));
+        const result = validate(parseContent(choice.message.content,uniqueJsonKeys));
         ensureTime(operation);
-        this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, 'success',null,null,attemptDiagnostic);
-        operation.onProgress?.({stage:generation,status:'completed',attempt});
+        const unresolved=result?.[PARTIAL_REVIEW]===true;
+        this.logAttempt(operation, generation, generationId, attempt, attemptId, started, status, finishReason, usage, unresolved?'partial_review':'success',null,null,attemptDiagnostic);
+        operation.onProgress?.({stage:generation,status:unresolved?'partial':'completed',attempt});
         return result;
       } catch (error) {
         streamController?.abort(error);

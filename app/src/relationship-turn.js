@@ -714,7 +714,10 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
   if(recovery?.combinedDraft?.contextKey!==contextKey&&recovery)delete recovery.combinedDraft;
   if(recovery?.combinedBlocks?.contextKey!==contextKey&&recovery)delete recovery.combinedBlocks;
   if(recovery?.turnReviewBundlesDisabled?.contextKey!==contextKey&&recovery)delete recovery.turnReviewBundlesDisabled;
-  const bundleReviews=gateway.bundleTurnReviews===true&&gateway.stateMode==='combined_blocks';
+  // Both draft modes retain the same independent review tasks and ordered
+  // fallback. The combined opt-in can use one draft + one review envelope.
+  const bundleReviews=gateway.bundleTurnReviews===true&&gateway.stateMode==='combined_blocks'||
+    gateway.bundleCombinedTurnReviews===true&&gateway.stateMode==='combined';
   let useReviewBundles=bundleReviews&&!recovery?.turnReviewBundlesDisabled;
   const retained=recovery?.combinedTurn;
   let blockDraft=gateway.stateMode==='combined_blocks'||Boolean(recovery?.combinedDraft),failedCandidate=recovery?.combinedDraft?.candidate,

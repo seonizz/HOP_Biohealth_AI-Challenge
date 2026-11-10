@@ -297,11 +297,14 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if (method === 'GET' && action === 'context') return json(res, 200, await store.context(owner, id));
         if (method === 'POST' && action === 'guidance') return json(res, 200, await referral.assess(owner, id, await body(req), requestId, {signal:request.signal}));
         if (method === 'GET' && action === 'progress') {
-          const row=await store.intake(owner,id);
+          let row=await store.intakeMetadata(owner,id);
           const candidate=resultRuns.get(`${owner}:${id}:${row.revision}`);
           const active=(candidate&&!candidate.controller.signal.aborted?candidate:null)||[...resultRuns.values()].find(run=>run.owner===owner&&run.id===id&&run.progress?.savedRevision===row.revision&&!run.controller.signal.aborted);
           const progress=active?.progress||generationProgress();
           if(!active){
+            // No live run can supply progress. Preserve the persisted record
+            // validation path instead of inferring completion from metadata.
+            row=await store.intake(owner,id);
             if(row.state.agentRecord){
               try{await store.record(owner,row.state.agentRecord.id);progress.finish('complete');}
               catch(error){if(error.status!==404)throw error;progress.finish('failed');}

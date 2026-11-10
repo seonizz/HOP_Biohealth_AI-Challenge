@@ -6,7 +6,7 @@ import { modelResponseFormat, safetyEvidenceQuotes } from './model-schema.js';
 import { retrieveSources, retrievedContext, citedSources, citationsRetrieved, sourceDocuments } from './relationship-retrieval.js';
 import { COMMON, STATE, ANALYZE, PLAN, WRITE, REVIEW, QUALITY, QUALITY_CHECK, PLAN_REVIEW, speechReviewPrompt, SPEAK, SUPPORT_REVIEW, GUIDANCE_REVIEW_BOUNDARY, GUIDANCE_REVIEW_VERDICTS, PROMPT_VERSION, CARD_ROLE_CONTRACT, CARD_ROLES, AVOID_CARD_WIRE, SPEECH_PARTS, DETAIL, reuseFinalDraftPrompt } from './relationship-prompts.js';
 import { claimsOf, auditSchema, validateAudits, AUDIT_INSTRUCTION } from './grounding-audit.js';
-import { finalReviewBundle } from './final-review-bundle.js';
+import { finalReviewBundle, reviewSourceTransport } from './final-review-bundle.js';
 import { sourceAttributionIssues } from './guidance-source-attribution.js';
 import {hasContinuationSources,focusedContextReviewRequest,validateContextPlanChange} from './card-context-review.js';
 import { avoidPartsProblem, avoidCardStructureIssue, avoidPartsRepair } from './avoid-card-structure.js';
@@ -982,7 +982,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   if(!operation.controller)operation={...operation,controller:new AbortController()};
   memory=canonicalPatientState(memory,context);
   let reviewedSafety=currentReviewedSafety(context);
-  const stages=[], retrievalTrace=[],reviewBundles=[];
+  const stages=[], retrievalTrace=[],reviewBundles=[],bundleTargets=new WeakMap();
   // A malformed speculative bundle must not prevent the original ordered
   // repair flow. Disable batching only for this run, never on a shared gateway.
   let useReviewBundles=gateway.bundleFinalReviews===true&&operation.recovery?.finalReviewBundlesDisabled!==true;
@@ -1008,7 +1008,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   const resetCards=()=>{publishedCards.clear();emitCard({type:'reset'});};
   const sourceRetrieval=(stage,payload,seeded)=>{
     const required=citedSources(payload);
-    if(reviewedSafety&&/^(?:relationship_analysis|analysis_repair)(?:_|$)/u.test(stage))required.push(...reviewedSafety.evidence);
+    if(reviewedSafety&&/^(?:relationship_analysis|analysis_repair|final_analysis_plan_draft)(?:_|$)/u.test(stage))required.push(...reviewedSafety.evidence);
     if(seeded)required.push(...citedSources(seeded));
     if(/^(?:card_care|support_review|speech_detail)/u.test(stage)||gateway.reuseFinalDraft===true&&/^guide_(?:write|refine)(?:_|$)/u.test(stage)||stage.startsWith('guide_repair')&&payload.field==='care'||
       stage.startsWith('speech_review')&&payload.guide?.care)
@@ -1018,7 +1018,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         payload.script,payload.guide?JSON.stringify(payload.guide):'',payload.current?JSON.stringify(payload.current):'',
         ...[...(payload.review?.issues||[]),...(payload.issues||[])].map(issue=>typeof issue==='string'?issue:issue.reason+' '+issue.repair)].filter(Boolean).join(' ')});
   };
-  const generate=async (stage,prompt,payload,schema,validate,activeOperation=operation,retrievalOverride)=>{
+  const generate=async (stage,prompt,payload,schema,validate,activeOperation=operation,retrievalOverride,requestOptions)=>{
     activeOperation.controller.signal.throwIfAborted();
     const seeded=finalSeed&&(stage==='relationship_analysis'&&reviewedSafety
       ?Object.fromEntries(Object.entries(finalSeed.selection).filter(([key])=>key!=='safety'))
@@ -1026,7 +1026,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
       stage==='guide_write'&&equalJSON(analysis,finalSeed.analysis)?finalSeed.draft:undefined);
     const retrieval=retrievalOverride||sourceRetrieval(stage,payload,seeded);
     const scoped=retrievedContext(context,retrieval);
-    const wirePayload={...payload,retrieval};
+    let wirePayload={...payload,retrieval};
     // Retrieval and validators retain the logical payload. Only an identical
     // wire copy is omitted; guide.script and its complete claims remain.
     if(gateway.compactReviewInputs===true&&/^speech_review(?:_|$)/u.test(stage)&&
@@ -1036,6 +1036,10 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
       // Keep source retrieval and review history intact; rewrite this card from
       // its sources and issues without copying the rejected serialized card.
       delete wirePayload.current;delete wirePayload.review;
+    }
+    if(gateway.shareReviewSources===true&&/^(?:final_review_bundle|card_review_bundle)(?:_|$)/u.test(stage)) {
+      const transport=reviewSourceTransport(wirePayload);
+      if(transport){wirePayload=transport.payload;prompt+=transport.instruction;}
     }
     const groundedSchema=groundedEvidenceSchema(schema,scoped);
     const validateGenerated=value=>{
@@ -1054,7 +1058,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         result=validateGenerated(structuredClone(seeded));
         if(stage==='relationship_analysis'&&!equalJSON(result,finalSeed.analysis))throw invalidFinalDraftSeed();
       } catch { throw invalidFinalDraftSeed(); }
-    } else result=await gateway.agentComplete(stage,prompt,wirePayload,groundedSchema,activeOperation,validateGenerated);
+    } else result=await gateway.agentComplete(stage,prompt,wirePayload,groundedSchema,activeOperation,validateGenerated,requestOptions);
     activeOperation.controller.signal.throwIfAborted();
     retrievalTrace.push({stage,...(seeded?{source:'trusted_local_seed'}:{}),indexed_sources:retrieval.indexed_sources,source_ids:retrieval.documents.map(row=>row.source_id)});
     if(seeded)seededStages.push(stage);else stages.push(stage);
@@ -1062,21 +1066,28 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   };
   const runReviewBundle=async (stage,requests,activeOperation=operation)=>{
     if(!useReviewBundles)return null;
-    const parts=requests.map(request=>({...request,payload:{...request.payload,retrieval:sourceRetrieval(request.stage,request.payload)}}));
+    const parts=requests.map(request=>({...request,schema:structuredClone(request.schema),
+      payload:structuredClone({...request.payload,retrieval:sourceRetrieval(request.stage,request.payload)})}));
     const completed=[];
     let partition=0;
     const run=async (partStage,selected)=>{
       activeOperation.controller.signal.throwIfAborted();
       if(!useReviewBundles)return null;
+      const targets=gateway.repairReviewBundleTasks===true?captureBundle(selected):null;
       if(selected.length===1) {
         const request=selected[0];
-        return {[request.key]:await generate(request.stage,request.prompt,request.payload,request.schema,request.validate,activeOperation,request.payload.retrieval)};
+        const output={[request.key]:await generate(request.stage,request.prompt,request.payload,request.schema,request.validate,activeOperation,request.payload.retrieval,
+          {uniqueJsonKeys:gateway.repairReviewBundleTasks===true})};
+        if(targets)bindBundle(output,targets);
+        return output;
       }
-      const bundle=finalReviewBundle(selected,validateSchema),documents=new Map();
+      const bundle=finalReviewBundle(selected,validateSchema,{partial:gateway.repairReviewBundleTasks===true}),documents=new Map();
       for(const part of selected)for(const document of part.payload.retrieval.documents)documents.set(document.source_id,document);
       const retrieval={...selected[0].payload.retrieval,stage:partStage,documents:[...documents.values()]};
       try {
-        const output=await generate(partStage,bundle.prompt,bundle.payload,bundle.schema,bundle.validate,activeOperation,retrieval);
+        const output=await generate(partStage,bundle.prompt,bundle.payload,bundle.schema,bundle.validate,activeOperation,retrieval,
+          {uniqueJsonKeys:gateway.repairReviewBundleTasks===true});
+        if(targets)bindBundle(output,targets);
         completed.push({stage:partStage,reviews:selected.map(request=>request.stage)});
         return output;
       } catch(error) {
@@ -1100,12 +1111,53 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         if(!left)return null;
         const right=await run(stage+'_part_'+(++partition),selected.slice(middle));
         if(!right)return null;
-        return {...left,...right};
+        const output={...left,...right};
+        if(targets)bindBundle(output,targets);
+        return output;
       }
     };
     const result=await run(stage,parts);
     if(result)for(const bundle of completed){stages.push(...bundle.reviews);reviewBundles.push(bundle);}
     return result;
+  };
+  const reviewTarget=request=>{
+    const reviewer=gateway.reviewGateway||gateway;
+    return createHash('sha256').update(JSON.stringify([request.payload,request.schema,request.prompt,
+      reviewer.baseUrl,reviewer.model,reviewer.apiKey,reviewer.protocol,reviewer.agentFormat,reviewer.reasoningEffort,
+      reviewer.preserveStringLimits,reviewer.streamJson,reviewer.streamCompleteJson,reviewer.discoverTokenLimits,
+      gateway.shareReviewSources,gateway.repairReviewBundleTasks,gateway.compactReviewOutput,reviewer.compactReviewOutput])).digest('hex');
+  };
+  const captureBundle=requests=>new Map(requests.map(request=>[request.key,
+    {request,identity:reviewTarget(request),validate:request.validate,pending:null}]));
+  const bindBundle=(results,targets)=>{
+    for(const target of targets.values())if(target.identity!==reviewTarget(target.request)||target.validate!==target.request.validate)invalid('agent_review_stale');
+    bundleTargets.set(results,targets);
+  };
+  const resolveReviewTask=async (results,key,activeOperation=operation)=>{
+    if(!useReviewBundles)return null;
+    activeOperation.controller.signal.throwIfAborted();
+    const target=bundleTargets.get(results)?.get(key);
+    if(target&&(target.identity!==reviewTarget(target.request)||target.validate!==target.request.validate))invalid('agent_review_stale');
+    if(Object.hasOwn(results,key))return results[key];
+    if(!target)invalid('agent_schema');
+    if(!target.pending)target.pending=(async()=>{
+      try {
+        const request=target.request;
+        const result=await generate(request.stage,request.prompt,request.payload,request.schema,request.validate,activeOperation,request.payload.retrieval,
+          {uniqueJsonKeys:true});
+        if(target.identity!==reviewTarget(request)||target.validate!==request.validate)invalid('agent_review_stale');
+        activeOperation.controller.signal.throwIfAborted();results[key]=result;return result;
+      } catch(error) {
+        activeOperation.controller.signal.throwIfAborted();
+        if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelAttempts===3) {
+          useReviewBundles=false;
+          if(operation.recovery)operation.recovery.finalReviewBundlesDisabled=true;
+          return null; // Resume the original ordered gates; do not publish siblings.
+        }
+        throw error;
+      }
+    })();
+    return target.pending;
   };
   const relationKnown=context.patient?.fields?.rel?.status==='answered';
   const requestAttribution='\n요청·동의의 귀속: 힘들다는 말, 상황 공유, 비밀 유지 요청은 도움을 요청하거나 상담에 동의했다는 보고와 다릅니다. 이용자가 도와주고 싶다는 바람도 대상자의 요청이 아닙니다. 대상자가 실제로 도움을 요청·수락했다는 원문 보고가 없다면 “도움을 요청하고 있다”, “상담을 원한다” 같은 행위를 추가하지 말고 확인된 상황 공유의 범위로 작성하세요. 직접 인용과 이용자가 명시적으로 전한 요청·동의는 모두 근거로 검토할 수 있습니다. tentative·가능한 해석 표지만으로 미확인 행위를 추가하지 마세요. 확인 질문의 모름·건너뜀은 요청이나 거부의 증거가 아닙니다. 검토기의 repair 예문에도 같은 기준을 적용하세요.';
@@ -1141,22 +1193,59 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     }
     return result;
   };
-  let analysis=await generate('relationship_analysis',analysisPrompt,data,analysisSchema,validateAnalysis);
+  const planReviewSchema=()=>{
+    const schema=structuredClone(reviewSchema);
+    schema.properties.issues.items.properties.field.enum=Object.keys(planSchema.properties);
+    schema.properties.issues.items.properties.repair.maxLength=180;
+    return schema;
+  };
+  let analysis,prebuiltPlan,prebuiltPlanReviews;
+  if(gateway.bundleAnalysisPlan===true&&useReviewBundles&&!gateway.skipFinalExtras&&!finalSeed) {
+    // One writer may draft dependent sections together; neither section is
+    // approved until its separate reviewer task has checked the exact sources.
+    try {
+      const combined=await generate('final_analysis_plan_draft',COMMON+
+        '\n분석과 대화 전략을 한 JSON에 작성하세요. 최상위 키는 analysis,plan뿐입니다. 아래 분석의 최상위 규칙은 analysis 내부, 전략 출력 규칙은 plan 내부에 적용합니다. plan은 이 analysis와 원답변에 근거하되 분석이나 전략을 스스로 승인하지 마세요.\n'+
+        analysisPrompt.slice(COMMON.length)+'\n'+PLAN.slice(COMMON.length)+
+        '\n반환 형식은 {"analysis":분석 객체,"plan":전략 객체}입니다. 모든 필수 근거·부정·시점·귀속을 보존하고 반복 설명은 쓰지 마세요.',
+        {answers:data},object({analysis:analysisSchema,plan:groundedEvidenceSchema(planSchema,context)}),(value,retrieval)=>{
+          validateSchema(value,object({analysis:analysisSchema,plan:groundedEvidenceSchema(planSchema,context)}));
+          return {analysis:validateAnalysis(value.analysis,retrieval),plan:validatePlan(value.plan,context)};
+        });
+      analysis=combined.analysis;prebuiltPlan=combined.plan;
+      stages.push('relationship_analysis','communication_plan');
+    } catch(error) {
+      // A confirmed capacity limit falls back to the original lossless calls.
+      // Invalid content or transport errors keep their existing repair budget.
+      if(error.code!=='MODEL_CONTEXT_TOO_LONG'||error.modelReason!=='context_budget')throw error;
+    }
+  }
+  if(!analysis)analysis=await generate('relationship_analysis',analysisPrompt,data,analysisSchema,validateAnalysis);
   const analysisReviewPrompt=REVIEW+'\n지금은 analysis만 원문과 대조하세요. 안내 문장은 아직 없으며 평가하지 마세요. 모든 issue.field는 relationship_analysis입니다. 의미·화자·부정·시점·강도를 바꾸지 않는 동의어·바꿔쓰기는 오류가 아닙니다. 단어가 원문과 다르다는 이유만으로 거절하지 마세요. tentative의 plausible은 근거에 맞고 가설임을 밝힌 해석일 때 허용됩니다. 다만 새 사실·감정·인과를 덧붙이거나 가설을 단정한 경우는 계속 거절하세요.'+requestAttribution;
-  const reviewAnalysis=async stage=>{
+  const analysisReviewRequest=stage=>{
     const claims=claimsOf(Object.fromEntries(['dynamics','strengths','boundaries'].map(key=>[key,analysis.relationship[key]])));
     const schema=structuredClone(analysisReviewSchema);schema.properties.audits=auditSchema(claims);schema.required.push('audits');
-    return generate(stage,analysisReviewPrompt+AUDIT_INSTRUCTION,{answers:data,analysis,claims},schema,value=>{
+    return {key:'analysis',stage,prompt:analysisReviewPrompt+AUDIT_INSTRUCTION,payload:{answers:data,analysis,claims},schema,validate:value=>{
       validateSchema(value,schema);validateAudits(value.audits,claims,value.approved);
       const review=validateReview({approved:value.approved,issues:value.issues});
       validateAnalysisReviewConsistency(value,claims);
       return review;
-    });
+    }};
   };
+  const reviewAnalysis=stage=>{
+    const request=analysisReviewRequest(stage);
+    return generate(stage,request.prompt,request.payload,request.schema,request.validate);
+  };
+  const planReviewRequest=(plan,stage)=>({key:'plan',stage,prompt:PLAN_REVIEW,payload:{answers:data,analysis,plan},schema:planReviewSchema(),validate:value=>{
+    validateSchema(value,planReviewSchema());
+    if(value.approved!==(value.issues.length===0))invalid('agent_review');
+    return value;
+  }});
   let analysisRepairs=0;
   const repairAnalysis=async (review,late=false)=>{
     if (analysisRepairs>=1) invalid('agent_analysis_review_rejected');
     if(late)resetCards();
+    prebuiltPlan=undefined;prebuiltPlanReviews=undefined;
     analysisRepairs++;
     const analysisIssues={approved:false,issues:review.issues.filter(issue=>issue.field==='relationship_analysis')};
     analysis=await generate(late?'analysis_repair_after_guide_review':'analysis_repair',
@@ -1166,7 +1255,11 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     if (!repairedReview.approved) invalid('agent_analysis_review_rejected');
     if(late)publishCard('relationship',analysis);
   };
-  const analysisReview=await reviewAnalysis('analysis_review');
+  if(prebuiltPlan)prebuiltPlanReviews=await runReviewBundle('final_review_bundle_analysis_plan',[
+    analysisReviewRequest('analysis_review'),planReviewRequest(prebuiltPlan,'plan_review'),
+  ]);
+  const analysisReview=prebuiltPlanReviews?await resolveReviewTask(prebuiltPlanReviews,'analysis')||await reviewAnalysis('analysis_review'):
+    await reviewAnalysis('analysis_review');
   if (!analysisReview.approved) await repairAnalysis(analysisReview);
   publishCard('relationship',analysis);
   const finalSchema=modelResponseFormat(context,true).json_schema.schema;
@@ -1267,11 +1360,21 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     if(!review.approved||!['care','next'].includes(field))return review;
     return results['card_support_'+field];
   };
+  const consumeCardReviews=async (field,value,results,activeOperation=operation)=>{
+    const requiredFixes=localCardIssues(field,value);
+    // A known local rejection invalidates any missing old-card review anyway.
+    if(requiredFixes.length&&!Object.hasOwn(results,'card_speech_'+field))return {approved:false,issues:requiredFixes};
+    const speech=await resolveReviewTask(results,'card_speech_'+field,activeOperation);
+    if(!speech)return null;
+    if(!speech.approved||requiredFixes.length||!['care','next'].includes(field))return cardReviewResult(field,value,results);
+    if(!await resolveReviewTask(results,'card_support_'+field,activeOperation))return null;
+    return cardReviewResult(field,value,results);
+  };
   const reviewCard=async (field,value,plan,suffix,revision,activeOperation)=>{
     const requests=cardReviewRequests(field,value,plan,suffix,revision);
     if(useReviewBundles&&requests.length>1) {
       const results=await runReviewBundle('card_review_bundle_'+field+suffix,requests,activeOperation);
-      if(results)return cardReviewResult(field,value,results);
+      if(results){const review=await consumeCardReviews(field,value,results,activeOperation);if(review)return review;}
     }
     const results={};
     for(const request of requests) {
@@ -1370,13 +1473,29 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
     }
     return results.guide;
   };
+  const consumeGuideReviews=async (draft,results)=>{
+    if(!analysis.safety.urgent) {
+      const requiredFixes=gateway.reuseFinalDraft===true
+        ?['script',...Object.keys(CARD_ROLES)].flatMap(field=>localCardIssues(field,draft.guide[field]))
+        :knownSpeechIssues(draft.guide,context);
+      if(requiredFixes.length&&!Object.hasOwn(results,'speech'))return {approved:false,issues:requiredFixes};
+      const speech=await resolveReviewTask(results,'speech');
+      if(!speech)return null;
+      if(requiredFixes.length||!speech.approved)return {...speech,approved:false,issues:[...requiredFixes,...speech.issues]};
+      const support=await resolveReviewTask(results,'support');
+      if(!support)return null;
+      if(!support.approved)return support;
+    }
+    if(!await resolveReviewTask(results,'guide'))return null;
+    return guideReviewResult(draft,results);
+  };
   const reviewGuide=async (stage,draft,plan,revision)=>{
     const contextReview=await reviewGuideContext(stage,draft);
     if(contextReview)return contextReview;
     const requests=guideReviewRequests(stage,draft,plan,revision);
     if(useReviewBundles&&requests.length>1) {
       const results=await runReviewBundle(stage.replace('guide_review','final_review_bundle'),requests);
-      if(results)return guideReviewResult(draft,results);
+      if(results){const review=await consumeGuideReviews(draft,results);if(review)return review;}
     }
     const results={};
     for(const request of requests) {
@@ -1394,16 +1513,16 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
   const composeGuide=async suffix=>{
     let plan;
     if(!gateway.skipFinalExtras){
-      plan=await generate('communication_plan'+suffix,PLAN,{answers:data,analysis},groundedEvidenceSchema(planSchema,context),v=>validatePlan(v,context));
-      const planReviewSchema=structuredClone(reviewSchema);
-      planReviewSchema.properties.issues.items.properties.field.enum=Object.keys(planSchema.properties);
-      planReviewSchema.properties.issues.items.properties.repair.maxLength=180;
+      plan=prebuiltPlan??await generate('communication_plan'+suffix,PLAN,{answers:data,analysis},groundedEvidenceSchema(planSchema,context),v=>validatePlan(v,context));
+      const bundledPlanReviews=prebuiltPlanReviews;
+      prebuiltPlan=undefined;prebuiltPlanReviews=undefined;
+      const schemaReviewPlan=planReviewSchema();
       const contextPlan=hasContinuationSources(data);
       let planRevision;
       for(let repair=0;repair<2;repair++){
-        const review=await generate((repair?'plan_review_after_repair':'plan_review')+suffix,PLAN_REVIEW,
-          {answers:data,analysis,plan,...(planRevision?{revision:planRevision}:{})},planReviewSchema,value=>{
-            validateSchema(value,planReviewSchema);
+        const review=(repair===0&&bundledPlanReviews?await resolveReviewTask(bundledPlanReviews,'plan'):null)||await generate((repair?'plan_review_after_repair':'plan_review')+suffix,PLAN_REVIEW,
+          {answers:data,analysis,plan,...(planRevision?{revision:planRevision}:{})},schemaReviewPlan,value=>{
+            validateSchema(value,schemaReviewPlan);
             if(value.approved!==(value.issues.length===0))invalid('agent_review');
             return value;
           });
@@ -1499,8 +1618,8 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
             const field=fields[next++];let value=await writeCard(field),revision;
             for(let repair=0;;repair++){
               const reviewSuffix=suffix+(repair?'_after_repair_'+repair:'');
-              const review=initialReviews&&repair===0?cardReviewResult(field,value,initialReviews)
-                :await reviewCard(field,value,plan,reviewSuffix,revision,branchOperation);
+              const initialReview=initialReviews&&repair===0?await consumeCardReviews(field,value,initialReviews,branchOperation):null;
+              const review=initialReview||await reviewCard(field,value,plan,reviewSuffix,revision,branchOperation);
               if(review.approved)break;
               if(repair>=2)invalid('agent_review_rejected');
               const before=structuredClone(value);
@@ -1535,9 +1654,10 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         bundledReviews=initialReviews&&equalJSON(initialReviewGuide,draft.guide)?initialReviews:
           await runReviewBundle('final_review_bundle_quality'+suffix,[qualityRequestFor(draft),...guideReviewRequests('guide_review'+suffix,draft,plan)]);
       }
-      let quality=bundledReviews?bundledReviews.quality:
-        await generate('guide_quality'+suffix,QUALITY,{...writerData,guide:draft.guide,...qualityRequest.metadata},
+      let quality=bundledReviews?await resolveReviewTask(bundledReviews,'quality'):null;
+      if(!quality){bundledReviews=null;quality=await generate('guide_quality'+suffix,QUALITY,{...writerData,guide:draft.guide,...qualityRequest.metadata},
           qualityRequest.schema,value=>validateSchema(value,qualityRequest.schema));
+      }
       if (quality.improvements.length) {
         for(const field of ['script',...Object.keys(CARD_ROLES)])removeCard(field);
         // The opt-in bundle/patch modes retain their single repair contract;
@@ -1580,13 +1700,15 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
           bundledReviews=null;
           if(useReviewBundles)bundledReviews=await runReviewBundle('final_review_bundle_after_quality'+repairSuffix,
             [qualityRequestFor(draft,revision),...guideReviewRequests('guide_review'+suffix,draft,plan)]);
-          quality=bundledReviews?bundledReviews.quality:await generate('guide_quality_check'+repairSuffix,QUALITY_CHECK,
+          quality=bundledReviews?await resolveReviewTask(bundledReviews,'quality'):null;
+          if(!quality){bundledReviews=null;quality=await generate('guide_quality_check'+repairSuffix,QUALITY_CHECK,
             {...writerData,guide:draft.guide,...qualityRequest.metadata,revision},qualityRequest.schema,
             value=>validateSchema(value,qualityRequest.schema));
+          }
         }
         if (quality.improvements.length) invalid('agent_quality_review_rejected');
       }
-      if(bundledReviews)bundledGuideReview=guideReviewResult(draft,bundledReviews);
+      if(bundledReviews)bundledGuideReview=await consumeGuideReviews(draft,bundledReviews);
     }
     const review=bundledGuideReview
       ?await reviewGuideContext('guide_review'+suffix,draft)||bundledGuideReview

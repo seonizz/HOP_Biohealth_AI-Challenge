@@ -33,6 +33,12 @@ function harness(request=async()=>({continuation:row()}),saved=new Map()){
   return {context,screen:context.screen,node,calls,saved};
 }
 const answer='어떻게 말하면 좋을까요?';
+const deferred=()=>{
+  let resolve,reject;
+  const promise=new Promise((res,rej)=>{resolve=res;reject=rej;});
+  return {promise,resolve,reject};
+};
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
 
 test('free question submits without a clarification ID and preserves typing ahead',async()=>{
   let release;
@@ -245,4 +251,161 @@ test('Send after a lost success response reuses the request ID instead of duplic
   await h.screen.send();
   const posts=h.calls.filter(c=>c.path.endsWith('/messages'));
   assert.equal(posts.length,2);assert.equal(posts[0].options.body.request_id,posts[1].options.body.request_id);
+});
+
+for(const action of ['messages','cards'])test(`approved ${action} render and release input before the session list resolves`,async()=>{
+  const post=deferred(),list=deferred();let settled=false;
+  const h=harness(async(path,options)=>options.method==='POST'?post.promise:list.promise);
+  h.screen.accept(row({messages:[{id:'u1',role:'user',text:'오늘 만났어요.'}]}));
+  if(action==='messages'){h.screen.draft=answer;h.screen.draw();}
+  const pending=h.screen.perform(action,action==='messages'?{text:answer}:{}).then(()=>{settled=true;});
+  post.resolve({continuation:row({revision:2,messages:[{id:'u1',role:'user',text:answer},{id:'a1',role:'assistant',text:'승인된 답변'}],cards:action==='cards'?[card]:[]})});
+  await flush();
+  assert.equal(settled,true,'the POST completion must not await the list GET');
+  assert.equal(h.screen.busy,false);assert.equal(h.screen.controller,null);
+  assert.equal(h.node('continuationWaiting').hidden,true);
+  assert.equal(h.node('continuationSend').disabled,false);
+  assert.match(h.node('continuationLog').innerHTML,/승인된 답변/);
+  if(action==='cards')assert.match(h.node('continuationCardsList').innerHTML,/편할 때 이야기해 줄래/);
+  h.node('continuationText').value='계속 작성하는 초안';h.node('continuationText').oninput();
+  h.node('continuationText').focus();
+  const log=h.node('continuationLog').innerHTML,cards=h.node('continuationCardsList').innerHTML;
+  list.resolve({continuations:[{id,created_at:card.date,status:'active'}]});await flush();await pending;
+  assert.equal(h.node('continuationText').value,'계속 작성하는 초안');
+  assert.equal(h.node('continuationText').focused,true);
+  assert.equal(h.node('continuationLog').innerHTML,log);assert.equal(h.node('continuationCardsList').innerHTML,cards);
+  assert.equal(h.calls.filter(call=>call.options.method==='POST').length,1);
+});
+
+for(const entry of ['start','open'])test(`${entry} displays its selected session before the list resolves`,async()=>{
+  const list=deferred();let settled=false;
+  const h=harness(async(path,options)=>options.method==='POST'||path===`/api/continuations/${id}`?
+    {continuation:row({revision:3,messages:[{id:'a1',role:'assistant',text:'선택한 대화'}]})}:list.promise);
+  const pending=(entry==='start'?h.screen.start(9):h.screen.open(id)).then(()=>{settled=true;});
+  await flush();
+  assert.equal(settled,true);assert.equal(h.screen.busy,false);assert.equal(h.screen.controller,null);
+  assert.equal(h.screen.row.id,id);assert.match(h.node('continuationLog').innerHTML,/선택한 대화/);
+  list.resolve({continuations:[]});await pending;await flush();
+});
+
+test('a list failure stays in history and cannot restore a successful card input or replace its notice',async()=>{
+  const list=deferred();let lists=0;
+  const h=harness(async(path,options)=>options.method==='POST'?
+    {continuation:row({revision:2,messages:[{id:'u1',role:'user',text:'오늘 만났어요.'}],cards:[card]})}:
+    ++lists===1?list.promise:{continuations:[]});
+  await h.screen.perform('cards');
+  const notice=h.node('continuationNotice').textContent,html=h.node('continuationCardsList').innerHTML;
+  h.screen.draft='새 초안';h.screen.draw();
+  list.reject(new Error('<목록 연결 오류>'));await flush();
+  assert.equal(h.node('continuationNotice').textContent,notice);
+  assert.equal(h.node('continuationCardsList').innerHTML,html);
+  assert.equal(h.screen.retryAction,null);assert.equal(h.screen.draft,'새 초안');assert.equal(h.screen.busy,false);
+  assert.match(h.node('continuationSessions').innerHTML,/&lt;목록 연결 오류&gt;/);
+  await h.screen.list();
+  assert.equal(h.screen.listError,'');assert.equal(h.calls.filter(call=>call.options.method==='POST').length,1);
+});
+
+test('same-screen reversed list responses keep the latest list without redrawing body or notice',async()=>{
+  const first=deferred(),second=deferred();let lists=0;
+  const h=harness(async()=>++lists===1?first.promise:second.promise);
+  const old=h.screen.list(),newer=h.screen.list();
+  h.screen.notice('현재 성공 안내');h.screen.draft='보존할 초안';h.screen.draw();
+  const html=h.node('continuationLog').innerHTML;
+  second.resolve({continuations:[{id:'latest',created_at:card.date,status:'completed'}]});await newer;
+  first.resolve({continuations:[{id:'stale',created_at:card.date,status:'active'}]});await old;
+  assert.deepEqual(plain(h.screen.sessions).map(session=>session.id),['latest']);
+  assert.equal(h.node('continuationNotice').textContent,'현재 성공 안내');
+  assert.equal(h.screen.draft,'보존할 초안');assert.equal(h.node('continuationLog').innerHTML,html);
+  assert.equal(h.screen.listController,null);assert.equal(h.screen.controller,null);
+});
+
+test('a superseded list failure cannot change a newer POST controller or busy state',async()=>{
+  const first=deferred(),post=deferred(),second=deferred();let lists=0;
+  const h=harness(async(path,options)=>options.method==='POST'?post.promise:++lists===1?first.promise:second.promise);
+  const old=h.screen.list();
+  const pending=h.screen.perform('messages',{text:answer});
+  const controller=h.screen.controller;
+  h.screen.notice('새 요청을 처리하고 있어요.');
+  first.reject(new Error('늦은 목록 오류'));await old;
+  assert.equal(h.screen.busy,true);assert.equal(h.screen.controller,controller);assert.equal(controller.signal.aborted,false);
+  assert.equal(h.node('continuationNotice').textContent,'새 요청을 처리하고 있어요.');
+  assert.equal(h.screen.listError,'');
+  post.resolve({continuation:row({revision:2,messages:[{id:'a1',role:'assistant',text:'새 답변'}]})});await pending;
+  second.resolve({continuations:[{id:'latest',created_at:card.date}]});await flush();
+  assert.equal(h.screen.busy,false);assert.match(h.node('continuationLog').innerHTML,/새 답변/);
+});
+
+test('a late list failure cannot erase the newest successful list or its success notice',async()=>{
+  const first=deferred(),second=deferred();let lists=0;
+  const h=harness(async()=>++lists===1?first.promise:second.promise);
+  const old=h.screen.list(),newer=h.screen.list();
+  second.resolve({continuations:[{id:'latest',created_at:card.date}]});await newer;
+  h.screen.notice('새 카드를 저장했어요.');
+  first.reject(new Error('이전 목록 실패'));await old;
+  assert.deepEqual(plain(h.screen.sessions).map(session=>session.id),['latest']);
+  assert.equal(h.node('continuationNotice').textContent,'새 카드를 저장했어요.');
+  assert.equal(h.screen.listError,'');
+});
+
+for(const changed of ['sourceRecord','id','revision'])test(`a list cannot update after its captured ${changed} changes`,async()=>{
+  const list=deferred(),h=harness(async()=>list.promise);
+  const pending=h.screen.list();
+  if(changed==='sourceRecord')h.screen.sourceRecord='10';
+  else h.screen.row={...h.screen.row,[changed]:changed==='id'?'another-continuation':1};
+  list.resolve({continuations:[{id:'stale',created_at:card.date}]});await pending;
+  assert.equal(h.screen.sessions.length,0);
+});
+
+test('list completion during correction preserves its draft and pending mutation',async()=>{
+  const first=deferred(),post=deferred(),second=deferred();let lists=0;
+  const h=harness(async(path,options)=>options.method==='POST'?post.promise:++lists===1?first.promise:second.promise);
+  h.screen.accept(row({messages:[{id:'u1',role:'user',text:'어제 만났어요.'}]}));
+  const old=h.screen.list();h.screen.correct('u1');
+  assert.equal(h.node('continuationText').focused,true);
+  h.node('continuationText').value='지난주 만났어요.';h.node('continuationText').oninput();
+  const pending=h.screen.send(),controller=h.screen.controller;
+  first.resolve({continuations:[{id:'stale',created_at:card.date}]});await old;
+  assert.equal(h.screen.controller,controller);assert.equal(h.screen.busy,true);assert.equal(h.screen.editing,'u1');
+  assert.equal(h.screen.sessions.length,0);
+  post.resolve({continuation:row({revision:3,messages:[{id:'u1',role:'user',text:'지난주 만났어요.'}]})});await pending;
+  second.resolve({continuations:[]});await flush();
+  assert.equal(h.screen.row.revision,3);assert.equal(h.screen.editing,null);
+});
+
+test('list completion after finish cannot reopen input or replace the completion notice',async()=>{
+  const first=deferred(),second=deferred();let lists=0;
+  const h=harness(async(path,options)=>options.method==='POST'?{continuation:row({revision:2,status:'completed',summary:'저장된 대화'})}:
+    ++lists===1?first.promise:second.promise);
+  const old=h.screen.list();await h.screen.finish();
+  const notice=h.node('continuationNotice').textContent;
+  first.reject(new Error('완료 전 목록 오류'));await old;
+  assert.equal(h.screen.row.status,'completed');assert.equal(h.node('continuationForm').hidden,true);
+  assert.equal(h.node('continuationNotice').textContent,notice);assert.equal(h.screen.listError,'');
+  second.resolve({continuations:[]});await flush();
+});
+
+test('list completion cannot repopulate a session during deletion or after navigation',async()=>{
+  const list=deferred(),deleting=deferred();
+  const h=harness(async(path,options)=>options.method==='DELETE'?deleting.promise:list.promise);
+  const old=h.screen.list();await h.screen.remove();
+  const pending=h.screen.remove();
+  const notice=h.node('continuationNotice').textContent;
+  list.resolve({continuations:[{id:'deleted',created_at:card.date}]});await old;
+  assert.equal(h.screen.busy,true);assert.equal(h.screen.sessions.length,0);
+  assert.equal(h.node('continuationNotice').textContent,notice);
+  deleting.resolve({deleted:true});await pending;
+  assert.equal(h.screen.row,null);assert.equal(h.node('continuation').hidden,true);
+});
+
+test('navigation cancels list work and a stale caller cannot cancel the new record list',async()=>{
+  const first=deferred(),second=deferred();let lists=0;
+  const h=harness(async()=>++lists===1?first.promise:second.promise);
+  const sequence=h.screen.sequence,old=h.screen.list();
+  h.screen.leave();h.screen.accept(row({id:'different',source_record_id:'10'}));
+  const newer=h.screen.list(),controller=h.screen.listController;
+  await h.screen.list(sequence);
+  assert.equal(h.screen.listController,controller);assert.equal(controller.signal.aborted,false);
+  first.reject(new Error('이전 화면 목록 오류'));await old;
+  second.resolve({continuations:[{id:'different',created_at:card.date}]});await newer;
+  assert.deepEqual(plain(h.screen.sessions).map(session=>session.id),['different']);assert.equal(h.screen.listError,'');
 });

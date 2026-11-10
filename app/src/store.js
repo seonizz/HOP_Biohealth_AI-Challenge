@@ -95,6 +95,7 @@ export class Store {
   createContinuation(owner, recordId, epoch, requestId) { return continuationStore.createContinuation(this, owner, recordId, epoch, requestId); }
   listContinuations(owner, recordId) { return continuationStore.listContinuations(this, owner, recordId); }
   getContinuation(owner, id) { return continuationStore.getContinuation(this, owner, id); }
+  continuationSources(owner, id, revision) { return continuationStore.continuationSources(this, owner, id, revision); }
   updateContinuation(owner, id, revision, mutate, options) { return continuationStore.updateContinuation(this, owner, id, revision, mutate, options); }
   deleteContinuation(owner, id) { return continuationStore.deleteContinuation(this, owner, id); }
 
@@ -260,6 +261,12 @@ export class Store {
     if (!result.rowCount) throw notFound();
     const row = result.rows[0];
     return { id, revision: row.revision, state: this.open(row.content, `${owner}:intake:${id}`) };
+  }
+
+  async intakeMetadata(owner, id) {
+    const result = await this.pool.query('SELECT revision FROM intakes WHERE id=$1 AND owner=$2', [id, owner]);
+    if (!result.rowCount) throw notFound();
+    return {id, revision:result.rows[0].revision};
   }
 
   async context(owner, id) {

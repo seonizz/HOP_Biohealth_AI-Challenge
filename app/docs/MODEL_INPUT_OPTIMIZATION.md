@@ -60,7 +60,7 @@ null 이름은 이전 턴의 이름 캐시나 모델의 생략 결정이 아니�
 - [카드 수정 지시](../src/relationship-agent.js), [블록 생성·상수 처리](../src/relationship-turn.js), [블록 입력·이름 지시](../src/turn-input-scope.js)
 - [Gateway](../src/model.js), [환경 설정](../src/model-config.js), [기본 Compose](../compose.yaml), [GPU overlay](../compose.gpu.yaml)
 - [최종 생성·수정 검사](../tests/final-draft-reuse.test.js), [턴 입력·null·복구 검사](../tests/turn-input-optimization.test.js), [설정 검사](../tests/model-config.test.js)
-- [검토 기획](../../docs/current/모델_호출_추가_최적화_검토_2026-10-31.md), [전체 사용량](../../docs/current/전체_모델_사용량_재조사_2026-10-31.md)
+- [검토 기획](../../docs/archive/2026-10/모델_호출_추가_최적화_검토_2026-10-31.md), [전체 사용량](../../docs/archive/2026-10/전체_모델_사용량_재조사_2026-10-31.md)
 
 ## 6. 구현 후 검토·검증
 

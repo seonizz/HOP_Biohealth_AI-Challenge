@@ -100,7 +100,7 @@
 
 회차 하나를 삭제해도 원본 기록은 남습니다. 해당 회차를 참조할 수 있는 이후 회차에는 같은 무효화 규칙을 적용합니다. 원본 record/intake 삭제, 전체 대화 삭제, 삭제 키 사용, 소유자 보유기간 만료는 연결된 후속 회차·카드·시작 토큰까지 삭제합니다. 삭제·정정·종료는 진행 중 작업을 취소하고 revision/존재 여부로 늦은 결과의 저장을 차단합니다. 소유하지 않은 자원은 404, Origin·CSRF 오류는 403으로 처리합니다.
 
-주요 추가 오류는 `SOURCE_CONTEXT_UNAVAILABLE`(원문 없는 이전 기록), `INTAKE_NOT_COMPLETE`, `CONTINUATION_PENDING`, `CONTINUATION_COMPLETE`, `NO_NEW_FACTS`, `REVISION_CONFLICT`(이상 409), `INVALID_REQUEST_ID`, `INVALID_CLARIFICATION`, `INVALID_MESSAGE`, `ANSWER_REQUIRED`(이상 422)입니다. 현재 카드·관계도 표시 제한과 향후 검증 기준은 [추가 질문 기능 기획·구현](../../docs/current/관계도_기반_추가질문_기획.md)을 따릅니다.
+주요 추가 오류는 `SOURCE_CONTEXT_UNAVAILABLE`(원문 없는 이전 기록), `INTAKE_NOT_COMPLETE`, `CONTINUATION_PENDING`, `CONTINUATION_COMPLETE`, `NO_NEW_FACTS`, `REVISION_CONFLICT`(이상 409), `INVALID_REQUEST_ID`, `INVALID_CLARIFICATION`, `INVALID_MESSAGE`, `ANSWER_REQUIRED`(이상 422)입니다. 현재 카드·관계도 표시 제한과 향후 검증 기준은 [추가 질문 기능 기획·구현](../../최신/관계도_기반_추가질문_기획.md)을 따릅니다.
 
 ## 서버 내부 상태
 
