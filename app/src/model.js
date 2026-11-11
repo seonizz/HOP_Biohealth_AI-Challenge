@@ -188,6 +188,16 @@ const timeout = () => failure(504, 'MODEL_TIMEOUT', '모델의 답변이 오래 
 const cancelled = () => failure(499, 'MODEL_CANCELLED', '답변 요청을 중단했어요.', 'cancelled');
 const unavailable = reason => failure(503, 'MODEL_UNAVAILABLE', '모델이 다른 답변을 만들고 있거나 연결되지 않았어요. 잠시 후 다시 시도해 주세요.', reason);
 const MAX_ATTEMPTS = 3;
+function missingRelationshipUnknowns(feedback) {
+  if(typeof feedback!=='string')return false;
+  try {
+    const issue=JSON.parse(feedback.split('\n',1)[0]);
+    return issue.path==='output.state.relationship_memory'&&issue.keyword==='objectKeys'&&
+      JSON.stringify(issue.actual?.missing_keys)==='["unknowns"]'&&issue.actual?.extra_key_count===0&&
+      Array.isArray(issue.expected?.keys)&&issue.expected.keys.length===4&&
+      ['patient','supporter','relationship','unknowns'].every(key=>issue.expected.keys.includes(key));
+  }catch{return false;}
+}
 const STATE_SCHEMA_RECOVERY_STAGES=new Set(['turn_draft','turn_draft_after_review','turn_review','turn_review_after_review',
   'state_review','state_review_after_review','question_review','safety_review']);
 const MAX_RETRY_DELAY_MS = 5000;
@@ -235,6 +245,9 @@ function contextBudgetError(value, status) {
   // The 31B worker supplies a stable code; its message is not a token-count contract.
   if (status === 400 && value?.error?.type === 'invalid_request_error' &&
       value.error.code === 'context_length_exceeded') return true;
+  // A provider's explicit code takes precedence over coincidentally matching
+  // legacy prose. Never repartition invalid-model/auth/etc. errors as capacity.
+  if (value?.error?.code != null) return false;
   return status === 400 && value?.error?.type === 'invalid_request_error' && typeof value.error.message === 'string' &&
     (/^Prompt \(\d+\) plus max_tokens \(\d+\) exceeds the \d+-token context budget; no text was truncated$/.test(value.error.message) ||
      /^Prompt \(\d+\) exceeds the \d+-token input budget; no text was truncated$/.test(value.error.message) ||
@@ -245,7 +258,7 @@ function contextBudgetError(value, status) {
 function remainingOutputTokens(value, status, policy, requested) {
   // Let the caller partition complete review tasks while preserving the output
   // reservation. A coded capacity rejection must not silently shorten it.
-  if (value?.error?.code === 'context_length_exceeded') return null;
+  if (value?.error?.code != null) return null;
   if (!policy || status !== 400 || value?.error?.type !== 'invalid_request_error') return null;
   const match = /^Prompt \((\d+)\) plus max_tokens \((\d+)\) exceeds the (\d+)-token context budget; no text was truncated$/.exec(value.error.message);
   if (!match) return null;
@@ -881,6 +894,9 @@ export class ModelGateway {
   }
 
   async agentComplete(stage,prompt,payload,schema,operation,validate,requestOptions={}) {
+    // JSON.parse silently overwrites duplicate keys before schema validation.
+    // Every agent output needs unambiguous facts/verdicts, not only compact reviews.
+    requestOptions={...requestOptions,uniqueJsonKeys:true};
     const reviewStage=modelStageRole(stage)==='reviewer';
     const compactOutput=requestOptions.compactReviewOutput??this.compactReviewOutput;
     const compactPartial=requestOptions.compactReviewPartial??this.repairReviewBundleTasks;
@@ -900,7 +916,6 @@ export class ModelGateway {
     const finalIds=this.extendedFinalEvidenceIds?(operation.finalEvidenceIds??=new Map()):undefined;
     const reviewTransport=reviewStage&&compactOutput?compactReviewTransport({stage,schema,payload,
       partial:compactPartial&&/^(?:final_review_bundle|card_review_bundle)(?:_|$)/u.test(stage)}):null;
-    if(reviewTransport)requestOptions={...requestOptions,uniqueJsonKeys:true};
     let originalRequestSchema=schema, transport=(reviewTransport?{...reviewTransport,decode:reviewTransport.hydrate}:null)||relationshipEvidenceTransport(stage,schema,sourceIds)||
       finalEvidenceTransport(stage,schema,{extended:this.extendedFinalEvidenceIds,registry:finalIds});
     let requestSchema=transport?.schema||schema, literalState=false, stateSchemaRecovery=false;
@@ -1057,10 +1072,11 @@ export class ModelGateway {
     }), operation, validate, final ? 'guide' : 'state');
   }
 
-  async request(body, operation, validate, generation, streamSchema,{uniqueJsonKeys=false}={}) {
+  async request(body, operation, validate, generation, streamSchema,{uniqueJsonKeys=false,relationshipBlockRecovery=false}={}) {
     const generationId=randomUUID();
     let repairReason = null; let repairs = 0; let repairFeedback = null; let schemaFallback = false;
     let structuralFailures=0;
+    let previousMissingUnknowns=false;
     let outputTokens = operation.tokenPolicy?.maxOutputTokens;
     let outputBudgetAdjusted=false;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
@@ -1193,11 +1209,19 @@ export class ModelGateway {
           failure.modelReason==='agent_schema'?failure.modelQuestionIdDiagnostic:null,attemptDiagnostic);
         if(!stopped&&known&&failure.code==='MODEL_INVALID_RESPONSE'&&
           ['agent_schema','content_json','stream_whitespace_stall'].includes(failure.modelReason))structuralFailures++;
-        if(!stopped&&known&&attempt===MAX_ATTEMPTS&&failure.code==='MODEL_INVALID_RESPONSE') {
+        const missingUnknowns=!stopped&&known&&failure.code==='MODEL_INVALID_RESPONSE'&&failure.modelReason==='agent_schema'&&
+          requestFormat==='json_schema'&&missingRelationshipUnknowns(failure.modelFeedback);
+        // Only the combined caller can recover with full blocks and fresh reviews.
+        // Leave json_object's third-attempt grammar promotion and all other errors intact.
+        const earlyBlocks=relationshipBlockRecovery===true&&/^turn_draft(?:_after_review)?$/u.test(generation)&&
+          attempt===2&&structuralFailures===2&&previousMissingUnknowns&&missingUnknowns;
+        previousMissingUnknowns=missingUnknowns;
+        if(!stopped&&known&&(attempt===MAX_ATTEMPTS||earlyBlocks)&&failure.code==='MODEL_INVALID_RESPONSE') {
           Object.defineProperty(failure,'modelAttempts',{value:attempt,enumerable:false,configurable:true});
           Object.defineProperty(failure,'modelStructuralFailures',{value:structuralFailures,enumerable:false,configurable:true});
+          if(earlyBlocks)Object.defineProperty(failure,'modelRelationshipBlockRecovery',{value:true,enumerable:false});
         }
-        if (stopped || !known || attempt === MAX_ATTEMPTS) throw failure;
+        if (stopped || !known || attempt === MAX_ATTEMPTS || earlyBlocks) throw failure;
         if (error.code === 'MODEL_INVALID_RESPONSE') {
           if(this.streamJson&&requestFormat==='json_schema'&&(error.modelReason==='stream_whitespace_stall'||streamStringOverflow)) {
             schemaFallback=true;

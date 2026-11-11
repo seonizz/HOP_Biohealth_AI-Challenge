@@ -351,8 +351,12 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           }
           const row = await store.updateIntake(owner, id, revision, state => {
             const next = action === 'back' ? backIntake(state) : answerIntake(discardModelAnswer(state), input);
-            // A correction invalidates model interpretations of the reverted answers.
-            if (action === 'back') { delete next.agentMemory; delete next.agentRelationshipMemory; delete next.agentResult; delete next.agentRecord; }
+            // This path commits without a model update (offline answers, legacy
+            // skipped answers, or back). Old interpretations/approvals/results
+            // cannot describe the newly committed source, even after reconnecting.
+            delete next.agentMemory; delete next.agentRelationshipMemory; delete next.agentStateExecution;
+            delete next.safetySignal; delete next.agentResult; delete next.agentRecord;
+            next.modelStatus='not_connected';
             return next;
           }, action === 'back' ? 'correction' : 'user_answer');
           cancelRuns(owner, id, revisionConflict(), row.revision);

@@ -761,9 +761,12 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
     if(!blockDraft) {
       try {
         drafted=await gateway.agentComplete('turn_draft'+suffix,draftPrompt(stateRequest,questions)+
-          (literalState?literalStateRepairInstruction({combined:true}):''),input,draftSchema,operation,validateDraft);
+          (literalState?literalStateRepairInstruction({combined:true}):''),input,draftSchema,operation,validateDraft,
+          {relationshipBlockRecovery:true});
       } catch(error) {
-        if(!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE'||error.modelAttempts!==3||error.modelStructuralFailures!==3||
+        const repeatedKeys=error?.modelRelationshipBlockRecovery===true&&error.modelAttempts===2&&error.modelStructuralFailures===2;
+        if(!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE'||
+          (!repeatedKeys&&(error.modelAttempts!==3||error.modelStructuralFailures!==3))||
           !['agent_schema','content_json','stream_whitespace_stall'].includes(error.modelReason))throw error;
         blockDraft=true;failedCandidate=lastCandidate;blockFeedback=error.modelFeedback;feedbackBlock=undefined;
         rememberBlocks();
