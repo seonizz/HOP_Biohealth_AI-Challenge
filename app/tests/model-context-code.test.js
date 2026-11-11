@@ -16,6 +16,28 @@ const makeGateway=(fetchImpl,extra={})=>new ModelGateway({baseUrl:'https://synth
 const complete=gateway=>gateway.operation({},operation=>gateway.agentComplete(
   'speech_review','독립 검토',{source:SOURCE},{type:'object'},operation,value=>value));
 
+test('llama.cpp typed capacity errors preserve source and output budget without blind retries',async()=>{
+  const requests=[];
+  const gateway=makeGateway(async(_url,options)=>{
+    if(options.method==='GET')return policy();
+    requests.push(JSON.parse(options.body));
+    return contextError({type:'exceed_context_size_error',code:400,message:'request exceeds available context'});
+  },{retryFailures:true,retryDelayMs:1});
+  await assert.rejects(complete(gateway),{code:'MODEL_CONTEXT_TOO_LONG',modelReason:'context_budget'});
+  assert.equal(requests.length,1);
+  assert.equal(requests[0].max_tokens,8192);
+  assert.equal(JSON.parse(requests[0].messages.at(-1).content).data.source,SOURCE);
+});
+
+test('llama.cpp numeric status alone or contradictory codes do not mean context overflow',async()=>{
+  for(const error of [{type:'invalid_request_error',code:400},
+    {type:'exceed_context_size_error',code:'invalid_model'},
+    {type:'exceed_context_size_error',code:500}]) {
+    const gateway=makeGateway(async(_url,options)=>options.method==='GET'?policy():contextError(error));
+    await assert.rejects(complete(gateway),{code:'MODEL_UPSTREAM_ERROR'});
+  }
+});
+
 function discoverFixedPolicy(value) {
   const fetch=value.gateway.fetchImpl;
   value.gateway.discoverTokenLimits=true;

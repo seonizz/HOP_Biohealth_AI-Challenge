@@ -242,6 +242,9 @@ function validMemory(value, context) {
 
 function contextBudgetError(value, status) {
   if (status === 422) return value?.error?.code === 'context_budget_exceeded';
+  // llama.cpp uses an HTTP numeric code plus a dedicated capacity error type.
+  if (status === 400 && value?.error?.type === 'exceed_context_size_error' &&
+      value.error.code === 400) return true;
   // The 31B worker supplies a stable code; its message is not a token-count contract.
   if (status === 400 && value?.error?.type === 'invalid_request_error' &&
       value.error.code === 'context_length_exceeded') return true;
