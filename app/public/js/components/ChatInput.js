@@ -149,7 +149,8 @@ const ChatInput={
           if(m.input){
             return openDetail(k);
           }
-          btns.forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));
+          const deselect=q.allowCustomWithSelection&&b.getAttribute("aria-pressed")==="true";
+          btns.forEach(x=>x.setAttribute("aria-pressed",x===b&&!deselect?"true":"false"));
           if(q.allowCustomWithSelection)return;
           return submit(optLabel(o),[k],"");
         }

@@ -105,6 +105,18 @@ test('one-choice submitted selection is restored visually without clicking or su
   assert.deepEqual(plain(fixture.input.captureDraft().selected),[1]);assert.equal(fixture.calls.length,0);
 });
 
+test('clearing a v3 single choice persists across refresh while custom input remains',async()=>{
+  const current=view({bundle_id:'malssi-intake-3.0.0-rc1',question:{id:'q3_05',instance_id:'q3_05:1',
+    type:'one',opts:['아직 아무것도 하지 않았어요'],allowCustomWithSelection:true}});
+  const fixture=await draftHarness();fixture.render(current);
+  const chip=fixture.document.getElementById('input').querySelector('.chip');
+  chip.click();fixture.edit('own','제가 먼저 말을 걸었어요.');chip.click();
+  const refreshed=await draftHarness({saved:fixture.saved});assert.equal(refreshed.render(current),true);
+  assert.deepEqual(plain(refreshed.input.captureDraft().selected),[]);
+  assert.equal(refreshed.document.getElementById('own').value,'제가 먼저 말을 걸었어요.');
+  assert.equal(refreshed.calls.length,0);
+});
+
 test('clearing a pending answer intentionally stays blank after refresh',async()=>{
   const pending=view({revision:2,model_pending:true,pending_answer:{revision:1,question_id:'concern',text:'이전 답변',follow_up:false}});
   const first=await draftHarness();first.render(pending);first.input.restoreDraft({text:'이전 답변'});first.edit('ta','');
@@ -185,6 +197,109 @@ function attachConversation(fixture,request){
   vm.runInContext(source('core/conversation.js')+'\nglobalThis.flow={renderConversation,recoverConversation,pendingAnswerDraft,getState:()=>S};',fixture.context);
   return fixture.context.flow;
 }
+
+const v3View=(question,overrides={})=>view({bundle_id:'malssi-intake-3.0.0-rc1',
+  question:{response_controls:true,...question,instance_id:`malssi-intake-3.0.0-rc1:${question.id}:1`},...overrides});
+const clickHelp=fixture=>fixture.document.getElementById('input').querySelectorAll('button').find(button=>button.textContent==='질문 설명').click();
+
+for(const question of [
+  {id:'q3_01',type:'one',opts:['목적 하나','목적 둘'],allowCustomWithSelection:true},
+  {id:'q3_03',type:'text'},
+  {id:'q3_08',type:'multi',opts:['듣기','연락']},
+  {id:'q3_10',type:'one',opts:['시점 직접 입력','모름'],allowCustomWithSelection:true,follow_up:true},
+])test(`first help preserves ${question.id} selections and text across its confirmed revision and refresh`,async()=>{
+  const fixture=await draftHarness(),initial=v3View(question),help={...initial,revision:3};
+  const flow=attachConversation(fixture,async()=>help);
+  flow.renderConversation(initial,0);
+  if(question.type!=='text')fixture.document.getElementById('input').querySelector('.chip').click();
+  fixture.edit(question.type==='text'?'ta':'own','설명을 보고 이어 작성할 초안');
+  const before=plain(fixture.input.captureDraft());
+  await clickHelp(fixture);
+  assert.deepEqual(plain(fixture.input.captureDraft()),before);
+  assert.equal(fixture.drafts.entries[fixture.drafts.identity(initial)],undefined);
+  const refreshed=await draftHarness({saved:fixture.saved});
+  assert.equal(refreshed.render(help),true);
+  assert.deepEqual(plain(refreshed.input.captureDraft()),before);
+  assert.equal(refreshed.calls.length,0);
+});
+
+test('first help retains independently typed ahead text without copying it into the current answer',async()=>{
+  const fixture=await draftHarness(),initial=v3View({id:'q3_01',type:'one',opts:['목적'],allowCustomWithSelection:true});
+  let resolve;
+  const flow=attachConversation(fixture,()=>new Promise(done=>{resolve=done;}));
+  flow.renderConversation(initial,0);fixture.document.getElementById('input').querySelector('.chip').click();
+  const pending=clickHelp(fixture);
+  fixture.edit('next-answer','미리 작성한 별도 초안');
+  resolve({...initial,revision:3});await pending;
+  assert.equal(fixture.document.getElementById('own').value,'');
+  assert.equal(fixture.input.captureDraft().nextText,'미리 작성한 별도 초안');
+  assert.deepEqual(plain(fixture.input.captureDraft().selected),[0]);
+  const refreshed=await draftHarness({saved:fixture.saved});refreshed.render({...initial,revision:3});
+  assert.deepEqual(plain(refreshed.input.captureDraft()),plain(fixture.input.captureDraft()));
+});
+
+test('first help restores the current editor in memory when tab storage is blocked',async()=>{
+  const fixture=await draftHarness({denied:true}),initial=v3View({id:'q3_01',type:'one',opts:['목적'],allowCustomWithSelection:true});
+  let resolve;
+  const flow=attachConversation(fixture,()=>new Promise(done=>{resolve=done;}));
+  flow.renderConversation(initial,0);fixture.document.getElementById('input').querySelector('.chip').click();fixture.edit('own','저장소 없이 이어 쓰기');
+  const pending=clickHelp(fixture);fixture.edit('next-answer','별도로 미리 쓴 내용');
+  resolve({...initial,revision:3});await pending;
+  assert.equal(fixture.drafts.storageKey,null);
+  assert.equal(fixture.document.getElementById('own').value,'저장소 없이 이어 쓰기');
+  assert.deepEqual(plain(fixture.input.captureDraft().selected),[0]);
+  assert.equal(fixture.input.captureDraft().nextText,'별도로 미리 쓴 내용');
+});
+
+test('help response recovered after a lost connection preserves the current draft',async()=>{
+  const fixture=await draftHarness(),initial=v3View({id:'q3_03',type:'text'}),help={...initial,revision:3};
+  const flow=attachConversation(fixture,async(_path,options)=>{
+    if(options?.method==='POST')throw Object.assign(new Error('lost response'),{status:0});
+    return help;
+  });
+  flow.renderConversation(initial,0);fixture.edit('ta','전송 응답이 끊겨도 보존할 초안');
+  await clickHelp(fixture);
+  assert.equal(fixture.document.getElementById('ta').value,'전송 응답이 끊겨도 보존할 초안');
+  const refreshed=await draftHarness({saved:fixture.saved});assert.equal(refreshed.render(help),true);
+  assert.equal(refreshed.document.getElementById('ta').value,'전송 응답이 끊겨도 보존할 초안');
+});
+
+test('retrying pending help preserves edits made after its failure',async()=>{
+  const fixture=await draftHarness(),initial=v3View({id:'q3_01',type:'one',opts:['목적'],allowCustomWithSelection:true});
+  let pending,posts=0;
+  const flow=attachConversation(fixture,async(_path,options)=>{
+    if(options?.method!=='POST')return pending;
+    if(++posts===1){
+      pending={...initial,revision:2,model_pending:true,pending_answer:plain(options.body)};
+      throw Object.assign(new Error('model retry'),{status:502,code:'MODEL_INVALID_RESPONSE'});
+    }
+    return {...initial,revision:3};
+  });
+  flow.renderConversation(initial,0);fixture.document.getElementById('input').querySelector('.chip').click();fixture.edit('own','처음 초안');
+  await clickHelp(fixture);fixture.edit('own','실패 뒤 고친 초안');
+  await fixture.document.getElementById('input').querySelectorAll('button').find(button=>button.textContent==='다시 시도').click();
+  assert.equal(posts,2);assert.equal(fixture.document.getElementById('own').value,'실패 뒤 고친 초안');
+  assert.deepEqual(plain(fixture.input.captureDraft().selected),[0]);
+  const refreshed=await draftHarness({saved:fixture.saved});assert.equal(refreshed.render({...initial,revision:3}),true);
+  assert.equal(refreshed.document.getElementById('own').value,'실패 뒤 고친 초안');
+});
+
+for(const boundary of ['second-help','skip','stop','different-intake','different-bundle','different-instance'])test(`help draft is not carried across ${boundary}`,async()=>{
+  const fixture=await draftHarness(),initial=v3View({id:'q3_03',type:'text'});
+  let next={...initial,revision:3};
+  if(boundary==='second-help'||boundary==='skip')next=v3View({id:'q3_04',type:'text'},{revision:3});
+  if(boundary==='stop')next={...next,status:'ready',question:null,user_stopped:true};
+  if(boundary==='different-intake')next={...next,id:'another'};
+  if(boundary==='different-bundle')next={...next,bundle_id:'different-bundle'};
+  if(boundary==='different-instance')next={...next,question:{...next.question,instance_id:'different-instance'}};
+  const flow=attachConversation(fixture,async()=>next);
+  flow.renderConversation(initial,0);fixture.edit('ta','다른 상태로 넘기지 않을 초안');
+  const label=boundary==='skip'?'건너뛰기':boundary==='stop'?'여기까지 할게요':'질문 설명';
+  await fixture.document.getElementById('input').querySelectorAll('button').find(button=>button.textContent===label).click();
+  assert.equal(fixture.drafts.entries[fixture.drafts.identity(initial)],undefined);
+  assert.ok(!fixture.document.getElementById('ta')?.value);
+  assert.equal(fixture.drafts.entries[fixture.drafts.identity(next)],undefined);
+});
 
 test('pending refresh restores the server answer and automatically resumes its saved request',async()=>{
   const fixture=await draftHarness(),calls=[];

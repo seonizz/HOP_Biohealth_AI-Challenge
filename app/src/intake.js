@@ -216,9 +216,10 @@ function answerV3(originalState, question, input) {
     if (question.id === 'q3_01') progress.goal_epoch++;
     // Previously skipped, unshown questions are reconsidered against every new source.
     state.modelSkipped = {};
-    // A changed goal reopens eligibility of every unshown question, including
-    // priorities before the prompt from which the user returned to edit it.
-    state.i = correction && question.id !== 'q3_01' ? progress.returnIndex ?? state.i + 1 : 0;
+    // Corrections can invalidate earlier skips just like a changed goal.
+    // advance skips saved answers and retains an issued but unanswered prompt;
+    // buildContext exposes only unshown questions for the model to replan.
+    state.i = 0;
     delete progress.returnIndex;
   }
   if (answer.response_event === 'stop') {
@@ -404,7 +405,6 @@ export function backIntake(originalState) {
     const state = structuredClone(originalState);
     const questions = state.questionSet.questions;
     const previousIndex = questions.findLastIndex((question, index) => index < state.i && state.ans[question.id]);
-    state.v3.returnIndex ??= state.i;
     state.i = previousIndex;
     state.v3.editingQuestion = questions[previousIndex].id;
     state.pendingFollow = null;

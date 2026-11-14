@@ -1461,6 +1461,38 @@ test('v3 single choice waits for Send and submits the selected purpose together 
   assert.equal(context.submitted[0][2],'추가로 원하는 내용');
 });
 
+test('v3 single choice can be cleared before Send without losing custom input',async()=>{
+  const document=documentWith(['input']),submitted=[],context=vm.createContext({document,setTimeout,clearTimeout});
+  vm.runInContext(script('core/utils.js')+script('core/questions.js')+script('components/ChatInput.js')+';globalThis.inputUI=ChatInput;',context);
+  context.inputUI.render({id:'q3_05',type:'one',opts:['아직 아무것도 하지 않았어요'],allowCustomWithSelection:true},(...args)=>submitted.push(args));
+  const chip=document.querySelectorAll('.chip')[0];
+  await chip.click();document.getElementById('own').value='제가 먼저 말을 걸었어요.';await chip.click();
+  assert.equal(chip.getAttribute('aria-pressed'),'false');
+  assert.equal(document.getElementById('own').value,'제가 먼저 말을 걸었어요.');
+  assert.equal(submitted.length,0);
+  await document.getElementById('ownSend').click();
+  assert.equal(submitted[0][0],'제가 먼저 말을 걸었어요.');assert.deepEqual(Array.from(submitted[0][1]),[]);
+});
+
+test('v3 choosing another single option replaces the selection and retains custom input',async()=>{
+  const document=documentWith(['input']),submitted=[],context=vm.createContext({document,setTimeout,clearTimeout});
+  vm.runInContext(script('core/utils.js')+script('core/questions.js')+script('components/ChatInput.js')+';globalThis.inputUI=ChatInput;',context);
+  context.inputUI.render({id:'q3_01',type:'one',opts:['첫 목적','바꾼 목적'],allowCustomWithSelection:true},(...args)=>submitted.push(args));
+  const chips=document.querySelectorAll('.chip');await chips[0].click();document.getElementById('own').value='세부 내용';await chips[1].click();
+  assert.deepEqual(chips.map(chip=>chip.getAttribute('aria-pressed')),['false','true']);assert.equal(submitted.length,0);
+  await document.getElementById('ownSend').click();
+  assert.equal(submitted[0][0],'바꾼 목적, 세부 내용');assert.deepEqual(Array.from(submitted[0][1]),[1]);
+});
+
+test('legacy single choice still submits immediately even when the selected option is clicked again',async()=>{
+  const document=documentWith(['input']),submitted=[],context=vm.createContext({document,setTimeout,clearTimeout});
+  vm.runInContext(script('core/utils.js')+script('core/questions.js')+script('components/ChatInput.js')+';globalThis.inputUI=ChatInput;',context);
+  context.inputUI.render({id:'legacy',type:'one',opts:['보기']},(...args)=>submitted.push(args));
+  const chip=document.querySelectorAll('.chip')[0];await chip.click();await chip.click();
+  assert.equal(submitted.length,2);assert.equal(chip.getAttribute('aria-pressed'),'true');
+  assert.deepEqual(Array.from(submitted[1][1]),[0]);
+});
+
 test('v3 explicit response controls preserve typed safety content and send a separate intent', async () => {
   for (const [label,event] of [['잘 모르겠어요','unknown'],['답하고 싶지 않아요','refused'],['질문 설명','not_understood'],['여기까지 할게요','stop']]) {
     const document = documentWith(['input']);

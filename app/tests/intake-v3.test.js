@@ -269,6 +269,69 @@ test('changing the goal replans earlier unshown skips before returning to an alr
   assert.equal(state.ans.q3_06, undefined);
 });
 
+test('correcting Q9 from a final Q10 replans unshown questions and preserves the consumed clarification across retry', () => {
+  const ids = ['q3_02','q3_03','q3_04','q3_05','q3_06','q3_07','q3_08'];
+  const skips = (context, sourceId) => ids.map(question_id => ({question_id, reason:'not_needed',
+    explanation:'현재 요청은 이미 보고한 범위의 문안 정리입니다.',
+    evidence:[{subject:'supporter',question_id:sourceId,quote:context.supporter.fields[sourceId].rawText}]}));
+  let pending = pendingGoal('가능한 범위만 짧게 정리하고 싶어요.');
+  let state = completeModelAnswer(pending, model({question_plan:{skip:skips(buildContext(pending),'q3_01')}}));
+  assert.equal(currentView(state).question.id, 'q3_09');
+  pending = prepareModelAnswer(state, {question_id:'q3_09',text:'친구에게 자료를 읽어 준다고 했어요.'}, 2);
+  const source = buildContext(pending).supporter.fields.q3_09;
+  state = completeModelAnswer(pending, model({question_plan:{skip:skips(buildContext(pending),'q3_09')},
+    clarification:{source_question_id:'q3_09',source_revision:source.source_revision,component:'rawText',event_id:'read_material',
+      quote:source.rawText,quote_start:0,quote_end:Array.from(source.rawText).length,axis:'execution',role:null,agreement_item_id:null}}));
+  assert.equal(currentView(state).question.id, 'q3_10');
+  const issued = structuredClone(state.v3.issued), goal = structuredClone(state.ans.q3_01);
+  state = backIntake(state);
+  assert.equal(currentView(state).question.id, 'q3_09');
+  const input = {question_id:'q3_09',text:'정정합니다. 아직 도움을 정하지 않았고 상대의 요청과 제 여건부터 확인하고 싶어요.'};
+  pending = prepareModelAnswer(state, input, 4);
+  for (const attempt of [pending, prepareModelAnswer(pending, input, 5)]) {
+    const context = buildContext(attempt);
+    assert.deepEqual(context.question_candidates.map(q => q.id), ids);
+    assert.deepEqual(attempt.v3.issued, issued);
+    assert.equal(context.clarification_available, false);
+    assert.equal(context.clarification_state.status, 'obsolete');
+    const completed = completeModelAnswer(attempt, model());
+    assert.equal(completed.status, 'active');
+    assert.equal(currentView(completed).question.id, 'q3_02');
+    assert.deepEqual(completed.ans.q3_01, goal);
+    assert.equal(completed.ans.q3_09.rawText, input.text);
+    assert.deepEqual(completed.v3.issued.q3_10, issued.q3_10);
+    assert.deepEqual(Object.keys(completed.v3.issued), ['q3_01','q3_09','q3_10','q3_02']);
+    assert.equal(completed.clarificationAnswers?.q3_10, undefined);
+  }
+});
+
+test('ordinary correction can reskip earlier candidates and return to the same unanswered issued question', () => {
+  const skips = (context, ids, sourceId, subject) => ids.map(question_id => ({question_id, reason:'not_needed',
+    explanation:'현재 요청은 원문에 보고한 범위만 정리하면 됩니다.',
+    evidence:[{subject,question_id:sourceId,quote:context[subject].fields[sourceId].rawText}]}));
+  let pending = pendingGoal('지금 말한 내용만 짧게 정리하고 싶어요.');
+  let state = completeModelAnswer(pending, model({question_plan:{skip:skips(buildContext(pending),['q3_02'],'q3_01','supporter')}}));
+  assert.equal(currentView(state).question.id, 'q3_03');
+  pending = prepareModelAnswer(state, {question_id:'q3_03',text:'친구에게 제 여건을 설명했어요.'}, 2);
+  state = completeModelAnswer(pending, model({question_plan:{skip:skips(buildContext(pending),['q3_02','q3_04','q3_05'],'q3_03','patient')}}));
+  assert.equal(currentView(state).question.id, 'q3_06');
+  const issued = structuredClone(state.v3.issued), goalEpoch = state.v3.goal_epoch;
+  state = backIntake(state);
+  assert.equal(currentView(state).question.id, 'q3_03');
+  pending = prepareModelAnswer(state, {question_id:'q3_03',text:'정정합니다. 아직 여건을 설명하지 않았어요.'}, 4);
+  const context = buildContext(pending);
+  assert.deepEqual(context.question_candidates.slice(0,3).map(q => q.id), ['q3_02','q3_04','q3_05']);
+  assert.equal(context.question_candidates.some(q => Object.hasOwn(issued,q.id)), false);
+  assert.deepEqual(pending.v3.issued, issued);
+  state = completeModelAnswer(pending, model({question_plan:{skip:skips(context,['q3_02','q3_04','q3_05'],'q3_03','patient')}}));
+  assert.equal(currentView(state).question.id, 'q3_06');
+  assert.equal(currentView(state).question.instance_id, issued.q3_06.instance_id);
+  assert.deepEqual(state.v3.issued, issued);
+  assert.equal(state.v3.goal_epoch, goalEpoch);
+  assert.equal(state.ans.q3_06, undefined);
+  assert.equal(state.ans.q3_03.rawText, '정정합니다. 아직 여건을 설명하지 않았어요.');
+});
+
 test('v3 selected answers preserve independent submitted raw text for complete safety review', () => {
   const raw = '  지금 친구가 다쳤어요.\n제가 직접 본 상황이에요.  ';
   const state = reply(start(), {selected:[0],text:raw,custom:'짧은 거절 문장도 필요해요.'});

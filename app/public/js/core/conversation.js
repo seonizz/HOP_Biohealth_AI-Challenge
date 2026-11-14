@@ -84,7 +84,7 @@ async function resumeConversation(id){
   }finally{if(token===conversationToken&&S?.id===id)resumingConversationId=null;}
 }
 
-function renderConversation(view,token,nextText=""){
+function renderConversation(view,token,nextText="",helpDraft=null){
   if(token!==conversationToken)return;
   if(typeof ConversationDrafts!=="undefined")ConversationDrafts.save();
   ChatScreen.think(false);
@@ -106,6 +106,10 @@ function renderConversation(view,token,nextText=""){
   const q=view.question;
   ChatInput.render(q,(text,selected,custom="",skipped=false,responseEvent)=>answer(text,selected,custom,skipped,responseEvent),view.canGoBack?goBack:null);
   const restored=typeof ConversationDrafts!=="undefined"&&ConversationDrafts.restore(view);
+  if(helpDraft){
+    ChatInput.restoreDraft(helpDraft);
+    if(typeof ConversationDrafts!=="undefined")ConversationDrafts.save(true);
+  }
   if(!view.model_pending){
     ChatInput.acceptTypeAhead?.(nextText);
     if(nextText&&typeof ConversationDrafts!=="undefined")ConversationDrafts.save(true);
@@ -152,7 +156,19 @@ function conversationErrorMessage(error){
   return messages[error.code]||(error.code?.startsWith("MODEL_")?"답변을 준비하지 못했어요. 대화 내용은 저장되어 있으니 다시 시도해 주세요.":error.message);
 }
 
-async function recoverConversation(error,token,retry,present=(message,operation)=>ChatInput.error(message,operation),current=()=>token===conversationToken){
+// A first help response redisplays the same v3 instance without consuming its answer.
+// Carry the editor only across that confirmed response, never another question or stop.
+function retainedHelpDraft(before,after,input){
+  const question=before?.question,next=after?.question;
+  if(input?.response_event!=="not_understood"||!before?.bundle_id||after?.bundle_id!==before.bundle_id||
+    after.id!==before.id||after.status!=="active"||after.model_pending||after.user_stopped||after.input_locked||
+    !Number.isInteger(after.revision)||after.revision<=before.revision||!question?.instance_id||
+    next?.instance_id!==question.instance_id||next.id!==question.id||!!next.follow_up!==!!question.follow_up||
+    input.question_id!==question.id||input.instance_id!==question.instance_id)return null;
+  return ChatInput.captureDraft();
+}
+
+async function recoverConversation(error,token,retry,present=(message,operation)=>ChatInput.error(message,operation),current=()=>token===conversationToken,submittedAnswer=null){
   if(error.code==="REQUEST_CANCELLED")return;
   if(!current())return;
   const modelError=error.code?.startsWith("MODEL_");
@@ -170,8 +186,9 @@ async function recoverConversation(error,token,retry,present=(message,operation)
       }else{
         if(view.status==="ready"&&view.revision===S.revision){present(conversationErrorMessage(error),retry);return;}
         const nextText=ChatInput.typeAhead?.()||"";
+        const helpDraft=retainedHelpDraft(S,view,submittedAnswer);
         if(typeof ConversationDrafts!=="undefined")ConversationDrafts.clear(S);
-        renderConversation(view,token,nextText);return;
+        renderConversation(view,token,helpDraft?"":nextText,helpDraft);return;
       }
     }catch(readError){error=readError;}
   }
@@ -194,10 +211,11 @@ async function submitConversation(path,body,token,message,detailPrompt){
     const view=await ChatScreen.typing(S?.question?.face||"ponder",()=>token===conversationToken?requestConversation(path,{method:"POST",body},token):null);
     if(token===conversationToken){
       const nextText=ChatInput.typeAhead?.()||"";
+      const helpDraft=retainedHelpDraft(submittedView,view,body);
       if(message&&typeof ConversationDrafts!=="undefined")ConversationDrafts.clear(submittedView);
-      renderConversation(view,token,nextText);
+      renderConversation(view,token,helpDraft?"":nextText,helpDraft);
     }
-  }catch(error){await recoverConversation(error,token,()=>submitConversation(path,{...body,revision:S.revision},token,message,detailPrompt));}
+  }catch(error){await recoverConversation(error,token,()=>submitConversation(path,{...body,revision:S.revision},token,message,detailPrompt),undefined,undefined,body);}
 }
 
 function pendingConversationLog(){

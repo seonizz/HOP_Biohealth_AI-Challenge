@@ -7,7 +7,7 @@ import {safetySources,agentContext} from '../src/relationship-agent.js';
 import {HttpError} from '../src/errors.js';
 
 const databaseUrl=process.env.TEST_DATABASE_URL;
-async function fixture(t,{clarify=false,failStopOnce=false}={}) {
+async function fixture(t,{clarify=false,failStopOnce=false,questionUpdate}={}) {
   const schema='test_v3_api_'+randomUUID().replaceAll('-','');
   const admin=new pg.Pool({connectionString:databaseUrl,connectionTimeoutMillis:5000});
   await admin.query(`CREATE SCHEMA ${schema}`);
@@ -18,6 +18,7 @@ async function fixture(t,{clarify=false,failStopOnce=false}={}) {
     if(failStopOnce&&context.user_stopped&&!failedStop){failedStop=true;throw new HttpError(503,'MODEL_UNAVAILABLE','합성 모델 연결 실패');}
     const field=context.patient.fields.q3_03;
     return {patient_state:{summary:'인터페이스 검사용',facts:[],unknowns:[],user_goal:context.user_goal.message?.text||'확인되지 않음'},name_index:null,question_plan:{skip:[]},
+      ...(questionUpdate?.(context)||{}),
       ...(clarify&&context.clarification_available&&field?.status==='answered'?{clarification:{source_question_id:field.id,source_revision:field.source_revision,component:'rawText',event_id:'reported_speech',quote:field.rawText,quote_start:0,quote_end:Array.from(field.rawText).length,axis:'actor',role:'speaker'}}:{})};
   },async respond(context){return {patient_state:{summary:'합성 인터페이스 결과',facts:[],unknowns:[],user_goal:context.user_goal.message?.text||'확인되지 않음'},name_index:null,
     assessment:{safety:false},guide:{top:'통합',script:'내가 가능한 범위에서 이야기하고 싶어.',doList:['가능한 범위를 말해 보세요.'],avoid:['상대의 마음을 단정하지 마세요.'],next:'서로 원하는 범위를 확인해 보세요.',care:{feel:'나의 마음도 살펴봐 주세요.',tips:['잠시 쉬어도 괜찮아요.']}}};}};
@@ -91,6 +92,41 @@ test('v3 HTTP renders bound Q10 once and keeps the single selected axis through 
   assert.deepEqual(context.clarification_state.assignment,{event_id:'reported_speech',axis:'actor',value:'user',role:'speaker'});
   assert.equal(context.clarification_available,false);
   const stale=await f.request(`/api/intakes/${v.id}/answers`,'POST',{revision:v.revision,question_id:'q3_10',follow_up:true,selected:[1]});
+  assert.equal(stale.status,409);
+});
+
+test('v3 persisted correction from final Q10 replans unshown questions without refunding clarification', {skip:!databaseUrl},async t=>{
+  const ids=['q3_02','q3_03','q3_04','q3_05','q3_06','q3_07','q3_08'];
+  const f=await fixture(t,{questionUpdate(context){
+    const sourceId=context.latest_answer.question_id,source=context.supporter.fields[sourceId];
+    if(!['q3_01','q3_09'].includes(sourceId)||source.rawText.startsWith('정정'))return {};
+    const question_plan={skip:ids.map(question_id=>({question_id,reason:'not_needed',explanation:'지금 요청은 보고한 범위의 짧은 문안 정리입니다.',
+      evidence:[{subject:'supporter',question_id:sourceId,quote:source.rawText}]}))};
+    return {question_plan,...(sourceId==='q3_09'?{clarification:{source_question_id:sourceId,source_revision:source.source_revision,
+      component:'rawText',event_id:'read_material',quote:source.rawText,quote_start:0,quote_end:Array.from(source.rawText).length,
+      axis:'execution',role:null,agreement_item_id:null}}:{})};
+  }});
+  let v=await f.answer(f.view,{custom:'가능한 범위만 짧게 정리하고 싶어요.'});
+  assert.equal(v.question.id,'q3_09');
+  v=await f.answer(v,{text:'친구에게 자료를 읽어 준다고 했어요.'});
+  assert.equal(v.question.id,'q3_10');
+  const clarificationInstance=v.question.instance_id;
+  const back=await f.request(`/api/intakes/${v.id}/back`,'POST',{revision:v.revision});
+  assert.equal(back.status,200);v=back.data;
+  assert.equal(v.question.id,'q3_09');
+  v=await f.answer(v,{text:'정정합니다. 아직 도움을 정하지 않았고 상대의 요청과 제 여건부터 확인하고 싶어요.'});
+  assert.equal(v.status,'active');
+  assert.equal(v.question.id,'q3_02');
+  assert.deepEqual(f.seen.at(-1).question_candidates.map(q=>q.id),ids);
+  assert.equal(v.question_instances,4);
+  const context=(await f.request(`/api/intakes/${v.id}/context`)).data.context;
+  assert.equal(context.clarification_available,false);
+  assert.equal(context.clarification_state.status,'obsolete');
+  assert.equal(context.clarification_state.binding.instance_id,clarificationInstance);
+  assert.equal(context.clarification_state.assignment,undefined);
+  assert.match(context.supporter.fields.q3_09.rawText,/^정정/);
+  assert.deepEqual((await f.request(`/api/intakes/${v.id}`)).data,v);
+  const stale=await f.request(`/api/intakes/${v.id}/answers`,'POST',{revision:v.revision,question_id:'q3_10',instance_id:clarificationInstance,follow_up:true,selected:[0]});
   assert.equal(stale.status,409);
 });
 
