@@ -193,7 +193,7 @@
     },
     "/api/questions": {
       "get": {
-        "summary": "DB의 현재 질문 목록 (기본 구성 29문항)",
+        "summary": "DB의 현재 질문 목록 (v3 기본 9문항, 조건부 확인 1문항)",
         "responses": {
           "200": {
             "description": "성공",
@@ -477,7 +477,56 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object"
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "question_id": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "custom": {
+                    "type": "string",
+                    "maxLength": 10000
+                  },
+                  "selected": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  },
+                  "skipped": {
+                    "type": "boolean"
+                  },
+                  "follow_up": {
+                    "type": "boolean"
+                  },
+                  "response_event": {
+                    "type": "string",
+                    "enum": [
+                      "answered",
+                      "unknown",
+                      "skipped",
+                      "refused",
+                      "not_understood",
+                      "stop"
+                    ]
+                  },
+                  "instance_id": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "revision",
+                  "question_id"
+                ],
+                "additionalProperties": false
               }
             }
           }
@@ -2075,7 +2124,17 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "allOf": [{"$ref": "#/components/schemas/ContinuationEnvelope"}, {"type": "object", "required": ["card"]}]
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ContinuationEnvelope"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "card"
+                      ]
+                    }
+                  ]
                 }
               }
             }
@@ -2542,24 +2601,60 @@
                 "items": {
                   "type": "object",
                   "additionalProperties": false,
-                  "required": ["subject", "code", "reason", "quotes"],
+                  "required": [
+                    "subject",
+                    "code",
+                    "reason",
+                    "quotes"
+                  ],
                   "properties": {
-                    "subject": {"type": "string", "enum": ["patient", "supporter", "other", "unclear"]},
+                    "subject": {
+                      "type": "string",
+                      "enum": [
+                        "patient",
+                        "supporter",
+                        "other",
+                        "unclear"
+                      ]
+                    },
                     "code": {
                       "type": "string",
                       "nullable": true,
-                      "enum": ["current_suicidal_thoughts", "self_harm_action", "immediate_violence", "physical_emergency", "wish_to_die_or_self_harm_concern", "self_harm_history", "abuse_or_neglect", "severe_function_impairment", "mental_health_concern", "substance_use_concern", "support_requested", null]
+                      "enum": [
+                        "current_suicidal_thoughts",
+                        "self_harm_action",
+                        "immediate_violence",
+                        "physical_emergency",
+                        "wish_to_die_or_self_harm_concern",
+                        "self_harm_history",
+                        "abuse_or_neglect",
+                        "severe_function_impairment",
+                        "mental_health_concern",
+                        "substance_use_concern",
+                        "support_requested",
+                        null
+                      ]
                     },
-                    "reason": {"type": "string"},
+                    "reason": {
+                      "type": "string"
+                    },
                     "quotes": {
                       "type": "array",
                       "items": {
                         "type": "object",
                         "additionalProperties": false,
-                        "required": ["question_id", "text"],
+                        "required": [
+                          "question_id",
+                          "text"
+                        ],
                         "properties": {
-                          "question_id": {"type": "string"},
-                          "text": {"type": "string", "description": "현재 저장된 답변에서 가져온, 수정하지 않은 전체 원문"}
+                          "question_id": {
+                            "type": "string"
+                          },
+                          "text": {
+                            "type": "string",
+                            "description": "현재 저장된 답변에서 가져온, 수정하지 않은 전체 원문"
+                          }
                         }
                       }
                     }

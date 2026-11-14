@@ -47,9 +47,9 @@ const revisionOf = value => {
   return value;
 };
 const sameAnswer = (a, b) => JSON.stringify([
-  a.question_id, a.text ?? '', a.selected ?? [], a.custom ?? '', a.skipped === undefined ? false : a.skipped, a.follow_up === undefined ? false : a.follow_up,
+  a.question_id, a.text ?? '', a.selected ?? [], a.custom ?? '', a.skipped === undefined ? false : a.skipped, a.follow_up === undefined ? false : a.follow_up, a.response_event ?? 'answered', a.instance_id ?? null,
 ]) === JSON.stringify([
-  b.question_id, b.text ?? '', b.selected ?? [], b.custom ?? '', b.skipped === undefined ? false : b.skipped, b.follow_up === undefined ? false : b.follow_up,
+  b.question_id, b.text ?? '', b.selected ?? [], b.custom ?? '', b.skipped === undefined ? false : b.skipped, b.follow_up === undefined ? false : b.follow_up, b.response_event ?? 'answered', b.instance_id ?? null,
 ]);
 const revisionConflict = () => new HttpError(409, 'REVISION_CONFLICT', '다른 요청이 먼저 반영됐어요. 현재 질문을 다시 확인해 주세요.');
 const cancelled = () => new HttpError(499, 'MODEL_CANCELLED', '요청이 취소됐어요.');
@@ -314,7 +314,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           return json(res,200,{revision:active?.revision??row.revision,progress:progress.state,cards:progress.cards()});
         }
         if (method === 'POST' && ['answers','back'].includes(action)) {
-          const input = object(await body(req), action === 'back' ? ['revision'] : ['revision','question_id','text','selected','custom','skipped','follow_up']);
+          const input = object(await body(req), action === 'back' ? ['revision'] : ['revision','question_id','text','selected','custom','skipped','follow_up','response_event','instance_id']);
           const revision = revisionOf(input.revision);
           if (gateway && action === 'answers' && (!input.skipped || gateway.protocol==='relationship_agent')) {
             let row = await store.intake(owner, id);
@@ -380,6 +380,9 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             // Rebuild safety metadata from the current saved intake. Contexts
             // written by an older version may omit its approved danger signal.
             const context = buildContext(row.state);
+            if (context.user_stopped && !context.safety_signal?.urgent) {
+              throw new HttpError(409, 'INTAKE_STOPPED', '대화를 종료했어요. 새 대화는 처음 화면에서 시작해 주세요.');
+            }
             signal.throwIfAborted();
             const result = await gateway.respond(context, row.state.agentMemory || null, { requestId, signal, onProgress:event=>{if(!signal.aborted)progress.event(event);},
               onCard:event=>{if(!signal.aborted)progress.card(event);} });

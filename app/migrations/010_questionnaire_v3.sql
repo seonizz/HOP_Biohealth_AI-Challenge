@@ -1,0 +1,328 @@
+-- Preserve prior administrative definitions; existing encrypted intake snapshots are untouched.
+CREATE TABLE IF NOT EXISTS question_bank_archive (
+  bundle_id TEXT PRIMARY KEY,
+  rows JSONB NOT NULL,
+  archived_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+INSERT INTO question_bank_archive(bundle_id, rows)
+SELECT 'before-malssi-intake-3.0.0-rc1', COALESCE(jsonb_agg(to_jsonb(q) ORDER BY sort_order,id), '[]'::jsonb)
+FROM questions q
+ON CONFLICT (bundle_id) DO NOTHING;
+UPDATE questions SET enabled=FALSE, updated_at=CURRENT_TIMESTAMP WHERE enabled;
+INSERT INTO questions(id,kind,sort_order,enabled,subject,definition)
+SELECT id,kind,sort_order,enabled,subject,definition
+FROM jsonb_to_recordset($v3$[
+  {
+    "id": "q3_01",
+    "kind": "base",
+    "sort_order": 100,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "sec": "목적",
+      "face": "ponder",
+      "q": "이번에 어떤 도움을 받고 싶으신가요?",
+      "type": "one",
+      "source_id": "Q3-01",
+      "topic_scope": "goal",
+      "help": "원하는 결과를 골라 주세요. 원하는 말이나 결과가 이미 정해져 있다면 그대로 적어도 됩니다. 여러 목적이 있으면 함께 적어 주세요.",
+      "response_controls": true,
+      "allowCustomWithSelection": true,
+      "opts": [
+        [
+          "거절하거나 선을 긋는 말을 쓰고 싶어요",
+          {
+            "value": "T1"
+          }
+        ],
+        [
+          "가능한 시간을 넣어 제안문을 쓰고 싶어요",
+          {
+            "value": "T2"
+          }
+        ],
+        [
+          "약속이나 합의한 내용을 정리하고 싶어요",
+          {
+            "value": "T3"
+          }
+        ],
+        [
+          "상황을 정리하고 싶어요",
+          {
+            "value": "T4"
+          }
+        ],
+        [
+          "제 생각이나 마음을 정리하고 싶어요",
+          {
+            "value": "T5"
+          }
+        ],
+        [
+          "어떻게 돕거나 말을 꺼낼지 고르고 싶어요",
+          {
+            "value": "T6"
+          }
+        ]
+      ],
+      "ownPh": "알고 있는 내용이나 원하는 내용을 적어 주세요"
+    }
+  },
+  {
+    "id": "q3_02",
+    "kind": "base",
+    "sort_order": 200,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "sec": "관계",
+      "face": "ponder",
+      "q": "이야기하시는 분과는 어떤 관계인가요?",
+      "type": "one",
+      "source_id": "Q3-02",
+      "topic_scope": "relationship",
+      "help": "본인과 상대의 관계만 알려 주세요. 실명은 필요하지 않습니다. 관계만으로 친밀도나 서로 쓰는 말투를 정하지 않습니다.",
+      "response_controls": true,
+      "allowCustomWithSelection": true,
+      "opts": [
+        [
+          "부모",
+          {
+            "value": "parent"
+          }
+        ],
+        [
+          "자녀",
+          {
+            "value": "child"
+          }
+        ],
+        [
+          "배우자",
+          {
+            "value": "spouse"
+          }
+        ],
+        [
+          "연인",
+          {
+            "value": "partner"
+          }
+        ],
+        [
+          "형제자매",
+          {
+            "value": "sibling"
+          }
+        ],
+        [
+          "친구",
+          {
+            "value": "friend"
+          }
+        ],
+        [
+          "직장 동료·선후배",
+          {
+            "value": "coworker"
+          }
+        ],
+        [
+          "그 밖의 관계",
+          {
+            "value": "other"
+          }
+        ]
+      ],
+      "ownPh": "알고 있는 내용이나 원하는 내용을 적어 주세요"
+    }
+  },
+  {
+    "id": "q3_03",
+    "kind": "base",
+    "sort_order": 300,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "sec": "상황",
+      "face": "ponder",
+      "q": "이번에 다루고 싶은 상황을 설명해 주실 수 있나요?",
+      "type": "text",
+      "source_id": "Q3-03",
+      "topic_scope": "scene",
+      "help": "지금 다루고 싶은 장면부터 적어 주세요. 여러 일이면 나누어 적어도 됩니다. 언제의 일인지 아는 범위에서 적어 주세요. 앞으로의 일이나 가정이라면 그대로 밝혀 주세요.",
+      "response_controls": true,
+      "ph": "말하고 싶은 만큼 적어 주세요"
+    }
+  },
+  {
+    "id": "q3_04",
+    "kind": "base",
+    "sort_order": 400,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "sec": "상대의 말과 행동",
+      "face": "ponder",
+      "q": "그 상황에서 상대가 한 말이나 행동은 무엇인가요?",
+      "type": "text",
+      "source_id": "Q3-04",
+      "topic_scope": "target_observation",
+      "help": "직접 확인한 말·행동과 전해 들은 이야기를 구별해 적어 주세요. 해석이나 추측은 그렇게 표시해 주세요. 없는 내용은 채우지 않아도 됩니다.",
+      "response_controls": true,
+      "ph": "말하고 싶은 만큼 적어 주세요"
+    }
+  },
+  {
+    "id": "q3_05",
+    "kind": "base",
+    "sort_order": 500,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "sec": "나의 대응과 상대 반응",
+      "face": "ponder",
+      "q": "그 상황에서 본인이 한 말이나 행동이 있었나요? 있었다면 그 뒤에 확인한 상대의 반응은 무엇인가요?",
+      "type": "one",
+      "source_id": "Q3-05",
+      "topic_scope": "interaction",
+      "help": "실제로 한 대응과 그 뒤에 알게 된 상대의 반응을 나누어 적어 주세요. 둘 중 아는 부분만 답해도 됩니다. 아직 대응하지 않았거나 반응을 모르면 그대로 적어 주세요.",
+      "response_controls": true,
+      "allowCustomWithSelection": true,
+      "opts": [
+        [
+          "아직 아무것도 하지 않았어요",
+          {
+            "value": "no_action_yet"
+          }
+        ]
+      ],
+      "ownPh": "알고 있는 내용이나 원하는 내용을 적어 주세요"
+    }
+  },
+  {
+    "id": "q3_06",
+    "kind": "base",
+    "sort_order": 600,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "sec": "나의 생각과 마음",
+      "face": "ponder",
+      "q": "이 상황에 대해 본인은 어떤 생각이나 마음이 드나요?",
+      "type": "text",
+      "source_id": "Q3-06",
+      "topic_scope": "self_experience",
+      "help": "본인의 생각이나 마음 중 말하고 싶은 부분을 적어 주세요. 그때와 지금이 다르면 구별해도 됩니다. 한 시점이나 한 부분만 답해도 되고, 변화가 없다는 것도 답입니다.",
+      "response_controls": true,
+      "ph": "말하고 싶은 만큼 적어 주세요"
+    }
+  },
+  {
+    "id": "q3_07",
+    "kind": "base",
+    "sort_order": 700,
+    "enabled": true,
+    "subject": "patient",
+    "definition": {
+      "sec": "상대가 표현한 선호",
+      "face": "ponder",
+      "q": "상대가 원하거나 원하지 않는 도움을 직접 말한 적이 있나요? 있다면 어떤 말이었나요?",
+      "type": "one",
+      "source_id": "Q3-07",
+      "topic_scope": "target_preference",
+      "help": "상대가 직접 표현했다고 알고 있는 바람이나 경계를 적어 주세요. 말한 적이 없는 것과 본인이 모르는 것은 다릅니다. 추측으로 채우지 않아도 됩니다.",
+      "response_controls": true,
+      "allowCustomWithSelection": true,
+      "opts": [
+        [
+          "말한 적 없어요",
+          {
+            "value": "not_expressed"
+          }
+        ],
+        [
+          "잘 모르겠어요",
+          {
+            "value": "unknown",
+            "none": 1
+          }
+        ]
+      ],
+      "ownPh": "알고 있는 내용이나 원하는 내용을 적어 주세요"
+    }
+  },
+  {
+    "id": "q3_08",
+    "kind": "base",
+    "sort_order": 800,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "sec": "내가 가능한 도움",
+      "face": "ponder",
+      "q": "이번 상황에서 본인이 할 수 있는 도움의 방법과 범위는 어느 정도인가요?",
+      "type": "multi",
+      "source_id": "Q3-08",
+      "topic_scope": "supporter_capacity",
+      "help": "본인에게 가능한 방법·시간·횟수·범위를 아는 만큼 적어 주세요. 가능하다는 답은 하겠다는 약속이 아닙니다. 여력이 없다는 것도 답입니다.",
+      "response_controls": true,
+      "allowCustomWithSelection": true,
+      "opts": [
+        [
+          "이야기를 들어 줄 수 있어요",
+          {
+            "value": "listen"
+          }
+        ],
+        [
+          "연락할 수 있어요",
+          {
+            "value": "contact"
+          }
+        ],
+        [
+          "만나거나 함께 갈 수 있어요",
+          {
+            "value": "meet_or_accompany"
+          }
+        ],
+        [
+          "일을 나누어 맡을 수 있어요",
+          {
+            "value": "share_work"
+          }
+        ],
+        [
+          "지금은 여력이 거의 없어요",
+          {
+            "value": "little_capacity"
+          }
+        ]
+      ],
+      "ownPh": "알고 있는 내용이나 원하는 내용을 적어 주세요"
+    }
+  },
+  {
+    "id": "q3_09",
+    "kind": "base",
+    "sort_order": 900,
+    "enabled": true,
+    "subject": "supporter",
+    "definition": {
+      "sec": "내가 원하는 선택",
+      "face": "ponder",
+      "q": "이번 상황에서 본인은 어떻게 하고 싶으신가요?",
+      "type": "text",
+      "source_id": "Q3-09",
+      "topic_scope": "supporter_intent",
+      "help": "할 수 있는지와 별개로 원하는 선택과 맡고 싶지 않은 일을 적어 주세요. 지금은 돕지 않기, 일부만 돕기, 아직 정하지 않기도 답이 됩니다.",
+      "response_controls": true,
+      "ph": "말하고 싶은 만큼 적어 주세요"
+    }
+  }
+]$v3$::jsonb)
+AS q(id TEXT,kind TEXT,sort_order INTEGER,enabled BOOLEAN,subject TEXT,definition JSONB)
+ON CONFLICT(id) DO UPDATE SET kind=EXCLUDED.kind,sort_order=EXCLUDED.sort_order,
+  enabled=EXCLUDED.enabled,subject=EXCLUDED.subject,definition=EXCLUDED.definition,updated_at=CURRENT_TIMESTAMP;

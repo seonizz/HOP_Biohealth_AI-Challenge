@@ -1,4 +1,4 @@
-import { contextGoal, nameSourceTexts } from './agent-state.js';
+import { contextGoal, nameSourceTexts, isV3Context, minimumQuestionAnswers } from './agent-state.js';
 import { answerComponents } from './answer-sources.js';
 
 const string = maxLength => ({ type: 'string', minLength: 1, maxLength });
@@ -121,9 +121,9 @@ function questionPlanSchema(context) {
     !['name', 'want', 'cause'].includes(candidate.id) && (!currentField(context, candidate) || currentField(context, candidate).status === 'not_asked'));
   const variants = ['patient', 'supporter', 'user_goal'].flatMap(subject => ['already_covered', 'not_needed'].flatMap(reason => {
     const ids = candidates.filter(candidate => candidate.subject === subject &&
-      (reason === 'already_covered' || (Number.isInteger(context?.answered_count) && context.answered_count >= 5 && !candidate.required && !candidate.noSkip)))
+      (reason === 'already_covered' || (Number.isInteger(context?.answered_count) && context.answered_count >= minimumQuestionAnswers(context) && !candidate.required && !candidate.noSkip)))
       .map(candidate => candidate.id);
-    const evidence = sourceVariants(context, subject === 'patient' ? ['patient', 'user_goal'] : [subject],
+    const evidence = sourceVariants(context, isV3Context(context) ? ['patient', 'supporter', 'user_goal'] : subject === 'patient' ? ['patient', 'user_goal'] : [subject],
       reason === 'already_covered' ? ['answered'] : ['answered', 'unknown']);
     if (!ids.length || !evidence.length) return [];
     return [object({

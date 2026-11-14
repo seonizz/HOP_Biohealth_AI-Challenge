@@ -1,0 +1,567 @@
+{
+  "bundle_id": "malssi-intake-3.0.0-rc1",
+  "schema_version": "1.0.0",
+  "created_date": "2026-11-13",
+  "timezone": "Asia/Seoul",
+  "production_approved": false,
+  "usage": "reference_only",
+  "native_app_contract": false,
+  "tasks": [
+    {
+      "id": "T1",
+      "label": "거절과 경계 표현",
+      "default_output_mode": "brief_text",
+      "allowed_question_ids": [
+        "Q3-01",
+        "Q3-02",
+        "Q3-03",
+        "Q3-09",
+        "Q3-10"
+      ],
+      "required_facts": [
+        "boundary_intent",
+        "boundary_scope"
+      ],
+      "optional_facts": [
+        "relationship",
+        "reported_scene"
+      ],
+      "completion": {
+        "rule_id": "T1_BOUNDARY",
+        "complete_if": "usable_requested_boundary_text_preserves_boundary_intent_and_scope_without_invented_reason_or_alternative",
+        "not_required": [
+          "alternative_time",
+          "target_agreement",
+          "supporter_emotion"
+        ],
+        "limited_if": "requested_boundary_scope_cannot_be_resolved_with_remaining_allowed_information",
+        "forbidden": [
+          "coercive_or_degrading_content",
+          "removing_the_requested_boundary_only_because_imperative_form"
+        ]
+      },
+      "question_needs": {
+        "Q3-02": [
+          "relationship"
+        ],
+        "Q3-03": [
+          "boundary_scope"
+        ],
+        "Q3-09": [
+          "boundary_intent"
+        ]
+      }
+    },
+    {
+      "id": "T2",
+      "label": "가능 시간을 넣은 제안",
+      "default_output_mode": "brief_text",
+      "allowed_question_ids": [
+        "Q3-01",
+        "Q3-02",
+        "Q3-03",
+        "Q3-07",
+        "Q3-08",
+        "Q3-09",
+        "Q3-10"
+      ],
+      "required_facts": [
+        "proposal_intent",
+        "proposed_action",
+        "supporter_available_time"
+      ],
+      "optional_facts": [
+        "relationship",
+        "target_preference"
+      ],
+      "completion": {
+        "rule_id": "T2_TIMED_PROPOSAL",
+        "complete_if": "usable_proposal_includes_user_reported_available_time_at_requested_precision_and_proposed_action",
+        "not_required": [
+          "prior_target_agreement"
+        ],
+        "limited_if": "missing_available_time_or_requested_precision; placeholder_draft_is_limited",
+        "forbidden": [
+          "invented_time",
+          "ability_as_commitment",
+          "proposal_as_existing_agreement"
+        ]
+      },
+      "question_needs": {
+        "Q3-02": [
+          "relationship"
+        ],
+        "Q3-03": [
+          "proposed_action"
+        ],
+        "Q3-07": [
+          "target_preference"
+        ],
+        "Q3-08": [
+          "supporter_available_time"
+        ],
+        "Q3-09": [
+          "proposal_intent"
+        ]
+      }
+    },
+    {
+      "id": "T3",
+      "label": "약속과 합의 정리",
+      "default_output_mode": "structured_summary",
+      "allowed_question_ids": [
+        "Q3-01",
+        "Q3-02",
+        "Q3-03",
+        "Q3-05",
+        "Q3-10"
+      ],
+      "required_facts": [
+        "agreement_items"
+      ],
+      "optional_facts": [
+        "relationship",
+        "supporter_response",
+        "target_response"
+      ],
+      "requested_scope_values": [
+        "confirmed_full",
+        "summarize_known"
+      ],
+      "default_requested_scope": "summarize_known",
+      "requested_scope_policy": "explicit_user_request_controls; default_records_known_and_unknown; never_downgrade_confirmed_full_to_hide_missing_information",
+      "agreement_values": [
+        "confirmed",
+        "declined",
+        "one_sided",
+        "unknown"
+      ],
+      "requested_item_ids_required": true,
+      "completion": {
+        "rule_id": "T3_ITEM_AGREEMENT",
+        "confirmed_full": {
+          "all_requested_items_must_exist": true,
+          "each_required_agreement": "confirmed",
+          "each_item_requires_evidence": true,
+          "all_requested_details_supported": true,
+          "otherwise": "limited"
+        },
+        "summarize_known": {
+          "all_requested_items_must_be_accounted_for": true,
+          "allowed_statuses": [
+            "confirmed",
+            "declined",
+            "one_sided",
+            "unknown"
+          ],
+          "each_known_claim_requires_evidence": true,
+          "unknown_items_labelled_explicitly": true,
+          "actual_summary_required": true,
+          "unknown_only_generic_disclaimer_is_complete": false
+        },
+        "forbidden": [
+          "unknown_as_proposed",
+          "one_sided_as_confirmed",
+          "agreement_as_execution",
+          "partial_scope_as_global_agreement",
+          "new_proposal_as_history"
+        ]
+      },
+      "question_needs": {
+        "Q3-02": [
+          "relationship"
+        ],
+        "Q3-03": [
+          "agreement_items"
+        ],
+        "Q3-05": [
+          "target_response",
+          "agreement_items"
+        ],
+        "Q3-10": [
+          "agreement"
+        ]
+      },
+      "item_contract": {
+        "required_keys": [
+          "item_id",
+          "description",
+          "agreement",
+          "evidence_refs"
+        ],
+        "independent_dimensions": [
+          "participants",
+          "action",
+          "date",
+          "time",
+          "duration",
+          "frequency",
+          "location"
+        ],
+        "confirmed_scope": "only_explicitly_supported_item_and_qualifiers",
+        "new_proposal_policy": "may_write_if_requested_but_separate_from_historical_summary; goal_change_required_to_count_different_task_complete"
+      }
+    },
+    {
+      "id": "T4",
+      "label": "상황 정리",
+      "default_output_mode": "structured_summary",
+      "allowed_question_ids": [
+        "Q3-01",
+        "Q3-02",
+        "Q3-03",
+        "Q3-04",
+        "Q3-05",
+        "Q3-06",
+        "Q3-10"
+      ],
+      "required_facts": [
+        "reported_scene"
+      ],
+      "optional_facts": [
+        "relationship",
+        "target_observation",
+        "supporter_response",
+        "target_response",
+        "supporter_experience"
+      ],
+      "completion": {
+        "rule_id": "T4_SCENE_SUMMARY",
+        "complete_if": "at_least_one_actual_source_report_is_summarized_with_people_events_and_known_unknown_distinctions_at_requested_scope",
+        "unknown_attributes_allowed": true,
+        "limited_if": "requested_specific_fact_or_scene_cannot_be_resolved",
+        "forbidden": [
+          "all_details_dismissed_as_unknown_when_supported_facts_exist",
+          "plan_as_execution",
+          "inference_as_target_fact"
+        ]
+      },
+      "question_needs": {
+        "Q3-02": [
+          "relationship"
+        ],
+        "Q3-03": [
+          "reported_scene"
+        ],
+        "Q3-04": [
+          "target_observation"
+        ],
+        "Q3-05": [
+          "supporter_response",
+          "target_response"
+        ],
+        "Q3-06": [
+          "supporter_experience"
+        ]
+      }
+    },
+    {
+      "id": "T5",
+      "label": "이용자 자신의 경험 정리",
+      "default_output_mode": "structured_summary",
+      "allowed_question_ids": [
+        "Q3-01",
+        "Q3-03",
+        "Q3-06",
+        "Q3-10"
+      ],
+      "required_facts": [
+        "supporter_experience"
+      ],
+      "optional_facts": [
+        "reported_scene"
+      ],
+      "completion": {
+        "rule_id": "T5_SELF_EXPERIENCE",
+        "complete_if": "requested_self_experience_is_reflected_from_explicit_report_without_invented_cause_or_belief",
+        "one_reported_thought_or_feeling_can_suffice": true,
+        "conditional_requirements": {
+          "explicit_past_current_comparison": "both_requested_time_scopes_have_reported_content_or_user_explicitly_reports_no_change"
+        },
+        "limited_if": "requested_experience_or_comparison_is_missing_and_no_allowed_question_remains",
+        "forbidden": [
+          "target_feeling_as_supporter_feeling",
+          "hypothetical_event_as_actual_action",
+          "refused_topic_expansion"
+        ]
+      },
+      "question_needs": {
+        "Q3-03": [
+          "reported_scene"
+        ],
+        "Q3-06": [
+          "supporter_experience"
+        ]
+      }
+    },
+    {
+      "id": "T6",
+      "label": "도움과 말 걸기 선택",
+      "default_output_mode": "full_guide",
+      "allowed_question_ids": [
+        "Q3-01",
+        "Q3-02",
+        "Q3-03",
+        "Q3-04",
+        "Q3-05",
+        "Q3-07",
+        "Q3-08",
+        "Q3-09",
+        "Q3-10"
+      ],
+      "required_facts": [
+        "support_goal",
+        "reported_scene"
+      ],
+      "optional_facts": [
+        "relationship",
+        "target_observation",
+        "supporter_response",
+        "target_response",
+        "target_preference",
+        "supporter_capacity",
+        "supporter_intent",
+        "chosen_action"
+      ],
+      "requested_scope_values": [
+        "compare_options",
+        "bounded_plan"
+      ],
+      "default_requested_scope": "compare_options",
+      "completion": {
+        "rule_id": "T6_SUPPORT_CHOICE",
+        "compare_options": {
+          "actual_contextual_options_or_opening_required": true,
+          "unknown_intent_or_capacity_allowed_when_explicit_and_conditional": true,
+          "must_not_choose_for_user": true
+        },
+        "bounded_plan": {
+          "additional_required_facts": [
+            "supporter_intent",
+            "supporter_capacity",
+            "chosen_action"
+          ],
+          "must_fit_reported_capacity": true,
+          "undecided_intent_does_not_support_commitment": true,
+          "otherwise": "limited"
+        },
+        "forbidden": [
+          "ability_as_willingness",
+          "user_willingness_as_target_consent",
+          "unknown_preference_as_refusal",
+          "unsourced_time_or_frequency"
+        ]
+      },
+      "question_needs": {
+        "Q3-02": [
+          "relationship"
+        ],
+        "Q3-03": [
+          "reported_scene"
+        ],
+        "Q3-04": [
+          "target_observation"
+        ],
+        "Q3-05": [
+          "supporter_response",
+          "target_response"
+        ],
+        "Q3-07": [
+          "target_preference"
+        ],
+        "Q3-08": [
+          "supporter_capacity"
+        ],
+        "Q3-09": [
+          "supporter_intent",
+          "chosen_action",
+          "support_goal"
+        ]
+      }
+    }
+  ],
+  "common_question_ids": [
+    "Q3-01",
+    "Q3-10"
+  ],
+  "default_priority": [
+    "Q3-01",
+    "Q3-02",
+    "Q3-03",
+    "Q3-04",
+    "Q3-05",
+    "Q3-06",
+    "Q3-07",
+    "Q3-08",
+    "Q3-09"
+  ],
+  "task_ids": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5",
+    "T6"
+  ],
+  "fact_dictionary": {
+    "goal_intent": {
+      "label": "이번에 요청한 과업과 산출물",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "support_goal": {
+      "label": "어떤 도움이나 전달을 원하는지",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "relationship": {
+      "label": "상대와 이용자의 관계",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "boundary_intent": {
+      "label": "거절하거나 제한하려는 이용자의 의사",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "boundary_scope": {
+      "label": "거절하거나 제한할 행동과 범위",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "proposal_intent": {
+      "label": "제안하려는 이용자의 의사",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "proposed_action": {
+      "label": "제안할 행동",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "supporter_available_time": {
+      "label": "이용자가 가능하다고 보고한 시간",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "agreement_items": {
+      "label": "정리할 합의 항목과 항목별 상태",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "reported_scene": {
+      "label": "적어도 한 장면에 대한 원문 보고",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "target_observation": {
+      "label": "상대의 말·행동에 대한 보고",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "supporter_response": {
+      "label": "이용자가 실제로 한 대응",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "target_response": {
+      "label": "그 대응 뒤 확인했다고 보고한 상대 반응",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "supporter_experience": {
+      "label": "이용자 자신의 생각이나 마음에 대한 보고",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "target_preference": {
+      "label": "상대가 표현했다고 보고된 바람·경계",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "supporter_capacity": {
+      "label": "이용자의 실제 가능한 범위",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "supporter_intent": {
+      "label": "능력과 별개인 이용자의 의사·미결정",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    },
+    "chosen_action": {
+      "label": "이용자가 선택한 행동",
+      "requires_current_source_evidence": true,
+      "unknown_is_not_value": true
+    }
+  },
+  "routing": {
+    "purpose_known": "do_not_issue_Q3-01",
+    "purpose_unknown": "Q3-01_once",
+    "generic_message_request": "route_by_requested_action; T1_boundary/T2_time_proposal/T6_support_opening",
+    "multiple_explicit_tasks": "track_each_requested_obligation; primary_task_follows_user_priority; never_drop_secondary_obligation_silently",
+    "new_goal": "increment_goal_revision_and_replan_unissued_questions; preserve_old_goal_outcome_and_refusal_scopes",
+    "clarification_precedence": "common_for_all_tasks; one_budget_for_entire_intake_not_per_task"
+  },
+  "required_facts_policy": {
+    "meaning": "minimum_information_for_full_requested_result_not_mandatory_question_ids",
+    "earlier_input_counts": true,
+    "already_covered_auto_skip": true,
+    "optional_facts_are_not_automatic_questions": true,
+    "conditional_requirement": "add_only_when_user_requested_detail_or_output_choice_depends_on_it",
+    "no_remaining_questions": "provide_specific_supported_result_and_mark_limited_if_requested_scope_not_met; no_generic_disclaimer_only_when_useful_output_exists"
+  },
+  "completion_statuses": [
+    {
+      "value": "completed",
+      "label": "현재 과업 완료"
+    },
+    {
+      "value": "limited",
+      "label": "제한 결과 제공"
+    },
+    {
+      "value": "awaiting_confirmation",
+      "label": "확인 대기"
+    },
+    {
+      "value": "changed_goal_completed",
+      "label": "사용자가 바꾼 과업 완료"
+    },
+    {
+      "value": "user_stopped",
+      "label": "사용자 요청으로 중단"
+    },
+    {
+      "value": "incomplete",
+      "label": "과업 미완료"
+    }
+  ],
+  "completion_rules": {
+    "actual_artifact_required_for": [
+      "completed",
+      "limited",
+      "changed_goal_completed"
+    ],
+    "awaiting_confirmation_requires_active_pending_question": true,
+    "user_stopped_is_not_completed": true,
+    "system_error": "incomplete with reason=system_error",
+    "unsupported_claim": "incomplete even_if_format_valid",
+    "new_goal_completed": "changed_goal_completed; old_goal_not_retroactively_completed",
+    "no_silent_scope_reduction": true
+  },
+  "input_compatibility": {
+    "no_claim_of_native_app_schema": true,
+    "source_question_ids_are_historical_design_ids": true,
+    "mixed_subjects_require_source_preserving_event_binding": true,
+    "old_required_name_or_min_answers_must_not_be_silently_applied": true
+  },
+  "output_policy": {
+    "relation_analysis": "reported_observation_and_tentative_interpretation_separate; unsupported_fields_unknown_or_omitted_if_schema_allows",
+    "existing_safety_handoff": "reuse_existing_approved_policy_and_contact_text; no_new_clinical_policy_here",
+    "brief_text": "only_requested_artifact; no_forced_five_cards_or_three_part_speech_detail",
+    "full_guide": "use_supported_cards; conversation_detail_optional; when_present_exactly_three_nonempty_contiguous_parts_concatenate_to_script",
+    "structured_summary": "requested_items_or_experiences_with_supported_values_and_explicit_unknowns; no_forced_five_cards_or_speech_detail",
+    "explicit_user_format_override": "an_explicit_brief_or_one_sentence_request_overrides_task_default_to_brief_text_without_weakening_fact_or_completion_requirements"
+  }
+}

@@ -38,6 +38,6 @@ docker compose exec -T postgres pg_restore -U malssi -d malssi --no-owner < mals
 docker compose up -d --build api
 ```
 
-원본 장비를 계속 사용하려면 덤프 후 `docker compose up -d api`로 다시 실행합니다. DB 볼륨·암호화 키를 보존하면 기존 상담의 질문 스냅샷·답변·모델 이력과 관리자가 변경한 질문을 유지합니다. 질문 관리는 [질문 관리](QUESTIONS.md)를 따릅니다.
+원본 장비를 계속 사용하려면 덤프 후 `docker compose up -d api`로 다시 실행합니다. DB 볼륨·암호화 키를 보존하면 기존 상담의 질문 스냅샷·답변·모델 이력을 유지합니다. 현재 코드의 `010_questionnaire_v3.sql`은 이전 질문 행을 보관하고 비활성화한 뒤 새 v3 기본 9문항을 등록합니다. 과거 대화의 선택 번호·원문·결과를 새 질문으로 변환하지 않으며, 새 대화에만 `malssi-intake-3.0.0-rc1`을 적용합니다. 현재 묶음의 부분 문구 수정은 허용하지 않으며 판본 단위 변경은 [질문 계약](QUESTIONS.md)을 따릅니다.
 
 동일 호스트·브라우저의 기존 쿠키가 있어야 익명 기록에 접근합니다. 호스트나 브라우저가 달라지면 DB 이동만으로 사용자 계정 동기화가 되지는 않습니다. `.env`, 덤프와 볼륨은 Git에 넣지 않습니다. 일반 종료는 `docker compose down`을 사용하며 DB 볼륨을 제거하는 `-v`를 붙이지 않습니다.

@@ -1,3 +1,4 @@
+import { restoreLegacyQuestionBank } from './helpers/legacy-question-bank.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -23,6 +24,7 @@ async function fixture(t) {
   });
   await admin.query(`CREATE SCHEMA "${schema}"`);
   f.store = await Store.connect(databaseUrl, f.key, 30, { schema });
+  await restoreLegacyQuestionBank(f.store);
   return f;
 }
 
@@ -153,7 +155,7 @@ databaseTest('restart preserves encrypted data, startup rejects a changed key, a
   f.store = await Store.connect(databaseUrl, f.key, 30, { schema: f.schema });
   assert.deepEqual(await f.store.record(browser.id, 'demo-record'), exampleRecord());
   assert.deepEqual((await f.store.context(browser.id, intake.id)).context, buildContext(intake.state));
-  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 9);
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 10);
   await f.store.pool.query('UPDATE schema_migrations SET checksum=$1', ['tampered-checksum']);
   await assert.rejects(Store.connect(databaseUrl, f.key, 30, { schema: f.schema }), /checksum/);
 });
@@ -358,5 +360,5 @@ databaseTest('conversation epoch migration upgrades existing browser data withou
   assert.equal((await f.store.history(owner)).conversation_epoch, 0);
   assert.deepEqual(await f.store.record(owner, 'retained'), exampleRecord('retained'));
   assert.deepEqual((await f.store.context(owner, intake.id)).context, buildContext(intake.state));
-  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 9);
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 10);
 });

@@ -1,3 +1,4 @@
+import { restoreLegacyQuestionBank } from './helpers/legacy-question-bank.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
@@ -22,6 +23,7 @@ async function fixture(t, gateway = { model:'gemma4:12b', updateState:async () =
   const admin = new pg.Pool({ connectionString:databaseUrl });
   await admin.query(`CREATE SCHEMA ${schema}`);
   const app = await createApp({ databaseUrl, schema, key:randomBytes(32), gateway, referralProvider:null, ...options });
+  await restoreLegacyQuestionBank(app.store);
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${app.server.address().port}`;
   t.after(async () => {

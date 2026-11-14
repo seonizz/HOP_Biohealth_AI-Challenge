@@ -8,7 +8,7 @@ import { JSON_STREAM_COMPLETE, ModelStreamError, streamJsonResponse, schemaArray
 import { discoverModelTokenPolicy } from './model-token-policy.js';
 import { randomUUID } from 'node:crypto';
 import {createOperationMetrics, operationMetrics, beginHttpAttempt, modelStageRole} from './model-operation-metrics.js';
-import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex, validateQuestionPlan } from './agent-state.js';
+import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex, validateQuestionPlan, isV3Context } from './agent-state.js';
 import { modelResponseFormat } from './model-schema.js';
 import { trainedContext } from './model-context.js';
 import { OBSERVE, MEMORY, STATE_REVIEW, PROMPT_VERSION } from './relationship-prompts.js';
@@ -783,6 +783,7 @@ export class ModelGateway {
   }
 
   async respond(context, priorMemory = null, options = {}) {
+    this.requireQuestionnaireProtocol(context);
     return this.operation(options, async operation => {
       if (this.protocol === 'relationship_agent') {
         let memory=validMemory(priorMemory || context.agent_state,context);
@@ -817,10 +818,17 @@ export class ModelGateway {
   }
 
   async updateState(context, priorMemory = null, options = {}) {
+    this.requireQuestionnaireProtocol(context);
     return this.operation(options, operation => this.protocol==='relationship_agent'
       ? this.relationshipState(context,validMemory(priorMemory,context),operation)
       : this.protocol==='json_prompt' ? this.trainedState(context, validMemory(priorMemory, context), operation)
       : this.complete(context, priorMemory, STATE_PROMPT, operation, payload => validateState(payload, context)));
+  }
+
+  requireQuestionnaireProtocol(context) {
+    if(isV3Context(context)&&this.protocol!=='relationship_agent') {
+      throw new HttpError(503,'MODEL_PROTOCOL_UNSUPPORTED','새 질문의 검토에 필요한 모델 연결 설정을 확인해 주세요.');
+    }
   }
 
   async relationshipState(context,memory,operation,final=false) {
@@ -1019,9 +1027,13 @@ export class ModelGateway {
           selectionRepairFeedback=error.modelReason==='agent_schema'?error.modelFeedback:undefined;
           const questionFailure=questionIdDiagnostic(stage,requestSchema,selectionRepairFeedback,candidate);
           if(questionFailure)Object.defineProperty(error,'modelQuestionIdDiagnostic',{value:questionFailure,configurable:true});
-          if(!reviewTransport&&['agent_schema','state_review_schema'].includes(error.modelReason)&&Array.isArray(stateReviewTarget?.claims)) {
-            stateReviewFormatRepair=true;rejectedOutput=undefined;
+          let auditCoverageFailure=false;
+          if(error.modelReason==='agent_claim_audit'){
+            try { auditCoverageFailure=JSON.parse(error.modelFeedback).keyword==='auditCoverage'; } catch { /* No structured identity failure. */ }
           }
+          stateReviewFormatRepair=!reviewTransport&&Array.isArray(stateReviewTarget?.claims)&&
+            (['agent_schema','state_review_schema'].includes(error.modelReason)||auditCoverageFailure);
+          if(stateReviewFormatRepair)rejectedOutput=undefined;
           if(error.modelReason==='agent_review_stale'&&payload.revision&&/^(?:speech_review|support_review)(?:_|$)/u.test(stage)) {
             currentReviewOnly=true;rejectedOutput=undefined;
             currentReviewFeedback='agent_review_stale: 이전 이력의 문구를 현재 오류로 지적했습니다. data.guide와 data.claims의 현재 문장 전체를 data.answers 원문과 다시 검토하세요. 현재 남은 오류는 해당 audits와 issues에 모두 기록하고 자동 승인하지 마세요.';

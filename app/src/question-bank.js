@@ -1,8 +1,21 @@
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+import { isDeepStrictEqual } from 'node:util';
 import { HttpError } from './errors.js';
 
-export const initialQuestionRows = JSON.parse(readFileSync(new URL('../seeds/questions.json', import.meta.url), 'utf8'));
+// Historical migrations and records without a snapshot retain their original bank.
+export const initialQuestionRows = JSON.parse(readFileSync(new URL('../seeds/questions-legacy.json', import.meta.url), 'utf8'));
+export const activeQuestionRows = JSON.parse(readFileSync(new URL('../seeds/questions.json', import.meta.url), 'utf8'));
+const bundleFile = name => readFileSync(new URL(`../seeds/questionnaire-v3/${name}.json`, import.meta.url), 'utf8');
+const manifest = JSON.parse(bundleFile('bundle'));
+const questionnaireBundle = Object.fromEntries(['questions','tasks','policy','codebook'].map(name => {
+  const source = bundleFile(name);
+  const asset = manifest.assets.find(asset => asset.path === `active/${name}.json`);
+  if (!asset || createHash('sha256').update(source).digest('hex') !== asset.sha256) {
+    throw new Error('Questionnaire bundle integrity check failed');
+  }
+  return [name === 'codebook' ? 'semantics' : name, JSON.parse(source)];
+}));
 const plain = value => value !== null && typeof value === 'object' && !Array.isArray(value);
 const fail = () => { throw new HttpError(503, 'QUESTION_BANK_INVALID', '질문 설정을 확인해 주세요.'); };
 const slug = value => typeof value === 'string' && /^[a-z][a-z0-9_]{0,79}$/.test(value) && !['__proto__','constructor','prototype'].includes(value);
@@ -23,10 +36,10 @@ function validateCondition(value, depth = 0) {
 }
 
 function validateDefinition(q, follow = false) {
-  const keys = ['sec','face','q','why','type','ph','ph_by_option','ownPh','fu','short','required','noOwn','noSkip','cue','intro','rare','rare_when','when','opts','follow_up'];
+  const keys = ['sec','face','q','why','type','ph','ph_by_option','ownPh','fu','short','required','noOwn','noSkip','cue','intro','rare','rare_when','when','opts','follow_up','source_id','topic_scope','help','response_controls','allowCustomWithSelection'];
   if (!exact(q, keys) || !string(q.q) || !['text','one','multi'].includes(q.type)) fail();
-  for (const key of ['sec','face','why','ph','ownPh','intro','rare']) if (q[key] !== undefined && !string(q[key])) fail();
-  for (const key of ['fu','short','required','noOwn','noSkip','cue']) if (q[key] !== undefined && typeof q[key] !== 'boolean') fail();
+  for (const key of ['sec','face','why','ph','ownPh','intro','rare','source_id','topic_scope','help']) if (q[key] !== undefined && !string(q[key])) fail();
+  for (const key of ['fu','short','required','noOwn','noSkip','cue','response_controls','allowCustomWithSelection']) if (q[key] !== undefined && typeof q[key] !== 'boolean') fail();
   if (q.ph_by_option !== undefined) {
     const ph = q.ph_by_option;
     if (q.type !== 'text' || !string(q.ph) || !exact(ph, ['question_id','values']) ||
@@ -40,7 +53,7 @@ function validateDefinition(q, follow = false) {
     for (const option of q.opts) {
       if (typeof option === 'string') { if (!string(option)) fail(); continue; }
       if (!Array.isArray(option) || option.length !== 2 || !string(option[0]) ||
-        !exact(option[1], ['d','a','x','s','r','p','t','g','none','input','ph','ask'])) fail();
+        !exact(option[1], ['d','a','x','s','r','p','t','g','none','input','ph','ask','value'])) fail();
       for (const [key, value] of Object.entries(option[1])) {
         if (['d','a','x'].includes(key)) { if (!Number.isFinite(value)) fail(); }
         else if (['none','input'].includes(key)) { if (![true,false,0,1].includes(value)) fail(); }
@@ -66,6 +79,11 @@ export function createQuestionSet(rows) {
   if (rows.some(row => !plain(row) || typeof row.enabled !== 'boolean' || !slug(row.id) || !Number.isSafeInteger(row.sort_order))) fail();
   const seen = new Set();
   const enabled = rows.filter(row => row.enabled === true).sort((a,b) => a.sort_order - b.sort_order || a.id.localeCompare(b.id));
+  const v3 = enabled.some(row => row.id.startsWith('q3_'));
+  if (v3 && (enabled.length !== activeQuestionRows.length || enabled.some((row, index) => {
+    const expected = activeQuestionRows[index];
+    return ['id','kind','sort_order','enabled','subject','definition'].some(key => !isDeepStrictEqual(row[key], expected[key]));
+  }))) fail();
   for (const row of enabled) {
     if (!slug(row.id) || seen.has(row.id) || !['base','gap'].includes(row.kind) ||
       !Number.isSafeInteger(row.sort_order) || !['patient','supporter','user_goal'].includes(row.subject)) fail();
@@ -87,11 +105,13 @@ export function createQuestionSet(rows) {
     }
   }
   const gap = enabled.find(row => row.kind === 'gap');
-  const content = { questions, gapQuestion:gap ? { id:gap.id, subject:gap.subject, ...structuredClone(gap.definition) } : null };
+  const content = { questions, gapQuestion:gap ? { id:gap.id, subject:gap.subject, ...structuredClone(gap.definition) } : null,
+    ...(v3 ? { bundle_id:manifest.bundle_id, bundle:structuredClone(questionnaireBundle) } : {}) };
   return { version:createHash('sha256').update(JSON.stringify(content)).digest('hex'), ...content };
 }
 
 export const initialQuestionSet = createQuestionSet(initialQuestionRows);
+export const activeQuestionSet = createQuestionSet(activeQuestionRows);
 
 function conditionDependencies(condition, questions) {
   if (condition.any || condition.all) return (condition.any || condition.all).flatMap(rule => conditionDependencies(rule, questions));

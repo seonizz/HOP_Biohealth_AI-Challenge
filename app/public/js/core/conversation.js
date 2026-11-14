@@ -92,9 +92,19 @@ function renderConversation(view,token,nextText=""){
   if(typeof AppRouter!=="undefined")AppRouter.sync("chat",{replace:true});
   ChatScreen.sync(view.log);ChatScreen.progress(view.progress,{index:view.questionIndex,total:view.totalQuestions,label:view.section,complete:view.status==="ready"});ChatScreen.title(view.chat_title);ChatScreen.section(view.section);
   ChatInput.clear();
+  if(view.user_stopped&&!view.safety_urgent&&!view.model_pending){
+    ChatInput.error("대화를 여기서 마쳤어요. 새 대화는 처음 화면에서 시작할 수 있어요.");
+    return;
+  }
   if(view.status==="ready"){finish(token);return;}
+  if(view.input_locked&&view.model_pending&&view.pending_answer){
+    const body={...view.pending_answer,revision:view.revision};
+    ChatInput.error("질문은 여기서 마쳤어요. 저장한 답변의 확인을 다시 시도할 수 있어요.",
+      ()=>submitConversation(`/api/intakes/${view.id}/answers`,body,token));
+    return;
+  }
   const q=view.question;
-  ChatInput.render(q,(text,selected,custom="",skipped=false)=>answer(text,selected,custom,skipped),view.canGoBack?goBack:null);
+  ChatInput.render(q,(text,selected,custom="",skipped=false,responseEvent)=>answer(text,selected,custom,skipped,responseEvent),view.canGoBack?goBack:null);
   const restored=typeof ConversationDrafts!=="undefined"&&ConversationDrafts.restore(view);
   if(!view.model_pending){
     ChatInput.acceptTypeAhead?.(nextText);
@@ -152,6 +162,7 @@ async function recoverConversation(error,token,retry,present=(message,operation)
       const id=S.id;
       const view=await ChatScreen.typing(S?.question?.face||"ponder",()=>current()?API.request(`/api/intakes/${id}`):null);
       if(!current())return;
+      if(view.input_locked){renderConversation(view,token);return;}
       if(view.model_pending&&view.question?.id===S.question?.id&&!!view.question.follow_up===!!S.question.follow_up){
         // 같은 질문의 입력창은 유지하여 실패 직후에도 답을 수정할 수 있어요.
         if(typeof ConversationDrafts!=="undefined")ConversationDrafts.rebind(view);
@@ -204,9 +215,11 @@ function answerDetailPrompt(question,selected){
 }
 const sameDetailPrompt=(message,prompt)=>message?.who==="ai"&&message.text===prompt.text&&message.face===prompt.face&&message.fu===true;
 
-function answer(text,selected,custom="",skipped=false){
+function answer(text,selected,custom="",skipped=false,responseEvent){
   if(!S?.question)return;
   const body={revision:S.revision,question_id:S.question.id,text,selected,custom,skipped,follow_up:!!S.question.follow_up};
+  if(responseEvent)body.response_event=responseEvent;
+  if(S.question.instance_id)body.instance_id=S.question.instance_id;
   const detailPrompt=answerDetailPrompt(S.question,selected);
   return submitConversation(`/api/intakes/${S.id}/answers`,body,conversationToken,{who:"me",text,fu:body.follow_up},detailPrompt);
 }

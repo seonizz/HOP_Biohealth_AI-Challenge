@@ -5,6 +5,8 @@ import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { clarificationQuestions, clarificationCandidates } from './clarifications.js';
 import { validateRelationshipMemory, validateSafetyEvidence, safetySnapshotFingerprint, currentApprovedSafety, currentReviewedSafety } from './relationship-agent.js';
 import { normalizeAnswerField } from './answer-sources.js';
+import { isV3Intake, initializeV3, issueV3, normalizeV3Answer, stampV3Answer, v3FieldStatus,
+  v3ClarificationAvailable, createV3Clarification, answerV3Clarification, invalidateV3Clarification } from './intake-v3.js';
 
 const SKIP = '(건너뛰었어요)';
 const WELCOME = '안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.';
@@ -37,15 +39,17 @@ function addPrompt(state, question, followUp = false) {
   if (rendered.intro && !followUp) {
     state.log.push({ who: 'ai', text: rendered.intro, fu: false, face: rendered.face });
   }
-  state.log.push({ who: 'ai', text: rendered.q, fu: followUp || Boolean(rendered.fu), face: rendered.face || 'ponder', ...(rendered.why ? { why: rendered.why } : {}) });
+  state.log.push({ who: 'ai', text: rendered.q, fu: followUp || Boolean(rendered.fu), face: rendered.face || 'ponder', ...(rendered.why ? { why: rendered.why } : {}),
+    ...(isV3Intake(state) ? { question_id:question.id } : {}) });
 }
 
 function advance(state, previous) {
   const { questions, gapQuestion } = questionSetOf(state);
-  while (state.i < questions.length && (state.modelSkipped?.[questions[state.i].id] ||
+  while (state.i < questions.length && ((isV3Intake(state) && state.ans[questions[state.i].id] && state.v3.editingQuestion !== questions[state.i].id) ||
+    state.modelSkipped?.[questions[state.i].id] ||
     (questions[state.i].when && !conditionMatches(questions[state.i].when, state)))) state.i++;
   if (state.i >= questions.length) {
-    if (gapQuestion && !state.ans.mood?.sel.length && !state.extraObs && isThin(state.ans.concern?.text, 1) &&
+    if (!isV3Intake(state) && gapQuestion && !state.ans.mood?.sel.length && !state.extraObs && isThin(state.ans.concern?.text, 1) &&
       !['mood', 'concern'].some(id => state.modelSkipped?.[id]?.reason === 'already_covered')) {
       state.pendingFollow = { kind: 'gap', questionId: 'gap_obs' };
       state.fuCount++;
@@ -62,7 +66,8 @@ function advance(state, previous) {
   else state.history[state.history.length - 1] = state.cur;
   const previousIndex = state.history.at(-2)?.i ?? -1;
   const cheer = CHEER.find(([ratio]) => state.i >= Math.ceil(ratio * questions.length) && previousIndex < Math.ceil(ratio * questions.length))?.[1];
-  if (cheer) state.log.push({ who:'ai', text:cheer, fu:false, face:'cheer' });
+  if (cheer && !isV3Intake(state)) state.log.push({ who:'ai', text:cheer, fu:false, face:'cheer' });
+  if (isV3Intake(state)) issueV3(state, questions[state.i]);
   addPrompt(state, questions[state.i]);
 }
 
@@ -74,12 +79,14 @@ export function createIntake(questionSet = initialQuestionSet) {
     prev: null, cur: null, history: [], pendingFollow: null, status: 'active',
     modelSkipped: {}, nameIndex: null, chatTitle: '',
   };
+  if (isV3Intake(state)) initializeV3(state);
   advance(state);
   return state;
 }
 
 function activeQuestion(state) {
   const { questions, gapQuestion } = questionSetOf(state);
+  if (state.pendingFollow?.kind === 'v3_clarification') return state.v3.clarification.question;
   if (state.pendingFollow?.kind === 'clarification') return { ...clarificationQuestions.find(q=>q.id===state.pendingFollow.questionId), follow_up:true };
   if (state.pendingFollow?.kind === 'gap') return { ...gapQuestion, follow_up: true };
   if (state.pendingFollow) {
@@ -91,17 +98,22 @@ function activeQuestion(state) {
 
 export function currentView(state) {
   const { questions } = questionSetOf(state);
+  const stopped = isV3Intake(state) && Boolean(state.v3.stopped || state.modelPending?.prepared?.v3?.stopped);
   const question = activeQuestion(state);
   const rendered = question ? renderQuestion(question, state) : null;
+  if (rendered && isV3Intake(state)) rendered.instance_id = state.v3.issued[question.id]?.instance_id;
   return {
     question: rendered,
     progress: state.status === 'ready' ? 100 : state.i / questions.length * 100,
     section: rendered?.sec || (state.i >= questions.length ? questions.at(-1).sec : ''),
-    canGoBack: state.status === 'active' && (state.pendingFollow ? historyOf(state).length > 0 : historyOf(state).length > 1),
+    canGoBack: isV3Intake(state) ? state.status === 'active' && !stopped && questions.slice(0, state.i).some(q => state.ans[q.id])
+      : state.status === 'active' && (state.pendingFollow ? historyOf(state).length > 0 : historyOf(state).length > 1),
     status: state.status,
     pendingFollow: Boolean(state.pendingFollow),
     totalQuestions: questions.length,
     questionIndex: state.i,
+    ...(isV3Intake(state) ? { bundle_id:state.questionSet.bundle_id, question_instances:Object.keys(state.v3.issued).length, maxQuestions:10,
+      user_stopped:stopped, input_locked:stopped, safety_urgent:Boolean(state.safetySignal?.urgent) } : {}),
     ...(state.modelPending ? { model_pending:true, pending_answer:structuredClone(state.modelPending.input) } : {}),
   };
 }
@@ -145,7 +157,7 @@ function normalizeAnswer(question, input) {
   }
   if (question.noOwn && !selected.length) invalid('invalid_selection', '이 질문은 제시된 보기에서 골라 주세요.');
   if ((question.required || question.noSkip) && !selected.length && !hasCustom) invalid('answer_required', '이 질문은 꼭 답해 주세요.');
-  if (question.type === 'one' && selected.length && custom) invalid('invalid_answer', '선택한 보기와 직접 입력을 함께 보낼 수 없어요.');
+  if (question.type === 'one' && selected.length && custom && !question.allowCustomWithSelection) invalid('invalid_answer', '선택한 보기와 직접 입력을 함께 보낼 수 없어요.');
 
   let text;
   if (question.type === 'one' && selected.length && optMeta(question.opts[selected[0]]).input) {
@@ -173,6 +185,53 @@ function commitAnswer(state, question, answer) {
   }
 }
 
+function answerV3(originalState, question, input) {
+  const state = structuredClone(originalState), progress = initializeV3(state);
+  if (input.instance_id !== undefined && input.instance_id !== progress.issued[question.id]?.instance_id) {
+    invalid('question_mismatch', '현재 질문에 답해 주세요.', 409);
+  }
+  let answer = stampV3Answer(state, question, normalizeV3Answer(question, input, normalizeAnswer, hasAnswerContent));
+  delete progress.helpReplay;
+  delete progress.editingQuestion;
+  if (state.ans[question.id]) state.log = state.log.filter(entry => entry.question_id !== question.id);
+  state.log.push({ who:'me', text:answer.text, fu:Boolean(state.pendingFollow), question_id:question.id, source_revision:answer.source_revision });
+  if (answer.response_event === 'not_understood' && progress.issued[question.id].help_displays === 0) {
+    if (typeof question.help !== 'string' || !question.help.trim()) invalid('QUESTION_BANK_INVALID', '질문 도움말을 확인해 주세요.', 503);
+    progress.issued[question.id].help_displays++;
+    progress.helpReplay = true;
+    progress.reports.push({ question:structuredClone(question), answer });
+    state.log.push({ who:'ai', text:question.help, face:question.face || 'ponder', fu:Boolean(state.pendingFollow) });
+    addPrompt(state, question, Boolean(state.pendingFollow));
+    return state;
+  }
+  if (state.pendingFollow?.kind === 'v3_clarification') {
+    answer = answerV3Clarification(state, question, answer);
+    state.clarificationAnswers ||= {};
+    state.clarificationAnswers.q3_10 = answer;
+    state.pendingFollow = null;
+  } else {
+    const correction = Object.hasOwn(state.ans, question.id);
+    if (correction) invalidateV3Clarification(state, question.id);
+    commitAnswer(state, question, answer);
+    if (question.id === 'q3_01') progress.goal_epoch++;
+    // Previously skipped, unshown questions are reconsidered against every new source.
+    state.modelSkipped = {};
+    // A changed goal reopens eligibility of every unshown question, including
+    // priorities before the prompt from which the user returned to edit it.
+    state.i = correction && question.id !== 'q3_01' ? progress.returnIndex ?? state.i + 1 : 0;
+    delete progress.returnIndex;
+  }
+  if (answer.response_event === 'stop') {
+    progress.stopped = true;
+    state.status = 'ready';
+    state.pendingFollow = null;
+    return state;
+  }
+  while (state.i < state.questionSet.questions.length && state.ans[state.questionSet.questions[state.i].id]) state.i++;
+  advance(state);
+  return state;
+}
+
 // Final-output testing supplies an explicit snapshot, not a simulated interview.
 // Missing questions remain unasked; only supplied answers become model evidence.
 export function createTestIntake(answers, questionSet = initialQuestionSet) {
@@ -181,7 +240,7 @@ export function createTestIntake(answers, questionSet = initialQuestionSet) {
     invalid('invalid_test_answers', '테스트 답변을 하나 이상, 문항 수 이내로 보내 주세요.', 422);
   }
   const inputs = new Map(), ids = new Set(questions.map(question => question.id));
-  const keys = ['question_id', 'text', 'selected', 'custom', 'skipped'];
+  const keys = ['question_id', 'text', 'selected', 'custom', 'skipped', ...(isV3Intake(questionSet) ? ['response_event'] : [])];
   for (const input of answers) {
     if (!input || typeof input !== 'object' || Array.isArray(input) ||
         Object.keys(input).some(key => !keys.includes(key)) ||
@@ -201,8 +260,9 @@ export function createTestIntake(answers, questionSet = initialQuestionSet) {
   for (const question of questions) {
     const input = inputs.get(question.id);
     if (!input) continue;
-    const answer = normalizeAnswer(question, input);
-    if (input.skipped && hasAnswerContent(input.text || '')) {
+    const answer = isV3Intake(state) ? stampV3Answer(state, question, normalizeV3Answer(question, input, normalizeAnswer, hasAnswerContent))
+      : normalizeAnswer(question, input);
+    if (input.skipped && hasAnswerContent(input.text || '') && !isV3Intake(state)) {
       invalid('invalid_test_answer', '건너뛴 문항에 실제 답변을 함께 넣을 수 없어요.', 422);
     }
     const detail = question.type === 'one' && answer.sel.length === 1 && optMeta(question.opts[answer.sel[0]]).input;
@@ -218,6 +278,9 @@ export function createTestIntake(answers, questionSet = initialQuestionSet) {
 
 export function answerIntake(originalState, input) {
   const { questions } = questionSetOf(originalState);
+  if (isV3Intake(originalState) && (originalState.v3.stopped || originalState.modelPending?.prepared?.v3?.stopped)) {
+    invalid('INTAKE_STOPPED', '종료한 대화에는 새 답변을 추가할 수 없어요. 새 대화를 시작해 주세요.', 409);
+  }
   if (originalState.status !== 'active') invalid('intake_complete', '이미 모든 질문에 답했어요.', 409);
   const question = activeQuestion(originalState);
   if (input?.follow_up !== undefined && typeof input.follow_up !== 'boolean') {
@@ -226,6 +289,7 @@ export function answerIntake(originalState, input) {
   if (input?.question_id !== question.id || Boolean(input?.follow_up) !== Boolean(originalState.pendingFollow)) {
     invalid('question_mismatch', '현재 질문에 답해 주세요.', 409);
   }
+  if (isV3Intake(originalState)) return answerV3(originalState, question, input);
   const answer = normalizeAnswer(question, input);
   const state = structuredClone(originalState);
   state.history = structuredClone(historyOf(originalState));
@@ -278,22 +342,46 @@ export function answerIntake(originalState, input) {
 // commits the prepared next prompt.
 export function discardModelAnswer(originalState) {
   const state = structuredClone(originalState);
+  // The control was durably submitted before the model started. Discarding a
+  // failed review must not restore an active interview or lose its safety text.
+  if (isV3Intake(state) && state.modelPending?.prepared?.v3?.stopped) return preparedModelState(state);
   if (state.modelPending) {
-    state.log.length = state.modelPending.logLen;
+    if (isV3Intake(state) && state.modelPending.originalLog) state.log = state.modelPending.originalLog;
+    else state.log.length = state.modelPending.logLen;
     delete state.modelPending;
   }
   return state;
 }
 
 export function prepareModelAnswer(originalState, input, sourceRevision) {
+  if (isV3Intake(originalState) && (originalState.v3.stopped || originalState.modelPending?.prepared?.v3?.stopped)) {
+    const comparable = value => JSON.stringify([value?.question_id, Boolean(value?.follow_up), value?.text ?? '',
+      value?.selected ?? [], value?.custom ?? '', Boolean(value?.skipped), value?.response_event ?? 'answered', value?.instance_id ?? null]);
+    if (originalState.modelPending?.input?.response_event === 'stop' && comparable(originalState.modelPending.input) === comparable(input)) {
+      const retry = structuredClone(originalState);
+      retry.v3.stopped = true;
+      return retry;
+    }
+    invalid('INTAKE_STOPPED', '종료 요청을 유지하고 있어요. 같은 요청을 다시 확인하거나 새 대화를 시작해 주세요.', 409);
+  }
   const state = discardModelAnswer(originalState);
   const prepared = answerIntake(state, input);
+  if (isV3Intake(state)) {
+    // The next prompt exists only in an uncommitted preparation. It has not consumed a display.
+    for (const id of Object.keys(prepared.v3.issued)) if (!state.v3.issued[id]) delete prepared.v3.issued[id];
+  }
   const logLen = state.log.length;
-  const evidenceEnd = prepared.log.findIndex((item, index) => index >= logLen && item.who === 'me') + 1;
-  state.log.push(...structuredClone(prepared.log.slice(logLen, evidenceEnd)));
+  const originalLog = isV3Intake(state) ? structuredClone(state.log) : null;
+  const evidenceEnd = isV3Intake(state) ? prepared.log.findLastIndex(item => item.who === 'me') + 1
+    : prepared.log.findIndex((item, index) => index >= logLen && item.who === 'me') + 1;
+  if (isV3Intake(state)) {
+    state.log = structuredClone(prepared.log.slice(0, evidenceEnd));
+    state.v3.input_revision = prepared.v3.input_revision;
+    if (prepared.v3.stopped) state.v3.stopped = true;
+  } else state.log.push(...structuredClone(prepared.log.slice(logLen, evidenceEnd)));
   // The question snapshot is already held by the base state.
   delete prepared.questionSet;
-  state.modelPending = { sourceRevision, input:structuredClone(input), logLen, prepared };
+  state.modelPending = { sourceRevision, input:structuredClone(input), logLen, prepared, ...(originalLog ? { originalLog } : {}) };
   return state;
 }
 
@@ -307,8 +395,30 @@ export function completeModelAnswer(state, output) {
 }
 
 export function backIntake(originalState) {
+  if (isV3Intake(originalState) && (originalState.v3.stopped || originalState.modelPending?.prepared?.v3?.stopped)) {
+    invalid('INTAKE_STOPPED', '종료한 대화에는 돌아갈 수 없어요. 새 대화를 시작해 주세요.', 409);
+  }
   const hadPendingModel = Boolean(originalState.modelPending);
   originalState = discardModelAnswer(originalState);
+  if (isV3Intake(originalState) && currentView(originalState).canGoBack) {
+    const state = structuredClone(originalState);
+    const questions = state.questionSet.questions;
+    const previousIndex = questions.findLastIndex((question, index) => index < state.i && state.ans[question.id]);
+    state.v3.returnIndex ??= state.i;
+    state.i = previousIndex;
+    state.v3.editingQuestion = questions[previousIndex].id;
+    state.pendingFollow = null;
+    state.modelSkipped = {};
+    delete state.v3.helpReplay;
+    if (state.v3.clarification?.status === 'issued') {
+      state.v3.clarification.status = 'obsolete';
+      delete state.v3.clarification.assignment;
+    }
+    for (const key of ['safetySignal','agentStateExecution','agentMemory','agentRelationshipMemory','agentResult','agentRecord']) delete state[key];
+    state.modelStatus = 'not_connected';
+    advance(state);
+    return state;
+  }
   if (!currentView(originalState).canGoBack) {
     // The first question has no preceding prompt; cancelling its uncommitted
     // answer still lets a concurrent correction invalidate the model request.
@@ -384,14 +494,25 @@ export function applyModelUpdate(originalState, output) {
     state.pendingFollow=null;state.status='ready';
     state.log.push({who:'ai',face:'ponder',fu:false,text:'지금 즉각적인 위험이 있다면 대화를 이어가기보다 응급 도움을 요청하고, 당신의 안전을 먼저 확보해 주세요. 혼자 감당하지 않도록 주변 도움을 함께 요청해 주세요.'});
   }
-  if (state.status === 'active' && !state.pendingFollow) {
+  if (state.status === 'active' && !state.pendingFollow && !state.v3?.helpReplay) {
     // The next prompt was prepared before the external model call and has not been displayed yet.
     const previous = state.prev;
     state.log.length = state.cur.logLen;
     state.cur = null;
     advance(state, previous);
   }
-  if (!output.finish_early && output.clarification && state.status==='ready') {
+  if (isV3Intake(state) && !output.finish_early && output.clarification && !state.v3.stopped && !state.v3.helpReplay) {
+    // Clarification preempts the prepared, still-unshown ordinary question.
+    if (state.status === 'active' && !state.pendingFollow) {
+      state.log.length = state.cur.logLen;
+      if (!originalState.v3.issued[state.questionSet.questions[state.i].id]) delete state.v3.issued[state.questionSet.questions[state.i].id];
+    }
+    const question = createV3Clarification(state, output.clarification);
+    state.pendingFollow = { kind:'v3_clarification', questionId:'q3_10' };
+    state.status = 'active';
+    state.fuCount = 1;
+    addPrompt(state, question, true);
+  } else if (!isV3Intake(state) && !output.finish_early && output.clarification && state.status==='ready') {
     const question=clarificationCandidates(state).find(q=>q.id===output.clarification);
     if (!question) invalid('INVALID_CLARIFICATION','이미 확인한 질문은 다시 묻지 않아요.',422);
     state.pendingFollow={kind:'clarification',questionId:question.id};
@@ -408,6 +529,11 @@ function payloadAnswer(question, answer, state) {
     id: question.id, question: renderQuestion(question, state).q, type: question.type,
     freeText: Boolean(question.cue), text: answer.text, custom: answer.custom || '',
     skipped: Boolean(answer.skipped),
+    ...(isV3Intake(state) ? { response_event:answer.response_event, source_revision:answer.source_revision,
+      source_message_id:answer.source_message_id, source_timestamp:answer.source_timestamp, source_timezone:answer.source_timezone,
+      ordinary_usable:answer.ordinary_usable ?? !['refused','stop','skipped','not_understood'].includes(answer.response_event),
+      ...(answer.selection_status ? { selection_status:answer.selection_status } : {}),
+      ...(answer.binding ? { binding:structuredClone(answer.binding), assignment:structuredClone(answer.assignment) } : {}) } : {}),
     selected: answer.sel.map(index => ({ label: optLabel(question.opts[index]), meta: { ...stripUiMeta(optMeta(question.opts[index])) } })),
   };
 }
@@ -419,7 +545,7 @@ function evidenceField(question, state) {
     ...(state.modelSkipped?.[question.id] ? { skip_decision: structuredClone(state.modelSkipped[question.id]) } : {}) };
   const payload = payloadAnswer(question, answer, state);
   return normalizeAnswerField({
-    ...payload, status: answer.skipped ? 'skipped' : 'answered',
+    ...payload, status: isV3Intake(state) ? v3FieldStatus(answer) : answer.skipped ? 'skipped' : 'answered',
     source: 'app_user_report', rawText: answer.rawText ?? answer.text,
     ...(answer.followUp ? { followUp: structuredClone(answer.followUp) } : {}),
   });
@@ -431,7 +557,9 @@ export function buildContext(state) {
   const latestAnswerId=state.modelPending?.input?.question_id;
   if (state.modelPending) state = { ...preparedModelState(state), log:state.log };
   const { questions, gapQuestion, version } = questionSetOf(state);
-  const latestQuestion=latestAnswerId ? [...questions,...clarificationQuestions].find(question=>question.id===latestAnswerId)||
+  const v3 = isV3Intake(state);
+  const extraQuestions = v3 ? (state.v3.clarification ? [state.v3.clarification.question] : []) : clarificationQuestions;
+  const latestQuestion=latestAnswerId ? [...questions,...extraQuestions].find(question=>question.id===latestAnswerId)||
     (gapQuestion?.id===latestAnswerId ? gapQuestion : null) : null;
   const gates = branchGateIds(questionSetOf(state));
   // A thin first answer is already evidence even while its follow-up is pending.
@@ -440,14 +568,14 @@ export function buildContext(state) {
   const answers = questions.filter(question => evidenceState.ans[question.id])
     .map(question => payloadAnswer(question, evidenceState.ans[question.id], evidenceState));
   if (state.ans.gap_obs && gapQuestion) answers.push(payloadAnswer(gapQuestion, state.ans.gap_obs, state));
-  for (const question of clarificationQuestions) if(state.clarificationAnswers?.[question.id]) {
+  for (const question of extraQuestions) if(state.clarificationAnswers?.[question.id]) {
     answers.push(payloadAnswer(question,state.clarificationAnswers[question.id],state));
   }
   const fields = Object.fromEntries(questions.map(question => [question.id, {
     ...evidenceField(question, evidenceState),
     ...(pending?.questionId === question.id ? { follow_up_pending:true } : {})
   }]));
-  const extraFields=Object.fromEntries(clarificationQuestions.filter(q=>state.clarificationAnswers?.[q.id]).map(q=>[q.id,
+  const extraFields=Object.fromEntries(extraQuestions.filter(q=>state.clarificationAnswers?.[q.id]).map(q=>[q.id,
     evidenceField(q,{...state,ans:state.clarificationAnswers})]));
   const value = id => state.ans[id]?.skipped ? '' : state.ans[id]?.text || '';
   const context = {
@@ -455,35 +583,44 @@ export function buildContext(state) {
     adaptive_questions:true,
     clarification_candidates:clarificationCandidates(state).map(q=>({...q,question:renderQuestion(q,state).q})),
     question_set_version:version,
+    ...(v3 ? { bundle_id:state.questionSet.bundle_id, questionnaire_bundle:structuredClone(state.questionSet.bundle),
+      question_policy:{ minimum_answer_count:0, maximum_question_instances:10, maximum_clarification_instances:1 },
+      clarification_available:v3ClarificationAvailable(state),
+      clarification_axes:structuredClone(state.questionSet.bundle.questions.clarification.axes),
+      input_revision:state.v3.input_revision, goal_epoch:state.v3.goal_epoch, user_stopped:state.v3.stopped,
+      issued_question_ids:Object.keys(state.v3.issued),
+      clarification_state:state.v3.clarification ? structuredClone(state.v3.clarification) : null } : {}),
     answered_count: Object.values(evidenceState.ans).filter(answer => !answer.skipped).length,
     latest_answer: latestQuestion ? {question_id:latestAnswerId,subject:subjectOf(latestQuestion)} : null,
     question_candidates: state.status === 'active' ? questions.slice(state.i)
       .filter(question => !['name','want','cause'].includes(question.id) && !gates.has(question.id) && !evidenceState.ans[question.id] &&
-        !state.modelSkipped?.[question.id] && (!question.when || conditionMatches(question.when, evidenceState)))
+        !state.modelSkipped?.[question.id] && (!v3 || !state.v3.issued[question.id]) && (!question.when || conditionMatches(question.when, evidenceState)))
       .map(question => ({ id:question.id, question:renderQuestion(question, evidenceState).q,
         subject:subjectOf(question),
         required:Boolean(question.required), noSkip:Boolean(question.noSkip) })) : [],
     name_index: state.nameIndex || null,
     chat_title: state.chatTitle || '',
-    user_goal: { message: fields.want, desired_outcomes: fields.goal },
+    user_goal: { message: fields[v3 ? 'q3_01' : 'want'], desired_outcomes: fields[v3 ? 'q3_09' : 'goal'] },
     patient: {
-      alias: state.name || '그분', relationship: fields.rel,
+      alias: state.name || '그분', relationship: fields[v3 ? 'q3_02' : 'rel'],
       fields: {
         ...Object.fromEntries(questions.filter(question => subjectOf(question) === 'patient').map(question => [question.id, fields[question.id]])),
-        ...Object.fromEntries(clarificationQuestions.filter(q=>q.subject==='patient'&&extraFields[q.id]).map(q=>[q.id,extraFields[q.id]])),
+        ...Object.fromEntries(extraQuestions.filter(q=>q.subject==='patient'&&extraFields[q.id]).map(q=>[q.id,extraFields[q.id]])),
         ...(state.ans.gap_obs && gapQuestion ? { gap_obs:evidenceField(gapQuestion, state) } : {}),
       },
     },
     supporter: {
       role: 'informant',
       fields: {...Object.fromEntries(questions.filter(question => subjectOf(question) === 'supporter').map(question => [question.id, fields[question.id]])),
-        ...Object.fromEntries(clarificationQuestions.filter(q=>q.subject==='supporter'&&extraFields[q.id]).map(q=>[q.id,extraFields[q.id]]))},
+        ...Object.fromEntries(extraQuestions.filter(q=>q.subject==='supporter'&&extraFields[q.id]).map(q=>[q.id,extraFields[q.id]]))},
     },
-    payload: { name: state.name, tags: [...state.tags], answers },
+    payload: { name: state.name, tags: [...state.tags], answers:v3 ? answers.filter(answer => answer.ordinary_usable !== false) : answers },
     profileInput: {
-      name: state.name, rel: value('rel'), contact: value('contact'), obs: state.extraObs,
-      concern: value('concern'), moment: value('moment'), feeling: value('feeling'), want: value('want'),
-      tags: [...state.tags], answers: Object.fromEntries(Object.entries(state.ans).map(([id, answer]) => [id, answer.text])),
+      name: state.name, rel: value(v3 ? 'q3_02' : 'rel'), contact: value('contact'), obs: state.extraObs,
+      concern: value(v3 ? 'q3_03' : 'concern'), moment: value(v3 ? 'q3_05' : 'moment'), feeling: value(v3 ? 'q3_06' : 'feeling'), want: value(v3 ? 'q3_01' : 'want'),
+      tags: [...state.tags], answers: Object.fromEntries(Object.entries(state.ans)
+        .filter(([, answer]) => !v3 || (v3FieldStatus(answer) === 'answered' && answer.ordinary_usable !== false))
+        .map(([id, answer]) => [id, answer.text])),
     },
     agent_state: state.agentMemory || null,
     ...(state.agentStateExecution?.name_reuse||state.agentStateExecution?.safety_reuse
@@ -491,6 +628,11 @@ export function buildContext(state) {
     relationship_state: state.agentRelationshipMemory || null,
     log: structuredClone(state.log), followUps: state.fuCount, model_status: state.modelStatus || 'not_connected',
   };
+  if (v3) for (const report of state.v3.reports) {
+    const id = `${report.question.id}_control_${report.answer.source_revision}`;
+    const question = { ...report.question, id };
+    context[question.subject].fields[id] = evidenceField(question, { ...state, ans:{ [id]:report.answer } });
+  }
   if(state.safetySignal) {
     try {context.safety_signal=currentReviewedSafety({...context,safety_signal:state.safetySignal});}
     catch(error) {

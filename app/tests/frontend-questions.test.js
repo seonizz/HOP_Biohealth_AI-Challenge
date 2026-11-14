@@ -1,3 +1,4 @@
+import { restoreLegacyQuestionBank } from './helpers/legacy-question-bank.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -178,6 +179,7 @@ async function fixture(t) {
   });
   await admin.query(`CREATE SCHEMA "${schema}"`);
   f.store = await Store.connect(databaseUrl, f.key, 30, {schema});
+  await restoreLegacyQuestionBank(f.store);
   return f;
 }
 async function restorePreviousDefaults(f) {

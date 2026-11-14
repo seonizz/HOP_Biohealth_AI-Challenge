@@ -68,7 +68,9 @@ export function isolatePreviewCookies(req,res,port) {
 }
 
 export async function seedPreview(store, owner, {modelMode='synthetic'}={}) {
-  const state=createIntake(await store.questionSet());
+  // This fixed historical record uses legacy question IDs. New preview chats
+  // still obtain the active bank from Store; never mix this fixture with it.
+  const state=createIntake();
   state.name=sample.name;state.chatTitle='[예시] 친구 민서';state.status='ready';state.pendingFollow=null;
   state.ans={name:answer(sample.name),rel:answer('친구'),want:answer(sample.want),describe:answer(sample.observation),feeling:answer(sample.feeling)};
   state.log=[{who:'ai',text:'로컬 미리보기용으로 만든 예시 대화예요.',fu:false},

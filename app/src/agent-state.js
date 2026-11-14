@@ -3,6 +3,9 @@ import { hasAnswerContent } from './catalog.js';
 
 const invalid = () => { throw new HttpError(502, 'MODEL_INVALID_RESPONSE', '모델의 답변을 확인하지 못했어요. 다시 시도해 주세요.'); };
 
+export const isV3Context = context => context?.bundle_id === 'malssi-intake-3.0.0-rc1';
+export const minimumQuestionAnswers = context => isV3Context(context) ? 0 : 5;
+
 function exactObject(value, keys) {
   if (!value || typeof value !== 'object' || Array.isArray(value) ||
       Object.keys(value).length !== keys.length || keys.some(key => !Object.hasOwn(value, key))) invalid();
@@ -79,6 +82,7 @@ export function validateNameIndex(value, context) {
 
 function evidenceField(context, evidence) {
   if (evidence.subject === 'user_goal') {
+    if (isV3Context(context)) return Object.values(context.user_goal || {}).find(field => field?.id === evidence.question_id);
     if (evidence.question_id === 'want') return context?.user_goal?.message;
     if (evidence.question_id === 'goal') return context?.user_goal?.desired_outcomes;
     return undefined;
@@ -101,13 +105,15 @@ export function validateQuestionPlan(value, context) {
     const current = evidenceField(context, { subject: candidate.subject, question_id: candidate.id });
     if (current && current.status !== 'not_asked') invalid();
     if (skip.reason === 'not_needed' && (candidate.required || candidate.noSkip ||
-        !Number.isInteger(context?.answered_count) || context.answered_count < 5)) invalid();
+        !Number.isInteger(context?.answered_count) || context.answered_count < minimumQuestionAnswers(context))) invalid();
     if (!Array.isArray(skip.evidence) || !skip.evidence.length || skip.evidence.length > 8) invalid();
     for (const evidence of skip.evidence) {
       exactObject(evidence, ['subject', 'question_id', 'quote']);
       if (!['patient', 'supporter', 'user_goal'].includes(evidence.subject)) invalid();
       text(evidence.question_id, 80); text(evidence.quote, 10000);
-      const allowed = candidate.subject === 'patient' ? ['patient', 'user_goal'] : [candidate.subject];
+      // v3 subjects identify the input bucket, not the actor in a mixed report.
+      const allowed = isV3Context(context) ? ['patient', 'supporter', 'user_goal']
+        : candidate.subject === 'patient' ? ['patient', 'user_goal'] : [candidate.subject];
       const source = evidenceField(context, evidence);
       if (!allowed.includes(evidence.subject) || !source || source.id !== evidence.question_id ||
           !['answered', 'unknown'].includes(source.status) ||

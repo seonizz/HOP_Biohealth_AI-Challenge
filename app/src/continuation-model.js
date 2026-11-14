@@ -80,7 +80,11 @@ export function continuationCardContext(record, messages, reviewed, safety) {
   const removed = input.original_sources.filter(s=>reviewed.superseded.includes(s.source_id));
   for (const source of removed) {
     if (context[source.subject]?.fields) delete context[source.subject].fields[source.question_id];
-    if (source.subject==='user_goal') for (const key of Object.keys(context.user_goal||{})) {
+    // v3 goal fields are aliases of a native question, not independent reports.
+    if (context.bundle_id) for (const subject of ['patient','supporter']) {
+      if (context[subject]?.fields) delete context[subject].fields[source.question_id];
+    }
+    if (source.subject==='user_goal' || context.bundle_id) for (const key of Object.keys(context.user_goal||{})) {
       if (context.user_goal[key]?.id===source.question_id) delete context.user_goal[key];
     }
     context.payload.answers=context.payload.answers.filter(a=>a.id!==source.question_id);
@@ -91,7 +95,19 @@ export function continuationCardContext(record, messages, reviewed, safety) {
     if (['mood','gap_obs'].includes(source.question_id)&&context.profileInput.obs&&
       input.original_sources.some(row=>row.question_id===source.question_id&&row.text.includes(context.profileInput.obs))) context.profileInput.obs='';
     if (source.question_id==='name') {context.name_index=null;context.patient.alias='그분';context.profileInput.name='그분';context.payload.name='그분';}
-    if (source.question_id==='rel') context.patient.relationship=null;
+    if (['rel','q3_02'].includes(source.question_id)) context.patient.relationship=null;
+    if (context.bundle_id && context.profileInput) {
+      const alias = {q3_01:'want',q3_02:'rel',q3_03:'concern',q3_05:'moment',q3_06:'feeling'}[source.question_id];
+      if (alias) context.profileInput[alias]='';
+    }
+    if (context.bundle_id && [context.clarification_state?.binding?.source_question_id,'q3_10'].includes(source.question_id)) {
+      if (context.clarification_state) {
+        context.clarification_state.status='obsolete';
+        delete context.clarification_state.assignment;
+      }
+      for (const subject of ['patient','supporter']) if (context[subject]?.fields) delete context[subject].fields.q3_10;
+      context.payload.answers=context.payload.answers.filter(answer=>answer.id!=='q3_10');
+    }
   }
   for (const [index,fact] of reviewed.facts.entries()) {
     const id=`continuation_${index}_${createHash('sha256').update(fact.message_id+fact.quote).digest('hex').slice(0,16)}`;

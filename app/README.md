@@ -4,6 +4,20 @@
 
 [프로젝트 홈](../README.md) · [통합 실행·검증](../docs/current/실행과_검증.md) · [현황과 할 일](../docs/current/현황과_할일.md)
 
+새 대화는 [v3 질문 계약](docs/QUESTIONS.md)의 기본 9문항과 조건부 확인 1문항을 사용합니다. 이전 대화의 질문과 기록은 당시 스냅샷으로 보존합니다.
+
+2026-11-14 기준 버전 식별자는 다음과 같습니다. 질문셋의 `v3`는 앱 패키지나 모델 크기의 버전이 아닙니다.
+
+| 대상 | 현재 식별자 | 기준 |
+| --- | --- | --- |
+| 새 대화 질문셋 | `malssi-intake-3.0.0-rc1` | `seeds/questionnaire-v3/bundle.json` |
+| 앱 npm 패키지 | `0.1.0` | `package.json` |
+| 관계 프롬프트 | `relationship-v3.28-speech-detail-review` | `src/relationship-prompts.js` |
+| 통합 턴 | 위 프롬프트 + `-combined-turn-v56` | `src/relationship-turn.js` |
+
+질문셋 원본은 참조 후보판이며 운영 승인·안정판 선언은 아닙니다. 앱 적용과 실제 생성·DB 저장의 확인 범위는 [v3 검증 기록](docs/QUESTIONNAIRE_V3_VERIFICATION.md)에서 실행별로 구분합니다.
+
+
 ## 설치와 실행
 
 통합 프로젝트의 `app/` 폴더에서 실행합니다. Node.js 24.14 이상 24.x, Docker·Compose, 접근 가능한 모델 API가 필요합니다. 아래는 로컬 Ollama를 사용하는 기본 절차이며 다른 API는 같은 환경 설정의 주소·모델·인증·지원 형식을 지정합니다.
@@ -157,7 +171,7 @@ JSON 재작성에는 해당 단계에서 검증에 실패한 직전 출력과 �
 | 상태 갱신·검색·최종 검토·화면·저장 구조 | [관계 에이전트 계약](docs/RELATIONSHIP_AGENT.md) |
 | HTTP 요청·응답과 오류 | [API 계약](docs/API.md), [OpenAPI](docs/openapi.json) |
 
-정리 전 설명과 당시 검증 기록은 [원문 보관](../archive/08_문서통합_원문/app/README.md)에 남깁니다.
+과거 기록은 [보관 문서 안내](../docs/archive/README.md)를 참고합니다. 예전 `archive/08_문서통합_원문/app/README.md` 원본은 이 체크아웃에 없으며 복구된 자료로 간주하지 않습니다.
 
 ## 추가 질문 화면 로컬 미리보기
 

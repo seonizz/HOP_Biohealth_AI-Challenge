@@ -1,0 +1,112 @@
+{
+  "schema_version": "active-bundle-1",
+  "bundle_id": "malssi-intake-3.0.0-rc1",
+  "created_date": "2026-11-13",
+  "timezone": "Asia/Seoul",
+  "purpose": "reference_only",
+  "status": "active_reference_candidate",
+  "production_approved": false,
+  "native_app_compatibility_verified": false,
+  "active_entrypoints": {
+    "questions": "active/questions.json",
+    "tasks": "active/tasks.json",
+    "semantics": "active/codebook.json",
+    "policy": "active/policy.json",
+    "semantic_oracles": "evaluation/semantic_oracles.json",
+    "scenario_registry": "evaluation/app_model_cases.json",
+    "reference_runner": "reference/run_checks.py"
+  },
+  "authority_order": [
+    "this_manifest_pins_exact_active_assets",
+    "active_semantic_oracles_and_contracts",
+    "docs_explain_the_same_contract",
+    "sources_and_history_are_not_active_gold"
+  ],
+  "assets": [
+    {
+      "path": "active/questions.json",
+      "bytes": 23574,
+      "sha256": "7587fed8a6d82003757da0126f49e4e40f5400f0e575784975f479741507c74a"
+    },
+    {
+      "path": "active/tasks.json",
+      "bytes": 17013,
+      "sha256": "e33bdc2c77d9d0849498bb02060eb93b95368a9789d4b72f205c3dde961c9b75"
+    },
+    {
+      "path": "active/codebook.json",
+      "bytes": 8095,
+      "sha256": "48002f5ea56958cbce19dff42259eff27b524c9e1cdb165c5bdd8c3633c48fc8"
+    },
+    {
+      "path": "active/policy.json",
+      "bytes": 7987,
+      "sha256": "cad89a4e7d78b95952d904f5821172e5dc6a20a9b3435c0229017dcd9f5570eb"
+    },
+    {
+      "path": "evaluation/semantic_oracles.json",
+      "bytes": 21824,
+      "sha256": "132b685c99308f88756a37ec78d901b3d28b1552ac3aecb9cb3df4c0e65a363d"
+    },
+    {
+      "path": "evaluation/app_model_cases.json",
+      "bytes": 68244,
+      "sha256": "4be31c20f033f3d8a1e3c270dfb7185ad96f39e63e42a18155522ca0b45fd3e7"
+    },
+    {
+      "path": "evaluation/measurement_plan.json",
+      "bytes": 4972,
+      "sha256": "ac37e35c9a92c05ed110b0afa7eac0fed00537da4efbeedb754559d63972eb2b"
+    },
+    {
+      "path": "evaluation/findings_traceability.json",
+      "bytes": 9469,
+      "sha256": "c7845f231f56928fd08322f9feb4dbf2be107913775f356c9e92ca23694d0251"
+    },
+    {
+      "path": "reference/engine.py",
+      "bytes": 45385,
+      "sha256": "f129161bb62f5db6103a96961c86663e8b0db8be63fe01d30575285b76fd40f1"
+    },
+    {
+      "path": "reference/test_engine.py",
+      "bytes": 40457,
+      "sha256": "da1d7cce0fdf6fe3eda4337dc02341a46ff218117c2aa0bee50c93a1944133ff"
+    },
+    {
+      "path": "reference/run_checks.py",
+      "bytes": 13723,
+      "sha256": "44c5c51fded618bda2b126935e8fb249d95ea78fefedc59584a1f0f16d276bc0"
+    }
+  ],
+  "excluded_from_active_inputs": [
+    "sources/",
+    "history/"
+  ],
+  "result_files_not_hashed_here_to_avoid_cycles": [
+    "reference/results.json",
+    "validation/package_validation.json",
+    "manifest.json"
+  ],
+  "production_dependencies_not_supplied": [
+    "actual_question_loader_and_bank",
+    "existing_app_source_and_DB_API",
+    "actual_prompts_and_model_configuration",
+    "approved_safety_policy_and_fixed_templates",
+    "native_browser_storage_and_renderer",
+    "legacy_bundle_handlers"
+  ],
+  "trusted_reference_inputs": [
+    "manually_reviewed_semantic_annotations",
+    "attributed_control_intent",
+    "independently_reviewed_task_plan_and_concreteness",
+    "injected_safety_verdict_for_branch_tests"
+  ],
+  "not_implemented_claims": [
+    "natural_language_extraction",
+    "clinical_decision_accuracy",
+    "native_atomic_database_writes",
+    "actual_browser_or_legacy_app_compatibility",
+    "automatic_multi_task_completion"
+  ]
+}

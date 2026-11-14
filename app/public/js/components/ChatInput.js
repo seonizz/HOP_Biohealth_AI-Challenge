@@ -82,7 +82,18 @@ const ChatInput={
     const context=draftContext??++this.draftSequence;
     this.clear();this.draftContext=context;this.draftQuestion=q;this.draftDetail=draftDetail;const box=$("input");
     const submit=(...args)=>this.run(()=>onDone(...args));
-    const addBack=()=>{if(!onBack)return;const b=document.createElement("button");b.className="back";b.textContent="← 이전 질문으로";
+    const addBack=()=>{
+      if(q.response_controls){
+        const controls=document.createElement("div");controls.className="acts response-controls";
+        for(const [event,label] of [["unknown","잘 모르겠어요"],["not_understood","질문 설명"],["refused","답하고 싶지 않아요"],["stop","여기까지 할게요"]]){
+          const button=document.createElement("button");button.className="ghost";button.textContent=label;
+          button.onclick=()=>{const draft=this.captureDraft(),custom=draft?.own||"",text=draft?.text||custom;
+            return submit(text,[],q.type==="text"?"":custom,false,event);};
+          controls.appendChild(button);
+        }
+        box.appendChild(controls);
+      }
+      if(!onBack)return;const b=document.createElement("button");b.className="back";b.textContent="← 이전 질문으로";
       b.onclick=()=>this.run(onBack);box.prepend(b);};
     // 건너뛰기 (네/아니요 질문은 q.noSkip, 핵심 문항은 q.required로 숨김)
     const canSkip=!q.noSkip&&!q.required;
@@ -139,6 +150,7 @@ const ChatInput={
             return openDetail(k);
           }
           btns.forEach(x=>x.setAttribute("aria-pressed",x===b?"true":"false"));
+          if(q.allowCustomWithSelection)return;
           return submit(optLabel(o),[k],"");
         }
         const on=b.getAttribute("aria-pressed")!=="true";
@@ -162,7 +174,9 @@ const ChatInput={
     const own=$("own");
     const pick=()=>btns.map((c,k)=>c.getAttribute("aria-pressed")==="true"?k:-1).filter(k=>k>=0);
     if(q.type==="one"){
-      const go=()=>{const v=own.value;if(!hasAnswerContent(v)){own.focus();return;}submit(v,[],v);};
+      const go=()=>{const v=own.value,sel=q.allowCustomWithSelection?pick():[];
+        if(!hasAnswerContent(v)&&!sel.length){own.focus();return;}
+        submit([...sel.map(k=>optLabel(q.opts[k])),...(hasAnswerContent(v)?[v]:[])].join(", "),sel,hasAnswerContent(v)?v:"");};
       $("ownSend").onclick=go;own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}};
     }else{
       g.onclick=()=>{const sel=pick(),raw=own?.value||"",v=hasAnswerContent(raw)?raw:"";

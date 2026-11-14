@@ -1446,3 +1446,55 @@ test('additional-question entry survives appended key controls without replacing
   assert.equal(document.getElementById('recordContinue'),null);
   assert.equal(document.getElementById('rdetail').querySelector('.script').textContent,'원래 대화문');
 });
+
+test('v3 single choice waits for Send and submits the selected purpose together with typed details', async () => {
+  const document = documentWith(['input']);
+  const context = vm.createContext({document,submitted:[],setTimeout,clearTimeout});
+  vm.runInContext(script('core/utils.js')+script('core/questions.js')+script('components/ChatInput.js')+';globalThis.inputUI=ChatInput;',context);
+  context.inputUI.render({id:'q3_01',type:'one',opts:[['목적',{value:'T1'}]],allowCustomWithSelection:true,response_controls:true},(...args)=>context.submitted.push(args));
+  await document.querySelectorAll('.chip')[0].click();
+  assert.equal(context.submitted.length,0);
+  document.getElementById('own').value='추가로 원하는 내용';
+  await document.getElementById('ownSend').click();
+  assert.equal(context.submitted[0][0],'목적, 추가로 원하는 내용');
+  assert.deepEqual(Array.from(context.submitted[0][1]),[0]);
+  assert.equal(context.submitted[0][2],'추가로 원하는 내용');
+});
+
+test('v3 explicit response controls preserve typed safety content and send a separate intent', async () => {
+  for (const [label,event] of [['잘 모르겠어요','unknown'],['답하고 싶지 않아요','refused'],['질문 설명','not_understood'],['여기까지 할게요','stop']]) {
+    const document = documentWith(['input']);
+    const context = vm.createContext({document,submitted:[],setTimeout,clearTimeout});
+    vm.runInContext(script('core/utils.js')+script('core/questions.js')+script('components/ChatInput.js')+';globalThis.inputUI=ChatInput;',context);
+    context.inputUI.render({id:'q3_03',type:'text',response_controls:true},(...args)=>context.submitted.push(args));
+    document.getElementById('ta').value='남기려는 원문';
+    await document.querySelectorAll('button').find(button=>button.textContent===label).click();
+    assert.equal(context.submitted[0][0],'남기려는 원문');
+    assert.equal(context.submitted[0][4],event);
+  }
+});
+
+test('v3 pending stop restores retry-only UI and never reopens ordinary answer controls', async () => {
+  const view={...conversationView(''),bundle_id:'malssi-intake-3.0.0-rc1',user_stopped:true,input_locked:true,model_pending:true,
+    question:{id:'q3_03',type:'text',response_controls:true},pending_answer:{question_id:'q3_03',response_event:'stop',text:'마지막 원문',revision:0}};
+  const {document,context}=conversationHarness(async()=>view,{realUI:true});
+  context.ui.typing=(_,work)=>Promise.resolve(typeof work==='function'?work():work);
+  await context.flow.begin();
+  assert.equal(document.getElementById('ta'),null);
+  assert.equal(document.getElementById('own'),null);
+  const buttons=document.getElementById('input').querySelectorAll('button');
+  assert.equal(buttons.length,1);
+  assert.equal(buttons[0].textContent,'다시 시도');
+  assert.equal(context.flow.getState().user_stopped,true);
+});
+
+test('v3 explicit stop acknowledgement does not request an ordinary result', async () => {
+  const requests=[];
+  const view={...conversationView(''),bundle_id:'malssi-intake-3.0.0-rc1',user_stopped:true,status:'ready',question:null};
+  const {document,context}=conversationHarness(async(path)=>{requests.push(path);return view;},{realUI:true});
+  context.ui.typing=(_,work)=>Promise.resolve(typeof work==='function'?work():work);
+  await context.flow.begin();
+  assert.ok(document.getElementById('input').textContent.includes('대화를 여기서 마쳤어요'));
+  assert.equal(requests.some(path=>path.endsWith('/result')),false);
+  assert.equal(document.getElementById('ta'),null);
+});

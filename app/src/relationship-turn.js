@@ -6,7 +6,7 @@ import { relationshipStateRequest, canonicalRelationshipState, assertRetrievedEv
   relationshipQuestionRequest, validateRelationshipQuestions, questionReviewRequest,
   applyQuestionReview, safetyReviewRequest, validateSafetyReview, validateSafetyEvidence, validateEvidence, validateSchema, MAX_REPORTED_MEMORY_EVIDENCE } from './relationship-agent.js';
 import { COMMON, STATE_REVIEW, PROMPT_VERSION } from './relationship-prompts.js';
-import { claimsOf, auditSchema, validateAudits } from './grounding-audit.js';
+import { claimsOf, auditSchema, validateAuditCoverage, validateAudits } from './grounding-audit.js';
 import { literalStateRepairSchema, literalStateRepairInstruction } from './relationship-state-repair.js';
 import { scopedBlockInput, scopedBlockPrompt, reviewedNameInput, REVIEWED_NAME_PROMPT, reviewedSafetyRequest } from './turn-input-scope.js';
 import { finalReviewBundle } from './final-review-bundle.js';
@@ -84,7 +84,7 @@ patient/supporter의 최신 answered 원문·후속 답변에 상태·관계 해
 아래 상태 규칙의 patient_state, name_index, relationship_memory는 출력 state 내부입니다. state_input의 전체 원문을 기준으로 작성하고 그 retrieval에 포함된 근거만 선택하세요.
 `+rules+(questions?(stageScopedQuestionRules&&['patient_state','name_index','relationship_memory'].includes(block)?'':`
 아래 질문 진행 규칙의 skip, clarify, safety는 출력 questions 내부입니다. question_input의 전체 원문과 후보를 기준으로 작성하고 그 retrieval에 포함된 근거만 선택하세요. 두 retrieval의 허용 근거를 섞지 마세요.
-questions.clarify에 선택할 추가 확인이 없으면 []입니다. clarification_candidates가 비었으면 반드시 []로 반환하세요. 이때 output_schema의 enum에 있는 "none"은 빈 후보를 표현하는 자리표시자이며 실제 선택지가 아니므로 ["none"]을 출력하지 마세요. 후보가 있어도 추가 확인이 불필요하면 []입니다.
+${questions.data.bundle_id==='malssi-intake-3.0.0-rc1'?'questions.clarify는 [] 또는 원문·revision·한 사건·한 축에 묶인 객체 하나입니다. clarification_available=false이면 반드시 []입니다. true여도 해당 확인이 요청 결과에 필요하지 않거나 원문에 이미 답이 있으면 []입니다. clarification_candidates가 비어 있다는 사실은 이 판본의 객체 확인을 금지하는 조건이 아닙니다.':'questions.clarify에 선택할 추가 확인이 없으면 []입니다. clarification_candidates가 비었으면 반드시 []로 반환하세요. 이때 output_schema의 enum에 있는 "none"은 빈 후보를 표현하는 자리표시자이며 실제 선택지가 아니므로 ["none"]을 출력하지 마세요. 후보가 있어도 추가 확인이 불필요하면 []입니다.'}
 `+withoutCommon(questions.prompt)):'\n이번 요청은 질문 진행 판단을 하지 않습니다. questions는 null입니다.')+`
 들여쓰기·코드블록 없는 한 줄 JSON만 출력하세요. 자유 문구는 짧게, unknowns/가설은 현재 중요한 것만 쓰세요. 일반적 정보 부족으로 목록을 채우지 말되 원문의 모름·거절·상충과 필수 필드·인용·정정은 보존하세요. 스스로 승인하지 마세요. 독립 검토는 다음 요청에서 합니다.
 검토 후 수정 요청이면 마지막으로 review.state.audits의 unsupported 항목을 rejected_draft.claims의 같은 id와 대조하세요. 인용 부족이라는 지적은 문장의 말투만 바꿔 해결하지 않습니다. 해당 문장에 남길 각 주장에 맞는 실제 원문을 허용된 evidence 후보에서 다시 선택하거나, 문장을 선택한 인용이 지지하는 범위로 좁히세요. 전체 입력의 다른 곳에 사실이 있어도 현재 finding의 evidence에 빠져 있으면 그 주장의 근거가 아닙니다. repair 예문의 문장만 복사하고 거절된 evidence를 그대로 두지 마세요. 직접 보고를 반복하는 항목은 reported 규칙을 따르고 추론을 새 사실로 바꾸지 마세요. 각 지적을 현재 원문과 대조해 수정한 뒤 기존 독립 검토를 다시 받아야 합니다.`+(block?`
@@ -385,12 +385,29 @@ function combinedStateReviewRequest(payload,suffix='') {
     ...payload,review_target:{...payload.review_target,claims:reviewClaims.claims},
   },schema:reviewSchema,validate:output=>{
     validateSchema(output,reviewSchema,'output',true);
-    const actualIds=new Set(output.state.audits.map(audit=>audit.id));
-    if(actualIds.size!==reviewClaims.claims.length||reviewClaims.claims.some(claim=>!actualIds.has(claim.id)))invalid('agent_claim_audit');
+    validateAuditCoverage(output.state.audits,reviewClaims.claims);
     const canonical={...output,state:{...output.state,audits:output.state.audits.map(audit=>unknownIds.has(audit.id)?{
       ...audit,verdict:audit.verdict==='still_unknown'?'supported':audit.verdict==='review_uncertain'?'plausible':'unsupported',
     }:audit)}};
-    const validated=validateCombinedStateReview(canonical,canonicalSchema,reviewClaims.claims);
+    let validated;
+    try { validated=validateCombinedStateReview(canonical,canonicalSchema,reviewClaims.claims); }
+    catch(error) {
+      // Keep the canonical rejection, but explain it in the verdict vocabulary
+      // requested on this wire. Unknown approvals require still_unknown only.
+      if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&output.state.approved){
+        let conflictId;
+        if(error.modelReason==='agent_unknown_audit')
+          conflictId=output.state.audits.find(audit=>unknownIds.has(audit.id)&&audit.verdict!=='still_unknown')?.id;
+        else if(error.modelReason==='agent_claim_audit'){
+          try { const feedback=JSON.parse(error.modelFeedback);if(feedback.keyword==='auditApprovalConflict')conflictId=feedback.claim_id; } catch { /* Preserve the original failure. */ }
+        }
+        const audit=unknownIds.has(conflictId)&&output.state.audits.find(audit=>audit.id===conflictId);
+        if(audit)error.modelFeedback=JSON.stringify({keyword:'auditApprovalConflict',claim_id:audit.id,verdict:audit.verdict,
+          allowed_approved_verdicts:['still_unknown'],
+          repair:'미확인 정보의 approved=true는 해당 audit가 still_unknown일 때만 가능합니다. 현재 원문과 미확인 범위를 다시 대조하세요. already_answered·not_needed·review_uncertain 판정이 남으면 approved=false와 구체적인 issues를 반환하세요. 형식에 맞추기 위해 판정을 still_unknown으로 올리거나 자동 승인하지 마세요.'});
+      }
+      throw error;
+    }
     if(!reviewClaims.aliases.size)return validated;
     const audits=new Map(validated.state.audits.map(audit=>[audit.id,audit]));
     const expanded={...validated,state:{...validated.state,audits:claims.map(claim=>({

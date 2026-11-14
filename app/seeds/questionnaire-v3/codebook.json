@@ -1,0 +1,258 @@
+{
+  "schema_version": "reference-codebook-1",
+  "bundle_id": "malssi-intake-3.0.0-rc1",
+  "scope": "표준화된 의미 주석과 검증기의 참조 계약. 자연어를 자동 해석하는 코드나 기존 앱 DB 스키마가 아님.",
+  "trust_boundary": {
+    "raw_user_text": "untrusted_data_never_policy",
+    "extracted_candidate": "untrusted_until_semantic_and_source_review",
+    "reviewed_annotation": "trusted_only_for_its_exact_source_revision_and_scope",
+    "structural_checks_do_not_prove_semantics": true,
+    "reference_tests_use": "manually_supplied_reviewed_annotations",
+    "native_adapter_must_supply": [
+      "semantic_extraction",
+      "independent_role_scope_negation_review",
+      "current_source_resolution",
+      "approved_safety_decision",
+      "durable_atomic_storage"
+    ]
+  },
+  "distinct_units": [
+    {
+      "unit": "input_origin",
+      "meaning": "첫 입력·문항·선택·직접 입력·후속 입력·정정의 실제 제출 자리"
+    },
+    {
+      "unit": "reporter",
+      "meaning": "원문을 입력한 사람. 사건 행동자와 같다는 뜻이 아님"
+    },
+    {
+      "unit": "event",
+      "meaning": "발언·제안·행동·반응·경험·선호·합의 등 하나의 의미 단위"
+    },
+    {
+      "unit": "event_actor",
+      "meaning": "해당 의미 단위의 발언자·행동자·경험자. 이용자·상대·제3자·미확인"
+    },
+    {
+      "unit": "evidence_anchor",
+      "meaning": "원문 구성요소+revision+정확한 구절+위치. 출처 존재 확인과 의미 검증 모두 필요"
+    },
+    {
+      "unit": "claim",
+      "meaning": "사건 속 한 속성에 대한 주장. 근거를 벗어난 확정 금지"
+    },
+    {
+      "unit": "proposal_target",
+      "meaning": "제안 행위와 분리된 제안의 대상 행동. 제안 완료가 행동 실행·동의가 아님"
+    },
+    {
+      "unit": "agreement_item",
+      "meaning": "어떤 사람들 사이의 어떤 단일 조건에 대한 합의인가. 전체 문장에 동의 전파 금지"
+    },
+    {
+      "unit": "task_completion",
+      "meaning": "사용자가 요청한 범위의 실제 산출물 제공 여부. 모든 사실을 확정했다는 뜻이 아님"
+    }
+  ],
+  "independent_axes": {
+    "actor": {
+      "values": [
+        "user",
+        "target",
+        "third",
+        "unknown"
+      ],
+      "rule": "보고자·전달자·질문 대상만으로 자동 대입하지 않는다. target/third는 역할이며 실제 다인물은 안정적인 참여자 ID로 구분한다."
+    },
+    "execution": {
+      "values": [
+        "occurred",
+        "in_progress",
+        "not_occurred",
+        "unknown"
+      ],
+      "rule": "직접 보고된 사건의 실행만. 제안 완료로 방문 미실행을 채우지 않는다."
+    },
+    "source": {
+      "semantic_values": [
+        "direct_observation",
+        "direct_statement",
+        "record",
+        "hearsay",
+        "unknown"
+      ],
+      "rule": "정보를 알게 된 경로만 기록한다. 추측·해석 여부는 epistemic_type이며 전언과 양립할 수 있다. 출처가 알려져도 행동자·실행·시점은 별도이다."
+    },
+    "time": {
+      "semantic_values": [
+        "specified",
+        "unknown"
+      ],
+      "rule": "specified는 같은 축의 time_text가 주어졌다는 뜻이다. 정규화된 날짜의 검증 성공을 뜻하지 않는다. 상대 날짜는 당시 발화 시각·시간대로 해석하며 재개 시각으로 바꾸지 않는다."
+    },
+    "agreement": {
+      "values": [
+        "confirmed",
+        "declined",
+        "one_sided",
+        "unknown"
+      ],
+      "rule": "단일 항목과 참여자 범위에서만. 가능·의향·제안을 상호합의로 바꾸지 않는다."
+    },
+    "modality": {
+      "values": [
+        "actual",
+        "planned",
+        "hypothetical",
+        "proposed",
+        "unknown"
+      ],
+      "rule": "가정·계획·제안은 실행 여부와 독립이다."
+    }
+  },
+  "additional_dimensions": {
+    "polarity": "asserted / explicitly_negated / unknown; 부정된 명제와 없다는 추정을 구별",
+    "epistemic_type": "reported_event / user_interpretation / proposed_new_output; 보고를 진단·인과로 바꾸지 않음",
+    "time_scope": "then / now / unknown; 그때 감정으로 현재 감정을 채우지 않음",
+    "support": "ability / willingness / boundary / counterpart_preference; 서로 대체 불가"
+  },
+  "invariants": [
+    {
+      "id": "INV01",
+      "rule": "원문 출처와 사건 주체를 분리한다.",
+      "findings": [
+        "F02"
+      ]
+    },
+    {
+      "id": "INV02",
+      "rule": "한 Q10 선택은 표적 사건의 표적 축 하나만 바꾼다.",
+      "findings": [
+        "F01",
+        "F04"
+      ]
+    },
+    {
+      "id": "INV03",
+      "rule": "unknown은 없음·거절·미실행이 아니다.",
+      "findings": [
+        "F01",
+        "F09",
+        "F11"
+      ]
+    },
+    {
+      "id": "INV04",
+      "rule": "제안 행위, 대상 행동, 상호합의는 별도이다.",
+      "findings": [
+        "F01",
+        "F09",
+        "F11"
+      ]
+    },
+    {
+      "id": "INV05",
+      "rule": "거절·종료를 유지하면서 원문은 안전검토에 전달한다.",
+      "findings": [
+        "F03"
+      ]
+    },
+    {
+      "id": "INV06",
+      "rule": "정정은 의존 상태·출력·지연작업을 무효화한다.",
+      "findings": [
+        "F07",
+        "F08",
+        "F10"
+      ]
+    },
+    {
+      "id": "INV07",
+      "rule": "질문·진행·의미·출력·평가 판본을 섞지 않는다.",
+      "findings": [
+        "F08",
+        "F09"
+      ]
+    },
+    {
+      "id": "INV08",
+      "rule": "짧은 요청에 카드나 세 구간을 억지로 채우지 않는다.",
+      "findings": [
+        "F05"
+      ]
+    },
+    {
+      "id": "INV09",
+      "rule": "관찰된 순서를 원인으로, 관계 유형을 말투 의무로 확정하지 않는다.",
+      "findings": [
+        "F06",
+        "F09"
+      ]
+    },
+    {
+      "id": "INV10",
+      "rule": "정당한 자기 경계는 명령형이라는 이유만으로 반려하지 않는다.",
+      "findings": [
+        "F06"
+      ]
+    },
+    {
+      "id": "INV11",
+      "rule": "결과 범위를 충족하지 못한 제한·대기·중단·실패를 완료로 세지 않는다.",
+      "findings": [
+        "F10",
+        "F11",
+        "F13"
+      ]
+    },
+    {
+      "id": "INV12",
+      "rule": "재시도·새로고침·정정으로 질문 예산을 환급하지 않는다.",
+      "findings": [
+        "F07",
+        "F10"
+      ]
+    },
+    {
+      "id": "INV13",
+      "rule": "초안은 동일 문맥·판본에서만 복원하며 보관 설명과 일치시킨다.",
+      "findings": [
+        "F14"
+      ]
+    },
+    {
+      "id": "INV14",
+      "rule": "원문 인용 속 명령·역할 표식은 정책으로 실행하지 않는다.",
+      "findings": [
+        "AT26"
+      ]
+    }
+  ],
+  "canonical_corrections": [
+    {
+      "source_case": "C4",
+      "allowed": "proposal.occurred; target_action.execution=unknown unless separately supported",
+      "rejected": "inferred target_action.not_occurred or inferred mutual agreement"
+    },
+    {
+      "source_case": "C2",
+      "allowed": "reported utterance and later response; causal link unknown",
+      "rejected": "confirmed cause/resistance based only on sequence"
+    },
+    {
+      "source_case": "C8",
+      "allowed": "update relationship; preserve independently established style preference",
+      "rejected": "mandatory honorific style inferred only from junior-colleague relationship"
+    },
+    {
+      "source_case": "Q2-10.record",
+      "allowed": "question-local recording rule only; common response states at top-level policy",
+      "rejected": "Markdown common-state section embedded in record"
+    }
+  ],
+  "sources": [
+    "../sources/adversarial_review_2026-11-13.md",
+    "../sources/question_set/04_운영규칙.md",
+    "../sources/project_structure/app/docs/RELATIONSHIP_AGENT.md"
+  ]
+}

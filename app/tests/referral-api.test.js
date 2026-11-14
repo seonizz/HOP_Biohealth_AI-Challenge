@@ -1,3 +1,4 @@
+import { restoreLegacyQuestionBank } from './helpers/legacy-question-bank.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
@@ -22,6 +23,7 @@ async function fixture(t, options = {}) {
   await admin.query(`CREATE SCHEMA ${schema}`);
   const app = await createApp({databaseUrl, schema, key:randomBytes(32), gateway:null,
     referralDirectory:directory(), ...options});
+  await restoreLegacyQuestionBank(app.store);
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   t.after(async () => {
     await new Promise(resolve => app.server.close(resolve));

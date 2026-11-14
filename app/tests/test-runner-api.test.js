@@ -1,3 +1,4 @@
+import { restoreLegacyQuestionBank } from './helpers/legacy-question-bank.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -27,6 +28,7 @@ async function fixture(t, gateway) {
     }
   });
   app = await createApp({databaseUrl, schema, key:randomBytes(32), gateway, referralProvider:null});
+  await restoreLegacyQuestionBank(app.store);
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${app.server.address().port}`;
   const browser = async () => {

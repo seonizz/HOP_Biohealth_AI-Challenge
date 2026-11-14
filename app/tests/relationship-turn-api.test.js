@@ -1,3 +1,4 @@
+import { restoreLegacyQuestionBank } from './helpers/legacy-question-bank.js';
 import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -49,6 +50,7 @@ async function fixture(t,gateway) {
   const admin=new pg.Pool({connectionString:databaseUrl});
   await admin.query(`CREATE SCHEMA ${schema}`);
   const app=await createApp({databaseUrl,schema,key:randomBytes(32),gateway});
+  await restoreLegacyQuestionBank(app.store);
   await new Promise(resolve=>app.server.listen(0,'127.0.0.1',resolve));
   t.after(async()=>{
     await new Promise(resolve=>app.server.close(resolve));

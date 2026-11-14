@@ -207,3 +207,29 @@ test('linked clarification retains the requested task without indexing AI prose 
   assert.equal(safetySnapshotFingerprint(changed),safetySnapshotFingerprint(context));
   assert.equal(JSON.stringify(sourceDocuments(context)).includes(request.text),false);
 });
+
+test('v3 corrections remove duplicated goal aliases and dependent Q10 assignments',()=>{
+  const record=original(),old='원래 요청은 철회할게요.';
+  record.context.bundle_id='malssi-intake-3.0.0-rc1';
+  record.context.supporter.fields.q3_01=field('q3_01',old);
+  record.context.user_goal.message=field('q3_01',old);
+  record.context.profileInput.want=old;
+  record.context.payload.answers.push(field('q3_01',old),field('q3_10','저예요'));
+  record.context.supporter.fields.q3_10=field('q3_10','저예요');
+  record.context.clarification_state={status:'answered',binding:{source_question_id:'q3_01'},assignment:{axis:'actor',value:'user'}};
+  const messages=[message('새로 상황만 정리하고 싶어요.')];
+  const input=continuationInput(record,messages);
+  const goalSources=input.original_sources.filter(source=>source.question_id==='q3_01');
+  assert.ok(goalSources.length>=2);
+  for (const source of goalSources) {
+    const context=continuationCardContext(record,messages,{answer:'새 요청을 참고할게요.',clarification:null,
+      facts:[],superseded:[source.source_id]});
+    assert.equal(context.user_goal.message,undefined);
+    assert.equal(context.supporter.fields.q3_01,undefined);
+    assert.equal(context.profileInput.want,'');
+    assert.equal(context.supporter.fields.q3_10,undefined);
+    assert.equal(context.clarification_state.assignment,undefined);
+    assert.equal(context.clarification_state.status,'obsolete');
+    assert.equal(context.payload.answers.some(answer=>['q3_01','q3_10'].includes(answer.id)),false);
+  }
+});

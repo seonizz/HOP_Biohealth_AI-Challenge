@@ -134,7 +134,7 @@ const TestRunner = {
       const data=await this.request('/api/bootstrap');
       this.csrf=data.csrf_token;this.questions=data.questions;
       $('test-questions').innerHTML=this.questions.map(q=>`<section><h3><code>${esc(q.id)}</code> · ${esc(q.q)}</h3>${q.opts?`<p>${q.opts.map((option,index)=>`${index}. ${esc(Array.isArray(option)?option[0]:option)}`).join('<br>')}</p>`:'<p>글로 답하기</p>'}</section>`).join('');
-      $('test-input').placeholder='{"title": "사례 이름", "answers": {"name": "테스트 친구", "want": "전하고 싶은 말"}}';
+      $('test-input').placeholder=TestInput.example(this.questions);
       this.busy(false);$('test-status').textContent='붙여넣기 또는 파일 불러오기로 시작하세요.';
       if (!data.model_connected) this.error('모델 연결 설정이 필요해요. 서버 설정을 확인한 뒤 다시 열어 주세요.');
     } catch (error) { this.error(`${error.message} 새로고침해서 다시 시도해 주세요.`);$('test-status').textContent='문항을 불러오지 못했어요.'; }

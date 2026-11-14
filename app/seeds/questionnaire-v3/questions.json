@@ -1,0 +1,668 @@
+{
+  "bundle_id": "malssi-intake-3.0.0-rc1",
+  "schema_version": "1.0.0",
+  "created_date": "2026-11-13",
+  "timezone": "Asia/Seoul",
+  "production_approved": false,
+  "usage": "reference_only",
+  "native_app_contract": false,
+  "questions": [
+    {
+      "id": "Q3-01",
+      "source_question_id": "Q2-01",
+      "order": 1,
+      "title": "목적",
+      "text": "이번에 어떤 도움을 받고 싶으신가요?",
+      "help": {
+        "id": "H3-01",
+        "text": "원하는 결과를 골라 주세요. 원하는 말이나 결과가 이미 정해져 있다면 그대로 적어도 됩니다. 여러 목적이 있으면 함께 적어 주세요.",
+        "max_displays": 1
+      },
+      "topic_scope": "goal",
+      "format": "single_select_with_text",
+      "collects": [
+        "goal_intent",
+        "support_goal"
+      ],
+      "options": [
+        {
+          "value": "T1",
+          "label": "거절하거나 선을 긋는 말을 쓰고 싶어요"
+        },
+        {
+          "value": "T2",
+          "label": "가능한 시간을 넣어 제안문을 쓰고 싶어요"
+        },
+        {
+          "value": "T3",
+          "label": "약속이나 합의한 내용을 정리하고 싶어요"
+        },
+        {
+          "value": "T4",
+          "label": "상황을 정리하고 싶어요"
+        },
+        {
+          "value": "T5",
+          "label": "제 생각이나 마음을 정리하고 싶어요"
+        },
+        {
+          "value": "T6",
+          "label": "어떻게 돕거나 말을 꺼낼지 고르고 싶어요"
+        }
+      ],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-02",
+      "source_question_id": "Q2-02",
+      "order": 2,
+      "title": "관계",
+      "text": "이야기하시는 분과는 어떤 관계인가요?",
+      "help": {
+        "id": "H3-02",
+        "text": "본인과 상대의 관계만 알려 주세요. 실명은 필요하지 않습니다. 관계만으로 친밀도나 서로 쓰는 말투를 정하지 않습니다.",
+        "max_displays": 1
+      },
+      "topic_scope": "relationship",
+      "format": "single_select_with_text",
+      "collects": [
+        "relationship"
+      ],
+      "options": [
+        {
+          "value": "parent",
+          "label": "부모"
+        },
+        {
+          "value": "child",
+          "label": "자녀"
+        },
+        {
+          "value": "spouse",
+          "label": "배우자"
+        },
+        {
+          "value": "partner",
+          "label": "연인"
+        },
+        {
+          "value": "sibling",
+          "label": "형제자매"
+        },
+        {
+          "value": "friend",
+          "label": "친구"
+        },
+        {
+          "value": "coworker",
+          "label": "직장 동료·선후배"
+        },
+        {
+          "value": "other",
+          "label": "그 밖의 관계"
+        }
+      ],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-03",
+      "source_question_id": "Q2-03",
+      "order": 3,
+      "title": "상황",
+      "text": "이번에 다루고 싶은 상황을 설명해 주실 수 있나요?",
+      "help": {
+        "id": "H3-03",
+        "text": "지금 다루고 싶은 장면부터 적어 주세요. 여러 일이면 나누어 적어도 됩니다. 언제의 일인지 아는 범위에서 적어 주세요. 앞으로의 일이나 가정이라면 그대로 밝혀 주세요.",
+        "max_displays": 1
+      },
+      "topic_scope": "scene",
+      "format": "text",
+      "collects": [
+        "reported_scene",
+        "boundary_scope",
+        "proposed_action",
+        "agreement_items"
+      ],
+      "options": [],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-04",
+      "source_question_id": "Q2-04",
+      "order": 4,
+      "title": "상대의 말과 행동",
+      "text": "그 상황에서 상대가 한 말이나 행동은 무엇인가요?",
+      "help": {
+        "id": "H3-04",
+        "text": "직접 확인한 말·행동과 전해 들은 이야기를 구별해 적어 주세요. 해석이나 추측은 그렇게 표시해 주세요. 없는 내용은 채우지 않아도 됩니다.",
+        "max_displays": 1
+      },
+      "topic_scope": "target_observation",
+      "format": "text",
+      "collects": [
+        "target_observation"
+      ],
+      "options": [],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-05",
+      "source_question_id": "Q2-05",
+      "order": 5,
+      "title": "나의 대응과 상대 반응",
+      "text": "그 상황에서 본인이 한 말이나 행동이 있었나요? 있었다면 그 뒤에 확인한 상대의 반응은 무엇인가요?",
+      "help": {
+        "id": "H3-05",
+        "text": "실제로 한 대응과 그 뒤에 알게 된 상대의 반응을 나누어 적어 주세요. 둘 중 아는 부분만 답해도 됩니다. 아직 대응하지 않았거나 반응을 모르면 그대로 적어 주세요.",
+        "max_displays": 1
+      },
+      "topic_scope": "interaction",
+      "format": "text_with_optional_parts",
+      "collects": [
+        "supporter_response",
+        "target_response",
+        "agreement_items"
+      ],
+      "options": [
+        {
+          "value": "no_action_yet",
+          "label": "아직 아무것도 하지 않았어요"
+        }
+      ],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-06",
+      "source_question_id": "Q2-06",
+      "order": 6,
+      "title": "나의 생각과 마음",
+      "text": "이 상황에 대해 본인은 어떤 생각이나 마음이 드나요?",
+      "help": {
+        "id": "H3-06",
+        "text": "본인의 생각이나 마음 중 말하고 싶은 부분을 적어 주세요. 그때와 지금이 다르면 구별해도 됩니다. 한 시점이나 한 부분만 답해도 되고, 변화가 없다는 것도 답입니다.",
+        "max_displays": 1
+      },
+      "topic_scope": "self_experience",
+      "format": "text",
+      "collects": [
+        "supporter_experience"
+      ],
+      "options": [],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-07",
+      "source_question_id": "Q2-07",
+      "order": 7,
+      "title": "상대가 표현한 선호",
+      "text": "상대가 원하거나 원하지 않는 도움을 직접 말한 적이 있나요? 있다면 어떤 말이었나요?",
+      "help": {
+        "id": "H3-07",
+        "text": "상대가 직접 표현했다고 알고 있는 바람이나 경계를 적어 주세요. 말한 적이 없는 것과 본인이 모르는 것은 다릅니다. 추측으로 채우지 않아도 됩니다.",
+        "max_displays": 1
+      },
+      "topic_scope": "target_preference",
+      "format": "text_with_quick_options",
+      "collects": [
+        "target_preference"
+      ],
+      "options": [
+        {
+          "value": "not_expressed",
+          "label": "말한 적 없어요"
+        },
+        {
+          "value": "unknown",
+          "label": "잘 모르겠어요"
+        }
+      ],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-08",
+      "source_question_id": "Q2-08",
+      "order": 8,
+      "title": "내가 가능한 도움",
+      "text": "이번 상황에서 본인이 할 수 있는 도움의 방법과 범위는 어느 정도인가요?",
+      "help": {
+        "id": "H3-08",
+        "text": "본인에게 가능한 방법·시간·횟수·범위를 아는 만큼 적어 주세요. 가능하다는 답은 하겠다는 약속이 아닙니다. 여력이 없다는 것도 답입니다.",
+        "max_displays": 1
+      },
+      "topic_scope": "supporter_capacity",
+      "format": "multi_select_with_text",
+      "collects": [
+        "supporter_capacity",
+        "supporter_available_time"
+      ],
+      "options": [
+        {
+          "value": "listen",
+          "label": "이야기를 들어 줄 수 있어요"
+        },
+        {
+          "value": "contact",
+          "label": "연락할 수 있어요"
+        },
+        {
+          "value": "meet_or_accompany",
+          "label": "만나거나 함께 갈 수 있어요"
+        },
+        {
+          "value": "share_work",
+          "label": "일을 나누어 맡을 수 있어요"
+        },
+        {
+          "value": "little_capacity",
+          "label": "지금은 여력이 거의 없어요"
+        }
+      ],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-09",
+      "source_question_id": "Q2-09",
+      "order": 9,
+      "title": "내가 원하는 선택",
+      "text": "이번 상황에서 본인은 어떻게 하고 싶으신가요?",
+      "help": {
+        "id": "H3-09",
+        "text": "할 수 있는지와 별개로 원하는 선택과 맡고 싶지 않은 일을 적어 주세요. 지금은 돕지 않기, 일부만 돕기, 아직 정하지 않기도 답이 됩니다.",
+        "max_displays": 1
+      },
+      "topic_scope": "supporter_intent",
+      "format": "text",
+      "collects": [
+        "supporter_intent",
+        "boundary_intent",
+        "proposal_intent",
+        "chosen_action",
+        "support_goal"
+      ],
+      "options": [],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    },
+    {
+      "id": "Q3-10",
+      "source_question_id": "Q2-10",
+      "order": null,
+      "title": "한 가지 확인",
+      "text": "표시된 「…」에서 이번 확인 항목은 어떤 경우에 해당하나요?",
+      "help": {
+        "id": "H3-10",
+        "text": "강조된 한 사건의 표시된 항목만 확인합니다. 이 답으로 다른 항목까지 정하지 않습니다. 모르거나 이해하기 어려우면 해당 상태를 선택해도 됩니다.",
+        "max_displays": 1
+      },
+      "topic_scope": "clarification",
+      "format": "registered_axis_variant",
+      "collects": [
+        "actor",
+        "execution",
+        "source",
+        "time",
+        "agreement",
+        "modality"
+      ],
+      "options": [],
+      "input_reporter": "user",
+      "event_subject_policy": "derive_per_evidenced_event_not_question_id",
+      "max_instances_per_intake": 1,
+      "required_by_default": false
+    }
+  ],
+  "default_priority": [
+    "Q3-01",
+    "Q3-02",
+    "Q3-03",
+    "Q3-04",
+    "Q3-05",
+    "Q3-06",
+    "Q3-07",
+    "Q3-08",
+    "Q3-09"
+  ],
+  "counting": {
+    "max_new_question_instances_per_intake": 10,
+    "max_instances_per_question_id": 1,
+    "consume_on": "first_issue",
+    "refund": false,
+    "same_instance_help_redisplay_counts_as_new": false,
+    "ui_restore_counts_as_new": false,
+    "goal_change_resets_budget": false,
+    "correction_resets_budget": false,
+    "old_followup_questions_enabled": false,
+    "forced_separate_name_question": false,
+    "user_copy": "일반 안내 질문은 최대 10개입니다. 안전 확인이 필요하면 별도 절차로 전환될 수 있습니다.",
+    "separate_metrics": [
+      "new_question_instances",
+      "help_redisplays",
+      "ui_restores",
+      "answer_time",
+      "not_understood_count",
+      "time_to_first_useful_output",
+      "time_to_final_storage",
+      "completion_status"
+    ]
+  },
+  "response_contract": {
+    "events": [
+      "answered",
+      "unknown",
+      "skipped",
+      "refused",
+      "not_understood",
+      "stop"
+    ],
+    "not_understood_first": "show_registered_help_once_and_redisplay_same_instance",
+    "not_understood_repeat": {
+      "status": "skipped",
+      "reason": "not_understood"
+    },
+    "missing_help_behavior": "contract_error_no_generated_help",
+    "unknown_or_skip": "do_not_reask_same_information_in_this_intake",
+    "refusal": "persist_explicit_topic_scope_across_linked_intakes_until_explicit_scoped_reopening",
+    "voluntary_fact_after_refusal": "preserve_fact_if_allowed_without_general_reopening",
+    "stop": "no_new_intake_questions; preserve_control_state; safety_handoff_if_required"
+  },
+  "planning": {
+    "rule": "select_lowest_priority_eligible_unissued_question; clarification_has_priority_when_needed",
+    "replan_on": [
+      "goal_revision",
+      "source_correction",
+      "new_scene_or_material_information"
+    ],
+    "may_revisit_previously_auto_skipped_unissued": true,
+    "may_reissue_consumed_question": false,
+    "auto_skip_does_not_consume_instance": true,
+    "source_order": "all_current_preceding_input_events_not_numeric_question_order",
+    "eligibility": [
+      "allowed_for_current_task_or_common",
+      "answer_changes_requested_output",
+      "needed_information_not_already_supported",
+      "information_scope_not_blocked",
+      "question_not_previously_issued",
+      "no_stop_or_safety_hold"
+    ],
+    "stale_response_policy": "reject_response_not_matching_active_instance_source_revision_and_goal_revision"
+  },
+  "clarification": {
+    "question_id": "Q3-10",
+    "applies_to_tasks": [
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6"
+    ],
+    "max_instances_per_intake": 1,
+    "consume_on": "first_issue",
+    "refund": false,
+    "one_event_only": true,
+    "one_axis_only": true,
+    "axes": {
+      "actor": {
+        "label": "확인할 사람의 역할",
+        "text": "표시된 「…」에서 강조한 내용의 당사자는 누구인가요?",
+        "help": {
+          "id": "H3-10-actor",
+          "text": "이번에는 화면에 표시한 역할의 사람만 확인합니다. 말한 사람, 행동한 사람, 경험한 사람, 가능한 범위의 당사자, 전달한 사람은 서로 다를 수 있습니다.",
+          "max_displays": 1
+        },
+        "format": "single_select",
+        "options": [
+          {
+            "value": "user",
+            "label": "저예요"
+          },
+          {
+            "value": "target",
+            "label": "이번 이야기의 상대예요"
+          },
+          {
+            "value": "third",
+            "label": "그 밖의 사람이에요"
+          },
+          {
+            "value": "unknown",
+            "label": "잘 모르겠어요"
+          }
+        ],
+        "required_extra_binding": [
+          "role"
+        ],
+        "role_labels": {
+          "speaker": "말한 사람",
+          "actor": "행동한 사람",
+          "experiencer": "경험한 사람",
+          "capacity_holder": "가능한 범위의 당사자",
+          "relayer": "전달한 사람"
+        },
+        "identity_policy": "actor_value_is_participant_category_only; third_does_not_identify_a_specific_person; retain_separately_evidenced_participant_id_or_unknown; never_merge_multiple_third_parties"
+      },
+      "execution": {
+        "label": "한 행동의 실행 여부",
+        "text": "표시된 「…」의 강조한 한 행동은 실제로 어느 상태인가요?",
+        "help": {
+          "id": "H3-10-execution",
+          "text": "강조한 한 행동의 실행 상태만 확인합니다. 제안한 것과 제안한 일을 실행한 것은 다른 행동입니다. 계획이나 가정 여부는 이 답만으로 정하지 않습니다.",
+          "max_displays": 1
+        },
+        "format": "single_select",
+        "options": [
+          {
+            "value": "occurred",
+            "label": "이미 한 행동이에요"
+          },
+          {
+            "value": "in_progress",
+            "label": "지금 하고 있는 행동이에요"
+          },
+          {
+            "value": "not_occurred",
+            "label": "아직 하지 않은 행동이에요"
+          },
+          {
+            "value": "unknown",
+            "label": "실행 여부를 모르겠어요"
+          }
+        ]
+      },
+      "source": {
+        "label": "그 내용을 알게 된 경로",
+        "text": "표시된 「…」의 내용을 어떤 경로로 알게 되셨나요?",
+        "help": {
+          "id": "H3-10-source",
+          "text": "그 내용을 알게 된 경로만 확인합니다. 말을 직접 들었다는 것과 그 말의 내용까지 직접 확인했다는 것은 다릅니다. 해석인지 여부는 별도로 보존하며, 경로가 섞여 구별하기 어려우면 모름을 선택해 주세요.",
+          "max_displays": 1
+        },
+        "format": "single_select",
+        "options": [
+          {
+            "value": "direct_observation",
+            "label": "그 행동이나 상황을 직접 보거나 겪었어요"
+          },
+          {
+            "value": "direct_statement",
+            "label": "그 사람이 하는 말을 직접 들었어요"
+          },
+          {
+            "value": "record",
+            "label": "메시지나 기록에서 확인했어요"
+          },
+          {
+            "value": "hearsay",
+            "label": "다른 사람이 전해 주었어요"
+          },
+          {
+            "value": "unknown",
+            "label": "경로를 모르거나 구별하기 어려워요"
+          }
+        ],
+        "orthogonal_epistemic_policy": "source_path_does_not_determine_epistemic_type; an_inference_may_be_based_on_hearsay_or_direct_observation"
+      },
+      "time": {
+        "label": "한 사건이나 경험의 시점",
+        "text": "표시된 「…」의 한 사건이나 경험은 언제의 일인가요?",
+        "help": {
+          "id": "H3-10-time",
+          "text": "표시된 한 사건이나 경험의 때만 적어 주세요. 정확한 날짜를 모르면 기억하는 범위로 적어도 됩니다. 이 답으로 실행 여부나 동의를 정하지 않습니다.",
+          "max_displays": 1
+        },
+        "format": "text_or_unknown",
+        "options": [
+          {
+            "value": "specified",
+            "label": "아는 범위의 시점을 적을게요"
+          },
+          {
+            "value": "unknown",
+            "label": "시점을 모르겠어요"
+          }
+        ],
+        "detail_field": "time_text",
+        "detail_required_for": [
+          "specified"
+        ],
+        "relative_time_policy": "preserve_time_text_and_source_timestamp_timezone; normalize_only_when_unambiguous; no_reanchor_on_resume"
+      },
+      "agreement": {
+        "label": "한 항목에 대한 상호 동의",
+        "text": "표시된 「…」의 강조한 한 항목에 대해 서로 동의했나요?",
+        "help": {
+          "id": "H3-10-agreement",
+          "text": "강조한 한 항목에 대한 양쪽의 동의만 확인합니다. 한쪽이 가능하다고 하거나 원한다고 한 것은 상호 동의가 아닙니다. 다른 날짜·시간·반복 횟수로 넓히지 않습니다.",
+          "max_displays": 1
+        },
+        "format": "single_select",
+        "options": [
+          {
+            "value": "confirmed",
+            "label": "양쪽 모두 이 항목에 동의했어요"
+          },
+          {
+            "value": "declined",
+            "label": "이 항목에는 동의하지 않는다는 답이 확인됐어요"
+          },
+          {
+            "value": "one_sided",
+            "label": "한쪽의 의사만 확인됐어요"
+          },
+          {
+            "value": "unknown",
+            "label": "서로 동의했는지 모르겠어요"
+          }
+        ],
+        "required_extra_binding": [
+          "agreement_item_id"
+        ]
+      },
+      "modality": {
+        "label": "실제 상황·계획·가정·제안의 구분",
+        "text": "표시된 「…」의 강조한 내용은 어떤 뜻으로 말씀하셨나요?",
+        "help": {
+          "id": "H3-10-modality",
+          "text": "실제 상황에 관한 설명인지, 계획인지, 가정인지, 제안 내용인지만 확인합니다. 계획이나 제안도 나중에 실행될 수 있으므로 이 답으로 실행 여부를 정하지 않습니다.",
+          "max_displays": 1
+        },
+        "format": "single_select",
+        "options": [
+          {
+            "value": "actual",
+            "label": "계획이나 가정이 아닌 실제 상황에 관한 설명이에요"
+          },
+          {
+            "value": "planned",
+            "label": "하려고 계획한 내용이에요"
+          },
+          {
+            "value": "hypothetical",
+            "label": "만약 그렇다면이라는 가정이에요"
+          },
+          {
+            "value": "proposed",
+            "label": "누군가에게 제안한 내용이에요"
+          },
+          {
+            "value": "unknown",
+            "label": "어느 뜻인지 정하기 어려워요"
+          }
+        ]
+      }
+    },
+    "required_binding": [
+      "instance_id",
+      "source_message_id",
+      "source_revision",
+      "event_id",
+      "quote",
+      "quote_start",
+      "quote_end",
+      "axis"
+    ],
+    "quote_coordinates": "Unicode code points; start inclusive; end exclusive; exact source substring",
+    "source_policy": "current_user_source_only; immutable_binding; no_auto_rebase_after_correction",
+    "update_policy": "only_selected_axis_of_bound_event; preserve_prior_supported_values_in_other_axes; unknown_remains_unknown",
+    "free_text_extra_policy": "any_extra_explicit_report_is_a_new_source_report_not_an_inferred_consequence_of_choice",
+    "second_ambiguity_policy": "no_second_Q10; retain_unknown; fulfill_supported_scope_or_return_specific_limited_result",
+    "invalidated_instance_policy": "mark_obsolete_and_keep_budget_consumed; reject_late_selection; continue_only_with_current_evidence",
+    "eligibility": [
+      "one_atomic_event_and_exact_quote_identified",
+      "axis_unknown_or_conflicting_and_changes_requested_output",
+      "scope_not_refused_or_previously_unknown_or_skipped",
+      "clarification_not_issued",
+      "not_in_safety_hold_or_stopped"
+    ],
+    "target_selection_priority": [
+      "blocks_requested_factually_correct_output",
+      "largest_number_of_requested_items_unblocked",
+      "earliest_current_source_order_then_event_id_then_axis_order"
+    ],
+    "axis_order": [
+      "actor",
+      "execution",
+      "source",
+      "time",
+      "agreement",
+      "modality"
+    ],
+    "help_policy": {
+      "use_axis_help_instead_of_generic": true,
+      "max_help_displays_per_instance": 1,
+      "generic_and_axis_help_budgets_are_not_additive": true
+    }
+  },
+  "citation_policy": {
+    "source_question_id_is_migration_metadata": true,
+    "source_question_id_is_not_current_app_question_id": true,
+    "question_subject_does_not_assign_event_actor": true,
+    "quote_presence_is_not_semantic_entailment": true
+  }
+}

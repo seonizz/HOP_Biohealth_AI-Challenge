@@ -42,7 +42,8 @@ const ConversationDrafts={
   },
   identity(view){
     if(!view?.question||view.id==null||view.revision==null||view.question.id==null)return null;
-    return JSON.stringify([String(view.id),view.revision,String(view.question.id),!!view.question.follow_up]);
+    return JSON.stringify([String(view.id),view.revision,String(view.question.id),!!view.question.follow_up,
+      ...(view.bundle_id?[view.bundle_id,view.question.instance_id||null]:[])]);
   },
   boundedDraft(draft){
     return {...(typeof draft.nextText==="string"&&draft.nextText?{nextText:draft.nextText.slice(0,20000)}:{}),text:typeof draft.text==="string"?draft.text.slice(0,20000):"",
@@ -94,7 +95,7 @@ const ConversationDrafts={
     const key=this.identity(view),previous=this.active;
     if(!key||!view.model_pending||!previous||typeof ChatInput==="undefined"||ChatInput.draftContext!==previous.context)return false;
     const before=JSON.parse(previous.key),after=JSON.parse(key);
-    if(before[0]!==after[0]||before[2]!==after[2]||before[3]!==after[3])return false;
+    if(before[0]!==after[0]||before[2]!==after[2]||before[3]!==after[3]||before[4]!==after[4]||before[5]!==after[5])return false;
     if(previous.key!==key)delete this.entries[previous.key];
     this.active={key,intake:String(view.id),context:previous.context,edited:previous.edited};
     this.save();

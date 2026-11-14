@@ -60,6 +60,12 @@ const TestInput = {
     });
   },
   example(questions) {
+    if(questions.some(question=>question.id==='q3_01'))return JSON.stringify({title:'친구에게 연락 제안하기',answers:{
+      q3_01:{selected:[1],custom:'금요일 저녁에 잠깐 통화하자고 제안하고 싶어요.'},
+      q3_02:'친구',q3_03:'친구와 이번 주에 통화할 시간을 정하고 싶어요.',
+      q3_08:{selected:[1],custom:'금요일 저녁 8시에 20분 정도 가능해요.'},
+      q3_09:'가능한지 먼저 물어보고 싶어요.',
+    }},null,2);
     const relation = questions.find(question => question.id === 'rel');
     const friend = relation?.opts.find(option => (Array.isArray(option) ? option[0] : option) === '친구');
     return JSON.stringify({ title:'친구에게 마음 전하기', answers:{

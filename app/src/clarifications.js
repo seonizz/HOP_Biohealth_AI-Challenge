@@ -9,6 +9,8 @@ export const clarificationQuestions = [
 ];
 
 export function clarificationCandidates(state) {
+  // v3 uses one source-bound axis question; the old three prompts are never mixed in.
+  if (state.questionSet?.bundle_id === 'malssi-intake-3.0.0-rc1') return [];
   if (state.status!=='ready') return [];
   // Answered, unknown and declined prompts are all consumed. Never ask again.
   return clarificationQuestions.filter(q=>!Object.hasOwn(state.clarificationAnswers||{},q.id));

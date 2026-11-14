@@ -1,3 +1,5 @@
+> 새 대화는 `malssi-intake-3.0.0-rc1`의 [v3 질문 계약](QUESTIONS.md)을 따릅니다. 질문·근거·정책 묶음은 대화 시작 시 고정하며, 이전 대화는 당시 스냅샷과 호환 계약을 유지합니다.
+
 # API 계약
 
 동일 Origin에서 호출합니다. `/api/bootstrap`은 `HttpOnly; SameSite=Strict` 익명 쿠키를 만들고 `csrf_token`을 반환합니다. 이후 세션 변경 요청에 `X-CSRF-Token`을 보내고 본문은 JSON으로 전달합니다. 세션을 잃었을 때의 삭제 키 경로는 별도 자격증명과 명시적인 동일 Origin을 요구합니다. 세션 토큰·삭제 키·모델 키는 로그에 남기지 않습니다.
@@ -35,21 +37,29 @@
 | `GET /api/columns/:article` | 칼럼과 상태 |
 | `PATCH /api/columns/:article/state` | `{read:true}` 또는 `{saved:true/false}`; 읽음 취소는 기존 UI에 없어 받지 않음 |
 
-질문 카탈로그와 새 상담은 `questions` 테이블에서 읽습니다. 진행 중 상담은 시작 시 질문 스냅샷을 사용합니다. 문맥의 `question_set_version`으로 당시 구성을 확인할 수 있습니다. 관리 방법은 [질문 관리](QUESTIONS.md)를 참고하세요.
+질문 카탈로그와 새 상담은 `questions` 테이블에서 읽습니다. 진행 중 상담은 시작 시 질문 스냅샷을 사용합니다. 문맥의 `question_set_version`으로 당시 구성의 해시를, `bundle_id`로 질문셋 판본을 확인할 수 있습니다. 관리 방법은 [질문 관리](QUESTIONS.md)를 참고하세요.
 
 ## 답변
 
 ```json
 {
   "revision": 0,
-  "question_id": "name",
-  "text": "친구",
-  "selected": [],
-  "custom": "",
-  "skipped": false,
-  "follow_up": false
+  "question_id": "q3_01",
+  "instance_id": "malssi-intake-3.0.0-rc1:q3_01:1",
+  "selected": [0],
+  "custom": "무리하지 않고 말을 꺼낼 방법을 정리하고 싶어요.",
+  "response_event": "answered"
 }
 ```
+
+새 대화에서는 응답의 현재 `question.id`·`question.instance_id`와 `revision`을 사용합니다. `instance_id`를 보내면 서버가 현재 질문 인스턴스와 대조합니다. `response_event`는 `answered`(기본), `unknown`, `skipped`, `refused`, `not_understood`, `stop` 중 하나입니다. 일반 입력에 포함된 “그만” 같은 인용 문구를 제어 이벤트로 간주하지 않습니다.
+
+- `answered`: 보기의 0 기반 `selected`와 `custom`을 함께 보낼 수 있습니다. 서술형은 `text`로 보냅니다.
+- 나머지 제어 이벤트에는 선택 보기를 함께 보내지 않습니다. `text`·`custom`은 원문으로 보존하되, 거절·종료·건너뜀의 문장을 일반 사실 근거로 채택하지 않습니다.
+- 첫 `not_understood`는 등록 도움말을 한 번 표시하고 같은 질문 인스턴스를 유지합니다. 같은 질문에서 반복하면 건너뜁니다.
+- `stop`은 종료 의사를 즉시 보존하고 일반 질문·새 일반 결과 생성을 막습니다. 모델 실패 후에도 종료 상태를 유지하며 같은 제출만 재시도할 수 있습니다.
+
+아래의 “네, 직접 입력”, 필수·`noSkip`, 기존 `follow_up` 설명은 해당 속성이 있는 이전 질문 스냅샷의 호환 동작입니다. 새 v3 기본 질문에는 필수 이름·최소 답변 수 조건이 없습니다.
 
 `selected`는 해당 질문 보기의 0 기반 번호입니다. 서버가 보기 문구·메타를 제공하고 검증합니다. 단일 보기에는 하나, 단독 보기에는 다른 선택을 함께 보낼 수 없습니다. “네, 직접 입력” 보기의 부가 문구는 `text`로 보냅니다. `follow_up:true`인 현재 질문에는 동일 플래그로 답해야 합니다.
 
@@ -57,7 +67,7 @@
 
 내용 유무는 UI·서버가 같은 함수로 판정합니다. 판정용 사본에서 Unicode `Cc`, `Cf`, `Default_Ignorable_Code_Point`와 가장자리 공백을 제외했을 때 빈값 또는 건너뛰기 표시만 남으면 내용 없는 입력입니다. 실제 내용이 있는 원문의 ZWJ·결합문자·앞뒤 공백은 삭제하지 않습니다. 선택형 `custom`에도 같은 기준을 적용해 필수·`noSkip`를 우회할 수 없게 합니다. 정상 선택과 함께 보낸 내용 없는 `custom`은 선택만 유지하며, 선택적 다중선택을 선택 없이 완료하는 기존 “해당 없음” 동작은 유지합니다. 선택한 “네”의 내용 없는 부가 설명은 원문 이력에 남을 수 있지만 검색·안전·상태 근거에는 포함하지 않습니다. 이 판정은 모든 글꼴의 시각적 공백을 탐지한다는 의미가 아닙니다.
 
-응답은 `id,revision,name,chat_title,status,question,progress,section,canGoBack,log`를 포함합니다. `chat_title`은 모델이 이름 답변의 실제 원문에서 추출한 호칭이며 식별되지 않으면 빈 문자열입니다. `status=ready`이면 현재 질문은 `null`입니다. UI는 전송한 글을 즉시 작성창에서 비우고 사용자 말풍선·대기 표시가 그려진 뒤 요청을 시작합니다. 재시도에는 별도로 보관한 같은 답변을 사용하며, 검증된 모델 상태를 받은 뒤 다음 질문을 표시합니다.
+응답은 `id,revision,name,chat_title,status,question,progress,section,canGoBack,log`를 포함합니다. `chat_title`은 이전 판본에서 모델이 이름 답변의 원문으로 추출한 호칭이며, 이름 문항을 사용하지 않는 v3에서는 보통 빈 문자열입니다. v3 응답은 `bundle_id`, `question_instances`, `maxQuestions:10`, `user_stopped`, `input_locked`, `safety_urgent`도 포함합니다. `status=ready`이면 현재 질문은 `null`입니다. UI는 전송한 글을 즉시 작성창에서 비우고 사용자 말풍선·대기 표시가 그려진 뒤 요청을 시작합니다. 재시도에는 별도로 보관한 같은 답변을 사용하며, 검증된 모델 상태를 받은 뒤 다음 질문을 표시합니다.
 
 모델 호출이 필요한 답변은 원문을 먼저 `modelPending` 대기 상태로 저장하며 모델 실패 시 502/503/504 오류를 반환합니다. 다음 기본 질문으로 넘어가지 않습니다. 같은 답변으로 재시도하면 답변을 중복 저장하지 않고 모델 호출을 다시 진행합니다. 실패한 답변을 수정하면 해당 질문 직전 상태를 기준으로 대기 답변을 교체하며 수정 전 원문은 버전 이력에 남습니다. 현재 `relationship_agent`는 명시적 사용자 건너뛰기도 모델 상태 갱신을 거칩니다. 모델 미설정 경로와 기존 프로토콜의 건너뛰기 처리는 호환용 질문 진행 규칙을 사용합니다.
 
@@ -106,8 +116,9 @@
 
 `context`는 다음 책임을 분리합니다.
 
-- `patient.fields`: 당사자에 대한 관계·관찰·전언·대처·도움과 생활 배경의 질문별 원문 근거.
-- `supporter.fields`: 앱 이용자의 힘든 순간·감정·부담·대처·지원 자원.
+- `patient.fields`: v3에서는 Q3-02·03·04·07의 질문별 원문 근거.
+- `supporter.fields`: v3에서는 Q3-01·05·06·08·09의 질문별 원문 근거.
+- 이 구분은 입력 문항의 출처이며 답변 속 모든 사건의 행위자를 뜻하지 않습니다. 복합 답변의 실제 말·행동 주체는 원문에서 별도로 확인합니다.
 - `user_goal`: 사용자가 전하고 싶은 말과 원하는 도움.
 - `payload`: 기존 UI의 모델 입력 계약인 원문 답변·선택 보기·태그.
 - `agent_state`: 실제 모델이 수정한 요약·근거별 해석·미확인 정보.
@@ -122,11 +133,15 @@
 
 ## 현재 관계 에이전트 프로토콜
 
-`MODEL_PROTOCOL=relationship_agent`의 기본 `MODEL_STATE_MODE=combined`는 상태·관계 기억·질문 계획 통합 작성 → 독립 통합 검토의 2회 요청으로 수행합니다. 검토·전송 실패 시 재시도 횟수는 추가될 수 있습니다. `MODEL_STATE_MODE=staged`는 비교·복구용 기존 4단계와 조건부 추가 검토를 유지합니다. 상태 출력의 `patient_state`, `relationship_memory`, `name_index`를 유지하며, 질문 계획은 이미 답한 후보(`already_covered`)와 답변 맥락상 불필요한 선택 질문(`not_needed`)을 구분해 생략하고 별도 검토를 거칩니다. `not_needed`는 직접 답변이 없어도 원문 맥락이 생략 사유를 지지하면 허용하며, 기존 최소 답변 수·후보 제한은 유지합니다. 생략은 `auto_skipped` 결정으로 저장하고 해당 답변을 만들어 채우지 않습니다. 기본 문항 완료 뒤에는 서버가 정한 선택적 확인 질문 최대 3개 중 미응답 질문을 선택할 수 있습니다. 답변·모름·거절·건너뜀은 재질문하지 않으며 임의 질문을 생성하지 않습니다. 즉각적 위험에 따른 조기 종료에는 전체 원문 근거와 독립된 위험 검토를 요구합니다. 기존 조건부 분기·필수 입력·사용자 건너뛰기는 유지합니다. 최종 결과는 기존 가이드에 `relationship_analysis`, 선택적 `conversation_detail`, `provenance.agent`의 실행·검토·검색 정보를 더합니다. 단계별 출력, 근거와 저장 계약은 [관계 에이전트 계약](RELATIONSHIP_AGENT.md)을 기준으로 합니다.
+`MODEL_PROTOCOL=relationship_agent`가 새 v3 묶음을 처리합니다. 새 로컬 설치는 `MODEL_STATE_MODE=combined_blocks`를 사용하며 상태·이름·관계 기억·질문 블록을 나누어 생성한 뒤 전체 검증과 독립 검토를 수행합니다. `combined`는 통합 초안 경로, `staged`는 관찰·관계 기억·상태 검토·질문 계획의 순차 경로입니다. 호출 수는 모드·질문 및 안전 검토·재시도에 따라 달라집니다.
+
+질문 계획은 이미 다룬 내용(`already_covered`)과 현재 맥락에 불필요한 질문(`not_needed`)을 구분합니다. 직접 답하지 않은 질문도 원문과 요청 목적이 생략 사유를 지지하면 생략할 수 있습니다. v3의 최소 답변 수는 0이며 기본 9문항과 필요한 확인 1문항을 합쳐 최대 10개 질문 인스턴스를 발행합니다. 확인 질문 Q3-10은 현재 답변 원문의 revision·구간·한 사건·한 축에 결합하고 독립 검토를 통과해야 합니다. 생략은 `auto_skipped` 결정으로 저장하며 답변·사실을 만들어 채우지 않습니다.
+
+답변·모름·거절·건너뜀을 단순 미응답으로 되돌려 반복 질문하지 않으며, 요청 목적을 정정하면 아직 제시하지 않은 질문의 필요성을 다시 판단합니다. 즉각적 위험에 따른 조기 종료에는 전체 원문과 독립된 안전 검토가 필요합니다. 최종 결과는 기존 가이드에 `relationship_analysis`, 선택적 `conversation_detail`, `provenance.agent`의 실행·검토·검색 정보를 더합니다. 단계별 출력·근거·저장 계약은 [관계 에이전트 계약](RELATIONSHIP_AGENT.md)을 따릅니다.
 
 ## 이전 프로토콜 호환 계약
 
-아래는 현재 관계 에이전트가 아닌 `json_prompt`·`json_schema` 경로의 설명입니다. 상태 모델은 `{patient_state,name_index,question_plan:{skip:[]}}`를 JSON으로 반환하며 이 경로에서는 검증된 생략 항목을 허용합니다. 이름 인덱스는 `{alias,source_question_id:"name",quote}`이며 실제 이름 입력·후속 답변만 인용할 수 있습니다. `skip` 항목은 `{question_id,reason,explanation,evidence:[{subject,question_id,quote}]}`입니다. 현재 미응답 후보만 선택하고 `already_covered`는 이미 답한 원문 근거를 요구합니다. `not_needed`는 5개 이상 답변 이후의 선택 질문만 허용합니다. 이름·전하고 싶은 말·원인 분기 기준은 제외하고 필수 질문은 `already_covered`만 허용합니다. 결정은 `auto_skipped` 상태와 근거로 저장하며 `payload.answers`에 답변을 만들지 않습니다. 최종 내부 결과는 `{guide,patient_state,assessment,name_index}`입니다.
+아래는 이전 질문 판본에 대한 `json_prompt`·`json_schema` 호환 경로의 설명입니다. 이 프로토콜로 새 v3 묶음을 처리하면 모델 호출 전에 `MODEL_PROTOCOL_UNSUPPORTED`로 거절합니다. 상태 모델은 `{patient_state,name_index,question_plan:{skip:[]}}`를 JSON으로 반환하며 이 경로에서는 검증된 생략 항목을 허용합니다. 이름 인덱스는 `{alias,source_question_id:"name",quote}`이며 실제 이름 입력·후속 답변만 인용할 수 있습니다. `skip` 항목은 `{question_id,reason,explanation,evidence:[{subject,question_id,quote}]}`입니다. 현재 미응답 후보만 선택하고 `already_covered`는 이미 답한 원문 근거를 요구합니다. `not_needed`는 5개 이상 답변 이후의 선택 질문만 허용합니다. 이름·전하고 싶은 말·원인 분기 기준은 제외하고 필수 질문은 `already_covered`만 허용합니다. 결정은 `auto_skipped` 상태와 근거로 저장하며 `payload.answers`에 답변을 만들지 않습니다. 최종 내부 결과는 `{guide,patient_state,assessment,name_index}`입니다.
 
 `MODEL_PROTOCOL=json_prompt`인 학습 모델은 지원하는 텍스트 Chat Completions 필드만 사용합니다. 상태 정리와 최종 가이드는 모델 서버가 공개한 출력 상한을 사용하고 공개하지 않으면 `max_tokens`를 생략하며 `user_goal`은 서버 원문으로 채웁니다. 모델 JSON의 `guide,assessment`에 검증된 상태·이름 인덱스를 결합한 뒤 동일 검증을 적용합니다. `script`는 5~8문장·약 300~500자, `doList,avoid,care.tips`는 각각 3~4개 항목을 목표로 요청하고 방법·이유·대안을 구체적으로 설명하게 합니다. 이는 생성 목표로 분량을 채우기 위한 사실 추가·반복은 금지하며, 응답 길이 자체를 새로운 실패 조건으로 삼지 않습니다. 현재 결과 화면과 저장 구조로 긴 가이드를 그대로 표시·보관합니다. 모델 입력에 전체 대화 로그를 중복 전송하지 않습니다. `json_schema`인 Ollama 경로도 별도 출력 토큰 상한 없이 같은 상세 지침을 사용하며 JSON Schema 출력 제약을 유지합니다. 두 경로 모두 근거 없는 JSON을 저장하지 않습니다.
 

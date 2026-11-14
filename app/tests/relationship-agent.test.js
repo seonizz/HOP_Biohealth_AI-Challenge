@@ -2736,7 +2736,11 @@ test('actual card and complete-guide reviews share the final guidance boundary w
   for(const stage of ['analysis_review','speech_detail_review']){
     const input=model.transportInputs.find(input=>input.stage===stage);assert.ok(input,stage);
     assert.ok(input.data.claims.length>0,stage);
-    assert.ok(input.data.claims.every(claim=>Object.hasOwn(claim,'certainty')&&!Object.hasOwn(claim,'claim_kind')),stage);
+    if(stage==='analysis_review')assert.ok(input.data.claims.every(claim=>Object.hasOwn(claim,'certainty')&&!Object.hasOwn(claim,'claim_kind')),stage);
+    else {
+      assert.ok(input.data.claims.every(claim=>!Object.hasOwn(claim,'certainty')&&claim.claim_kind==='speech_detail_explanation'),stage);
+      assert.deepEqual(input.output_schema.properties.audits.items.properties.verdict.enum,['supported','plausible','unsupported']);
+    }
   }
 });
 
