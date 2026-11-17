@@ -9,6 +9,8 @@
 | 현재 기술 계약 | [관계 에이전트](../app/docs/RELATIONSHIP_AGENT.md) |
 | 실행본·남은 검증 | [현황과 할 일](../docs/current/현황과_할일.md) |
 | 목표 31B 전환·학습 근거 | [데이터와 연구](../docs/current/데이터와_연구.md) |
+| 12B·31B 개선 모델 결과·남은 한계 | [승인 편향 수정과 실제 비교 결과](docs/review_approval_bias_repair.md) |
+| 12B 오승인 원인·재학습 전 자료 검증 | [12B 자료·평가 수정 결과](docs/local12b_overapproval_repair.md) |
 | 목표 31B API 호출 자료 | [이용 안내](trained_model_api/LOCAL_USAGE_REFERENCE.md) |
 | 선택적 Ollama 인증 프록시 | [프록시 안내](local_api/README.md) |
 | 서버 작업 위치·경계 | [서버 작업 규칙](Gemma_서버접속_작업규칙_레퍼런스.md) |

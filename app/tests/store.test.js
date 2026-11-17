@@ -155,7 +155,7 @@ databaseTest('restart preserves encrypted data, startup rejects a changed key, a
   f.store = await Store.connect(databaseUrl, f.key, 30, { schema: f.schema });
   assert.deepEqual(await f.store.record(browser.id, 'demo-record'), exampleRecord());
   assert.deepEqual((await f.store.context(browser.id, intake.id)).context, buildContext(intake.state));
-  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 10);
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 12);
   await f.store.pool.query('UPDATE schema_migrations SET checksum=$1', ['tampered-checksum']);
   await assert.rejects(Store.connect(databaseUrl, f.key, 30, { schema: f.schema }), /checksum/);
 });
@@ -360,5 +360,5 @@ databaseTest('conversation epoch migration upgrades existing browser data withou
   assert.equal((await f.store.history(owner)).conversation_epoch, 0);
   assert.deepEqual(await f.store.record(owner, 'retained'), exampleRecord('retained'));
   assert.deepEqual((await f.store.context(owner, intake.id)).context, buildContext(intake.state));
-  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 10);
+  assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 12);
 });

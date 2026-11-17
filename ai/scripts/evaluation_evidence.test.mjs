@@ -22,7 +22,7 @@ test('evaluator forwards prompt/omit settings into the actual agent request cont
   assert.equal(config.agentFormat,'prompt');
   assert.equal(config.reasoningEffort,'omit');
   const gateway=new ModelGateway(config);
-  gateway.request=makeBody=>makeBody({});
+  gateway.request=async makeBody=>makeBody({});
   const body=await gateway.agentComplete('synthetic','synthetic prompt',{}, {type:'object'},{},value=>value);
   assert.equal(Object.hasOwn(body,'max_tokens'),false);
   assert.equal(Object.hasOwn(body,'response_format'),false);

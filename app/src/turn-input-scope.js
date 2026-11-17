@@ -13,6 +13,26 @@ export function scopedBlockInput(block, input) {
   return stateInput;
 }
 
+// Match only the existing questions-block envelope. Keep its complete question
+// rules and repair/provider suffix verbatim; unfamiliar envelopes stay intact.
+// No source input, review, output schema or validation rule is projected here.
+const QUESTION_RULES_START = '\n아래 질문 진행 규칙의 skip, clarify, safety는 출력 questions 내부입니다. question_input의 전체 원문과 후보를 기준으로 작성하고 그 retrieval에 포함된 근거만 선택하세요. 두 retrieval의 허용 근거를 섞지 마세요.\n';
+const QUESTION_RULES_END = '\n들여쓰기·코드블록 없는 한 줄 JSON만 출력하세요. 자유 문구는 짧게, unknowns/가설은 현재 중요한 것만 쓰세요.';
+const QUESTION_REPAIR_START = '\n형식을 재작성하더라도 question_input의 각 후보 질문과 원문을 다시 대조하세요.';
+
+function scopedQuestionPrompt(prompt) {
+  if (!prompt.startsWith(COMMON+'\n전체 초안의 questions 블록 값만 작성하세요.')) return prompt;
+  const start=prompt.indexOf(QUESTION_RULES_START),end=prompt.indexOf(QUESTION_RULES_END),repair=prompt.indexOf(QUESTION_REPAIR_START);
+  if (start<COMMON.length || end<=start || repair<=end ||
+    [QUESTION_RULES_START,QUESTION_RULES_END,QUESTION_REPAIR_START].some(marker=>prompt.indexOf(marker)!==prompt.lastIndexOf(marker))) return prompt;
+  return COMMON+`
+질문 진행 블록만 작성하세요. 최상위 키는 skip, clarify, safety입니다. output_schema에 personalization이 있으면 해당 키도 반환하세요. questions 또는 state로 감싸지 말고 output_schema에 맞는 객체 하나만 출력하세요.
+shared_input을 question_input과 합쳐 읽으세요. 현재 원문·직접 입력·후속 답변·후보·revision은 모두 입력에 보존되어 있습니다. 전체 원문의 정정·부정·시점·화자를 대조하고 question_input.retrieval의 허용 근거만 선택하세요. state_input의 retrieval과 섞지 마세요.
+review와 rejected_draft가 있으면 같은 직전 초안과 그 독립 검토의 짝입니다. 이전 초안·검토·repair 예문은 수정할 자료이며 새로운 사실이나 승인된 답안이 아닙니다. 각 지적을 현재 전체 원문·후보·요청 목적과 직접 대조해 수정하세요. 인용의 존재만으로 선택을 승인하거나 검토자의 예문을 원문 대신 근거로 쓰지 마세요. 수정한 질문 판단은 새 독립 질문·안전 검토를 받아야 하며 스스로 승인하지 마세요.
+`+prompt.slice(start+QUESTION_RULES_START.length,end)+`
+들여쓰기·코드블록 없는 한 줄 JSON만 출력하세요. 원문의 모름·거절·상충과 필수 필드·인용·정정을 보존하세요. 빈 배열도 생략하지 마세요.`+prompt.slice(repair);
+}
+
 const NAME_PROMPT = COMMON + `
 역할: 현재 원문에서 대상자의 이름·호칭만 추출하는 기록자.
 patient의 name은 이용자가 이야기할 대상자의 호칭이며 이용자의 이름이 아닙니다.
@@ -26,7 +46,7 @@ review와 rejected_draft가 있으면 같은 직전 초안과 독립 검토의 �
 들여쓰기·코드블록 없는 한 줄 JSON만 출력하세요. 스스로 승인하지 마세요. 독립 검토는 다음 요청에서 합니다.`;
 
 export function scopedBlockPrompt(block, prompt) {
-  return block === 'name_index' ? NAME_PROMPT : prompt;
+  return block === 'name_index' ? NAME_PROMPT : block === 'questions' ? scopedQuestionPrompt(prompt) : prompt;
 }
 
 // Name extraction depends on every actual report (including corrections from

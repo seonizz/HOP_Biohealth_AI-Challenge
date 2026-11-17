@@ -16,6 +16,10 @@ for(const skipped of [false,true])test('unreviewed answer invalidates previous m
   state.modelStatus='connected';
   let row={id,owner,revision:0,state};
   const store={async close(){},async purgeExpired(){},async browser(){return {id:owner,csrf:'synthetic-csrf'};},
+    async intake(candidate,requested){
+      assert.equal(candidate,owner);assert.equal(requested,id);
+      return structuredClone(row);
+    },
     async updateIntake(candidate,requested,revision,mutate){
       assert.equal(candidate,owner);assert.equal(requested,id);
       if(revision!==row.revision)throw new HttpError(409,'REVISION_CONFLICT','합성 충돌');

@@ -89,7 +89,8 @@ function wireOptions(env, prefix, {serverGpuOnly = false, protocol = 'relationsh
   const agentFormat = trained && env[prefix + '_AGENT_FORMAT'] !== undefined ? env[prefix + '_AGENT_FORMAT'] : env[prefix + '_AGENT_FORMAT'] ?? (trained ? 'prompt' : 'json_schema');
   const reasoningEffort = trained && env[prefix + '_REASONING_EFFORT'] !== undefined ? env[prefix + '_REASONING_EFFORT'] : env[prefix + '_REASONING_EFFORT'] ?? (trained ? 'omit' : 'none');
   if (trained && (protocol === 'json_schema' || agentFormat !== 'prompt' || reasoningEffort !== 'omit' ||
-    ['_STREAM_JSON', '_STREAM_COMPLETE_JSON'].some(suffix => env[prefix + suffix] !== undefined && env[prefix + suffix] !== 'false'))) throw invalid(prefix);
+    env[prefix + '_STREAM_JSON'] !== undefined && !['true','false'].includes(env[prefix + '_STREAM_JSON']) ||
+    env[prefix + '_STREAM_COMPLETE_JSON'] !== undefined && env[prefix + '_STREAM_COMPLETE_JSON'] !== 'false')) throw invalid(prefix);
   return {apiProfile, agentFormat, reasoningEffort,
     streamJson:env[prefix + '_STREAM_JSON'] === 'true', streamCompleteJson:env[prefix + '_STREAM_COMPLETE_JSON'] === 'true'};
 }
@@ -143,6 +144,7 @@ export function configuredReviewGateway({env = process.env, defaultModel = DEFAU
     discoverTokenLimits:discoverSetting(env, 'MODEL_REVIEW_DISCOVER_TOKEN_LIMITS', 'MODEL_REVIEW'),
     reuseTokenPolicy:optInSetting(env, 'MODEL_REUSE_TOKEN_POLICY'),
     compactReviewOutput:optInSetting(env, 'MODEL_REVIEW_COMPACT_REVIEW_OUTPUT','MODEL_REVIEW'),
+    safetyReviewSelectionMap:optInSetting(env, 'MODEL_REVIEW_SAFETY_REVIEW_SELECTION_MAP','MODEL_REVIEW'),
     diagnosticLogger, fetchImpl,
   });
   if (!gateway.configured) throw invalid('MODEL_REVIEW');
@@ -171,6 +173,7 @@ export function configuredModelGateway({env = process.env, diagnosticLogger, fet
     // Opt in only on the isolated test service; required independent reviews remain.
     skipFinalExtras:skipFinalExtrasSetting(env),
     reuseFinalDraft:reuseFinalDraftSetting(env),
+    prioritizeSpeechPreview:optInSetting(env, 'MODEL_PRIORITIZE_SPEECH_PREVIEW'),
     ...turnInputSettings(env),
     compactReviewInputs:optInSetting(env, 'MODEL_COMPACT_REVIEW_INPUTS'),
     scopedQualityRefinement:optInSetting(env, 'MODEL_SCOPED_QUALITY_REFINEMENT'),
@@ -182,8 +185,14 @@ export function configuredModelGateway({env = process.env, diagnosticLogger, fet
     extendedFinalEvidenceIds:optInSetting(env, 'MODEL_EXTENDED_FINAL_EVIDENCE_IDS'),
     bundleTurnReviews:optInSetting(env, 'MODEL_BUNDLE_TURN_REVIEWS'),
     bundleCombinedTurnReviews:optInSetting(env, 'MODEL_BUNDLE_COMBINED_TURN_REVIEWS'),
+    singleCallTurns:optInSetting(env, 'MODEL_SINGLE_CALL_TURNS'),
+    singleCallQuestionOnly:optInSetting(env, 'MODEL_SINGLE_CALL_QUESTION_ONLY'),
+    detailedCardAnalysis:optInSetting(env, 'MODEL_DETAILED_CARD_ANALYSIS'),
     bundleAnalysisPlan:optInSetting(env, 'MODEL_BUNDLE_ANALYSIS_PLAN'),
     compactReviewOutput:optInSetting(env, 'MODEL_COMPACT_REVIEW_OUTPUT'),
+    compactTurnReviewOutput:optInSetting(env, 'MODEL_COMPACT_TURN_REVIEW_OUTPUT'),
+    safetyReviewSelectionMap:optInSetting(env, 'MODEL_SAFETY_REVIEW_SELECTION_MAP'),
+    combinedTurnEvidenceIds:optInSetting(env, 'MODEL_COMBINED_TURN_EVIDENCE_IDS'),
     reuseReviewedName:optInSetting(env, 'MODEL_REUSE_REVIEWED_NAME'),
     reuseReviewedSafety:optInSetting(env, 'MODEL_REUSE_REVIEWED_SAFETY'),
     discoverTokenLimits:discoverSetting(env, 'MODEL_DISCOVER_TOKEN_LIMITS', 'MODEL'),

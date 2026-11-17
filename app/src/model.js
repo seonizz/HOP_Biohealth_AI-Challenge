@@ -1,6 +1,8 @@
 import {finalEvidenceTransport} from './final-evidence-transport.js';
+import {combinedTurnEvidenceTransport,questionTurnEvidenceTransport,combinedTurnStreamSchema} from './combined-turn-evidence-transport.js';
+import {personalizationSourceTransport} from './personalization-source-transport.js';
 import {PARTIAL_REVIEW} from './final-review-bundle.js';
-import {compactReviewTransport} from './compact-review-transport.js';
+import {compactReviewTransport,safetyReviewSelectionTransport} from './compact-review-transport.js';
 import {generateContinuation} from './continuation-model.js';
 import { HttpError } from './errors.js';
 import { modelHttpFetch } from './model-http.js';
@@ -15,9 +17,28 @@ import { OBSERVE, MEMORY, STATE_REVIEW, PROMPT_VERSION } from './relationship-pr
 import { claimsOf, auditSchema, validateAudits, AUDIT_INSTRUCTION } from './grounding-audit.js';
 import { runCombinedRelationshipState } from './relationship-turn.js';
 import { literalStateRepairSchema, literalStateRepairInstruction } from './relationship-state-repair.js';
-import { runRelationshipAgent, assertRetrievedEvidence, relationshipStateRequest, canonicalRelationshipState, canonicalPatientState, currentRelationshipMemory, relationshipQuestionRequest, validateRelationshipQuestions, questionReviewRequest, applyQuestionReview, safetyReviewRequest, validateSafetyReview, validateSchema } from './relationship-agent.js';
+import { runRelationshipAgent, assertRetrievedEvidence, relationshipStateRequest, canonicalRelationshipState, canonicalPatientState, currentRelationshipMemory, relationshipQuestionRequest, validateRelationshipQuestions, questionReviewRequest, applyQuestionReview, safetyReviewRequest, validateSafetyReview, validateSchema, speechPermissionQuestions } from './relationship-agent.js';
 
 const TRAINED_MODEL = 'malssi-gemma4-31b-step100';
+function validateStreamedGuideSpeech(path,text,{complete},checkSpeech) {
+  if(path!=='output.guide.script')return;
+  // Reuse the complete-output rule only after its sentence boundary is known.
+  // An unfinished sentence may still become an explicit opt-out or deferral.
+  let end=complete?text.length:0;
+  if(!complete)for(const match of text.matchAll(/(?<=[.!?。！？])\s+|\n+/gu))end=match.index+match[0].length;
+  if(!end)return;
+  const finished=text.slice(0,end),questions=speechPermissionQuestions(finished);
+  // Ordinary drafts may repeat permission before their later speech rewrite.
+  // Only clear exact repetition is a stall in that path, not two paraphrases.
+  const counts=new Map();let repetitions=0;
+  for(const question of questions){const key=question.trim(),count=(counts.get(key)||0)+1;counts.set(key,count);repetitions=Math.max(repetitions,count);}
+  if(checkSpeech?questions.length>1:repetitions>=12)throw new ModelStreamError('agent_speech_repeat',JSON.stringify({
+    field:'script',rejected_text:finished,permission_questions:questions,permission_question_count:questions.length,
+    max_permission_questions:1,partial_output:true,
+    ...(!checkSpeech?{stream_repetition_count:repetitions,stream_repetition_threshold:12}:{}),
+    repair:'최초의 대화 허락 질문만 남기고 나머지는 상대 이야기를 듣는 열린 질문이나 선택 가능한 제안으로 수정하세요. 미완성 출력은 승인된 대화문이 아닙니다. 원문 근거와 이용자의 지원 가능 범위를 보존해 완전한 JSON을 다시 작성하세요.',
+  }));
+}
 function streamJsonHost(hostname) {
   if(['localhost','host.docker.internal','[::1]'].includes(hostname))return true;
   if(!/^(?:\d{1,3}\.){3}\d{1,3}$/.test(hostname))return false;
@@ -171,7 +192,25 @@ function parseContent(content,uniqueKeys=false) {
       }
     }
     return value;
-  } catch { throw invalidResponse('content_json'); }
+  } catch (error) {
+    const failure=invalidResponse('content_json');
+    // Never forward parser messages: they can contain source-bearing snippets.
+    // Give stateless retries a structural diagnosis without accepting or fixing
+    // an ambiguous candidate locally.
+    const message=error instanceof SyntaxError?error.message:'';
+    const position=/\bposition (\d+)\b/.exec(message);
+    failure.modelFeedback=JSON.stringify({path:'output',keyword:'jsonSyntax',
+      problem:message==='Duplicate JSON key'?'duplicate_key':/Unexpected non-whitespace character after JSON/.test(message)?'trailing_content':
+        /Unexpected end of JSON/.test(message)?'incomplete_json':'invalid_json',
+      ...(position?{character_offset:Number(position[1])}:{}),character_count:json.length});
+    throw failure;
+  }
+}
+
+function objectLayout(schema,path=[],depth=0) {
+  if(schema?.type!=='object'||!schema.properties)return [];
+  const keys=Object.keys(schema.properties);
+  return [{path,keys},...(depth<2?keys.flatMap(key=>objectLayout(schema.properties[key],[...path,key],depth+1)):[])];
 }
 
 function invalidResponse(reason = 'output_schema') {
@@ -188,6 +227,22 @@ const timeout = () => failure(504, 'MODEL_TIMEOUT', '모델의 답변이 오래 
 const cancelled = () => failure(499, 'MODEL_CANCELLED', '답변 요청을 중단했어요.', 'cancelled');
 const unavailable = reason => failure(503, 'MODEL_UNAVAILABLE', '모델이 다른 답변을 만들고 있거나 연결되지 않았어요. 잠시 후 다시 시도해 주세요.', reason);
 const MAX_ATTEMPTS = 3;
+const MAX_OPERATION_RESTARTS = 2;
+function arrayQuestionBlock(feedback) {
+  if(typeof feedback!=='string')return false;
+  try {
+    const issue=JSON.parse(feedback);
+    return issue.path==='output.questions'&&issue.keyword==='type'&&
+      issue.expected?.type==='object'&&issue.actual?.type==='array';
+  }catch{return false;}
+}
+function duplicateJsonKeys(feedback) {
+  if(typeof feedback!=='string')return false;
+  try {
+    const issue=JSON.parse(feedback);
+    return issue.path==='output'&&issue.keyword==='jsonSyntax'&&issue.problem==='duplicate_key';
+  }catch{return false;}
+}
 function missingRelationshipUnknowns(feedback) {
   if(typeof feedback!=='string')return false;
   try {
@@ -246,7 +301,7 @@ function contextBudgetError(value, status) {
   if (status === 400 && value?.error?.type === 'exceed_context_size_error' &&
       value.error.code === 400) return true;
   // The 31B worker supplies a stable code; its message is not a token-count contract.
-  if (status === 400 && value?.error?.type === 'invalid_request_error' &&
+  if (status === 400 && ['invalid_request_error','request_error'].includes(value?.error?.type) &&
       value.error.code === 'context_length_exceeded') return true;
   // A provider's explicit code takes precedence over coincidentally matching
   // legacy prose. Never repartition invalid-model/auth/etc. errors as capacity.
@@ -274,6 +329,7 @@ function remainingOutputTokens(value, status, policy, requested) {
 
 function correction(reason, repair) {
   if (!reason) return '';
+  if(reason==='content_json')return '\n직전 출력은 JSON 문법 검증에 실패했습니다. 이전의 잘못된 괄호 구조를 복사하지 말고 원래 요청의 원문과 출력 계약에 맞는 완전한 객체 하나를 새로 작성하세요. 모든 키를 올바른 중괄호 안에 넣고, 같은 키를 중복하거나 객체를 일찍 닫은 뒤 필드를 이어 쓰지 마세요. 문자열·배열·객체를 모두 닫고 최상위 객체 밖에 다른 JSON이나 설명을 붙이지 마세요. 문법 수정은 내용의 승인 판정이 아니며 사실·답변·판정을 임의로 채우지 마세요.';
   if(reason==='agent_speech_repeat')return '\n검증 실패: 지금 대화해도 되는지 묻는 허락 질문이 중복됐습니다. validation_feedback의 permission_questions와 permission_question_count를 확인하고 최초의 허락 질문만 남기세요. parts는 미검증 초안이며 반복의 원인일 수 있습니다. parts.listening과 parts.offer의 open_question·small_invitation에 있는 중복 허락 질문을 다시 복사하지 말고 삭제하거나 상대 이야기를 듣는 실제 열린 질문·선택 가능한 작은 제안으로 수정하세요. 문장 표현만 바꾼 대화 허락 질문도 반복입니다. answers와 observations의 관찰 및 이용자의 마음·가능 범위는 보존하고 새로운 사실이나 동의를 만들지 마세요. 수정한 전체 JSON을 반환하세요.';
   if(reason==='agent_speech_address')return '\n검증 실패: 직접 말을 듣는 상대를 제삼자인 “그분”이나 “대상자”로 설명했습니다. 호칭을 생략하고 “요즘 어떤지 듣고 싶어요”처럼 상대에게 직접 건넬 말로 쓰세요.';
   if(reason==='agent_script_inference')return '\n검증 실패: script 또는 발화 부분에서 대상자의 마음·노력·원인을 알고 있는 것처럼 설명했습니다. validation_feedback의 field와 rejected_text, matched_text를 확인하고 “네가 얼마나 최선을 다하는지 다 알고 있어”, “완벽하게 하고 싶은 마음 때문에” 같은 단정을 삭제하세요. parts와 earlier_parts도 초안이며 사실 근거가 아닙니다. answers에 있는 관찰과 이용자 자신의 마음만 유지하고 대상자의 마음은 열린 질문으로 물으세요. 지정된 현재 단계의 전체 JSON만 다시 쓰고 원문에 없는 행동이나 다른 단계의 문장을 보태지 마세요.';
@@ -599,9 +655,10 @@ function wireEvidenceSelectionRepair(stage,transport,feedback,candidate) {
 export class ModelGateway {
   constructor({ baseUrl, apiKey, model = 'gemma4:12b', protocol, timeoutMs, agentFormat = 'json_schema', reasoningEffort = 'none', stateMode = 'combined', skipFinalExtras = false, reuseFinalDraft = false, fetchImpl = modelHttpFetch,
     stageScopedQuestionRules = false, blockScopedInputs = false, compactReviewInputs = false, scopedQualityRefinement = false, reuseTokenPolicy = false,
-    bundleFinalReviews = false, bundleTurnReviews = false, bundleCombinedTurnReviews = false, bundleAnalysisPlan = false,
-    compactReviewOutput = false, reuseReviewedName = false, reuseReviewedSafety = false,
-    shareReviewSources = false, repairReviewBundleTasks = false, extendedFinalEvidenceIds = false,
+    bundleFinalReviews = false, bundleTurnReviews = false, bundleCombinedTurnReviews = false, singleCallTurns = false, singleCallQuestionOnly = false, bundleAnalysisPlan = false,
+    questionCallLimit = 0, questionExecution = 'parallel',
+    compactReviewOutput = false, compactTurnReviewOutput = false, safetyReviewSelectionMap = false, combinedTurnEvidenceIds = false, reuseReviewedName = false, reuseReviewedSafety = false,
+    shareReviewSources = false, repairReviewBundleTasks = false, extendedFinalEvidenceIds = false, prioritizeSpeechPreview = false, detailedCardAnalysis = false,
     discoverTokenLimits = false, preserveStringLimits = false, streamJson = false, streamCompleteJson = false, retryFailures = false, retryDelayMs = 1000, reviewGateway = null, diagnosticLogger = entry => console.error(JSON.stringify(entry)) } = {}) {
     this.baseUrl = typeof baseUrl === 'string' ? baseUrl.replace(/\/+$/, '') : '';
     this.apiKey = apiKey;
@@ -621,11 +678,20 @@ export class ModelGateway {
     this.bundleFinalReviews = bundleFinalReviews;
     this.bundleTurnReviews = bundleTurnReviews;
     this.bundleCombinedTurnReviews = bundleCombinedTurnReviews;
+    this.singleCallTurns = singleCallTurns;
+    this.singleCallQuestionOnly = singleCallQuestionOnly;
+    this.questionCallLimit = questionCallLimit;
+    this.questionExecution = questionExecution;
+    this.detailedCardAnalysis = detailedCardAnalysis;
     this.bundleAnalysisPlan = bundleAnalysisPlan;
     this.compactReviewOutput = compactReviewOutput;
+    this.compactTurnReviewOutput = compactTurnReviewOutput;
+    this.safetyReviewSelectionMap = safetyReviewSelectionMap;
+    this.combinedTurnEvidenceIds = combinedTurnEvidenceIds;
     this.shareReviewSources = shareReviewSources;
     this.repairReviewBundleTasks = repairReviewBundleTasks;
     this.extendedFinalEvidenceIds = extendedFinalEvidenceIds;
+    this.prioritizeSpeechPreview = prioritizeSpeechPreview;
     this.reuseReviewedName = reuseReviewedName;
     this.reuseReviewedSafety = reuseReviewedSafety;
     this.reviewedNameIdentity = randomUUID();
@@ -649,13 +715,21 @@ export class ModelGateway {
         typeof this.streamJson === 'boolean' && (!this.streamJson || streamJsonHost(url.hostname)) &&
         typeof this.skipFinalExtras === 'boolean' && typeof this.reuseFinalDraft === 'boolean' &&
         (!this.reuseFinalDraft || this.protocol === 'relationship_agent' && !this.skipFinalExtras) &&
+        typeof this.prioritizeSpeechPreview === 'boolean' &&
+        (!this.prioritizeSpeechPreview || this.reuseFinalDraft && this.bundleFinalReviews && !this.skipFinalExtras) &&
         typeof this.stageScopedQuestionRules === 'boolean' && typeof this.blockScopedInputs === 'boolean' &&
         typeof this.compactReviewInputs === 'boolean' && typeof this.scopedQualityRefinement === 'boolean' && typeof this.reuseTokenPolicy === 'boolean' &&
         typeof this.bundleTurnReviews === 'boolean' && typeof this.bundleFinalReviews === 'boolean' && typeof this.reuseReviewedName === 'boolean' && typeof this.reuseReviewedSafety === 'boolean' &&
-        typeof this.bundleCombinedTurnReviews === 'boolean' && typeof this.bundleAnalysisPlan === 'boolean' && typeof this.compactReviewOutput === 'boolean' &&
+        typeof this.bundleCombinedTurnReviews === 'boolean' && typeof this.bundleAnalysisPlan === 'boolean' && typeof this.compactReviewOutput === 'boolean' && typeof this.compactTurnReviewOutput === 'boolean' && typeof this.combinedTurnEvidenceIds === 'boolean' &&
         (!this.bundleCombinedTurnReviews || this.protocol === 'relationship_agent' && this.stateMode === 'combined') &&
+        typeof this.singleCallTurns === 'boolean' &&
+        (!this.singleCallTurns || this.protocol === 'relationship_agent' && this.stateMode === 'combined' && !this.bundleCombinedTurnReviews) &&
+        typeof this.singleCallQuestionOnly === 'boolean' && (!this.singleCallQuestionOnly || this.singleCallTurns) &&
+        [0,1,2].includes(this.questionCallLimit) && ['individual','parallel'].includes(this.questionExecution) &&
+        typeof this.detailedCardAnalysis === 'boolean' && (!this.detailedCardAnalysis || this.protocol === 'relationship_agent') &&
         (!this.bundleAnalysisPlan || this.bundleFinalReviews) &&
-        (!this.compactReviewOutput || this.protocol === 'relationship_agent') &&
+        typeof this.safetyReviewSelectionMap === 'boolean' &&
+        (!(this.compactReviewOutput || this.compactTurnReviewOutput || this.safetyReviewSelectionMap || this.combinedTurnEvidenceIds) || this.protocol === 'relationship_agent') &&
         (!this.bundleFinalReviews || this.protocol === 'relationship_agent' && !this.skipFinalExtras) &&
         typeof this.shareReviewSources === 'boolean' && typeof this.repairReviewBundleTasks === 'boolean' && typeof this.extendedFinalEvidenceIds === 'boolean' &&
         (!(this.shareReviewSources || this.repairReviewBundleTasks) || this.bundleFinalReviews) &&
@@ -668,7 +742,7 @@ export class ModelGateway {
         (!(this.compactReviewInputs || this.scopedQualityRefinement) || this.protocol === 'relationship_agent') &&
         typeof this.streamCompleteJson === 'boolean' && (!this.streamCompleteJson || this.streamJson) &&
         (this.reviewGateway === null || this.reviewGateway instanceof ModelGateway && this.reviewGateway !== this &&
-          this.reviewGateway.reviewGateway === null && this.reviewGateway.configured) &&
+          this.reviewGateway.reviewGateway === null && !this.reviewGateway.singleCallTurns && this.reviewGateway.configured) &&
         Number.isInteger(this.timeoutMs) && this.timeoutMs >= 0 &&
         typeof this.retryFailures === 'boolean' && Number.isInteger(this.retryDelayMs) && this.retryDelayMs > 0 && this.retryDelayMs <= 2147483647 &&
         this.timeoutMs <= 2147483647 && ['json_schema', 'json_object', 'prompt'].includes(this.agentFormat) &&
@@ -677,20 +751,27 @@ export class ModelGateway {
     } catch { return false; }
   }
 
-  async operation(options, generate, {retryFailures=this.retryFailures,parentOperation=null} = {}) {
+  async operation(options, generate, {retryFailures=this.retryFailures,parentOperation=null,maxHttpAttempts} = {}) {
     if (!this.configured) throw new HttpError(503, 'MODEL_NOT_CONFIGURED', '모델 연결 설정을 확인해 주세요.');
+    if(maxHttpAttempts!==undefined&&(!Number.isSafeInteger(maxHttpAttempts)||maxHttpAttempts<1))throw new RangeError('Invalid model HTTP attempt limit');
     const requestId = typeof options?.requestId === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(options.requestId)
       ? options.requestId : null;
     const cancellation=new AbortController(),external=options?.signal,recovery={};
     const metrics=parentOperation?.metrics||createOperationMetrics();
-    const onCancel=()=>cancellation.abort(cancelled());
+    // Count actual chat dispatches across writer/reviewer gateways, branches and
+    // operation restarts. A fresh child must never receive a fresh call budget.
+    const httpBudget=parentOperation?.httpBudget||(maxHttpAttempts===undefined?null:{limit:maxHttpAttempts,used:0});
+    const onCancel=()=>cancellation.abort(parentOperation&&external?.reason?.code==='MODEL_TIMEOUT'?timeout():cancelled());
     external?.addEventListener('abort',onCancel,{once:true});
     if(external?.aborted)onCancel();
+    // One wall-clock budget covers generation, repairs, restarts and backoff.
+    const deadline=Math.min(parentOperation?.deadline??Infinity,this.timeoutMs===0?Infinity:performance.now()+this.timeoutMs);
+    const budgetTimer=Number.isFinite(deadline)?setTimeout(()=>cancellation.abort(timeout()),Math.max(0,deadline-performance.now())):undefined;
     let retries=0;
     try {
       for(;;){
         const controller=new AbortController();
-        const abort=()=>controller.abort(cancelled());
+        const abort=()=>controller.abort(cancellation.signal.reason);
         cancellation.signal.addEventListener('abort',abort,{once:true});
         if(cancellation.signal.aborted)abort();
         let active=true,hasCards=false;
@@ -699,9 +780,9 @@ export class ModelGateway {
           hasCards=event.type==='reset'?false:true;
           try{options?.onCard?.(event);}catch{ /* Display updates cannot stop generation. */ }
         };
-        const operation={controller,deadline:this.timeoutMs===0?Infinity:performance.now()+this.timeoutMs,requestId,onProgress:options?.onProgress,onCard,recovery,
+        const operation={controller,deadline,requestId,onProgress:options?.onProgress,onCard,recovery,httpBudget,
+          questionExecution:parentOperation?.questionExecution,
           metrics,restart:parentOperation?.restart??retries,tokenPolicies:parentOperation?.tokenPolicies||new Map()};
-        const timer=this.timeoutMs>0?setTimeout(()=>controller.abort(timeout()),this.timeoutMs):undefined;
         let delay;
         try {
           ensureTime(operation);
@@ -719,6 +800,12 @@ export class ModelGateway {
           const retryable=['MODEL_UNAVAILABLE','MODEL_TIMEOUT'].includes(failed.code)||
             failed.code==='MODEL_UPSTREAM_ERROR'&&failed.modelReason==='http_transient';
           if(!retryFailures||!retryable||failed.modelReason==='retry_after_limit')throw failed;
+          if(cancellation.signal.aborted||performance.now()>=deadline)throw failed;
+          if(retries>=MAX_OPERATION_RESTARTS){
+            try{this.diagnosticLogger?.({event:'model_operation_retry_exhausted',request_id:requestId,restarts:retries,code:failed.code,
+              reason:failed.modelReason||null,...operationMetrics(operation)});}catch{ /* Diagnostics cannot stop recovery. */ }
+            throw failed;
+          }
           retries++;
           delay=Math.min(30000,this.retryDelayMs*2**Math.min(retries-1,20));
           try{this.diagnosticLogger?.({event:'model_operation_retry',request_id:requestId,attempt:retries,code:failed.code,reason:failed.modelReason||null,delay_ms:delay,
@@ -726,9 +813,9 @@ export class ModelGateway {
           try{options?.onProgress?.({stage:'retry',status:'started',attempt:retries});}catch{ /* Progress cannot stop recovery. */ }
         } finally {
           active=false;
-          clearTimeout(timer);cancellation.signal.removeEventListener('abort',abort);
+          cancellation.signal.removeEventListener('abort',abort);
         }
-        await waitRetry(delay,{controller:cancellation,deadline:Infinity});
+        await waitRetry(delay,{controller:cancellation,deadline});
       }
     }
     catch(error){
@@ -736,6 +823,7 @@ export class ModelGateway {
       throw error;
     }
     finally {
+      clearTimeout(budgetTimer);
       external?.removeEventListener('abort',onCancel);
       // Retry-only working state belongs to this invocation, never the gateway,
       // a later request, diagnostics or persisted conversation state.
@@ -818,11 +906,20 @@ export class ModelGateway {
   }
 
   async updateState(context, priorMemory = null, options = {}) {
+    if(this.questionGateway!==undefined&&this.questionGateway!==null) {
+      if(!(this.questionGateway instanceof ModelGateway)||this.questionGateway===this||this.questionGateway.questionGateway)
+        throw new HttpError(503,'MODEL_NOT_CONFIGURED','질문 모델 연결 설정을 확인해 주세요.');
+      return this.questionGateway.updateState(context,priorMemory,options);
+    }
     this.requireQuestionnaireProtocol(context);
-    return this.operation(options, operation => this.protocol==='relationship_agent'
+    return this.operation(options, operation => {
+      operation.questionExecution=this.questionExecution;
+      return this.protocol==='relationship_agent'
       ? this.relationshipState(context,validMemory(priorMemory,context),operation)
       : this.protocol==='json_prompt' ? this.trainedState(context, validMemory(priorMemory, context), operation)
-      : this.complete(context, priorMemory, STATE_PROMPT, operation, payload => validateState(payload, context)));
+      : this.complete(context, priorMemory, STATE_PROMPT, operation, payload => validateState(payload, context));
+    },{retryFailures:this.singleCallTurns||this.questionCallLimit?false:this.retryFailures,
+      maxHttpAttempts:this.singleCallTurns?1:this.questionCallLimit||undefined});
   }
 
   requireQuestionnaireProtocol(context) {
@@ -832,6 +929,18 @@ export class ModelGateway {
   }
 
   async relationshipState(context,memory,operation,final=false) {
+    if(this.singleCallQuestionOnly&&!final) {
+      if(!isV3Context(context)||context.adaptive_questions!==true)
+        throw new HttpError(503,'MODEL_PROTOCOL_UNSUPPORTED','질문 전용 설정은 새 질문의 대화 진행에서만 사용할 수 있어요.');
+      const request=relationshipQuestionRequest(context);
+      const decision=await this.agentComplete('question_plan',request.prompt,request.data,request.schema,operation,
+        value=>validateRelationshipQuestions(value,context,request),{maxAttempts:1});
+      // No inferred memory is fabricated or reused to advance a question. The
+      // final respond() path rebuilds missing state from sources and reviews it.
+      return {...decision,patient_state:null,relationship_memory:null,name_index:null,
+        state_agent:{prompt_version:PROMPT_VERSION+'-question-slots-v2'+(context.personalization?.version===1?'-personalized-v1':''),stages:['question_plan'],
+          reviewed:false,mode:'single_call',memory_deferred:true}};
+    }
     if (['combined', 'combined_blocks'].includes(this.stateMode) && !final) return runCombinedRelationshipState(this,context,memory,operation,final);
     const request=relationshipStateRequest(context,memory,final);
     const observationSchema=structuredClone(request.schema);
@@ -890,9 +999,9 @@ export class ModelGateway {
         stages.push('safety_review');
         decision.finish_early=safetyReview.urgent;
         decision.safety_signal=safetyReview;
-        if(decision.finish_early){decision.question_plan={skip:[]};decision.clarification=null;}
+        if(decision.finish_early){decision.question_plan={skip:[]};decision.clarification=null;if(Object.hasOwn(decision,'personalization'))decision.personalization=null;}
       }
-      if(decision.question_plan.skip.length||decision.clarification){
+      if(decision.question_plan.skip.length||decision.clarification||decision.personalization){
         const reviewRequest=questionReviewRequest(decision,questions);
         decision=await this.agentComplete('question_review',reviewRequest.prompt,reviewRequest.data,reviewRequest.schema,operation,
           value=>applyQuestionReview(value,decision,reviewRequest));
@@ -909,7 +1018,9 @@ export class ModelGateway {
     // Every agent output needs unambiguous facts/verdicts, not only compact reviews.
     requestOptions={...requestOptions,uniqueJsonKeys:true};
     const reviewStage=modelStageRole(stage)==='reviewer';
-    const compactOutput=requestOptions.compactReviewOutput??this.compactReviewOutput;
+    const compactOutput=requestOptions.compactReviewOutput??(this.compactReviewOutput||
+      this.compactTurnReviewOutput&&/^turn_review_bundle(?:_|$)/u.test(stage));
+    const safetySelectionMap=requestOptions.safetyReviewSelectionMap??this.safetyReviewSelectionMap;
     const compactPartial=requestOptions.compactReviewPartial??this.repairReviewBundleTasks;
     const stateReviewTarget=/^turn_review(?:_after_review)?$/u.test(stage)?payload?.review_target||payload?.state:null;
     if(this.reviewGateway&&reviewStage) {
@@ -918,36 +1029,42 @@ export class ModelGateway {
       // request() keeps its three attempts; only the writer owns operation recovery.
       return this.reviewGateway.operation({requestId:operation.requestId,signal:operation.controller.signal,onProgress:operation.onProgress,onCard:operation.onCard},reviewOperation=>
         this.reviewGateway.agentComplete(stage,prompt,payload,schema,reviewOperation,validate,
-          {...requestOptions,...(compactOutput?{compactReviewOutput:true}:{}),compactReviewPartial:compactPartial}),{retryFailures:false,parentOperation:operation});
+          {...requestOptions,...(compactOutput?{compactReviewOutput:true}:{}),...(safetySelectionMap?{safetyReviewSelectionMap:true}:{}),compactReviewPartial:compactPartial}),{retryFailures:false,parentOperation:operation});
     }
     // Literal repair may remove a branch-only source. Retain identities across
     // retries so a rejected ID can never be reassigned to a different source.
     // The registry does not grant access; every node still has its own enum.
     const sourceIds=new Map();
     const finalIds=this.extendedFinalEvidenceIds?(operation.finalEvidenceIds??=new Map()):undefined;
-    const reviewTransport=reviewStage&&compactOutput?compactReviewTransport({stage,schema,payload,
-      partial:compactPartial&&/^(?:final_review_bundle|card_review_bundle)(?:_|$)/u.test(stage)}):null;
-    let originalRequestSchema=schema, transport=(reviewTransport?{...reviewTransport,decode:reviewTransport.hydrate}:null)||relationshipEvidenceTransport(stage,schema,sourceIds)||
+    const safetyTransport=reviewStage&&safetySelectionMap?safetyReviewSelectionTransport({stage,schema,payload}):null;
+    const reviewTransport=safetyTransport||(reviewStage&&compactOutput?compactReviewTransport({stage,schema,payload,
+      partial:compactPartial&&/^(?:final_review_bundle|card_review_bundle)(?:_|$)/u.test(stage)}):null);
+    const questionOnly=this.singleCallQuestionOnly&&stage==='question_plan';
+    const questionTransport=questionOnly?questionTurnEvidenceTransport(stage,schema,sourceIds,{evidenceIds:this.combinedTurnEvidenceIds}):null;
+    // A future unsupported schema must not silently fall back to duplicate-prone arrays.
+    if(questionOnly&&!questionTransport)throw new HttpError(502,'MODEL_INVALID_RESPONSE','질문 진행 형식을 확인할 수 없어요.');
+    let originalRequestSchema=schema, transport=questionTransport||(reviewTransport?{...reviewTransport,decode:reviewTransport.hydrate}:null)||(this.combinedTurnEvidenceIds&&combinedTurnEvidenceTransport(stage,schema,sourceIds))||relationshipEvidenceTransport(stage,schema,sourceIds)||
       finalEvidenceTransport(stage,schema,{extended:this.extendedFinalEvidenceIds,registry:finalIds});
+    transport=personalizationSourceTransport(stage,schema,payload,transport);
     let requestSchema=transport?.schema||schema, literalState=false, stateSchemaRecovery=false;
-    let streamSchema=requestSchema;
-    if(/^turn_draft(?:_after_review)?$/u.test(stage)&&schema.properties?.state?.properties?.relationship_memory){
-      // The full-turn validator already accepts two literal reports plus one
-      // hypothesis, merging only source-validated reports before normal review.
-      // Keep that existing representation exception out of the early guard;
-      // the requested schema and final validator stay unchanged.
-      streamSchema=structuredClone(schema);
-      for(const subject of ['patient','supporter']){
-        const group=streamSchema.properties.state.properties.relationship_memory.properties[subject];
-        if(group.maxItems===2)group.maxItems=3;
-      }
-    }
+    const activeStreamSchema=()=>/^turn_draft(?:_after_review)?$/u.test(stage)?combinedTurnStreamSchema(requestSchema):requestSchema;
+    let streamSchema=activeStreamSchema();
     // A stateless retry must see the candidate that failed, not just an error
     // about an unseen answer. Keep it only in this stage invocation and never
     // treat it as approved state or include it in diagnostics.
     let rejectedOutput, currentReviewOnly=false, currentReviewFeedback, stateReviewFormatRepair=false;
     let selectionRepairFeedback=payload?.combined_validation_feedback;
     return this.request(({repairReason,repairs,repairFeedback})=>{
+      // A syntax failure never reached the validator. An older parseable
+      // candidate is not that failed output and must not seed its next retry.
+      if(repairReason==='content_json') {
+        rejectedOutput=undefined;selectionRepairFeedback=undefined;stateReviewFormatRepair=false;
+      }
+      if(repairReason==='agent_speech_repeat') {
+        try {
+          if(JSON.parse(repairFeedback?.trim().split('\n').at(-1)).partial_output===true)rejectedOutput=undefined;
+        } catch { /* Complete-output feedback keeps its original rejected candidate. */ }
+      }
       // A local streaming state draft/reviewer may need its schema grammar.
       // request() keeps its stream format fallback sticky, so this cannot oscillate.
       if(this.streamJson&&this.agentFormat==='json_object'&&STATE_SCHEMA_RECOVERY_STAGES.has(stage)&&repairReason==='agent_schema'&&repairs>=2)
@@ -959,8 +1076,9 @@ export class ModelGateway {
         originalRequestSchema=/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)
           ?literalStateRepairSchema({properties:{relationship_memory:schema}}).properties.relationship_memory
           :literalStateRepairSchema(schema,{combined:stage.startsWith('turn_draft')});
-        transport=relationshipEvidenceTransport(stage,originalRequestSchema,sourceIds);requestSchema=transport?.schema||originalRequestSchema;
-        if(transport)streamSchema=requestSchema;
+        transport=(this.combinedTurnEvidenceIds&&combinedTurnEvidenceTransport(stage,originalRequestSchema,sourceIds))||relationshipEvidenceTransport(stage,originalRequestSchema,sourceIds);
+        transport=personalizationSourceTransport(stage,originalRequestSchema,payload,transport);
+        requestSchema=transport?.schema||originalRequestSchema;streamSchema=activeStreamSchema();
       }
       const scope=literalState?(/^turn_draft_block_relationship_memory(?:_after_review)?$/.test(stage)
         ?literalStateRepairInstruction({}).replace('relationship_memory.relationship','relationship')
@@ -968,7 +1086,9 @@ export class ModelGateway {
       // An obsolete review must not keep seeding its own historical wording.
       // Retain all current sources and the original validator/retry ceiling.
       const data=currentReviewOnly?Object.fromEntries(Object.entries(payload).filter(([key])=>key!=='revision')):payload;
-      const feedback=currentReviewOnly?currentReviewFeedback:repairFeedback;
+      const feedback=repairReason==='content_json'?repairFeedback:currentReviewOnly?currentReviewFeedback:repairFeedback;
+      // json_object guarantees neither schema shape nor unique object keys.
+      const layout=['prompt','json_object'].includes(this.agentFormat)||repairReason==='content_json'?objectLayout(requestSchema):[];
       const evidenceRepair=transport?null:evidenceSelectionRepair(stage,requestSchema,selectionRepairFeedback,rejectedOutput);
       const questionRepair=questionSelectionRepair(stage,requestSchema,selectionRepairFeedback,rejectedOutput);
       const wireEvidenceRepair=wireEvidenceSelectionRepair(stage,transport,selectionRepairFeedback,rejectedOutput);
@@ -989,6 +1109,8 @@ export class ModelGateway {
         messages:[{role:'system',content:prompt+correction(repairReason,repairs)+scope+(transport?(transport.instruction||EVIDENCE_WIRE_INSTRUCTION):'')+
           (arrayLimits.length?RELATIONSHIP_ARRAY_INSTRUCTION:'')+questionCatalogInstruction(stage,requestSchema)+qualityRepairInstruction},
           {role:'user',content:JSON.stringify({stage,data,output_schema:requestSchema,...(feedback?{validation_feedback:feedback}:{}),
+            ...(layout.length?{output_object_layout:layout,
+              output_layout_instruction:'output_object_layout은 output_schema에서 추출한 객체별 키 배치이며 답안 예시가 아닙니다. path=[]는 최상위이고 각 경로의 keys를 그 객체 안에 배치하세요. validation_feedback의 문법·형식·근거 오류를 구분하고 data 원문으로 내용을 다시 판단하세요. 문법 진단만으로 내용을 승인하지 마세요. data나 이 배치 설명을 반환하지 말고 output_schema를 지킨 출력 객체만 반환하세요.'}:{}),
             ...(transport?{evidence_sources:transport.table}:{}),
             ...(arrayLimits.length?{array_limits:arrayLimits}:{}),
             ...(arrayRepair?{array_count_repair:arrayRepair}:{}),
@@ -1087,14 +1209,15 @@ export class ModelGateway {
     }), operation, validate, final ? 'guide' : 'state');
   }
 
-  async request(body, operation, validate, generation, streamSchema,{uniqueJsonKeys=false,relationshipBlockRecovery=false}={}) {
+  async request(body, operation, validate, generation, streamSchema,{uniqueJsonKeys=true,relationshipBlockRecovery=false,maxAttempts=MAX_ATTEMPTS}={}) {
+    if(!Number.isSafeInteger(maxAttempts)||maxAttempts<1||maxAttempts>MAX_ATTEMPTS)throw new RangeError('Invalid model attempt limit');
     const generationId=randomUUID();
     let repairReason = null; let repairs = 0; let repairFeedback = null; let schemaFallback = false;
     let structuralFailures=0;
     let previousMissingUnknowns=false;
     let outputTokens = operation.tokenPolicy?.maxOutputTokens;
     let outputBudgetAdjusted=false;
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       ensureTime(operation);
       if(operation.tokenPolicyDirty){
         await this.loadTokenPolicy(operation);
@@ -1128,6 +1251,13 @@ export class ModelGateway {
         if (outputTokens !== undefined) request.max_tokens = outputTokens;
         const requestBody = JSON.stringify(request);
         ensureTime(operation);
+        // Reserve synchronously before awaiting fetch so simultaneous branches
+        // cannot both spend the last slot. Discovery GETs are not model calls.
+        if(operation.httpBudget) {
+          if(operation.httpBudget.used>=operation.httpBudget.limit)
+            throw failure(502,'MODEL_CALL_LIMIT','설정한 모델 호출 횟수 안에 답변을 완료하지 못했어요. 다시 시도하거나 호출 설정을 확인해 주세요.','call_limit');
+          operation.httpBudget.used++;
+        }
         try {
           started=performance.now();attemptId=randomUUID();
           attemptDiagnostic=beginHttpAttempt(operation,this,generation,request);
@@ -1177,6 +1307,8 @@ export class ModelGateway {
         let payload;
         try {
           if(this.streamJson)response=await streamJsonResponse(response,{signal,arrayLimit,propertyArrayLimits,arrayPaths,stringLimit,
+            validateString:/^guide_write(?:_|$)/u.test(generation)?
+              (path,text,options)=>validateStreamedGuideSpeech(path,text,options,this.skipFinalExtras):undefined,
             completeJson:this.streamCompleteJson&&activeStreamSchema!==undefined,abort:error=>streamController.abort(error)});
           payload = await response.json();
         } catch (error) {
@@ -1227,16 +1359,23 @@ export class ModelGateway {
         const missingUnknowns=!stopped&&known&&failure.code==='MODEL_INVALID_RESPONSE'&&failure.modelReason==='agent_schema'&&
           requestFormat==='json_schema'&&missingRelationshipUnknowns(failure.modelFeedback);
         // Only the combined caller can recover with full blocks and fresh reviews.
-        // Leave json_object's third-attempt grammar promotion and all other errors intact.
-        const earlyBlocks=relationshipBlockRecovery===true&&/^turn_draft(?:_after_review)?$/u.test(generation)&&
+        // An observed array in place of the questions object needs a complete
+        // question decision, not another full state generation or empty defaults.
+        const questionShape=relationshipBlockRecovery===true&&/^turn_draft(?:_after_review)?$/u.test(generation)&&
+          !stopped&&known&&failure.code==='MODEL_INVALID_RESPONSE'&&failure.modelReason==='agent_schema'&&arrayQuestionBlock(failure.modelFeedback);
+        const duplicateJson=relationshipBlockRecovery===true&&/^turn_draft(?:_after_review)?$/u.test(generation)&&
+          !stopped&&known&&failure.code==='MODEL_INVALID_RESPONSE'&&failure.modelReason==='content_json'&&duplicateJsonKeys(failure.modelFeedback);
+        const earlyBlocks=questionShape||duplicateJson||relationshipBlockRecovery===true&&/^turn_draft(?:_after_review)?$/u.test(generation)&&
           attempt===2&&structuralFailures===2&&previousMissingUnknowns&&missingUnknowns;
         previousMissingUnknowns=missingUnknowns;
-        if(!stopped&&known&&(attempt===MAX_ATTEMPTS||earlyBlocks)&&failure.code==='MODEL_INVALID_RESPONSE') {
+        if(!stopped&&known&&(attempt===maxAttempts||earlyBlocks)&&failure.code==='MODEL_INVALID_RESPONSE') {
           Object.defineProperty(failure,'modelAttempts',{value:attempt,enumerable:false,configurable:true});
           Object.defineProperty(failure,'modelStructuralFailures',{value:structuralFailures,enumerable:false,configurable:true});
           if(earlyBlocks)Object.defineProperty(failure,'modelRelationshipBlockRecovery',{value:true,enumerable:false});
+          if(questionShape)Object.defineProperty(failure,'combinedStructuralFailure',{value:true,enumerable:false});
+          if(duplicateJson)Object.defineProperty(failure,'combinedJsonFailure',{value:true,enumerable:false});
         }
-        if (stopped || !known || attempt === MAX_ATTEMPTS || earlyBlocks) throw failure;
+        if (stopped || !known || attempt === maxAttempts || earlyBlocks) throw failure;
         if (error.code === 'MODEL_INVALID_RESPONSE') {
           if(this.streamJson&&requestFormat==='json_schema'&&(error.modelReason==='stream_whitespace_stall'||streamStringOverflow)) {
             schemaFallback=true;
@@ -1244,7 +1383,9 @@ export class ModelGateway {
               attempt,from:'json_schema',to:'json_object',reason:error.modelReason,
               ...(streamStringOverflow?{feedback_keyword:'streamStringLimit'}:{})});}catch{/* Diagnostics cannot stop recovery. */}
           }
-          repairReason = error.modelReason; repairFeedback = error.modelFeedback ? [repairFeedback,error.modelFeedback].filter(Boolean).join('\n') : null; repairs++;
+          repairReason = error.modelReason;
+          repairFeedback = error.modelFeedback ? (repairReason==='content_json'?error.modelFeedback:[repairFeedback,error.modelFeedback].filter(Boolean).join('\n')) : null;
+          repairs++;
           retry = true;
         }
         if (!retry) throw failure;

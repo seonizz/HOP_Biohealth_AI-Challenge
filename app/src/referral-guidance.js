@@ -67,10 +67,12 @@ function checkedPlan(value, sources, directory) {
 
 // This boundary orchestrates trusted server-side providers; it does not infer
 // a risk level from keywords, guide.top, or the legacy safety:false boolean.
-export function createReferralGuidance({store, provider = null, directory = createReferralDirectory(),
+export function createReferralGuidance({store, provider = null, providerForState, directory = createReferralDirectory(),
   characters = createCharacterRegistry(), messages = createReferralMessages(), timeoutMs = 0,
   cacheVersion = 'referral-final-v2', cacheTtlMs = 86400000, now = () => Date.now()} = {}) {
   if (provider !== null && typeof provider !== 'function') throw new TypeError('Referral provider must be a function');
+  if(providerForState!==undefined&&typeof providerForState!=='function')throw new TypeError('Invalid referral provider resolver');
+  const selectedProvider=state=>providerForState?providerForState(state):provider;
   if (!Number.isInteger(timeoutMs) || timeoutMs < 0 || timeoutMs > 120000) throw new TypeError('Invalid referral timeout');
   if(typeof cacheVersion!=='string'||!cacheVersion||cacheVersion.length>256||!Number.isInteger(cacheTtlMs)||cacheTtlMs<1||cacheTtlMs>86400000||typeof now!=='function')throw new TypeError('Invalid referral cache configuration');
   const runs = new Map();
@@ -131,14 +133,16 @@ export function createReferralGuidance({store, provider = null, directory = crea
         urgency:'undetermined', reviewed:false, institution_ids:[],
         safety_alert:existingAlert,
       } : null});
-      if (!provider) return unavailable();
+      let activeProvider;
+      try{activeProvider=selectedProvider(row.state);}catch{return unavailable();}
+      if (!activeProvider) return unavailable();
       const cacheable=row.state.status==='ready'&&!row.state.modelPending;
       const sourceHash=referralSnapshotFingerprint(row.state);
       const currentTime=now();
       if(!Number.isFinite(currentTime))throw new TypeError('Invalid referral clock');
       // Routing eligibility uses a calendar date; a cached contact must not
       // outlive that date even when its 24-hour assessment TTL has not elapsed.
-      const policyHash=fingerprint([cacheVersion,provider.cacheKey ?? null,directory.list(),new Date(currentTime).toISOString().slice(0,10)]);
+      const policyHash=fingerprint([cacheVersion,row.state.modelProfileId??null,activeProvider.cacheKey ?? null,directory.list(),new Date(currentTime).toISOString().slice(0,10)]);
       const cached=row.state.referralAssessment;
       let cachedPlan=null;
       if(cacheable&&cached?.schema_version==='1.0'&&cached.revision===row.revision&&cached.source_hash===sourceHash&&cached.policy_hash===policyHash&&
@@ -161,7 +165,7 @@ export function createReferralGuidance({store, provider = null, directory = crea
         if (timeoutMs > 0) timer = setTimeout(() => controller.abort(new Error('Referral deadline')), timeoutMs);
           value = await Promise.race([stopped, Promise.resolve().then(() => {
           if (controller.signal.aborted) throw controller.signal.reason;
-          return provider({
+          return activeProvider({
             schema_version:'1.0', subject:'patient', context:structuredClone(context),
             sources:structuredClone(sources), institutions:directory.list().institutions,
             existing_safety:structuredClone(existing),
@@ -238,6 +242,9 @@ export function createReferralGuidance({store, provider = null, directory = crea
     };
   }
   return Object.freeze({assess, cancel, shutdown, characters:() => characters.list(), institutions:() => directory.list(),
-    available:state => provider !== null && state.status === 'ready' && !state.modelPending &&
-      safetySources(buildContext(state)).some(source => source.question_id !== 'name')});
+    available:state => {
+      let activeProvider;try{activeProvider=selectedProvider(state);}catch{return false;}
+      return activeProvider!=null && state.status === 'ready' && !state.modelPending &&
+        safetySources(buildContext(state)).some(source => source.question_id !== 'name');
+    }});
 }

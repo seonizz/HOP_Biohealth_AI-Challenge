@@ -61,8 +61,8 @@ test('unvalidated pending, name-only, or unavailable observations do not invoke 
 
 test('same revision is deduplicated while pending and after completion',async()=>{
   const result=deferred();const {guide,calls}=harness(()=>result.promise);
-  const pending=guide.observe(view());await guide.observe(view());assert.equal(calls.length,1);
-  result.resolve(response());await pending;await guide.observe(view());assert.equal(calls.length,1);
+  const pending=guide.observe(view()),repeated=guide.observe(view());assert.equal(calls.length,1);
+  result.resolve(response());await Promise.all([pending,repeated]);await guide.observe(view());assert.equal(calls.length,1);
 });
 
 test('older answer cannot overwrite a new confirmed revision',async()=>{
@@ -209,20 +209,20 @@ test('active conversation rendering never requests Bulssi and keeps input usable
   assert.equal(observed.length,0);assert.equal(rendered[0],state.question);
 });
 
-function readyConversationHarness(){
-  const guidance=deferred(),result=deferred(),calls=[],timers=[],thinking=[],observed=[],screens={chat:{hidden:false},result:{hidden:true}};
+function readyConversationHarness(extra={}){
+  const guidance=deferred(),result=deferred(),retryResult=deferred(),calls=[],timers=[],thinking=[],observed=[],opened=[],errors=[],screens={chat:{hidden:false},result:{hidden:true}};
   const context=vm.createContext({
     ReferralGuide:{observe(state){observed.push({...state});return observed.length===1?guidance.promise:Promise.resolve();},invalidate(){}},
-    API:{request:(...args)=>{calls.push(args);return result.promise;}},
+    API:{request:(...args)=>{calls.push(args);return calls.length===1?result.promise:retryResult.promise;}},
     ChatScreen:{think:state=>thinking.push(state),sync(){},progress(){},title(){},section(){},clear(){},leave:go=>go()},
     ChatInput:{clear(){},render(){assert.fail('ready conversations must not render another question');}},
-    rememberRec(){},ResultScreen:{prepare(){screens.chat.hidden=true;screens.result.hidden=false;},open(){}},show(screen){for(const [id,node]of Object.entries(screens))node.hidden=id!==screen;},window:{scrollTo(){}},$:id=>screens[id],
+    rememberRec(){},ResultScreen:{prepare(){screens.chat.hidden=true;screens.result.hidden=false;},open(...args){opened.push(args);},pendingError(message,retry){errors.push({message,retry});}},show(screen){for(const [id,node]of Object.entries(screens))node.hidden=id!==screen;},window:{scrollTo(){}},$:id=>screens[id],
     setTimeout(run,delay){timers.push({run,delay});return timers.length;},clearTimeout(){},
   });
   vm.runInContext(script('core/conversation.js'),context);
   const finish=context.finish;context.finish=(...args)=>context.finishing=finish(...args);
-  context.renderConversation({...view(3),status:'ready'},0);
-  return {context,guidance,result,calls,timers,thinking,observed};
+  context.renderConversation({...view(3),status:'ready',...extra},0);
+  return {context,guidance,result,retryResult,calls,timers,thinking,observed,opened,errors};
 }
 
 test('ready conversation opens results and waits for final guidance before normal generation',async()=>{
@@ -252,7 +252,100 @@ test('failed initial guidance does not block ready conversation result generatio
   result.resolve({revision:4,record:{profile:{},guide:{}}});await context.finishing;
 });
 
-function pendingResultHarness(){
+test('explicit nonurgent v3 results start immediately and appear before deferred guidance finishes',async()=>{
+  const {context,guidance,result,calls,timers,observed,opened}=readyConversationHarness({bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:false});
+  assert.equal(calls.length,1);assert.ok(calls[0][0].endsWith('/result'));assert.equal(timers[0].delay,250);assert.equal(observed.length,0);
+  context.finish();assert.equal(calls.length,1,'a duplicate finish cannot dispatch another result');
+  result.resolve({revision:4,record:{profile:{},guide:{}}});await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(opened.length,1);assert.equal(observed.length,1);assert.equal(observed[0].revision,4);
+  context.finish();assert.equal(calls.length,1,'guidance after saving remains part of the serialized finish');
+  guidance.resolve();await context.finishing;
+});
+
+for(const safety of [true,null,undefined,'false',0])test('v3 guidance stays first unless safety is explicitly false: '+safety,async()=>{
+  const {context,guidance,result,calls,observed}=readyConversationHarness({bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:safety});
+  assert.equal(calls.length,0);assert.equal(observed.length,1);
+  guidance.resolve();await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,1);
+  result.resolve({revision:4,record:{profile:{},guide:{}}});await context.finishing;
+});
+
+test('nonurgent final failure still runs guidance and queues one retry until it settles',async()=>{
+  const {context,guidance,result,retryResult,calls,observed,errors}=readyConversationHarness({bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:false});
+  result.reject(Object.assign(new Error('generation failed'),{status:502}));await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(errors.length,1);assert.equal(observed.length,1);assert.equal(observed[0].revision,3);
+  const first=errors[0].retry(),second=errors[0].retry();assert.equal(first,second);assert.equal(calls.length,1);
+  guidance.resolve();await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,2);
+  retryResult.resolve({revision:4,record:{profile:{},guide:{}}});await first;
+  assert.deepEqual(observed.map(state=>state.revision),[3,4]);
+});
+
+test('leaving while deferred guidance is pending cancels a queued result retry',async()=>{
+  const {context,guidance,result,calls,errors}=readyConversationHarness({bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:false});
+  result.reject(Object.assign(new Error('generation failed'),{status:502}));await new Promise(resolve=>setImmediate(resolve));
+  const retry=errors[0].retry();context.leaveConversation();guidance.resolve();await retry;
+  assert.equal(calls.length,1);
+});
+
+test('leaving a result-first request prevents any late guidance or result display',async()=>{
+  const {context,result,calls,observed,opened}=readyConversationHarness({bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:false});
+  context.leaveConversation();result.resolve({revision:4,record:{profile:{},guide:{}}});await context.finishing;
+  assert.equal(calls.length,1);assert.equal(observed.length,0);assert.equal(opened.length,0);
+});
+
+for(const status of [0,409])test('recovered ready revision queues one automatic result retry without waiting on itself: '+status,{timeout:1000},async()=>{
+  const state={bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:false};
+  const {context,guidance,result,retryResult,calls,observed,opened,errors}=readyConversationHarness(state);
+  const restored=deferred();
+  context.ChatScreen.typing=(_face,work)=>work();
+  context.API.request=(...args)=>{calls.push(args);return args[0].endsWith('/result')?retryResult.promise:restored.promise;};
+  result.reject(Object.assign(new Error('result response unavailable'),{status}));await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls.length,2);assert.equal(calls[1][0],'/api/intakes/synthetic-intake');
+  restored.resolve({...view(4),...state});await new Promise(resolve=>setImmediate(resolve));
+  const automaticRetry=context.finishing;
+  assert.equal(errors.length,0);assert.equal(calls.length,2,'restored result waits for deferred guidance');
+  assert.deepEqual(observed.map(item=>item.revision),[4]);
+  context.finish();assert.equal(calls.length,2,'duplicate resume cannot start another result');
+  guidance.resolve();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls.length,3);assert.equal(calls[2][1].body.revision,4);
+  retryResult.resolve({revision:5,record:{profile:{},guide:{}}});await automaticRetry;
+  assert.equal(opened.length,1);assert.deepEqual(observed.map(item=>item.revision),[4,5]);
+});
+
+test('urgent ready revision recovery keeps guidance before the automatic retry',{timeout:1000},async()=>{
+  const state={bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:true};
+  const {context,guidance,result,retryResult,calls,observed,opened}=readyConversationHarness(state);
+  guidance.resolve();await new Promise(resolve=>setImmediate(resolve));
+  const restored=deferred(),retryGuidance=deferred();
+  context.ChatScreen.typing=(_face,work)=>work();
+  context.API.request=(...args)=>{calls.push(args);return args[0].endsWith('/result')?retryResult.promise:restored.promise;};
+  context.ReferralGuide.observe=state=>{observed.push({...state});return state.revision===4?retryGuidance.promise:Promise.resolve();};
+  result.reject(Object.assign(new Error('revision changed'),{status:409}));await new Promise(resolve=>setImmediate(resolve));
+  restored.resolve({...view(4),...state});await new Promise(resolve=>setImmediate(resolve));
+  const automaticRetry=context.finishing;
+  assert.equal(calls.length,2);assert.deepEqual(observed.map(item=>item.revision),[3,4]);
+  retryGuidance.resolve();await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls.length,3);assert.equal(calls[2][1].body.revision,4);
+  retryResult.resolve({revision:5,record:{profile:{},guide:{}}});await automaticRetry;
+  assert.equal(opened.length,1);assert.deepEqual(observed.map(item=>item.revision),[3,4,5]);
+});
+
+for(const leaveAt of ['recovery-read','deferred-guidance'])test('leaving during ready revision recovery prevents its automatic retry: '+leaveAt,{timeout:1000},async()=>{
+  const state={bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:false};
+  const {context,guidance,result,calls,observed,opened}=readyConversationHarness(state);
+  const restored=deferred();
+  context.ChatScreen.typing=(_face,work)=>work();
+  context.API.request=(...args)=>{calls.push(args);assert.ok(!args[0].endsWith('/result'),'stale recovery must not dispatch a result');return restored.promise;};
+  result.reject(Object.assign(new Error('revision changed'),{status:409}));await new Promise(resolve=>setImmediate(resolve));
+  if(leaveAt==='recovery-read')context.leaveConversation();
+  restored.resolve({...view(4),...state});await new Promise(resolve=>setImmediate(resolve));
+  const finishing=context.finishing;
+  if(leaveAt==='deferred-guidance')context.leaveConversation();
+  guidance.resolve();await finishing;
+  assert.equal(calls.length,2);assert.equal(opened.length,0);
+  assert.equal(observed.length,leaveAt==='deferred-guidance'?1:0);
+});
+
+function pendingResultHarness(extra={}){
   const initial=deferred(),results=[deferred(),deferred()],requests=[],quote='  합성 원문 <그대로>\n전문가와 이야기하고 싶어요.  ';
   let firstGuidance=true;
   const data=response({assessment:{urgency:'planned'},guidance:{...response().guidance,urgency:'planned',urgent:false,
@@ -274,7 +367,7 @@ function pendingResultHarness(){
   vm.runInContext(script('components/GuideCards.js')+script('components/ResultScreen.js')+script('core/conversation.js')+'\nglobalThis.resultScreen=ResultScreen;',context);
   context.resultScreen.animate=()=>{};
   const finish=context.finish;context.finish=(...args)=>context.finishing=finish(...args);
-  context.renderConversation({...view(),status:'ready'},0);
+  context.renderConversation({...view(),status:'ready',...extra},0);
   return {context,guide,nodes,calls,initial,results,requests,data,quote};
 }
 
@@ -302,6 +395,48 @@ test('normal final failure preserves the quoted card and exposes a working retry
   retry.onclick();await new Promise(resolve=>setImmediate(resolve));assert.equal(requests.length,2);assert.equal(guide.root.parent,nodes.rbody.querySelector('.cards'));
   assert.equal(guide.root.all('blockquote')[0].textContent,quote);
   context.show('records');results[1].reject(new Error('late retry failure'));await context.finishing;
+});
+
+test('guidance retry clicks wait for an active result and coalesce after failure',{timeout:1000},async()=>{
+  const {context,guide,calls,initial,results,requests}=pendingResultHarness();
+  initial.reject(new Error('guidance unavailable'));await new Promise(resolve=>setImmediate(resolve));
+  const button=guide.root.find('ghost referral-retry');
+  const first=button.onclick(),second=button.onclick();
+  assert.equal(calls.filter(([path])=>path.endsWith('/guidance')).length,1);assert.equal(requests.length,1);
+  results[0].reject(Object.assign(new Error('result unavailable'),{code:'MODEL_INVALID_RESPONSE'}));
+  await Promise.all([context.finishing,first,second]);
+  assert.equal(calls.filter(([path])=>path.endsWith('/guidance')).length,2);
+  assert.ok(guide.root.all('blockquote').length);
+});
+
+for(const ending of ['saved-revision','navigation'])test('queued guidance retry is discarded after '+ending,{timeout:1000},async()=>{
+  const {context,guide,calls,initial,results}=pendingResultHarness();
+  initial.reject(new Error('guidance unavailable'));await new Promise(resolve=>setImmediate(resolve));
+  const retry=guide.root.find('ghost referral-retry').onclick();
+  if(ending==='navigation'){
+    context.show('records');results[0].reject(new Error('late failure'));
+  }else{
+    results[0].resolve({revision:3,record:{profile:{},guide:{top:'마음',care:{feel:'함께 이야기해요',tips:[]},script:'완성한 대화 문장',doList:[],avoid:[],next:'다음 행동'}}});
+  }
+  await Promise.all([context.finishing,retry]);
+  assert.deepEqual(calls.filter(([path])=>path.endsWith('/guidance')).map(([,options])=>options.body.revision),ending==='navigation'?[2]:[2,3]);
+  if(ending==='navigation')assert.equal(guide.root.hidden,true);
+});
+
+test('result-first retry waits for a guidance retry already in flight',{timeout:1000},async()=>{
+  const {context,guide,nodes,calls,initial,results,requests,data}=pendingResultHarness({bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:false});
+  results[0].reject(Object.assign(new Error('result unavailable'),{code:'MODEL_INVALID_RESPONSE'}));await new Promise(resolve=>setImmediate(resolve));
+  initial.reject(new Error('guidance unavailable'));await context.finishing;
+  const resultButton=nodes.rbody.querySelector('.result-pending').all('button')[0];
+  const retryGuidance=deferred(),request=context.API.request;
+  context.API.request=(...args)=>{if(args[0].endsWith('/guidance')){calls.push(args);return retryGuidance.promise;}return request(...args);};
+  const guidance=guide.root.find('ghost referral-retry').onclick();
+  const retry=resultButton.onclick();
+  assert.equal(requests.length,1,'the result must wait for the already dispatched guidance');
+  retryGuidance.resolve(data);await guidance;await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(requests.length,2);
+  results[1].reject(Object.assign(new Error('result still unavailable'),{code:'MODEL_INVALID_RESPONSE'}));await retry;
+  assert.equal(calls.filter(([path])=>path.endsWith('/guidance')).length,2);
 });
 
 test('successful normal generation replaces pending content and assesses the saved result revision',async()=>{
@@ -456,4 +591,11 @@ test('resume is blocked during deletion and inaccessible intakes show no restora
   const blocked=resumeHarness(async()=>{throw new Error('should not fetch');});blocked.context.RecordsScreen._deleting='all';await blocked.context.resumeConversation('synthetic-intake');assert.equal(blocked.calls.length,0);
   const missing=resumeHarness(async()=>{throw{status:404,message:'대화를 찾을 수 없어요.'};});await missing.context.resumeConversation('synthetic-intake');
   assert.equal(missing.observed.length,0);assert.equal(missing.errors.length,1);assert.equal(missing.errors[0][1],null);
+});
+
+test('provisional urgent safety is not treated as a completed nonurgent result',async()=>{
+  const {context,guidance,result,calls,observed}=readyConversationHarness({bundle_id:'malssi-intake-3.0.0-rc1',safety_urgent:false,safety_review_pending:true});
+  assert.equal(calls.length,0);assert.equal(observed.length,1);
+  guidance.resolve();await new Promise(resolve=>setImmediate(resolve));assert.equal(calls.length,1);
+  result.resolve({revision:4,record:{profile:{},guide:{}}});await context.finishing;
 });

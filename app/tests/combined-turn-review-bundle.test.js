@@ -4,16 +4,18 @@ import {ModelGateway} from '../src/model.js';
 import {COMMON} from '../src/relationship-prompts.js';
 import {scopeContext,scopeDraft,scopeBlock,scopeReview} from './helpers/turn-input-optimization-fixture.js';
 import {evidenceWireFixture} from './evidence-wire.fixture.js';
+import {restoreReviewSources} from '../src/final-review-bundle.js';
 
 const envelope=value=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}]}));
 const withoutExecution=({state_agent,...result})=>result;
 const contextLimit=()=>new Response(JSON.stringify({error:{type:'invalid_request_error',
   message:'Prompt (20000) exceeds the 10000-token input budget; no text was truncated'}}),{status:400});
 
-function fixture({bundle=true,ctx=scopeContext(),value=scopeDraft(ctx),response,http}={}) {
+function fixture({bundle=true,shareSources=false,ctx=scopeContext(),value=scopeDraft(ctx),response,http}={}) {
   const calls=[],logical=[],diagnostics=[];
   const gateway=new ModelGateway({baseUrl:'https://combined-writer.synthetic.invalid/v1',apiKey:'synthetic-only',model:'synthetic-writer',
     protocol:'relationship_agent',agentFormat:'prompt',reasoningEffort:'omit',stateMode:'combined',
+    shareReviewSources:shareSources,bundleFinalReviews:shareSources,
     timeoutMs:0,retryFailures:false,diagnosticLogger:entry=>diagnostics.push(entry),fetchImpl:async(url,request)=>{
       const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);
       const call={...input,prompt:body.messages[0].content,body};calls.push(call);
@@ -26,10 +28,11 @@ function fixture({bundle=true,ctx=scopeContext(),value=scopeDraft(ctx),response,
       };
       let output;
       if(input.data.tasks) {
+        const restored=restoreReviewSources(input.data);
         output={};
-        for(const task of input.data.tasks) {
-          const data={...task.input,...Object.fromEntries(Object.entries(task.shared_input_keys).map(([key,id])=>[key,input.data.shared_inputs[id]]))};
-          const instructions=task.instructions.map(rule=>rule.text??input.data.shared_instructions[rule.shared_instruction]).join('\n');
+        for(const task of restored.tasks) {
+          const data={...task.input,...Object.fromEntries(Object.entries(task.shared_input_keys).map(([key,id])=>[key,restored.shared_inputs[id]]))};
+          const instructions=task.instructions.map(rule=>rule.text??restored.shared_instructions[rule.shared_instruction]).join('\n');
           output[task.id]=await produce({stage:task.stage,data,output_schema:input.output_schema.properties[task.id],
             prompt:COMMON+'\n'+instructions,bundle_stage:input.stage});
         }
@@ -58,6 +61,57 @@ test('combined opt-in uses two POSTs and preserves every independent input/schem
   }
   assert.deepEqual(candidate.ctx,baseline.ctx);
   assert.equal(candidate.diagnostics.filter(row=>row.event==='model_attempt').length,2);
+});
+
+const sourceHeavyContext=()=>{
+  const ctx=scopeContext();
+  const text='합성 검증 자료입니다. 대화에서 확인된 원문과 현재의 도움 범위를 그대로 유지해 주세요. '.repeat(50);
+  ctx.user_goal.message={...ctx.user_goal.message,text,rawText:text};
+  return ctx;
+};
+
+test('shared turn sources reduce the wire payload while preserving all logical scopes in two calls',async()=>{
+  const ctx=sourceHeavyContext(),before=structuredClone(ctx);
+  const baseline=fixture({ctx}),candidate=fixture({ctx,shareSources:true});
+  const expected=await baseline.run(),actual=await candidate.run();
+  assert.equal(baseline.calls.length,2);assert.equal(candidate.calls.length,2);
+  assert.deepEqual(withoutExecution(actual),withoutExecution(expected));
+  assert.deepEqual(candidate.logical,baseline.logical);
+  assert.deepEqual(ctx,before);
+  const original=baseline.calls[1],shared=candidate.calls[1];
+  assert.ok(shared.data.shared_sources?.length>0);
+  assert.equal(Object.hasOwn(original.data,'shared_sources'),false);
+  assert.deepEqual(restoreReviewSources(shared.data),original.data);
+  assert.deepEqual(shared.output_schema,original.output_schema);
+  assert.ok(JSON.stringify(shared.body.messages).length<JSON.stringify(original.body.messages).length);
+  assert.deepEqual(shared.data.tasks.map(task=>task.id),['state','questions','safety']);
+});
+
+test('shared turn sources retain rejection, fresh reviews and original inputs during repair',async()=>{
+  const ctx=sourceHeavyContext();
+  const response=(task,value)=>task.stage==='turn_review'?scopeReview(task.data,true):value;
+  const baseline=fixture({ctx,response}),candidate=fixture({ctx,response,shareSources:true});
+  const expected=await baseline.run(),actual=await candidate.run();
+  assert.equal(candidate.calls.length,4);
+  assert.deepEqual(withoutExecution(actual),withoutExecution(expected));
+  assert.deepEqual(candidate.logical,baseline.logical);
+  for(const stage of ['turn_review_bundle','turn_review_bundle_after_review']){
+    const shared=candidate.calls.find(call=>call.stage===stage),original=baseline.calls.find(call=>call.stage===stage);
+    assert.deepEqual(restoreReviewSources(shared.data),original.data);
+  }
+  assert.deepEqual(candidate.calls.map(call=>call.stage),['turn_draft','turn_review_bundle','turn_draft_after_review','turn_review_bundle_after_review']);
+  for(const stage of ['turn_review','question_review','safety_review'])assert.ok(candidate.logical.some(task=>task.stage===stage+'_after_review'));
+});
+
+test('shared turn sources cannot turn malformed independent audits into approval',async()=>{
+  const probe=fixture({ctx:sourceHeavyContext(),shareSources:true,response:(task,value)=>{
+    if(task.stage==='turn_review')delete value.state.audits;
+    return value;
+  }});
+  await assert.rejects(probe.run(),{code:'MODEL_INVALID_RESPONSE'});
+  assert.equal(probe.calls.filter(call=>call.stage==='turn_review_bundle').length,3);
+  assert.ok(probe.calls.some(call=>call.stage==='turn_review'));
+  assert.ok(probe.calls.length<=10,'existing bounded fallback cannot loop indefinitely');
 });
 
 test('current scoped block profile uses five POSTs while joint drafting and reviews require two',async()=>{

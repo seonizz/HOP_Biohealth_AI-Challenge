@@ -44,7 +44,7 @@ const ResultScreen={
       [...node.querySelectorAll("details")].forEach((section,index)=>{if(expanded[index])section.open=true;});
       if(card.id==='script')GuideCards.bindCopy(node,card.value);
       if(!previous)stream.appendChild(node);
-      this.previewCards.set(card.id,{node,signature});
+      this.previewCards.set(card.id,{node,signature,html});
     }
     // Show either action as soon as it is ready. When both are ready, reuse
     // their nodes in the original two-column pair at the first action's place.
@@ -80,6 +80,9 @@ const ResultScreen={
     card.appendChild(heading);card.appendChild(detail);card.appendChild(button);
   },
   open(p,g,saved,analysis,detail,recordId){
+    const selectors={care:'.care',script:'.script',doList:'.do',avoid:'.avoid',next:'.next',relationship:'.relationship'};
+    const visible=$("rbody").querySelector('.result-stream')?Object.keys(selectors).filter(id=>
+      this.previewCards?.get(id)?.html===GuideCards.partial({id,value:id==='relationship'?analysis:g[id],detail},{care:g.care})):[];
     this.previewCards=new Map();
     $("rbody").innerHTML=`
      <div class="rside"><img src="${M.cheer}" alt="하트를 안은 말씨">
@@ -95,7 +98,7 @@ const ResultScreen={
        <div class="actions"><span class="note" style="margin-right:auto;align-self:center">${saved?`"${esc(p.name||"그분")}" 기록으로 저장했어요.`:"기록을 저장하지 못했어요."}</span>${saved&&recordId?'<button class="btn" id="resultContinue" type="button">추가 질문하기</button>':""}<button class="ghost" id="toCol">${esc(g.top)} 관련 칼럼</button><button class="ghost" id="toRec">내 기록 보기</button><button class="ghost" id="again">처음부터 다시</button></div>
        ${CrisisLine("위급할 땐 <b>109</b> 자살예방상담 · <b>1577-0199</b> 정신건강위기상담 · <b>112 / 119</b>")}
      </div>`;
-    show("result");this.animate();
+    show("result");this.animate(visible.map(id=>$("rbody").querySelector(selectors[id])).filter(Boolean));
     if(saved&&recordId)$("resultContinue").onclick=()=>ContinuationScreen.start(recordId);
     $("toRec").onclick=()=>RecordsScreen.open();
     $("toCol").onclick=()=>ColumnsScreen.open(g.top);
@@ -103,10 +106,11 @@ const ResultScreen={
     $("again").onclick=()=>show("start");
   },
   // 등장 효과: 왼쪽 말씨·제목이 먼저, 이어서 오른쪽 카드가 한 칸씩 통째로 떠오름
-  animate(){
+  animate(alreadyVisible=[]){
     const b=$("rbody"),side=b.querySelector(".rside");
     reveal(side.children,{step:120});
     const order=[];[...b.querySelector(".cards").children].forEach(c=>c.classList.contains("two")?order.push(...c.children):order.push(c));
-    order.forEach(c=>c.classList.add("pop"));reveal(order,{start:300,step:170});
+    const appearing=order.filter(card=>!alreadyVisible.includes(card));
+    appearing.forEach(c=>c.classList.add("pop"));reveal(appearing,{start:300,step:170});
   }
 };

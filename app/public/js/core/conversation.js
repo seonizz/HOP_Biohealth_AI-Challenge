@@ -3,16 +3,23 @@ let S;
 let conversationToken=0;
 let resumingConversationId=null;
 let conversationRequest=null;
+let conversationProgress=null;
+let finishingConversation=null;
 function cancelConversationRequest(){
+  conversationProgress?.();
+  if(finishingConversation)finishingConversation.cancelled=true;
   if(!conversationRequest)return;
   const request=conversationRequest;conversationRequest=null;conversationToken++;request.abort();
 }
-async function requestConversation(path,options,token){
+async function requestConversation(path,options={},token){
   if(token!==conversationToken)throw Object.assign(new Error("요청을 취소했어요."),{status:499,code:"REQUEST_CANCELLED"});
   const controller=typeof AbortController==="function"?new AbortController():null;
   conversationRequest?.abort();conversationRequest=controller;
   try{
-    const result=await API.request(path,{...options,...(controller?{signal:controller.signal}:{})});
+    const onEvent=typeof options.onEvent==="function"?(type,data)=>{
+      if(token===conversationToken&&!controller?.signal.aborted&&conversationRequest===controller)options.onEvent(type,data);
+    }:undefined;
+    const result=await API.request(path,{...options,...(onEvent?{onEvent}:{}),...(controller?{signal:controller.signal}:{})});
     if(token!==conversationToken||controller?.signal.aborted||conversationRequest!==controller)throw Object.assign(new Error("요청을 취소했어요."),{status:499,code:"REQUEST_CANCELLED"});
     return result;
   }
@@ -61,7 +68,7 @@ async function begin(){
       try{const data=await API.request("/api/records");if(token===conversationToken)setHistory(data);}
       catch(readError){error=readError;}
     }
-    if(token===conversationToken)ChatInput.error(error.message,begin);
+    if(token===conversationToken)ChatInput.error(error.message,()=>begin());
   }
 }
 
@@ -92,7 +99,7 @@ function renderConversation(view,token,nextText="",helpDraft=null){
   if(typeof AppRouter!=="undefined")AppRouter.sync("chat",{replace:true});
   ChatScreen.sync(view.log);ChatScreen.progress(view.progress,{index:view.questionIndex,total:view.totalQuestions,label:view.section,complete:view.status==="ready"});ChatScreen.title(view.chat_title);ChatScreen.section(view.section);
   ChatInput.clear();
-  if(view.user_stopped&&!view.safety_urgent&&!view.model_pending){
+  if(view.user_stopped&&!view.safety_urgent&&!view.safety_review_pending&&!view.model_pending){
     ChatInput.error("대화를 여기서 마쳤어요. 새 대화는 처음 화면에서 시작할 수 있어요.");
     return;
   }
@@ -206,9 +213,13 @@ async function submitConversation(path,body,token,message,detailPrompt){
   if(message&&!detailPrompt)detailPrompt=answerDetailPrompt(S.question,body.selected||[]);
   if(detailPrompt&&!sameDetailPrompt(log.at(-1),detailPrompt))log=[...log,detailPrompt];
   if(message)ChatScreen.sync([...log,message]);
-  if(message)ChatInput.waitForQuestion?.();
+  if(message||path.endsWith("/back"))ChatInput.waitForQuestion?.();
   try{
-    const view=await ChatScreen.typing(S?.question?.face||"ponder",()=>token===conversationToken?requestConversation(path,{method:"POST",body},token):null);
+    const onEvent=(type,data)=>{
+      if(type!=="progress"||token!==conversationToken||S!==submittedView||data.revision!==body.revision)return;
+      if(typeof ChatScreen.thinkProgress==="function")ChatScreen.thinkProgress(data.progress);
+    };
+    const view=await ChatScreen.typing(S?.question?.face||"ponder",()=>token===conversationToken?requestConversation(path,{method:"POST",body,onEvent},token):null);
     if(token===conversationToken){
       const nextText=ChatInput.typeAhead?.()||"";
       const helpDraft=retainedHelpDraft(submittedView,view,body);
@@ -249,44 +260,111 @@ function goBack(){
 
 async function finish(token=conversationToken){
   if(token!==conversationToken||!S?.id)return;
+  if(finishingConversation&&!finishingConversation.cancelled&&finishingConversation.token===token&&finishingConversation.id===S.id){
+    return finishingConversation.revision===S.revision?finishingConversation.promise:finishingConversation.retry();
+  }
+  const run={id:S.id,revision:S.revision,token,cancelled:false};
+  finishingConversation=run;
+  run.promise=finishConversation(run);
+  return run.promise;
+}
+
+function pendingConversationFinish(view){
+  const run=finishingConversation;
+  if(!run||run.cancelled||run.id!==view.id)return null;
+  // An automatic result retry has priority over a separate guidance retry.
+  return run.promise.then(()=>run.retryPromise);
+}
+
+async function finishConversation(run){
+  const {token}=run;
   const id=S.id,revision=S.revision;
   ChatInput.clear();ChatScreen.think(true);
   const pending=typeof ResultScreen!=="undefined"&&typeof ResultScreen.prepare==="function";
   if(pending)ResultScreen.prepare(S);
-  const current=()=>token===conversationToken&&(!pending||!$("result")?.hidden);
-  if(pending&&typeof ReferralGuide!=="undefined"){
-    // 결과 화면에서만 불씨를 확인하고, 한 모델의 두 생성을 순서대로 진행해요.
-    try{await ReferralGuide.observe(S);}catch{ /* Guidance failure must not block the saved result. */ }
+  const current=()=>!run.cancelled&&token===conversationToken&&S?.id===id&&(!pending||!$("result")?.hidden);
+  run.retry=()=>{
     if(!current())return;
-  }
-  let polling=true,timer;
+    if(finishingConversation!==run)return finish(token);
+    return run.retryPromise??=run.promise.then(()=>current()?finish(token):undefined);
+  };
+  const observe=async()=>{
+    if(!current()||typeof ReferralGuide==="undefined")return;
+    try{await ReferralGuide.observe(S);}catch{ /* Guidance failures have their own retry UI. */ }
+  };
+  // Only a v3 view with an explicit completed nonurgent result changes order.
+  // Missing/unknown/urgent safety flags retain guidance-first behavior.
+  const resultFirst=Boolean(S.bundle_id)&&S.safety_urgent===false&&S.safety_review_pending!==true;
+  let polling=true,timer,pollTimer,pollController,rejectPoll;
+  const stopPolling=()=>{
+    polling=false;clearTimeout(timer);clearTimeout(pollTimer);
+    pollController?.abort();rejectPoll?.(new Error("Progress polling cancelled"));
+    if(conversationProgress===stopPolling)conversationProgress=null;
+  };
   const poll=async()=>{
     if(!polling||!current())return;
+    let delay=500;
+    const controller=typeof AbortController==="function"?new AbortController():null;
+    pollController=controller;
     try{
-      const data=await API.request(`/api/intakes/${id}/progress`);
+      const timeout=new Promise((_,reject)=>{
+        rejectPoll=reject;
+        pollTimer=setTimeout(()=>{controller?.abort();reject(new Error("Progress polling timed out"));},8000);
+      });
+      const data=await Promise.race([API.request(`/api/intakes/${id}/progress`,controller?{signal:controller.signal}:{}),timeout]);
       if(polling&&current()&&data.revision===revision){
         ChatScreen.thinkProgress(data.progress);
         if(typeof ResultScreen.progress==="function")ResultScreen.progress(data.progress);
         if(typeof ResultScreen.partial==="function")ResultScreen.partial(data.cards||[]);
       }
-    }catch{ /* The final request owns error reporting; polling can reconnect. */ }
-    if(polling&&current())timer=setTimeout(poll,1500);
+    }catch(error){
+      // The server limits each IP to 600 API requests per minute by default.
+      // A single active poll uses at most 120/min; honor a shared-IP rejection.
+      if(error.status===429)delay=60000;
+    }finally{clearTimeout(pollTimer);pollController=null;rejectPoll=null;}
+    if(polling&&current())timer=setTimeout(poll,delay);
   };
-  timer=setTimeout(poll,250);
   try{
-    const result=await requestConversation(`/api/intakes/${id}/result`,{method:"POST",body:{revision}},token);
-    if(!current())return;
-    ChatScreen.think(false);
-    S.revision=result.revision;
-    rememberRec(result.record,id);
-    ResultScreen.open(result.record.profile,result.record.guide,true,result.record.relationship_analysis,result.record.conversation_detail,result.record.id);
-    if(typeof ReferralGuide!=="undefined")void ReferralGuide.observe(S);
-  }catch(error){
-    polling=false;clearTimeout(timer);
-    await recoverConversation(error,token,()=>{if(current())return finish(token);},(message,retry)=>{
-      if(pending&&typeof ResultScreen.pendingError==="function")ResultScreen.pendingError(message,retry);
-      else ChatScreen.thinkError(retry,message);
-    },current);
+    if(resultFirst&&typeof ReferralGuide!=="undefined"&&ReferralGuide.pendingRequest){
+      try{await ReferralGuide.pendingRequest;}catch{ /* Its own retry UI reports guidance failure. */ }
+      if(!current())return;
+    }
+    if(pending&&!resultFirst&&typeof ReferralGuide!=="undefined"){await observe();if(!current())return;}
+    conversationProgress=stopPolling;
+    timer=setTimeout(poll,250);
+    let saved=false;
+    try{
+      const onEvent=(type,data)=>{
+        if(type!=="progress"||!current()||data.revision!==revision)return;
+        // New servers push snapshots on this request. Polling remains only for
+        // older JSON servers, and an in-flight fallback poll is cancelled here.
+        stopPolling();
+        ChatScreen.thinkProgress(data.progress);
+        if(typeof ResultScreen.progress==="function")ResultScreen.progress(data.progress);
+        if(typeof ResultScreen.partial==="function")ResultScreen.partial(data.cards||[]);
+      };
+      const result=await requestConversation(`/api/intakes/${id}/result`,{method:"POST",body:{revision},onEvent},token);
+      stopPolling();
+      if(!current())return;
+      ChatScreen.think(false);
+      S.revision=result.revision;run.revision=result.revision;
+      rememberRec(result.record,id);
+      ResultScreen.open(result.record.profile,result.record.guide,true,result.record.relationship_analysis,result.record.conversation_detail,result.record.id);
+      saved=true;
+    }catch(error){
+      stopPolling();
+      await recoverConversation(error,token,run.retry,(message,retry)=>{
+        if(pending&&typeof ResultScreen.pendingError==="function")ResultScreen.pendingError(message,retry);
+        else ChatScreen.thinkError(retry,message);
+      },current);
+    }finally{
+      stopPolling();
+      // A failed main result must not permanently skip deferred guidance. Keep
+      // retries queued until this call settles, so model generations stay serial.
+      if(saved||resultFirst)await observe();
+    }
+  }finally{
+    stopPolling();
+    if(finishingConversation===run)finishingConversation=null;
   }
-  finally{polling=false;clearTimeout(timer);}
 }

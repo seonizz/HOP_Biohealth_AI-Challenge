@@ -8,13 +8,14 @@ import {HttpError} from '../src/errors.js';
 import {scopeProbe,scopeContext,scopeDraft,scopeBlock,scopeReview} from './helpers/turn-input-optimization-fixture.js';
 
 const affected=stage=>/^turn_draft_block_(patient_state|name_index|relationship_memory)(?:_after_review)?$/u.test(stage);
+const questionBlock=stage=>/^turn_draft_block_questions(?:_after_review)?$/u.test(stage);
 const restored=(data,key)=>({...data.shared_input,...data[key]});
 const sourceOnly=({prior_state,prior_relationship_memory,...input})=>input;
 const withoutAgent=({state_agent,...result})=>result;
 const stages=value=>value.calls.map(call=>call.stage);
 const configured=options=>scopeProbe(ModelGateway,{enabled:true,blockScopedInputs:true,...options});
 
-for(const scenario of [{},{rejectOnce:true},{malformedOnce:true}])
+for(const scenario of [{},{rejectOnce:true},{malformedOnce:true},{stateMode:'combined',fallback:true}])
 test('scoped writers preserve sources, question decisions, all review requests and stored output: '+JSON.stringify(scenario),async()=>{
   const original=scopeProbe(ModelGateway,scenario),optimized=configured(scenario);
   const before=structuredClone(optimized.ctx),expected=await original.run(),actual=await optimized.run();
@@ -24,6 +25,18 @@ test('scoped writers preserve sources, question decisions, all review requests a
   const state=sourceOnly(relationshipStateRequest(optimized.ctx,null).data);
   for(let i=0;i<optimized.requests.length;i++){
     const prior=original.requests[i],current=optimized.requests[i],call=optimized.calls[i];
+    if(questionBlock(call.stage)){
+      const old=original.calls[i],question=relationshipQuestionRequest(optimized.ctx);
+      assert.deepEqual(call.data,old.data);
+      assert.deepEqual(restored(call.data,'question_input'),sourceOnly(question.data));
+      assert.deepEqual(call.output_schema,old.output_schema);
+      assert.deepEqual({...current,messages:[prior.messages[0],...current.messages.slice(1)]},prior);
+      assert.equal(call.prompt.split(COMMON).length-1,1);
+      assert.ok(call.prompt.includes(question.prompt.slice(COMMON.length)));
+      assert.doesNotMatch(call.prompt,/아래 상태 규칙의 patient_state|최신 reported fact를 선택했다면/u);
+      assert.ok(Buffer.byteLength(current.messages[0].content)<Buffer.byteLength(prior.messages[0].content));
+      continue;
+    }
     if(!affected(call.stage)){assert.deepEqual(current,prior);continue;}
     const old=original.calls[i];
     assert.equal(Object.hasOwn(call.data,'question_input'),false);
@@ -62,8 +75,8 @@ test('question-rule-only option removes just its exact prompt segment',async()=>
   }
 });
 
-for(const options of [{stateMode:'combined'},{stateMode:'combined',fallback:true}])
-test('scope options leave combined and its block fallback inputs unchanged: '+JSON.stringify(options),async()=>{
+for(const options of [{stateMode:'combined'}])
+test('scope options leave direct combined inputs unchanged: '+JSON.stringify(options),async()=>{
   const original=scopeProbe(ModelGateway,options),optimized=configured(options);
   assert.deepEqual(await optimized.run(),await original.run());
   assert.deepEqual(optimized.requests,original.requests);
@@ -99,17 +112,20 @@ test('fixed null name is independent of scope opt-in and conditional question re
   assert.deepEqual(stages(original),['turn_draft_block_patient_state','turn_draft_block_questions','turn_draft_block_relationship_memory','turn_review','safety_review']);
 });
 
-test('combined structural fallback also resolves only schema-fixed null without applying block scoping',async()=>{
+test('combined structural fallback resolves schema-fixed null while preserving opted-in block source scopes',async()=>{
   const ctx=scopeContext();delete ctx.patient.fields.name;
   const value=scopeDraft(ctx);value.state.name_index=null;
   const options={ctx,value,stateMode:'combined',fallback:true};
   const original=scopeProbe(ModelGateway,options),optimized=configured(options);
   assert.deepEqual(await optimized.run(),await original.run());
-  assert.deepEqual(optimized.requests,original.requests);
+  assert.deepEqual(optimized.requests.filter((_row,index)=>!optimized.calls[index].data.output_block),
+    original.requests.filter((_row,index)=>!original.calls[index].data.output_block));
   assert.equal(optimized.requests.length,9);
   assert.equal(stages(optimized).some(stage=>stage.includes('name_index')),false);
-  for(const call of optimized.calls.filter(call=>call.data.output_block))
-    assert.ok(Object.hasOwn(call.data,'question_input'));
+  for(const call of optimized.calls.filter(call=>call.data.output_block)){
+    assert.equal(Object.hasOwn(call.data,'question_input'),call.data.output_block==='questions');
+    assert.deepEqual(restored(call.data,'state_input'),sourceOnly(relationshipStateRequest(ctx,null).data));
+  }
 });
 
 test('non-adaptive fixed-null state still receives its full independent state review',async()=>{

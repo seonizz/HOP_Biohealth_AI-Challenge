@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {ModelGateway} from '../src/model.js';
 import {fixture,reviewStages,assertDetail} from './helpers/final-flow-fixture.js';
+import {scopeProbe} from './helpers/turn-input-optimization-fixture.js';
 
 const MODEL='synthetic-model';
 const SOURCE='변경하지 않는 합성 원문 '.repeat(80);
@@ -46,11 +47,12 @@ function discoverFixedPolicy(value) {
 }
 
 test('the 31B machine context code is recognized independently of its message without retries or truncation',async()=>{
+  for(const type of ['invalid_request_error','request_error'])
   for(const message of [workerMessage,'Different provider wording',undefined]) {
     const requests=[],logs=[];
     const gateway=makeGateway(async(_url,options)=>{
       if(options.method==='GET')return policy();
-      requests.push(JSON.parse(options.body));return contextError({message});
+      requests.push(JSON.parse(options.body));return contextError({type,message});
     },{retryFailures:true,retryDelayMs:1,diagnosticLogger:entry=>logs.push(entry)});
     await assert.rejects(complete(gateway),{code:'MODEL_CONTEXT_TOO_LONG',modelReason:'context_budget'});
     assert.equal(requests.length,1);
@@ -65,6 +67,9 @@ test('the 31B machine context code is recognized independently of its message wi
 test('unrelated codes, wrong error types and other statuses do not become capacity rejections',async()=>{
   for(const [overrides,status,code] of [
     [{code:'invalid_model'},400,'MODEL_UPSTREAM_ERROR'],
+    [{type:'request_error',code:'invalid_model'},400,'MODEL_UPSTREAM_ERROR'],
+    [{type:'request_error',code:undefined},400,'MODEL_UPSTREAM_ERROR'],
+    [{type:'request_error'},422,'MODEL_UPSTREAM_ERROR'],
     [{type:'server_error'},400,'MODEL_UPSTREAM_ERROR'],
     [{},422,'MODEL_UPSTREAM_ERROR'],
     [{},409,'MODEL_UPSTREAM_ERROR'],
@@ -80,6 +85,42 @@ test('unrelated codes, wrong error types and other statuses do not become capaci
     });
     assert.equal(posts,1);
   }
+});
+
+for(const type of ['invalid_request_error','request_error'])
+test('combined turn capacity failure switches once to complete independently reviewed blocks: '+type,async()=>{
+  const reference=discoverFixedPolicy(scopeProbe(ModelGateway));
+  const value=discoverFixedPolicy(scopeProbe(ModelGateway,{stateMode:'combined',response:call=>
+    call.stage==='turn_draft'?contextError({type}):undefined}));
+  const expected=await reference.run(),actual=await value.run();
+  assert.deepEqual(actual,expected);
+  assert.equal(value.calls.filter(call=>call.stage==='turn_draft').length,1);
+  for(const original of reference.calls){
+    const split=value.calls.find(call=>call.stage===original.stage);
+    assert.ok(split,original.stage+' must still execute');
+    assert.deepEqual(split.data,original.data,original.stage+' preserves complete input');
+    assert.deepEqual(split.output_schema,original.output_schema);
+    assert.equal(split.prompt,original.prompt);
+  }
+  assert.ok(value.requests.every(body=>body.max_tokens===8192));
+  assert.equal(actual.state_agent.reviewed,true);
+});
+
+test('an indivisible turn block over capacity fails without recursive retries or approving partial state',async()=>{
+  const value=discoverFixedPolicy(scopeProbe(ModelGateway,{stateMode:'combined',response:call=>
+    call.stage==='turn_draft'||call.data.output_block?contextError({type:'request_error'}):undefined}));
+  await assert.rejects(value.run(),{code:'MODEL_CONTEXT_TOO_LONG',modelReason:'context_budget'});
+  assert.equal(value.calls.filter(call=>call.stage==='turn_draft').length,1);
+  assert.ok(value.calls.filter(call=>call.data.output_block).length<=2);
+  assert.equal(value.calls.some(call=>call.stage.includes('review')),false);
+  assert.ok(value.requests.every(body=>body.max_tokens===8192));
+});
+
+test('non-capacity combined turn HTTP rejection does not trigger splitting',async()=>{
+  const value=discoverFixedPolicy(scopeProbe(ModelGateway,{stateMode:'combined',response:call=>
+    call.stage==='turn_draft'?contextError({type:'request_error',code:'invalid_model'}):undefined}));
+  await assert.rejects(value.run(),{code:'MODEL_UPSTREAM_ERROR',modelReason:'http_rejected'});
+  assert.equal(value.calls.length,1);
 });
 
 test('a structured capacity code preserves the complete output reservation even with a legacy numeric message',async()=>{

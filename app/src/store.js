@@ -57,7 +57,7 @@ export class Store {
         await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
           version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`);
-        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql', '008_record_access_keys.sql', '009_continuations.sql', '010_questionnaire_v3.sql']) {
+        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql', '008_record_access_keys.sql', '009_continuations.sql', '010_questionnaire_v3.sql', '011_model_selection.sql', '012_model_connections.sql']) {
           const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8');
           const checksum = digest(source);
           const applied = await client.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
@@ -91,6 +91,38 @@ export class Store {
   }
 
   async close() { await this.pool.end(); }
+
+  async selectedModelProfile(defaultId = 'local12b') {
+    const result = await this.pool.query('SELECT profile_id FROM model_selection WHERE singleton=TRUE');
+    return result.rows[0]?.profile_id ?? defaultId;
+  }
+
+  async modelConnections(){
+    const result=await this.pool.query('SELECT id,profile_id,content FROM model_connections ORDER BY sequence');
+    return result.rows.map(row=>({id:row.id,profile_id:row.profile_id,config:this.open(row.content,`model-connection:${row.id}`)}));
+  }
+
+  async createModelConnection(profileId,config){
+    if(!['local12b','gpu31b'].includes(profileId))throw new HttpError(422,'INVALID_MODEL_PROFILE','사용할 모델을 다시 선택해 주세요.');
+    const baseline=['baseline','legacy','execution_default'].includes(config?.role);
+    if(config?.role==='legacy'&&profileId!=='local12b')throw new HttpError(422,'INVALID_MODEL_PROFILE','사용할 모델을 다시 선택해 주세요.');
+    const id=profileId+'_'+(baseline?({baseline:'0',legacy:'1',execution_default:'2'}[config.role]).repeat(32):randomBytes(16).toString('hex'));
+    await this.pool.query('INSERT INTO model_connections(id,profile_id,content) VALUES($1,$2,$3)'+(baseline?' ON CONFLICT (id) DO NOTHING':''),[id,profileId,this.seal(config,`model-connection:${id}`)]);
+    if(baseline){
+      // Deterministic snapshot IDs make simultaneous app starts converge on
+      // the first committed configuration without replacing its credentials.
+      const saved=await this.pool.query('SELECT content FROM model_connections WHERE id=$1',[id]);
+      return {id,profile_id:profileId,config:this.open(saved.rows[0].content,`model-connection:${id}`)};
+    }
+    return {id,profile_id:profileId,config};
+  }
+
+  async setModelProfile(id) {
+    if (!['local12b', 'gpu31b'].includes(id)) throw new HttpError(422, 'INVALID_MODEL_PROFILE', '사용할 모델을 다시 선택해 주세요.');
+    await this.pool.query(`INSERT INTO model_selection(singleton,profile_id) VALUES (TRUE,$1)
+      ON CONFLICT (singleton) DO UPDATE SET profile_id=EXCLUDED.profile_id,updated_at=CURRENT_TIMESTAMP`, [id]);
+    return id;
+  }
 
   createContinuation(owner, recordId, epoch, requestId) { return continuationStore.createContinuation(this, owner, recordId, epoch, requestId); }
   listContinuations(owner, recordId) { return continuationStore.listContinuations(this, owner, recordId); }

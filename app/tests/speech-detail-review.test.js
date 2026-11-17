@@ -56,6 +56,37 @@ test('mixed unreported personal facts remain visible to review and unsupported o
   assert.throws(()=>request.validate({approved:true,issues:[],audits:audits(request.payload.claims).slice(1)}),{code:'MODEL_INVALID_RESPONSE'});
 });
 
+test('contradictory detail rejections are review errors, never approvals or content repair instructions',()=>{
+  const request=speechDetailReviewRequest(payload());
+  for(const issues of [[],['audits의 verdict 키가 verdict로 잘못 적혔습니다.','audits의 id 순서가 다릅니다.'],
+    ['listening: opening의 설명을 복사해 현재 구간의 내용과 맞지 않습니다.']]){
+    const value={approved:false,issues,audits:audits(request.payload.claims).reverse()},before=structuredClone(value);
+    assert.throws(()=>request.validate(value),error=>{
+      assert.equal(error.modelReason,'agent_detail_review_inconsistent');
+      const feedback=JSON.parse(error.modelFeedback);
+      assert.deepEqual(feedback.rejected_claim_ids,[]);
+      assert.match(feedback.instruction,/검토 JSON만 수정/u);
+      assert.match(feedback.instruction,/ID 순서는 자유/u);
+      assert.match(feedback.instruction,/자동 승인하거나 실제 문제를 지우지/u);
+      return true;
+    });
+    assert.deepEqual(value,before);
+  }
+  const approved={approved:true,issues:[],audits:audits(request.payload.claims).reverse()};
+  assert.deepEqual(request.validate(approved),approved,'Audit order is not a semantic error');
+});
+
+test('coherent negative detail audits remain content rejections without literal IDs in free-text issues',()=>{
+  const request=speechDetailReviewRequest(payload()),value=rejection(request.payload.claims);
+  const natural={...value,issues:['설명에 확인되지 않은 감정이 추가됐어요.']};
+  assert.deepEqual(request.validate(natural),natural);
+  const comparison={...value,issues:['opening: listening에서만 묻는 내용을 이 구간의 설명에 넣지 마세요.']};
+  assert.deepEqual(request.validate(comparison),comparison,'A repair may compare another supported section');
+  const multiple={...natural,audits:audits(request.payload.claims,'unsupported')};
+  assert.deepEqual(request.validate(multiple),multiple);
+  assert.throws(()=>request.validate({...natural,issues:[]}),{modelReason:'agent_detail_review_inconsistent'});
+});
+
 test('an approved script expression is not evidence of the user having that feeling or intention',()=>{
   const input=payload();
   input.detail.opening.excerpt='응원하고 싶어. ';
@@ -132,5 +163,31 @@ test('two valid semantic rejections still fail closed without more repairs or pu
   await assert.rejects(run.run(),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_detail_review_rejected'});
   assert.deepEqual(run.stages().filter(stage=>stage.startsWith('speech_detail')),
     ['speech_detail','speech_detail_review','speech_detail_repair','speech_detail_review_after_repair']);
+  assert.equal(run.events.some(event=>JSON.stringify(event).includes(invented)),false);
+});
+
+test('a contradictory review is retried before a genuine detail rejection consumes the content repair',async()=>{
+  let reviews=0,repairs=0;
+  const run=fixture({response:({stage,data},body,value)=>{
+    if(stage==='speech_detail')return {...value,opening:{...value.opening,why:invented}};
+    if(stage==='speech_detail_review'){
+      reviews++;
+      if(reviews===1)return {approved:false,issues:['audits의 id 순서가 다릅니다.'],audits:audits(data.claims).reverse()};
+      assert.match(JSON.stringify(JSON.parse(body.messages.at(-1).content).validation_feedback),/검토기 자신의 audits/u);
+      return rejection(data.claims);
+    }
+    if(stage==='speech_detail_repair'){
+      repairs++;
+      assert.equal(data.review.audits.find(audit=>audit.id==='opening').verdict,'unsupported');
+      assert.equal(data.review.issues.some(issue=>issue.includes('id 순서')),false);
+      assert.match(body.messages[0].content,/다른 구간에서만 하는/u);
+      return {...value,opening:{...value.opening,why:purpose}};
+    }
+    if(stage==='speech_detail_review_after_repair')return {approved:true,issues:[],audits:audits(data.claims)};
+  }});
+  const result=await run.run();assertDetail(result);
+  assert.equal(reviews,2);assert.equal(repairs,1);
+  assert.deepEqual(run.stages().filter(stage=>stage.startsWith('speech_detail')),
+    ['speech_detail','speech_detail_review','speech_detail_review','speech_detail_repair','speech_detail_review_after_repair']);
   assert.equal(run.events.some(event=>JSON.stringify(event).includes(invented)),false);
 });

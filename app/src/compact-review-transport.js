@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import {HttpError} from './errors.js';
 import {validateSchema} from './relationship-agent.js';
+import {restoreReviewSources} from './final-review-bundle.js';
 
 const object=properties=>({type:'object',properties,required:Object.keys(properties),additionalProperties:false});
 const plain=value=>value!==null&&typeof value==='object'&&!Array.isArray(value)&&
@@ -47,6 +48,58 @@ function knownSchema(node) {
     (!node.items||knownSchema(node.items))&&(!node.anyOf||Array.isArray(node.anyOf)&&node.anyOf.length>0&&node.anyOf.every(knownSchema));
 }
 const identity=schema=>({schema:structuredClone(schema),encode:value=>structuredClone(value),hydrate:value=>structuredClone(value)});
+
+/** Standalone safety selection only. Preserves the selected ID set and exact
+ * model-authored basis/reason; evidence_ids are restored in source order, not
+ * the logical input array's arbitrary order. Duplicate logical IDs are errors.
+ * The caller must reject duplicate raw JSON keys and run its original safety
+ * validator after hydration. This codec never decides or approves safety.
+ */
+export function safetyReviewSelectionTransport({stage,schema,payload}) {
+  if(typeof stage!=='string'||!/^safety_review(?:_|$)/u.test(stage)||payload===undefined)return null;
+  try {
+    const logicalSchema=jsonData(schema),request=jsonData(payload);
+    const only=(node,keys)=>plain(node)&&Object.keys(node).every(key=>keys.includes(key));
+    if(!knownSchema(logicalSchema)||!strictObject(logicalSchema)||
+      !only(logicalSchema,['type','properties','required','additionalProperties','description'])||
+      !exact(Object.keys(logicalSchema.properties),['basis','reason','evidence_ids'])||!Array.isArray(request?.safety_sources))return null;
+    const {basis,reason,evidence_ids:selection}=logicalSchema.properties;
+    const bases=['current_physical_danger','distress_without_immediate_danger','negated','past_only','unclear'];
+    if(!only(basis,['type','enum','description'])||basis.type!=='string'||!Array.isArray(basis.enum)||!exact(basis.enum,bases)||
+      !only(reason,['type','minLength','maxLength','description'])||reason.type!=='string'||reason.minLength!==1||
+      !Number.isSafeInteger(reason.maxLength)||reason.maxLength<1||
+      !only(selection,['type','items','minItems','maxItems','description'])||selection.type!=='array'||
+      !Number.isSafeInteger(selection.minItems)||selection.minItems<0||!Number.isSafeInteger(selection.maxItems)||
+      selection.maxItems<selection.minItems||!only(selection.items,['type','enum','description'])||
+      selection.items.type!=='string'||!Array.isArray(selection.items.enum))return null;
+    const ids=request.safety_sources.map(source=>plain(source)?source.id:undefined);
+    if(ids.some(id=>typeof id!=='string'||!id.trim())||new Set(ids).size!==ids.length||
+      new Set(selection.items.enum).size!==selection.items.enum.length||
+      !exact(selection.items.enum,ids.length?ids:['none'])||selection.maxItems>ids.length)return null;
+    const binding=createHash('sha256').update(JSON.stringify(['safety-selection-output-v1',stage,logicalSchema,request])).digest('hex').slice(0,32);
+    const wireSchema=object({b:{type:'string',enum:[binding]},o:object({
+      basis:structuredClone(basis),reason:structuredClone(reason),
+      evidence_selection:object(Object.fromEntries(ids.map(id=>[id,{type:'boolean'}]))),
+    })}),privateSchema=structuredClone(wireSchema);
+    return {schema:wireSchema,
+      instruction:'\n안전 검토 출력 전송 형식: 원래 안전 판단과 전체 원문 검토 기준을 유지하세요. output_schema에 따라 b에는 현재 요청값, o에는 basis·reason·evidence_selection을 반환하세요. basis와 구체적인 reason은 직접 판단하여 작성합니다. evidence_selection은 safety_sources의 각 실제 ID를 키로 가진 객체입니다. 모든 키를 한 번씩 쓰고 해당 근거를 선택하면 true, 선택하지 않으면 false로 쓰세요. 선택 개수 제한은 '+selection.maxItems+'개입니다. 다른 근거로 개수를 채우지 마세요. evidence_ids 배열은 전송하지 않습니다. 서버는 true인 ID만 현재 safety_sources 순서의 evidence_ids로 복원하며 판단·이유·근거를 추가하거나 승인하지 않습니다. 현재 위험에는 유효한 현재 위험 근거가 반드시 필요합니다.',
+      encode(logical){
+        try {jsonData(logical);} catch {fail();}
+        validateSchema(logical,logicalSchema,'output',true);
+        if(new Set(logical.evidence_ids).size!==logical.evidence_ids.length)fail();
+        const selected=new Set(logical.evidence_ids);
+        const wire={b:binding,o:{basis:logical.basis,reason:logical.reason,
+          evidence_selection:Object.fromEntries(ids.map(id=>[id,selected.has(id)]))}};
+        validateSchema(wire,privateSchema,'output',true);return wire;
+      },
+      hydrate(wire){
+        try {jsonData(wire);} catch {fail();}
+        validateSchema(wire,privateSchema,'output',true);
+        const logical={basis:wire.o.basis,reason:wire.o.reason,evidence_ids:ids.filter(id=>wire.o.evidence_selection[id])};
+        validateSchema(logical,logicalSchema,'output',true);return logical;
+      }};
+  } catch(error) {if(error instanceof TypeError)return null;throw error;}
+}
 
 /** Lossless reviewer-output representation only. Every reason/repair remains
  * model-authored, including passing/unknown/tentative audits. The caller must
@@ -141,16 +194,19 @@ export function compactReviewTransport({stage,schema,payload,partial=false}) {
 
     let root,tasks;
     if(bundleStage.test(stage)) {
-      if(!Array.isArray(request.tasks)||!plain(request.shared_inputs))return null;
+      // Bind the codec to the exact wire request above, while reading claims
+      // from the task's restored scope rather than a referenced superset.
+      const bundleRequest=Object.hasOwn(request,'shared_input_projections')?restoreReviewSources(request):request;
+      if(!Array.isArray(bundleRequest.tasks)||!plain(bundleRequest.shared_inputs))return null;
       const definitions=new Map();
-      for(const task of request.tasks) {
+      for(const task of bundleRequest.tasks) {
         if(!plain(task)||!exact(Object.keys(task),['id','stage','instructions','input','shared_input_keys'])||
           typeof task.stage!=='string'||!reviewer.test(task.stage)||typeof task.id!=='string'||definitions.has(task.id)||
           !plain(task.input)||!plain(task.shared_input_keys))unsupported();
         const data={...task.input};
         for(const [key,reference]of Object.entries(task.shared_input_keys)) {
-          if(Object.hasOwn(data,key)||typeof reference!=='string'||!Object.hasOwn(request.shared_inputs,reference))unsupported();
-          data[key]=request.shared_inputs[reference];
+          if(Object.hasOwn(data,key)||typeof reference!=='string'||!Object.hasOwn(bundleRequest.shared_inputs,reference))unsupported();
+          data[key]=bundleRequest.shared_inputs[reference];
         }
         definitions.set(task.id,data);
       }

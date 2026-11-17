@@ -100,7 +100,7 @@ function conversationHarness(request, { realUI = false } = {}) {
   document.getElementById('thinking').innerHTML='<div class="waiting-dots" role="status" aria-label="안내를 준비하고 있어요" aria-busy="true"><span class="dots"><span></span><span></span><span></span></span></div><div class="th-err" hidden><p></p></div>';
   const listeners={};
   const context = vm.createContext({
-    document, window:{ scrollTo() {}, addEventListener(event,listener){listeners[event]=listener;} }, StartScreen: { updRecN() {} }, setTimeout, clearTimeout,
+    document, window:{ scrollTo() {}, addEventListener(event,listener){listeners[event]=listener;} }, StartScreen: { updRecN() {} }, setTimeout, clearTimeout, AbortController,
     MutationObserver:class { observe() {} }, ResizeObserver:class { observe() {} },
     M: { hello:'hello.png', ponder:'ponder.png', hear:'hear.png' },
     ...(!realUI ? { ChatInput: { clear() {}, render() {}, error(message) { throw new Error(message); } } } : {}),
@@ -1186,7 +1186,7 @@ function controlProgressTimers(context){
   let nextId=0;const timers=new Map();
   context.setTimeout=(run,delay)=>{const id=++nextId;timers.set(id,{run,delay});return id;};
   context.clearTimeout=id=>timers.delete(id);
-  return {timers,run(){const [id,timer]=timers.entries().next().value;timers.delete(id);return timer.run();}};
+  return {timers,run(delay){const [id,timer]=[...timers].find(([,timer])=>delay===undefined||timer.delay===delay)||[];assert.ok(timer,'expected a scheduled timer');timers.delete(id);return timer.run();}};
 }
 
 test('result polling forwards real server step metadata into the visible pending card',async()=>{
@@ -1231,6 +1231,51 @@ test('generation polling ignores other revisions, recovers after network errors 
   assert.equal(context.flow.loadRecs()[0],historyRecord);
 });
 
+test('a hung progress GET times out, aborts and reconnects without waiting for its stale response',async()=>{
+  const result=deferred(),hung=deferred(),signals=[];let polls=0;
+  const {document,context}=conversationHarness((path,options)=>{
+    if(path.endsWith('/result'))return result.promise;
+    signals.push(options.signal);return ++polls===1?hung.promise:Promise.resolve({revision:1,progress:{status:'running'}});
+  });
+  const clock=controlProgressTimers(context);context.ResultScreen={open(){}};
+  context.flow.renderConversation(conversationView('친구'),0);
+  const finishing=context.flow.finish(),polling=clock.run(250);
+  assert.equal(signals[0].aborted,false);await clock.run(8000);await polling;
+  assert.equal(signals[0].aborted,true);assert.equal(clock.timers.size,1);
+  await clock.run(500);assert.equal(polls,2);
+  hung.resolve({revision:1,progress:{status:'complete'}});await settleUI();
+  assert.equal(document.getElementById('thinking').querySelector('.waiting-dots').getAttribute('aria-busy'),'true');
+  result.resolve({revision:2,record:historyRecord});await finishing;assert.equal(clock.timers.size,0);
+});
+
+test('progress requests back off for the shared-IP rate limit',async()=>{
+  const result=deferred();
+  const {context}=conversationHarness(path=>path.endsWith('/result')?result.promise:Promise.reject(Object.assign(new Error('rate limited'),{status:429})));
+  const clock=controlProgressTimers(context);context.ResultScreen={open(){}};context.flow.renderConversation(conversationView('친구'),0);
+  const finishing=context.flow.finish();await clock.run(250);
+  assert.deepEqual([...clock.timers.values()].map(timer=>timer.delay),[60000]);
+  result.resolve({revision:2,record:historyRecord});await finishing;assert.equal(clock.timers.size,0);
+});
+
+for(const ending of ['complete','leave','delete'])test(`a pending progress GET is aborted immediately on ${ending}`,async()=>{
+  const result=deferred(),hung=deferred();let progressSignal;
+  const {context}=conversationHarness((path,options)=>{
+    if(options?.method==='DELETE')return Promise.resolve({deleted:true,record_ids:[]});
+    if(path.endsWith('/progress')){progressSignal=options.signal;return hung.promise;}
+    return result.promise;
+  });
+  const clock=controlProgressTimers(context);context.ResultScreen={open(){}};
+  context.flow.renderConversation(conversationView('친구'),0);context.flow.show('chat');
+  const finishing=context.flow.finish(),polling=clock.run(250);
+  if(ending==='leave')context.flow.leaveConversation();
+  else if(ending==='delete')await context.flow.deleteCurrentConversation();
+  else result.resolve({revision:2,record:historyRecord});
+  await settleUI();assert.equal(progressSignal.aborted,true);await polling;
+  assert.equal(clock.timers.size,0);
+  if(ending!=='complete')result.resolve({revision:2,record:historyRecord});
+  await finishing;
+});
+
 for(const ending of ['complete','failure','leave','delete']){
   test(`a progress response after ${ending} cannot update the guide loading state`,async()=>{
     const result=deferred(),progress=deferred();
@@ -1272,6 +1317,43 @@ for(const type of ['text','one','multi'])test(`typing ahead transfers into the n
   assert.equal(calls.length,1);assert.equal(document.getElementById('input').dataset.busy,'');
 });
 
+test('returning to a previous question keeps typing available without exposing or submitting it early',async()=>{
+  const response=deferred(),calls=[];
+  const {document,context}=conversationHarness((path,options)=>{calls.push([path,options.body]);return response.promise;},{realUI:true});
+  const view={...conversationView('친구'),log:[prompt],canGoBack:true};context.flow.renderConversation(view,0);
+  document.getElementById('ta').value='현재 질문의 보내지 않은 답변';
+  const back=document.getElementById('input').querySelector('.back');back.click();back.click();
+  assert.equal(calls.length,1);assert.equal(calls[0][0],'/api/intakes/intake-1/back');
+  assert.deepEqual(structuredClone(calls[0][1]),{revision:1});
+  const ahead=document.getElementById('next-answer');assert.equal(ahead.disabled,false);assert.equal(ahead.focused,true);
+  ahead.value='이전 답변에 보탤 초안';
+  assert.ok(document.getElementById('log').querySelector('.dots'));
+  assert.equal(document.getElementById('log').querySelector('.me'),null);
+  assert.equal(document.getElementById('log').textContent.includes(nextPrompt.text),false);
+  response.resolve({...view,revision:2,log:[nextPrompt],question:{id:'previous',type:'text',required:true}});await settleUI();
+  assert.equal(document.getElementById('ta').value,'이전 답변에 보탤 초안');
+  assert.equal(calls.length,1);assert.equal(document.getElementById('input').dataset.busy,'');
+});
+
+test('failed previous-question navigation restores the original editor and retains its separate typing-ahead draft',async()=>{
+  const first=deferred(),second=deferred(),calls=[];
+  const {document,context}=conversationHarness((path,options)=>{calls.push([path,options.body]);return calls.length===1?first.promise:second.promise;},{realUI:true});
+  const view={...conversationView('친구'),canGoBack:true};context.flow.renderConversation(view,0);
+  document.getElementById('ta').value='현재 질문의 초안';document.getElementById('input').querySelector('.back').click();
+  document.getElementById('next-answer').value='앞 질문에 쓸 내용';
+  first.reject(new Error('잠시 실패'));await settleUI();
+  assert.equal(document.getElementById('ta').value,'현재 질문의 초안');
+  assert.equal(document.getElementById('ta').parentElement.hidden,false);
+  assert.equal(document.getElementById('next-answer').value,'앞 질문에 쓸 내용');
+  assert.equal(document.getElementById('input').dataset.busy,'');
+  document.getElementById('input').querySelector('.api-error').querySelector('button').click();
+  assert.deepEqual(calls[1],calls[0]);
+  second.resolve({...view,revision:2,question:{id:'previous',type:'one',opts:['예','아니요'],noOwn:true}});await settleUI();
+  assert.equal(document.getElementById('next-answer').value,'앞 질문에 쓸 내용');
+  assert.equal(document.getElementById('input').querySelector('.chip').getAttribute('aria-pressed'),'false');
+  assert.equal(calls.length,2);
+});
+
 test('typing ahead survives a failed request and retry without replacing the submitted answer',async()=>{
   const first=deferred(),second=deferred(),calls=[];
   const {document,context}=conversationHarness((path,options)=>{calls.push(options.body);return calls.length===1?first.promise:second.promise;},{realUI:true});
@@ -1299,11 +1381,11 @@ test('typing ahead remains available across choice-only questions and clears for
   assert.equal(document.getElementById('next-answer'),null);assert.equal(document.getElementById('ta').value,'');
 });
 
-function progressiveResultHarness(request=async()=>{}){
+function progressiveResultHarness(request=async()=>{},{animate=false}={}){
   const fixture=conversationHarness(request),{context}=fixture;
   context.CrisisLine=()=>'';
   vm.runInContext(script('components/GuideCards.js')+script('components/ResultScreen.js')+'\nglobalThis.resultScreen=ResultScreen;',context);
-  context.resultScreen.animate=()=>{};
+  if(!animate)context.resultScreen.animate=()=>{};
   return fixture;
 }
 
@@ -1414,6 +1496,32 @@ test('polled cards precede the final result, and only the confirmed saved record
   assert.match(document.getElementById('rbody').textContent,/기록으로 저장했어요/);
   assert.equal(document.getElementById('rbody').querySelector('.result-stream'),null);
   assert.equal(context.flow.loadRecs()[0],record);assert.equal(clock.timers.size,0);
+});
+
+test('unchanged reviewed previews remain visible when saved results replace the pending screen',()=>{
+  const {document,context}=progressiveResultHarness(undefined,{animate:true}),screen=context.resultScreen,revealed=[];
+  context.reveal=(nodes)=>revealed.push([...nodes]);
+  const guide={top:'통합',script:'이미 검토된 대화 문장',care:{feel:'공감',tips:['휴식']},doList:['경청'],avoid:['재촉'],next:'다음 안내'};
+  screen.prepare(conversationView('친구'));
+  screen.partial(['script','doList','avoid'].map(id=>({id,value:guide[id]})));
+  screen.open({name:'친구'},guide,true);
+  const body=document.getElementById('rbody'),appearing=revealed[1];
+  for(const selector of ['.script','.do','.avoid']){
+    assert.equal(appearing.includes(body.querySelector(selector)),false);
+    assert.equal(body.querySelector(selector).classList.contains('pop'),false);
+  }
+  assert.ok(appearing.includes(body.querySelector('.care')));assert.ok(body.querySelector('.two'));
+  assert.match(body.textContent,/기록으로 저장했어요/);assert.ok(body.querySelector('.copy'));
+  revealed.length=0;screen.open({name:'친구'},guide,true);
+  assert.ok(revealed[1].includes(body.querySelector('.script')),'a newly opened result retains the original animation');
+});
+
+test('a changed final card is not mistaken for an already-visible reviewed preview',()=>{
+  const {document,context}=progressiveResultHarness(undefined,{animate:true}),screen=context.resultScreen,revealed=[];
+  context.reveal=nodes=>revealed.push([...nodes]);screen.prepare(conversationView('친구'));
+  screen.partial([{id:'script',value:'이전 검토 문장'}]);
+  screen.open({name:'친구'},{top:'통합',script:'새로 검토된 문장',care:{feel:'공감',tips:[]},doList:[],avoid:[],next:'다음'},true);
+  assert.ok(revealed[1].includes(document.getElementById('rbody').querySelector('.script')));
 });
 
 test('opening a record with a key renders it without importing ownership or key-management controls', async () => {
@@ -1529,4 +1637,34 @@ test('v3 explicit stop acknowledgement does not request an ordinary result', asy
   assert.ok(document.getElementById('input').textContent.includes('대화를 여기서 마쳤어요'));
   assert.equal(requests.some(path=>path.endsWith('/result')),false);
   assert.equal(document.getElementById('ta'),null);
+});
+
+test('public start screen never offers model settings, even with stale bootstrap data',()=>{
+  const document=documentWith(['page']);let calls=0,args;
+  const context=vm.createContext({document,NavBar:()=>'',loadRecs:()=>[],begin:(...value)=>{calls++;args=value;},
+    API:{data:{model_profiles:[{id:'local12b',label:'12B',available:true},{id:'gpu31b',label:'31B',available:true}],default_model_profile:'gpu31b'}}});
+  vm.runInContext(script('core/utils.js')+script('components/StartScreen.js')+'\nglobalThis.start=StartScreen;',context);
+  document.getElementById('page').innerHTML=context.start.render();context.start.mount();
+  assert.equal(document.getElementById('modelProfile'),null);
+  document.getElementById('go').click();assert.equal(calls,1);assert.equal(args.length,0);
+});
+
+test('new conversation and retry never override the administrator model selection',async()=>{
+  const sent=[];let retry,attempt=0;
+  const {context}=conversationHarness(async(path,options)=>{
+    if(path==='/api/intakes'){sent.push(options.body);if(++attempt===1)throw new Error('synthetic network failure');return conversationView('selected');}
+    throw new Error(path);
+  });
+  context.StartScreen.selection=()=> 'gpu31b';context.ChatInput.error=(_message,handler)=>{retry=handler;};
+  await context.flow.begin({modelProfileId:'gpu31b'});await retry();
+  assert.equal(sent.length,2);
+  for(const value of sent)assert.deepEqual(Object.keys(value),['conversation_epoch']);
+});
+
+test('stopped provisional danger proceeds to final safety verification without reopening questions',async()=>{
+  const view={...conversationView(''),bundle_id:'malssi-intake-3.0.0-rc1',user_stopped:true,status:'ready',question:null,safety_urgent:false,safety_review_pending:true};
+  const {context}=conversationHarness(async()=>view,{realUI:true});
+  context.ui.typing=(_,work)=>Promise.resolve(typeof work==='function'?work():work);
+  vm.runInContext('finish=()=>{globalThis.finalSafetyRequested=true;};',context);
+  await context.flow.begin();assert.equal(context.finalSafetyRequested,true);
 });

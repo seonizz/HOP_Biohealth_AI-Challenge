@@ -134,6 +134,62 @@ test('Q10 binds exact Unicode source and changes only the selected axis', () => 
   assert.throws(() => applyModelUpdate(state, model({ clarification:binding(pending) })), { code:'INVALID_CLARIFICATION' });
 });
 
+function clarificationAfterSkips() {
+  const pending = pendingGoal('친구에게 자료를 읽어 준다고 했어요.');
+  const context = buildContext(pending);
+  const skip = context.question_candidates.map(q => ({question_id:q.id,reason:'not_needed',
+    explanation:'현재 요청은 보고한 범위만 정리합니다.',
+    evidence:[{subject:'supporter',question_id:'q3_01',quote:context.supporter.fields.q3_01.rawText}]}));
+  return {state:completeModelAnswer(pending, model({question_plan:{skip},clarification:binding(pending)})),skip};
+}
+
+for (const input of [{selected:[1]}, {response_event:'unknown'}, {response_event:'refused'}, {response_event:'skipped'}])
+test('Q10 completion reconsiders unshown skips without inventing answers: '+(input.response_event||'answered'), () => {
+  const {state}=clarificationAfterSkips(), issued=structuredClone(state.v3.issued);
+  const pending=prepareModelAnswer(state,{question_id:'q3_10',follow_up:true,...input},2);
+  const prepared=pending.modelPending.prepared;
+  assert.deepEqual(buildContext(pending).question_candidates.map(q=>q.id),activeQuestionSet.questions.slice(1).map(q=>q.id));
+  assert.deepEqual(pending.v3.issued,issued);
+  assert.deepEqual(pending.modelSkipped,state.modelSkipped,'Uncommitted state remains available for a cancelled answer');
+  assert.deepEqual(prepared.modelSkipped,{});
+  assert.equal(prepared.clarificationAnswers.q3_10.assignment.value,input.selected?'in_progress':'unknown');
+  assert.equal(buildContext(pending).clarification_available,false);
+  const next=completeModelAnswer(pending,model());
+  assert.equal(currentView(next).question.id,'q3_02');
+  assert.deepEqual(Object.keys(next.ans),['q3_01']);
+  assert.deepEqual(next.v3.issued.q3_10,issued.q3_10);
+  assert.equal(next.clarificationAnswers.q3_10.source_revision,prepared.clarificationAnswers.q3_10.source_revision);
+  assert.ok(buildContext(next).payload.answers.every(answer=>['q3_01','q3_10'].includes(answer.id)));
+});
+
+test('model may freshly skip unshown questions after Q10 while preserving the consumed clarification', () => {
+  const {state,skip}=clarificationAfterSkips();
+  const pending=prepareModelAnswer(state,{question_id:'q3_10',follow_up:true,selected:[1]},2);
+  const next=completeModelAnswer(pending,model({question_plan:{skip}}));
+  assert.equal(next.status,'ready');
+  assert.deepEqual(Object.keys(next.ans),['q3_01']);
+  assert.deepEqual(Object.keys(next.v3.issued),['q3_01','q3_10']);
+  assert.equal(buildContext(next).clarification_available,false);
+});
+
+test('first Q10 help keeps its prompt; exhausted help replans while stop never advances', () => {
+  const {state}=clarificationAfterSkips();
+  const help=reply(state,{response_event:'not_understood'});
+  assert.equal(currentView(help).question.id,'q3_10');
+  assert.equal(help.v3.helpReplay,true);
+  assert.deepEqual(help.modelSkipped,state.modelSkipped);
+  assert.equal(help.clarificationAnswers?.q3_10,undefined);
+  const pending=prepareModelAnswer(help,{question_id:'q3_10',follow_up:true,response_event:'not_understood'},3);
+  assert.equal(buildContext(pending).question_candidates.length,8);
+  const next=completeModelAnswer(pending,model());
+  assert.equal(currentView(next).question.id,'q3_02');
+  assert.equal(next.clarificationAnswers.q3_10.assignment.value,'unknown');
+  const stopped=reply(state,{response_event:'stop'});
+  assert.equal(stopped.status,'ready');assert.equal(stopped.v3.stopped,true);
+  assert.deepEqual(Object.keys(stopped.v3.issued),['q3_01','q3_10']);
+  assert.deepEqual(buildContext(stopped).question_candidates,[]);
+});
+
 test('Q10 rejects stale revisions, non-codepoint ranges, missing roles and unbound agreement items', () => {
   const pending = pendingGoal();
   for (const change of [ { source_revision:0 }, { quote_start:1 }, { axis:'actor' }, { axis:'agreement' } ]) {

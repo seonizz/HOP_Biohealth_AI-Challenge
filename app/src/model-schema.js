@@ -127,8 +127,9 @@ function questionPlanSchema(context) {
       reason === 'already_covered' ? ['answered'] : ['answered', 'unknown']);
     if (!ids.length || !evidence.length) return [];
     return [object({
-      question_id: { type: 'string', enum: ids }, reason: literal(reason), explanation: string(1000),
+      question_id: { type: 'string', enum: ids }, reason: literal(reason),
       evidence: array({ anyOf: evidence }, 8, 1),
+      explanation: string(1000),
     })];
   }));
   return object({ skip: array(variants.length ? { anyOf: variants } : object({}), variants.length ? 8 : 0) });

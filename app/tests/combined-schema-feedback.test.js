@@ -1,3 +1,4 @@
+import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -40,7 +41,7 @@ test('combined draft rejects three reported findings outside the normalization e
     return true;
   });
   assert.equal(calls,1);assert.deepEqual(value,before);
-  assert.match(TURN_PROMPT_VERSION,/-combined-turn-v56$/);
+  assert.match(TURN_PROMPT_VERSION,/-combined-turn-v58$/);
 });
 
 test('fact writing selects its quote enum while the complete long answer survives input and independent review',async()=>{
@@ -183,7 +184,7 @@ test('the next model attempt receives exact capacity feedback and still requires
         payload={state:{approved:true,issues:[],audits:input.data.review_target.claims.map(claim=>({id:claim.id,
           verdict:claim.kind==='unresolved_information'&&claim.certainty==='unknown'?'still_unknown':claim.certainty==='tentative'?'plausible':'supported',reason:'합성 원문 대조'}))},questions:null,safety:null};
       }
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,payload))}}]}));
     }});
   const output=await model.updateState(ctx);
   assert.deepEqual(requests.map(body=>JSON.parse(body.messages.at(-1).content).stage),['turn_draft','turn_draft','turn_review','safety_review']);
@@ -230,7 +231,7 @@ test('a misplaced review receives trusted sibling key names on repair and still 
         }
       }else if(input.stage.startsWith('safety_review'))payload=safetyReviewFixture(input.data);
       else assert.equal(input.stage,'turn_draft');
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,payload))}}]}));
     }});
   const output=await model.updateState(ctx);
   assert.deepEqual(requests.map(input=>input.stage),['turn_draft','turn_review','safety_review','turn_review']);

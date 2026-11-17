@@ -68,7 +68,7 @@ test('GPU mode rejects stale reviewer and referral overrides even before any inf
     {[prefix+'_NAME']:'gemma4:12b'}, {[prefix+'_API_KEY']:'PRIVATE_SECRET'},
     {[prefix+'_NAME']:''}, {[prefix+'_API_KEY']:''}, {[prefix+'_API_PROFILE']:'default'},
     {[prefix+'_AGENT_FORMAT']:'json_schema'}, {[prefix+'_REASONING_EFFORT']:'none'},
-    {[prefix+'_STREAM_JSON']:'true'}, {[prefix+'_STREAM_COMPLETE_JSON']:'true'},
+    {[prefix+'_STREAM_JSON']:'TRUE'}, {[prefix+'_STREAM_COMPLETE_JSON']:'true'},
   ]) assert.throws(() => configuredModelGateway({env:gpuEnv(change),fetchImpl:neverFetch}), error => {
     assert.match(error.message, new RegExp('Invalid '+prefix+' configuration'));
     assert.doesNotMatch(error.message, /PRIVATE_SECRET/);
@@ -86,7 +86,7 @@ test('trained_chat profile is strict and independent without enabling GPU-only r
   assert.equal(configuredModelGateway({env:{...base,MODEL_PROTOCOL:'json_prompt'}}).protocol, 'json_prompt');
   for (const override of [
     {MODEL_PROTOCOL:'json_schema'}, {MODEL_AGENT_FORMAT:'json_schema'}, {MODEL_AGENT_FORMAT:'json_object'},
-    {MODEL_REASONING_EFFORT:'none'}, {MODEL_STREAM_JSON:'true'}, {MODEL_STREAM_COMPLETE_JSON:'true'},
+    {MODEL_REASONING_EFFORT:'none'}, {MODEL_STREAM_COMPLETE_JSON:'true'},
     {MODEL_API_PROFILE:'unknown'}, {MODEL_API_PROFILE:null}, {MODEL_AGENT_FORMAT:null}, {MODEL_REASONING_EFFORT:null},
     {MODEL_STREAM_JSON:'TRUE'}, {MODEL_STREAM_COMPLETE_JSON:true},
   ]) assert.throws(() => configuredModelGateway({env:{...base,...override},fetchImpl:neverFetch}), /Invalid MODEL configuration/);
@@ -123,7 +123,7 @@ test('referral provider in GPU mode reuses the shared gateway and rejects an inj
   assert.equal(configuredServerGpuReferralGateway({gateway,env:{}}), gateway);
   for (const override of [
     {REFERRAL_MODEL_BASE_URL:'http://127.0.0.1:11434'}, {REFERRAL_MODEL_NAME:'gemma4:12b'},
-    {REFERRAL_MODEL_API_KEY:'another'}, {REFERRAL_MODEL_API_PROFILE:'default'}, {REFERRAL_MODEL_STREAM_JSON:'true'},
+    {REFERRAL_MODEL_API_KEY:'another'}, {REFERRAL_MODEL_API_PROFILE:'default'}, {REFERRAL_MODEL_STREAM_COMPLETE_JSON:'true'},
   ]) assert.throws(() => configuredReferralProvider({gateway,env:{...env,...override}}), /Invalid REFERRAL_MODEL configuration/);
   const alternate = configuredModelGateway({env:gpuEnv({MODEL_BASE_URL:'http://127.0.0.1:18091'})});
   assert.throws(() => configuredReferralProvider({gateway:alternate,env}), /Invalid REFERRAL_MODEL configuration/);
@@ -161,4 +161,13 @@ test('actual writer, reviewer and referral request bodies satisfy the existing G
   const output = execFileSync('python3',['-B','-c',python,fileURLToPath(new URL('../../ai/trained_model_api',import.meta.url)),GPU_MODEL],
     {input:JSON.stringify(calls),encoding:'utf8'});
   assert.equal(output.trim(),'accepted');
+});
+
+
+test('GPU writer, independent reviewer and shared referral stream without accepting early JSON completion',()=>{
+ const env=gpuEnv({MODEL_STREAM_JSON:'true',MODEL_REVIEW_STREAM_JSON:'true',REFERRAL_MODEL_STREAM_JSON:'true',MODEL_STREAM_COMPLETE_JSON:'false',MODEL_REVIEW_STREAM_COMPLETE_JSON:'false',REFERRAL_MODEL_STREAM_COMPLETE_JSON:'false'});
+ const gateway=configuredModelGateway({env,fetchImpl:neverFetch});
+ for(const value of [gateway,gateway.reviewGateway,configuredServerGpuReferralGateway({gateway,env})]){assert.ok(value);assert.equal(value.streamJson,true);assert.equal(value.streamCompleteJson,false);assert.equal(value.apiProfile,'trained_chat');}
+ assert.ok(configuredReferralProvider({gateway,env}));
+ for(const prefix of ['MODEL','MODEL_REVIEW','REFERRAL_MODEL'])assert.throws(()=>configuredModelGateway({env:{...env,[prefix+'_STREAM_COMPLETE_JSON']:'true'},fetchImpl:neverFetch}),/Invalid (?:MODEL|MODEL_REVIEW|REFERRAL_MODEL) configuration/);
 });

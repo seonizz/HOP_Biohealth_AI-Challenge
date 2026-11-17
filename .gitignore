@@ -95,3 +95,7 @@ source_dialogues.*
 
 # Archived broken references may point to private local bundles.
 /docs/archive/missing_links_2026-11-10/links/
+
+# Local agent handoff and spreadsheet inspection intermediates.
+/docs/checkpoints/2026-11-17-1708.md
+/outputs/**/*.inspect.ndjson

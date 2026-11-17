@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {ModelGateway} from '../src/model.js';
 import {safetySources,urgentGuideActions,currentReviewedSafety,safetySnapshotFingerprint,agentContext} from '../src/relationship-agent.js';
-import {COMMON} from '../src/relationship-prompts.js';
+import {COMMON,SUPPORT_CAPACITY_CONTRACT} from '../src/relationship-prompts.js';
 import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import {restoreReviewSources} from '../src/final-review-bundle.js';
 
@@ -610,4 +610,61 @@ test('late analysis rejection renews every downstream bundled gate with source s
   assert.deepEqual(new Set(fresh.map(task=>task.key)),new Set(value.logicalRequests
     .filter(task=>task.bundle_stage==='final_review_bundle_initial').map(task=>task.key)));
   assert.ok(fresh.every(task=>task.stage.endsWith('_after_analysis_repair')));
+});
+
+for(const persistent of [false,true])test('bundled review receives the capacity contract and repairs only an ungrounded first-person promise: '+persistent,async()=>{
+  const bad='도울 범위를 정해서 전하세요. 예를 들어 “수요일 오후에 이십 분 동안 맡을 수 있어”라고 말하세요.';
+  const fixed='자신의 일정을 먼저 확인하세요. 아직 범위를 정하지 못했다면 “내가 가능한 범위를 정한 뒤 알려줄게”라고 말할 수 있어요.';
+  const candidate=guide();candidate.guide.doList=[bad];let repairs=0;
+  const probe=fixture({validGuide:candidate,shareReviewSources:true,compactReviewInputs:true,response:(input,body)=>{
+    if(input.stage==='guide_write')assert.ok(body.messages[0].content.includes(SUPPORT_CAPACITY_CONTRACT));
+    if(input.stage.startsWith('guide_repair_card_')){
+      assert.equal(input.stage.startsWith('guide_repair_card_doList'),true,'only the rejected card is regenerated');
+      assert.equal(input.data.field,'doList');repairs++;
+      return {doList:[persistent?bad:fixed]};
+    }
+    if(!input.stage.startsWith('speech_review_card_doList'))return;
+    const prompt=input.prompt??body.messages[0].content;
+    assert.ok(prompt.includes(SUPPORT_CAPACITY_CONTRACT),'the actual review task includes the writer capacity boundary');
+    if(input.data.guide.doList.includes(bad))return {approved:false,issues:[{field:'doList',
+      reason:'권장하는 1인칭 대사가 확인되지 않은 구체적 지원 시점과 분량을 가능하다고 단정합니다.',
+      repair:'구체적 시점과 분량의 가능 단정을 지우고 실제 가능한 범위를 먼저 정한 뒤 알리는 표현으로 바꾸세요.'}],
+      audits:audits(input.data.claims).map(audit=>({...audit,verdict:'problem_in_guidance',
+        reason:'일반 안내와 예시 표시만으로는 실제 가능 범위를 확인한 조건이 되지 않습니다.'}))};
+  }});
+  if(persistent){
+    await assert.rejects(probe.run(),{code:'MODEL_INVALID_RESPONSE',modelReason:'agent_review_rejected'});
+    assert.equal(repairs,2);assert.equal(probe.stages().includes('speech_detail'),false);
+  }else{
+    const output=await probe.run();assertDetail(output);assert.equal(repairs,1);
+    assert.deepEqual(output.guide.doList,[fixed]);
+    for(const key of ['script','avoid','next','care'])assert.deepEqual(output.guide[key],candidate.guide[key]);
+    const after=probe.logicalRequests.find(input=>input.stage==='speech_review_card_doList_after_repair_1');
+    assert.ok(after);assert.deepEqual(after.data.guide.doList,[fixed]);
+  }
+  const bundled=probe.requests.find(({input})=>input.stage==='final_review_bundle_initial');assert.ok(bundled);
+  assert.ok(JSON.stringify(bundled.body).includes('지원 가능범위 계약'),'contract survives real bundle HTTP serialization');
+  const initial=probe.logicalRequests.find(input=>input.stage==='speech_review_card_doList');
+  assert.equal(initial.bundle_stage,'final_review_bundle_initial');assert.deepEqual(initial.data.guide.doList,[bad]);
+  assert.equal(probe.events.some(event=>event.type==='upsert'&&event.id==='doList'&&JSON.stringify(event).includes(bad)),false);
+});
+
+for(const scenario of [
+  {name:'reported capacity',source:'저는 토요일 낮에 삼십 분 정도 같이 살펴볼 수 있어요.',text:'보고한 범위를 그대로 “토요일 낮에 삼십 분 정도 같이 살펴볼 수 있어”라고 전하세요.'},
+  {name:'recipient availability question',text:'상대에게 “언제 이야기하기 편해?”라고 물어보세요.'},
+  {name:'conditional new proposal',text:'내 일정도 확인해서 가능하고 상대도 원하면, 함께 내용을 살펴볼지 제안해 보세요.'},
+  {name:'explicitly conditional example',text:'실제로 그 시간과 분량이 가능하고 맡기로 정한 경우에만 “토요일 낮에 삼십 분 정도 살펴볼 수 있어”라고 말하세요.'},
+  {name:'determine own capacity first',text:'아직 범위를 정하지 않았다면 “내가 가능한 범위를 정한 뒤 알려줄게”라고 말할 수 있어요.'},
+  {name:'avoided promise',field:'avoid',text:'피할 말·행동: “토요일 낮에 삼십 분은 무조건 맡을게.” 이유: 확인하지 않은 범위를 약속할 수 있어요. 대신 “내 일정을 확인하고 가능한 범위를 알려줄게”라고 말하세요.'},
+])test('capacity review contract preserves the valid role and scope without extra calls: '+scenario.name,async()=>{
+  const ctx=context();if(scenario.source)ctx.supporter.fields.capacity=field('capacity',scenario.source);
+  const candidate=guide(),card=scenario.field??'doList';candidate.guide[card]=[scenario.text];
+  const probe=fixture({ctx,validGuide:candidate,compactReviewInputs:true,shareReviewSources:true,response:(input,body)=>{
+    if(input.stage!=='speech_review_card_'+card)return;
+    assert.ok((input.prompt??body.messages[0].content).includes(SUPPORT_CAPACITY_CONTRACT));
+    assert.deepEqual(input.data.guide[card],[scenario.text]);
+    if(scenario.source)assert.ok(JSON.stringify(input.data.answers).includes(scenario.source));
+  }});
+  const output=await probe.run();assertDetail(output);assert.deepEqual(output.guide,candidate.guide);
+  assert.equal(probe.requests.length,8);assert.equal(probe.stages().some(stage=>stage.startsWith('guide_repair')),false);
 });

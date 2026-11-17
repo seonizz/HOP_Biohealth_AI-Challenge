@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { BUNDLE_ID, MAX_HTTP_REQUESTS, configuration, parseArgs, runVerification, syntheticAnswer } from '../scripts/verify-questionnaire-v3-live.mjs';
+import { BUNDLE_ID, MAX_HTTP_REQUESTS, configuration, parseArgs, runVerification, syntheticAnswer, verifyContext } from '../scripts/verify-questionnaire-v3-live.mjs';
 import { activeQuestionSet } from '../src/question-bank.js';
 import { createIntake, answerIntake, currentView, buildContext } from '../src/intake.js';
-import { createV3Clarification } from '../src/intake-v3.js';
+import { createV3Clarification, issueV3 } from '../src/intake-v3.js';
 
 const intakeId = 'ee190889-25ee-45b5-a617-0f310a180760';
 const cookie = 'malssi_session=synthetic_secret_cookie';
@@ -18,7 +18,7 @@ async function output(t) {
   return path;
 }
 
-function fixture({adaptive = false, clarify = false, failure, mutateRecord, corruptContext, repeat = false, pending = false} = {}) {
+function fixture({adaptive = false, clarify = false, skipAfterFirst = false, failure, mutateRecord, corruptContext, repeat = false, pending = false} = {}) {
   let state = createIntake(activeQuestionSet), revision = 0, record;
   const requests = [];
   const view = () => ({id:intakeId,revision,...currentView(state)});
@@ -33,12 +33,19 @@ function fixture({adaptive = false, clarify = false, failure, mutateRecord, corr
     }
     assert.equal(options.headers.cookie, cookie);
     assert.equal(options.headers['x-csrf-token'], csrf);
-    if (failure && path.endsWith(failure.path)) return json({error:{code:failure.code,message:`do not log ${cookie} ${csrf}`}}, failure.status);
+    if (failure && path.endsWith(failure.path) && (!failure.questionId || body?.question_id === failure.questionId)) {
+      return json({error:{code:failure.code,message:`do not log ${cookie} ${csrf}`}}, failure.status);
+    }
     if (path === '/api/intakes') return json(view(),201);
     if (path.endsWith('/answers')) {
       assert.equal(body.revision, revision);
       if (!repeat) state = answerIntake(state, body);
       revision += 2;
+      if (skipAfterFirst && body.question_id === 'q3_01') {
+        state.modelSkipped.q3_02 = {reason:'already_covered'};
+        state.i = 2;
+        issueV3(state,activeQuestionSet.questions[state.i]);
+      }
       if (clarify && body.question_id === 'q3_01') {
         const answer = state.ans.q3_01;
         const question = createV3Clarification(state, {source_question_id:'q3_01',source_revision:answer.source_revision,
@@ -84,6 +91,9 @@ test('live runner performs one bounded conversation and verifies exact persisted
   assert.equal(report.record_id, '123456789');
   assert.equal(report.intake_id, intakeId);
   assert.equal(report.answered_question_ids.length, 9);
+  assert.deepEqual(report.skipped_question_ids,[]);
+  assert.deepEqual(report.unasked_question_ids,[]);
+  assert.deepEqual(report.question_progress,{status:'verified',source:'input_context'});
   assert.equal(report.request_count, 15);
   assert.equal(fake.requests.filter(request => request.path === '/api/intakes').length,1);
   assert.equal(fake.requests.some(request => request.path.includes('/progress')),false);
@@ -118,6 +128,7 @@ test('status and ETA exist before the first HTTP request; adaptive skips and bou
   assert.equal(report.status,'passed');
   assert.deepEqual(report.answered_question_ids,['q3_01','q3_10']);
   assert.equal(report.skipped_question_ids.length,8);
+  assert.deepEqual(report.unasked_question_ids,[]);
   const q10 = fake.requests.find(request => request.body?.question_id === 'q3_10').body;
   assert.equal(q10.response_event,'unknown');
   assert.equal(q10.follow_up,true);
@@ -129,9 +140,87 @@ test('a model HTTP failure stops once and records only safe error metadata', asy
   assert.equal(report.status,'failed');
   assert.deepEqual(report.error,{code:'MODEL_INVALID_RESPONSE',http_status:502});
   assert.equal(report.failed_stage,'answer_question');
-  assert.equal(fake.requests.length,3);
+  assert.equal(fake.requests.length,4);
+  assert.equal(fake.requests.filter(request => request.path.endsWith('/context')).length,1);
+  assert.deepEqual(report.answered_question_ids,[]);
+  assert.deepEqual(report.skipped_question_ids,[]);
+  assert.equal(report.unasked_question_ids.length,9);
+  assert.deepEqual(report.question_progress,{status:'verified',source:'failure_context'});
   assert.equal(fake.requests.some(request => request.path.endsWith('/result')),false);
   assert.equal((await readFile(join(path,'report.json'),'utf8')).includes('synthetic_secret'),false);
+});
+
+test('a later answer failure reports confirmed skips separately from unasked questions', async t => {
+  const path = await output(t), fake = fixture({skipAfterFirst:true,
+    failure:{path:'/answers',questionId:'q3_03',code:'MODEL_CONTEXT_TOO_LONG',status:502}});
+  const report = await runVerification({output:path},fake);
+  assert.equal(report.status,'failed');
+  assert.deepEqual(report.error,{code:'MODEL_CONTEXT_TOO_LONG',http_status:502});
+  assert.equal(report.failed_stage,'answer_question');
+  assert.deepEqual(report.answered_question_ids,['q3_01']);
+  assert.deepEqual(report.skipped_question_ids,['q3_02']);
+  assert.deepEqual(report.unasked_question_ids,['q3_03','q3_04','q3_05','q3_06','q3_07','q3_08','q3_09']);
+  assert.deepEqual(report.question_progress,{status:'verified',source:'failure_context'});
+  assert.equal(fake.requests.filter(request => request.path.endsWith('/context')).length,1);
+  assert.ok(report.request_count <= MAX_HTTP_REQUESTS);
+  assert.equal(fake.requests.some(request => request.path.endsWith('/result')),false);
+  assert.match(await readFile(join(path,'status.md'),'utf8'),/확인된 자동 생략: q3_02/);
+});
+
+test('failed or stalled progress lookup preserves the original failure and marks progress unavailable', async t => {
+  for (const stalled of [false,true]) {
+    const fake = fixture({failure:{path:'/answers',code:'MODEL_CONTEXT_TOO_LONG',status:502}});
+    let progressCalls = 0, progressSignal;
+    const fetchImpl = async (url, options) => {
+      if (new URL(url).pathname.endsWith('/context')) {
+        progressCalls++;progressSignal=options.signal;
+        if (stalled) return new Promise(() => {});
+        return json({error:{code:'CONTEXT_UNAVAILABLE'}},503);
+      }
+      return fake.fetchImpl(url,options);
+    };
+    const report = await runVerification({output:await output(t),requestTimeoutSeconds:0.01},{fetchImpl});
+    assert.deepEqual(report.error,{code:'MODEL_CONTEXT_TOO_LONG',http_status:502});
+    assert.equal(report.failed_stage,'answer_question');
+    assert.equal(progressCalls,1);
+    assert.deepEqual(report.question_progress,{status:'unavailable',code:stalled?'REQUEST_TIMEOUT':'CONTEXT_UNAVAILABLE'});
+    assert.deepEqual(report.answered_question_ids,[]);
+    if (stalled) assert.equal(progressSignal.aborted,true);
+  }
+});
+
+test('an unacknowledged source in the failure context never inflates successful answer counts', async t => {
+  const fake = fixture({failure:{path:'/answers',code:'MODEL_INVALID_RESPONSE',status:502},corruptContext:context => {
+    context.supporter.fields.q3_01 = {...context.supporter.fields.q3_01,status:'answered',rawText:'Unacknowledged source'};
+  }});
+  const report = await runVerification({output:await output(t)},fake);
+  assert.deepEqual(report.answered_question_ids,[]);
+  assert.equal(report.unasked_question_ids.includes('q3_01'),false);
+  assert.deepEqual(report.error,{code:'MODEL_INVALID_RESPONSE',http_status:502});
+});
+
+test('fabricated skipped content makes failure progress unavailable without masking the model error', async t => {
+  const fake = fixture({failure:{path:'/answers',code:'MODEL_CONTEXT_TOO_LONG',status:502},corruptContext:context => {
+    context.patient.fields.q3_02 = {...context.patient.fields.q3_02,status:'auto_skipped',rawText:'PRIVATE_FABRICATED_SOURCE'};
+  }});
+  const path = await output(t), report = await runVerification({output:path},fake);
+  assert.deepEqual(report.error,{code:'MODEL_CONTEXT_TOO_LONG',http_status:502});
+  assert.deepEqual(report.question_progress,{status:'unavailable',code:'FABRICATED_UNANSWERED_SOURCE'});
+  assert.deepEqual(report.skipped_question_ids,[]);
+  assert.equal((await readFile(join(path,'report.json'),'utf8')).includes('PRIVATE_FABRICATED_SOURCE'),false);
+});
+
+test('an answer network failure does not start a progress retry', async t => {
+  const fake = fixture();let calls=0;
+  const fetchImpl = async (url,options) => {
+    calls++;
+    if (new URL(url).pathname.endsWith('/answers')) throw new Error('synthetic network failure');
+    return fake.fetchImpl(url,options);
+  };
+  const report = await runVerification({output:await output(t)},{fetchImpl});
+  assert.deepEqual(report.error,{code:'NETWORK_ERROR'});
+  assert.deepEqual(report.question_progress,{status:'unverified'});
+  assert.equal(calls,3);
 });
 
 test('per-request and whole-run deadlines abort stalled HTTP and persist failure', async t => {
@@ -185,4 +274,16 @@ test('configuration limits destinations, arguments, time bounds and clarificatio
   const parsed = parseArgs(['--base-url','http://127.0.0.1:9000','--output','/tmp/one-run','--estimate-min-seconds','1800','--estimate-max-seconds','5400','--timeout-seconds','7200']);
   assert.equal(parsed.timeoutSeconds,7200);
   assert.equal(parsed.requestTimeoutSeconds,1800);
+});
+
+
+test('live runner accepts only bounded personalized IDs and never fabricates answers to generated questions', () => {
+  const question={id:'q3_personal_01',instance_id:'one',follow_up:true,personalized:true,type:'text',q:'어떤 도움이 필요하다고 말했나요?'};
+  const answer=syntheticAnswer(question);
+  assert.equal(answer.response_event,'unknown');
+  assert.equal(answer.text,'');
+  assert.equal(answer.follow_up,true);
+  assert.throws(()=>syntheticAnswer({...question,id:'q3_personal_03'}),{code:'UNREGISTERED_QUESTION'});
+  assert.throws(()=>syntheticAnswer({...question,personalized:false}),{code:'INVALID_PERSONALIZED_QUESTION'});
+  assert.throws(()=>syntheticAnswer({...question,type:'one'}),{code:'INVALID_PERSONALIZED_QUESTION'});
 });

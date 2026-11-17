@@ -1,3 +1,4 @@
+import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -139,7 +140,7 @@ test('the next overflow retry receives slot guidance and still needs a new compl
         assert.deepEqual(input.data.review_target.claims[1].evidence,repaired.state.relationship_memory.patient[1].evidence);
         payload=approve(input.data);
       }
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,payload))}}]}));
     }});
   const result=await model.updateState(f.ctx);
   assert.deepEqual(requests.map(input=>input.stage),['turn_draft','turn_draft','turn_review','safety_review']);
@@ -187,7 +188,7 @@ test('a model can use capacity feedback to reselect evidence, followed by comple
         for(const id of f.ids)assert.ok(raw.patient.find(row=>row.question_id===id).answers.some(answer=>answer.text===f.ref(id).quote));
         payload=approve(input.data);
       }
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,payload))}}]}));
     }});
   const output=await model.updateState(f.ctx);
   assert.deepEqual(calls.map(call=>call.stage),['turn_draft','turn_draft','turn_review','safety_review']);

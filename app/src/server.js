@@ -10,6 +10,7 @@ import { questionCatalogOf } from './question-bank.js';
 import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate,
   prepareModelAnswer, completeModelAnswer, discardModelAnswer } from './intake.js';
 import { configuredModelGateway } from './model-config.js';
+import {configuredModelProfiles,createModelProfiles} from './model-profiles.js';
 import { generationProgress } from './generation-progress.js';
 import { sourceFingerprint } from './source-identity.js';
 import { PROMPT_VERSION } from './relationship-prompts.js';
@@ -18,6 +19,11 @@ import { configuredReferralProvider } from './referral-runtime.js';
 import { createTestRuns } from './test-runs.js';
 import { createContinuations } from './continuations.js';
 import { finalSafety } from './final-safety.js';
+import {currentReviewedSafety} from './relationship-agent.js';
+import {configuredAdminAccess} from './admin-access.js';
+import {withModelConnections,prepareModelConnection,prepareModelExecution,missingExecutionDefaults,missingModelBaselines,missingLegacyModelBaseline} from './model-connections.js';
+import {DEFAULT_MODEL_EXECUTION} from './model-execution.js';
+import {respondWithRun,streamEvent} from './response-stream.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -56,6 +62,14 @@ const cancelled = () => new HttpError(499, 'MODEL_CANCELLED', '요청이 취소�
 const notFound = () => new HttpError(404, 'NOT_FOUND', '대화를 찾을 수 없어요.');
 
 function subscribeRun(run, signal) {
+  // A request can finish awaiting its DB read after shutdown's run sweep.
+  // Stop an unclaimed new run before its queued task starts, while leaving
+  // another live subscriber's shared work intact.
+  if (signal.aborted) {
+    if (!run.finished && !run.subscribers.size) run.controller.abort(cancelled());
+    run.promise.catch(() => {}); // Observe the retired task even without a subscriber.
+    return Promise.reject(cancelled());
+  }
   const subscriber = Symbol(); run.subscribers.add(subscriber);
   let onAbort, onCancel;
   return new Promise((resolve, reject) => {
@@ -91,9 +105,10 @@ function sharedRun(runs, key, metadata, task) {
 
 export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema = 'public', key, sessionDays = 30,
   retentionDays = Number(process.env.DATA_RETENTION_DAYS ?? 30), retentionCleanupMs = 3600000,
-  publicOrigin, allowedOrigins = [], rateLimit = 600, gateway,
+  publicOrigin, allowedOrigins = [], rateLimit = 600, gateway, modelProfiles, adminEnv=process.env,
   referralProvider, referralDirectory, guideCharacters, referralMessages, referralTimeoutMs } = {}) {
   const sourceIdentity=sourceFingerprint(fileURLToPath(new URL('../', import.meta.url)));
+  const requireAdmin=configuredAdminAccess(adminEnv);
   if (!Array.isArray(allowedOrigins) || allowedOrigins.some(value => {
     try { const url = new URL(value); return url.origin !== value || !['http:', 'https:'].includes(url.protocol) || url.username || url.password; }
     catch { return true; }
@@ -102,7 +117,28 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   if (!Number.isInteger(retentionCleanupMs) || retentionCleanupMs < 10 || retentionCleanupMs > 3600000) throw new Error('Retention cleanup interval must be 10..3600000 ms');
   // Validate optional model settings before opening a database pool.
   if (gateway === undefined) gateway = configuredModelGateway();
+  let legacyGateway=gateway;
+  let profiles=modelProfiles===undefined?configuredModelProfiles({gateway}):modelProfiles===null?null:createModelProfiles(modelProfiles);
+  const profileGateway=id=>{
+    if(id===undefined)return legacyGateway;
+    if(!profiles)throw new HttpError(503,'MODEL_PROFILE_UNAVAILABLE','선택한 모델의 연결을 준비한 뒤 다시 시도해 주세요.');
+    return profiles.resolve(id);
+  };
   const store = await Store.connect(databaseUrl, key || loadContentKey(resolve('./runtime/content.key')), sessionDays, { schema, retentionDays });
+  try{if(profiles){
+    let rows=await store.modelConnections();
+    const baselines=missingModelBaselines(profiles,rows);
+    const legacy=missingLegacyModelBaseline(gateway,rows);
+    if(legacy)baselines.push(legacy);
+    for(const row of baselines)await store.createModelConnection(row.profile_id,row.config);
+    if(baselines.length)rows=await store.modelConnections();
+    profiles=withModelConnections(profiles,rows,{legacyGateway:gateway});
+    for(const row of missingExecutionDefaults(profiles,rows)){
+      const saved=await store.createModelConnection(row.profile_id,row.config);profiles.add(saved);
+    }
+    legacyGateway=profiles.resolveLegacy();
+  }}
+  catch(error){await store.close();throw error;}
   let retentionCleanupOk = false, cleanupRun;
   const cleanup = () => cleanupRun ||= store.purgeExpired().then(() => { retentionCleanupOk = true; })
     .catch(error => { retentionCleanupOk = false; throw error; }).finally(() => { cleanupRun = null; });
@@ -111,14 +147,27 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   const limits = new Map();
   let referral;
   try {
+    const savedReferralSettings=profiles?.legacyReferralSettings();
+    const legacyProvider=referralProvider !== undefined ? referralProvider : (typeof legacyGateway?.referralGuidance === 'function' ? input => legacyGateway.referralGuidance(input) : configuredReferralProvider({gateway:legacyGateway,
+      ...(savedReferralSettings===undefined?{}:{env:{REFERRAL_GUIDANCE_ENABLED:process.env.REFERRAL_GUIDANCE_ENABLED,REFERRAL_COUNTRY:process.env.REFERRAL_COUNTRY,...savedReferralSettings}})}));
+    const providers=new WeakMap();
+    const providerForState=referralProvider===undefined?state=>{
+      if(state.modelProfileId===undefined)return legacyProvider;
+      const selected=profileGateway(state.modelProfileId);
+      if(!providers.has(selected))providers.set(selected,typeof selected.referralGuidance==='function'
+        ? input=>selected.referralGuidance(input)
+        : configuredReferralProvider({gateway:selected,env:{REFERRAL_GUIDANCE_ENABLED:process.env.REFERRAL_GUIDANCE_ENABLED,REFERRAL_COUNTRY:process.env.REFERRAL_COUNTRY}}));
+      return providers.get(selected);
+    }:undefined;
     referral = createReferralGuidance({store,
-      provider:referralProvider !== undefined ? referralProvider : (typeof gateway?.referralGuidance === 'function' ? input => gateway.referralGuidance(input) : configuredReferralProvider({gateway})),
+      provider:legacyProvider,providerForState,
       directory:referralDirectory, characters:guideCharacters, messages:referralMessages,
       timeoutMs:referralTimeoutMs ?? 0, cacheVersion:sourceIdentity.sha256});
   } catch (error) { await store.close(); throw error; }
   const resultRuns = new Map();
   const modelRuns = new Map();
-  const continuations = createContinuations({store,gateway,sharedRun,subscribeRun});
+  const stopping = new AbortController();
+  const continuations = createContinuations({store,gateway,sharedRun,subscribeRun,resolveGateway:record=>profileGateway(record.provenance?.model_profile_id)});
   const testRuns = createTestRuns({ gateway, questionSet:() => store.questionSet() });
   const cancelRuns = (owner, id, reason = revisionConflict(), keepRevision) => {
     for (const runs of [modelRuns, resultRuns]) for (const [key, run] of runs) {
@@ -131,11 +180,13 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
     if (id === undefined) testRuns.cancelOwner(owner);
   };
   const view = row => ({ id: row.id, revision: row.revision, name:row.state.name, chat_title:row.state.chatTitle || '', ...currentView(row.state), log: row.state.log,
-    referral_available:referral.available(row.state) });
+    referral_available:referral.available(row.state),
+    ...(row.state.modelProfileId!==undefined?{model_profile_id:row.state.modelProfileId}:{}) });
   const server = createServer(async (req, res) => {
     const requestId = randomUUID();
     const requestStarted = Date.now();
     const request = new AbortController();
+    const modelSignal = AbortSignal.any([request.signal, stopping.signal]);
     const disconnected = () => { if (!res.writableEnded) request.abort(cancelled()); };
     req.once('aborted', disconnected);
     res.once('close', disconnected);
@@ -153,6 +204,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (req.headers.origin && !origins.includes(req.headers.origin)) throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
       if (req.headers['sec-fetch-site'] === 'cross-site') throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
       const url = new URL(req.url, expectedOrigin), path = url.pathname, method = req.method;
+      if (path === '/api/admin/models'||path==='/api/admin/model-connections'||path.startsWith('/api/admin/model-connections/')||path==='/api/admin/model-execution'||path.startsWith('/api/admin/model-execution/')) requireAdmin(req,res,hostOrigin);
       if (path === '/health' && method === 'GET') return json(res, retentionCleanupOk ? 200 : 503, { status:retentionCleanupOk ? 'ok' : 'retention_cleanup_failed', model_configured:Boolean(gateway), mode:'personal_demo',
         retention_cleanup_ok:retentionCleanupOk,
         source_sha256:sourceIdentity.sha256, model_protocol:gateway?.protocol || null,
@@ -162,8 +214,10 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if (!['GET','HEAD'].includes(method)) throw new HttpError(405, 'METHOD_NOT_ALLOWED', '허용되지 않은 요청이에요.');
         let decoded;
         try { decoded = decodeURIComponent(path); } catch { throw new HttpError(400, 'INVALID_PATH', '주소를 확인해 주세요.'); }
+        const adminPage = ['/admin/models', '/admin/models/', '/admin-models.html'].includes(decoded);
+        if (adminPage) requireAdmin(req,res,hostOrigin);
         const screenPath=/^\/(?:about|records(?:\/\d+)?|columns(?:\/[a-zA-Z0-9_-]+)?|(?:chat|result|continuations)(?:\/[a-f0-9-]{36})?)\/?$/i.test(decoded);
-        const file = resolve(ROOT, '.' + (decoded === '/' || screenPath ? '/index.html' : decoded));
+        const file = resolve(ROOT, '.' + (adminPage ? '/admin-models.html' : decoded === '/' || screenPath ? '/index.html' : decoded));
         if (!file.startsWith(ROOT.endsWith(sep) ? ROOT : ROOT + sep) || !MIMES[extname(file)] || decoded.split('/').some(part => part.startsWith('.'))) throw new HttpError(404, 'NOT_FOUND', '페이지를 찾을 수 없어요.');
         try {
           if (!(await stat(file)).isFile()) throw new Error('not file');
@@ -209,7 +263,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         return json(res, 200, {
           schema_version:'1.0', csrf_token:browser.csrf,
           retention:{ inactivity_days:retentionDays, cleanup_interval_seconds:retentionCleanupMs / 1000 },
-          mode:'personal_demo', model_connected:Boolean(gateway),
+          mode:'personal_demo', model_connected:profiles?profiles.list().some(profile=>profile.available):Boolean(gateway),
           ...await store.history(browser.id), column_state:await store.columnState(browser.id),
           columns, categories, questions:questionCatalogOf(await store.questionSet())
         });
@@ -217,6 +271,43 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (!browser) throw new HttpError(401, 'SESSION_REQUIRED', '앱을 새로고침해 주세요.');
       if (!['GET','HEAD'].includes(method) && !safeEqual(req.headers['x-csrf-token'], browser.csrf)) throw new HttpError(403, 'CSRF_REJECTED', '앱을 새로고침한 뒤 다시 시도해 주세요.');
       const owner = browser.id;
+      if(path==='/api/admin/model-execution'||path.startsWith('/api/admin/model-execution/')){
+        if(!profiles)throw new HttpError(503,'MODEL_SELECTION_DISABLED','모델 선택 설정이 준비되지 않았어요.');
+        const metadata=()=>({executions:profiles.executions()});
+        if(path==='/api/admin/model-execution'&&method==='GET')return json(res,200,metadata());
+        const match=/^\/api\/admin\/model-execution\/(local12b|gpu31b)$/.exec(path);
+        if(match&&method==='PUT'){
+          const prepared=prepareModelExecution(match[1],await body(req),profiles.current(match[1]));
+          const row=await store.createModelConnection(match[1],prepared.config);profiles.add(row,prepared.gateway);
+          return json(res,200,metadata());
+        }
+        throw new HttpError(405,'METHOD_NOT_ALLOWED','허용되지 않은 요청이에요.');
+      }
+      if(path==='/api/admin/model-connections'||path.startsWith('/api/admin/model-connections/')){
+        if(!profiles)throw new HttpError(503,'MODEL_SELECTION_DISABLED','모델 선택 설정이 준비되지 않았어요.');
+        const metadata=async()=>({connections:profiles.connections(),selected_model_profile:await store.selectedModelProfile(profiles.defaultId)});
+        if(path==='/api/admin/model-connections'&&method==='GET')return json(res,200,await metadata());
+        const match=/^\/api\/admin\/model-connections\/(local12b|gpu31b)$/.exec(path);
+        if(match&&method==='PUT'){
+          let prepared=prepareModelConnection(match[1],await body(req),profiles.current(match[1]));
+          if(!prepared.gateway.executionSnapshot&&prepared.gateway.protocol==='relationship_agent')
+            prepared=prepareModelExecution(match[1],DEFAULT_MODEL_EXECUTION,prepared.gateway);
+          const row=await store.createModelConnection(match[1],prepared.config);profiles.add(row,prepared.gateway);
+          return json(res,200,await metadata());
+        }
+        throw new HttpError(405,'METHOD_NOT_ALLOWED','허용되지 않은 요청이에요.');
+      }
+      if (path === '/api/admin/models') {
+        if (!profiles) throw new HttpError(503, 'MODEL_SELECTION_DISABLED', '모델 선택 설정이 준비되지 않았어요.');
+        if (method === 'GET') return json(res, 200, {profiles:profiles.list(),selected_model_profile:await store.selectedModelProfile(profiles.defaultId)});
+        if (method === 'PUT') {
+          const input=object(await body(req), ['model_profile_id']);
+          if(!profiles.list().some(profile=>profile.id===input.model_profile_id&&profile.available))profiles.resolve(input.model_profile_id);
+          const id=await store.setModelProfile(input.model_profile_id);
+          return json(res, 200, {profiles:profiles.list(),selected_model_profile:id});
+        }
+        throw new HttpError(405, 'METHOD_NOT_ALLOWED', '허용되지 않은 요청이에요.');
+      }
       const continuationListMatch = /^\/api\/records\/(\d+)\/continuations$/.exec(path);
       if(continuationListMatch) {
         if(method==='GET')return json(res,200,await continuations.list(owner,continuationListMatch[1]));
@@ -228,7 +319,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if(!UUID.test(id))throw notFound();
         if(method==='GET'&&!action)return json(res,200,await continuations.get(owner,id));
         if(method==='DELETE'&&!action)return json(res,200,await continuations.remove(owner,id));
-        if(method==='POST'&&action)return json(res,200,await continuations.mutate(owner,id,action,await body(req),{signal:request.signal,requestId}));
+        if(method==='POST'&&action)return json(res,200,await continuations.mutate(owner,id,action,await body(req),{signal:modelSignal,requestId}));
       }
       const testMatch = /^\/api\/test-runs\/([^/]+)(\/progress)?$/.exec(path);
       if (testMatch) {
@@ -236,7 +327,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if (!UUID.test(id)) throw new HttpError(404, 'NOT_FOUND', '테스트를 찾을 수 없어요.');
         if (method === 'GET' && progress) return json(res, 200, testRuns.progress(owner, id));
         if (method === 'POST' && !progress) return json(res, 200,
-          await testRuns.start(owner, id, await body(req), { signal:request.signal, requestId }));
+          await testRuns.start(owner, id, await body(req), { signal:modelSignal, requestId }));
         if (method === 'DELETE' && !progress) {
           testRuns.cancel(owner, id);
           return json(res, 200, { cancelled:true });
@@ -282,7 +373,12 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (method === 'POST' && path === '/api/intakes') {
         const input = object(await body(req), ['conversation_epoch']);
         const epoch = revisionOf(input.conversation_epoch);
-        return json(res, 201, view(await store.createIntake(owner, createIntake(await store.questionSet()), epoch)));
+        const state=createIntake(await store.questionSet());
+        if(profiles){
+          const id=await store.selectedModelProfile(profiles.defaultId);
+          const binding=profiles.bind(id);profiles.resolve(binding);state.modelProfileId=binding;
+        }
+        return json(res, 201, view(await store.createIntake(owner,state,epoch)));
       }
       const intakeMatch = /^\/api\/intakes\/([^/]+)(?:\/(answers|back|context|result|progress|guidance))?$/.exec(path);
       if (intakeMatch) {
@@ -295,7 +391,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           return json(res, 200, { deleted:true, ...deleted });
         }
         if (method === 'GET' && action === 'context') return json(res, 200, await store.context(owner, id));
-        if (method === 'POST' && action === 'guidance') return json(res, 200, await referral.assess(owner, id, await body(req), requestId, {signal:request.signal}));
+        if (method === 'POST' && action === 'guidance') return json(res, 200, await referral.assess(owner, id, await body(req), requestId, {signal:modelSignal}));
         if (method === 'GET' && action === 'progress') {
           let row=await store.intakeMetadata(owner,id);
           const candidate=resultRuns.get(`${owner}:${id}:${row.revision}`);
@@ -316,7 +412,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if (method === 'POST' && ['answers','back'].includes(action)) {
           const input = object(await body(req), action === 'back' ? ['revision'] : ['revision','question_id','text','selected','custom','skipped','follow_up','response_event','instance_id']);
           const revision = revisionOf(input.revision);
-          if (gateway && action === 'answers' && (!input.skipped || gateway.protocol==='relationship_agent')) {
+          const selectedGateway=action==='answers'?profileGateway((await store.intake(owner,id)).state.modelProfileId):null;
+          if (selectedGateway && action === 'answers' && (!input.skipped || selectedGateway.protocol==='relationship_agent')) {
             let row = await store.intake(owner, id);
             const retry = row.state.modelPending && sameAnswer(row.state.modelPending.input, input);
             if (revision !== row.revision && !(retry && revision === row.state.modelPending.sourceRevision)) throw revisionConflict();
@@ -334,20 +431,24 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             }
             cancelRuns(owner, id, revisionConflict(), row.revision);
             const runKey = `${owner}:${id}:${row.revision}`;
+            const progress=generationProgress();
             const run = async signal => {
               const context = buildContext(row.state);
-              const memory = await gateway.updateState(context, row.state.agentMemory || null, { requestId, signal });
+              const memory = await selectedGateway.updateState(context, row.state.agentMemory || null, { requestId, signal,
+                onProgress:event=>{if(!signal.aborted)progress.event(event);} });
               signal.throwIfAborted();
+              progress.finish('saving');
               const updated = await store.updateIntake(owner, id, row.revision, state => {
                 signal.throwIfAborted();
                 return completeModelAnswer(state, memory);
               }, 'model_update');
               referral.cancel(owner, id, revisionConflict(), updated.revision);
+              progress.finish('complete');
               return updated;
             };
             // The pending input remains saved; an error cannot advance a prompt.
-            return json(res, 200, view(await subscribeRun(sharedRun(modelRuns, runKey,
-              {owner, id, revision:row.revision}, run), request.signal)));
+            return await respondWithRun(req,res,sharedRun(modelRuns, runKey,
+              {owner, id, revision:row.revision, progress}, run),modelSignal,subscribeRun,{revision,project:view});
           }
           const row = await store.updateIntake(owner, id, revision, state => {
             const next = action === 'back' ? backIntake(state) : answerIntake(discardModelAnswer(state), input);
@@ -355,7 +456,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             // skipped answers, or back). Old interpretations/approvals/results
             // cannot describe the newly committed source, even after reconnecting.
             delete next.agentMemory; delete next.agentRelationshipMemory; delete next.agentStateExecution;
-            delete next.safetySignal; delete next.agentResult; delete next.agentRecord;
+            delete next.safetySignal; delete next.safetyReviewPending; delete next.agentResult; delete next.agentRecord;
             next.modelStatus='not_connected';
             return next;
           }, action === 'back' ? 'correction' : 'user_answer');
@@ -376,20 +477,40 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
               progress.finish('complete');return {record,revision:row.revision};
             }
             if (row.revision !== revision || row.state.status !== 'ready') throw new HttpError(409, 'INTAKE_NOT_READY', '대화를 마친 뒤 결과를 확인해 주세요.');
-            if (!gateway) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
+            const selectedGateway=profileGateway(row.state.modelProfileId);
+            if (!selectedGateway) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
             // Rebuild safety metadata from the current saved intake. Contexts
             // written by an older version may omit its approved danger signal.
             const context = buildContext(row.state);
-            if (context.user_stopped && !context.safety_signal?.urgent) {
+            if (context.user_stopped && !context.safety_signal?.urgent && !context.safety_review_pending) {
               throw new HttpError(409, 'INTAKE_STOPPED', '대화를 종료했어요. 새 대화는 처음 화면에서 시작해 주세요.');
             }
             signal.throwIfAborted();
-            const result = await gateway.respond(context, row.state.agentMemory || null, { requestId, signal, onProgress:event=>{if(!signal.aborted)progress.event(event);},
-              onCard:event=>{if(!signal.aborted)progress.card(event);} });
+            let result;
+            try {
+              result = await selectedGateway.respond(context, row.state.agentMemory || null, { requestId, signal, onProgress:event=>{if(!signal.aborted)progress.event(event);},
+                onCard:event=>{if(!signal.aborted)progress.card(event);} });
+            } catch(error) {
+              // A stopped conversation may resolve its pending safety review
+              // without generating a guide. Persist that verdict once, so a
+              // reload does not rerun the same independent review forever.
+              if(error instanceof HttpError&&error.code==='INTAKE_STOPPED'&&error.reviewedSafety) {
+                signal.throwIfAborted();
+                const reviewed=currentReviewedSafety({...context,safety_signal:error.reviewedSafety});
+                if(reviewed?.urgent===false) {
+                  row=await store.updateIntake(owner,id,row.revision,state=>{
+                    signal.throwIfAborted();
+                    const next={...state,safetySignal:reviewed};delete next.safetyReviewPending;return next;
+                  },'model_update');
+                  referral.cancel(owner,id,revisionConflict(),row.revision);
+                }
+              }
+              throw error;
+            }
             signal.throwIfAborted();
             progress.finish('saving');
             const recordId = await store.nextRecordId();
-            const p = { ...context.profileInput, scores:{}, safety:finalSafety(context, result, gateway.protocol),
+            const p = { ...context.profileInput, scores:{}, safety:finalSafety(context, result, selectedGateway.protocol),
               symptoms:[], risks:[], protect:[] };
             row = await store.updateIntake(owner, id, revision, state => {
               signal.throwIfAborted();
@@ -403,8 +524,9 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
                 profile:{ ...p, name:next.name }, guide:result.guide, log:next.log, followUps:state.fuCount,
                 ...(result.relationship_analysis ? {relationship_analysis:result.relationship_analysis} : {}),
                 ...(result.conversation_detail ? {conversation_detail:result.conversation_detail} : {}),
-                provenance:{ kind:'model', model:gateway.model || 'unknown', clinically_validated:false,
-                  source_sha256:sourceIdentity.sha256, model_protocol:gateway.protocol || null, runtime_model_identity_verified:false,
+                provenance:{ kind:'model', model:selectedGateway.model || 'unknown', clinically_validated:false,
+                  ...(state.modelProfileId!==undefined?{model_profile_id:state.modelProfileId}:{}),
+                  source_sha256:sourceIdentity.sha256, model_protocol:selectedGateway.protocol || null, runtime_model_identity_verified:false,
                   ...(result.agent ? {agent:result.agent} : {}) }
               };
               next.agentRecord.context = buildContext(next);
@@ -417,8 +539,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             progress.finish('complete');
             return { record, revision:row.revision };
           };
-          return json(res, 200, await subscribeRun(sharedRun(resultRuns, runKey,
-            {owner, id, revision, progress}, run), request.signal));
+          return await respondWithRun(req,res,sharedRun(resultRuns, runKey,
+            {owner, id, revision, progress}, run),modelSignal,subscribeRun);
         }
       }
       if (method === 'GET' && path === '/api/records') return json(res, 200, await store.history(owner));
@@ -457,8 +579,10 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           ? {reason:error.modelReason} : {}),
       }));
       if (!known) console.error(`[${requestId}] request failed`); // No inputs, credentials or counselling content.
-      if (!res.headersSent) json(res, known ? error.status : 500, { error:{ code:known ? error.code : 'INTERNAL_ERROR', message:known ? error.message : '저장하지 못했어요. 잠시 후 다시 시도해 주세요.', request_id:requestId } });
-      else res.end();
+      const status=known?error.status:500;
+      const value={error:{code:known?error.code:'INTERNAL_ERROR',message:known?error.message:'저장하지 못했어요. 잠시 후 다시 시도해 주세요.',request_id:requestId}};
+      if(!res.headersSent)json(res,status,value);
+      else {if(res.getHeader('Content-Type')==='text/event-stream; charset=utf-8')streamEvent(res,'error',{...value,status});res.end();}
     } finally {
       req.removeListener('aborted', disconnected);
       res.removeListener('close', disconnected);
@@ -474,6 +598,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   const closeStore = () => storeClosing ||= store.close();
   server.on('close', () => { clearInterval(cleanupTimer); continuations.close(); closeStore().catch(() => {}); });
   const shutdown = () => shutdownRun ||= (async () => {
+    stopping.abort(cancelled());
     // An unlimited model retry must stop before graceful HTTP close waits for
     // its response. These runs all belong to this app instance.
     for (const runs of [modelRuns, resultRuns]) {

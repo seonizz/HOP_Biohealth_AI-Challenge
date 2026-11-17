@@ -190,7 +190,9 @@ export function schemaArrayPaths(schema) {
   return paths;
 }
 
-export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,propertyArrayLimits=null,arrayPaths=null,stringLimit=null,completeJson=false}={}) {
+// Optional semantic inspection receives decoded values at known paths, never
+// property names. Incomplete values stay provisional; throwing cancels the stream.
+export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,propertyArrayLimits=null,arrayPaths=null,stringLimit=null,completeJson=false,validateString}={}) {
   let reader;
   const cancelled=()=>{void reader?.cancel().catch(()=>{});};
   try {
@@ -203,16 +205,22 @@ export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,
     const content=[],reasoning=[],reasoningContent=[];
     let line='',data=[],done=false,skipLF=false,finishReason=null,usage,id,model,created;
     let inString=false,escaped=false,whitespaceRun=0,keyText=null,valueString=false,stringLength=0,unicodeRemaining=0;
+    let stringText='',stringPath=null,unicodeText='';
     const frames=[];
     let rootStarted=false,rootClosed=false,jsonComplete=false;
     const bounded=Number.isSafeInteger(arrayLimit)&&arrayLimit>=0;
     const stringBounded=Number.isSafeInteger(stringLimit)&&stringLimit>=0;
-    const trackStructure=bounded||stringBounded||completeJson;
-    const stringUnits=units=>{
-      stringLength+=units;
-      if(stringLength>stringLimit)throw new ModelStreamError('agent_schema',JSON.stringify({
+    const inspectStrings=typeof validateString==='function';
+    const trackStructure=bounded||stringBounded||completeJson||inspectStrings;
+    const stringCharacters=text=>{
+      stringLength+=text.length;
+      if(stringBounded&&stringLength>stringLimit)throw new ModelStreamError('agent_schema',JSON.stringify({
         path:'output',keyword:'streamStringLimit',expected:{max_length:stringLimit},actual:{length:stringLength},
       }));
+      if(inspectStrings&&stringPath!==null)stringText+=text;
+    };
+    const inspectString=complete=>{
+      if(inspectStrings&&stringPath!==null)validateString(stringPath,stringText,{complete});
     };
     const valuePosition=()=>{
       const frame=frames.at(-1);
@@ -236,18 +244,20 @@ export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,
         if(inString) {
           if(valueString&&unicodeRemaining){
             if(!/^[0-9a-f]$/iu.test(char))throw new ModelStreamError('content_json');
-            if(--unicodeRemaining===0)stringUnits(1);
+            unicodeText+=char;
+            if(--unicodeRemaining===0)stringCharacters(String.fromCharCode(parseInt(unicodeText,16)));
           }
           else if(escaped){
             if(keyText!==null)keyText+=char;escaped=false;
             if(valueString){
-              if(char==='u')unicodeRemaining=4;
-              else if('"\\/bfnrt'.includes(char))stringUnits(1);
+              if(char==='u'){unicodeRemaining=4;unicodeText='';}
+              else if('"\\/bfnrt'.includes(char))stringCharacters(JSON.parse('"\\'+char+'"'));
               else throw new ModelStreamError('content_json');
             }
           }
           else if(char==='\\'){if(keyText!==null)keyText+=char;escaped=true;}
           else if(char==='"'){
+            if(valueString)inspectString(true);
             inString=false;valueString=false;
             if(keyText!==null){
               const frame=frames.at(-1);
@@ -256,15 +266,20 @@ export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,
             }
           }else {
             if(keyText!==null)keyText+=char;
-            if(valueString)stringUnits(char.length);
+            if(valueString)stringCharacters(char);
           }
           whitespaceRun=0;
         } else if(char==='"') {
-          valueString=false;stringLength=0;unicodeRemaining=0;
+          valueString=false;stringLength=0;unicodeRemaining=0;stringText='';stringPath=null;
           if(trackStructure&&rootStarted){
             const frame=frames.at(-1);
             if(frame?.type==='object'&&frame.state==='key')keyText='';
-            else {valuePosition();valueStart();valueString=stringBounded&&frames.length>0;}
+            else {
+              valuePosition();
+              if(frame?.path)stringPath=frame.type==='array'?frame.path+'['+frame.count+']':
+                pathProperty(frame.key)?frame.path+'.'+frame.key:null;
+              valueStart();valueString=(stringBounded||inspectStrings)&&frames.length>0;
+            }
           }
           inString=true;whitespaceRun=0;
         }
@@ -317,6 +332,7 @@ export async function streamJsonResponse(response,{signal,abort,arrayLimit=null,
           else if(frames.length)valueStart();
         }
       }
+      if(valueString)inspectString(false);
       return fragment;
     };
     const frame=()=>{

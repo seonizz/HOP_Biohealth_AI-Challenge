@@ -124,7 +124,11 @@ test('unparseable response text is neither retained as a parsed candidate nor ex
     requests.push(body(options));return requests.length===1?new Response(JSON.stringify({choices:[{finish_reason:'stop',
       message:{content:'PRIVATE_UNPARSEABLE_RESPONSE'}}]})):envelope(valid);
   },{diagnosticLogger:entry=>logs.push(entry)});
-  assert.deepEqual(await generate(model),valid);assert.equal(requests.length,2);clean(requests[0]);clean(requests[1]);secretFree(logs);
+  assert.deepEqual(await generate(model),valid);assert.equal(requests.length,2);clean(requests[0]);
+  assert.equal(requests[1].rejected_output,undefined);assert.equal(requests[1].repair_task,undefined);
+  assert.deepEqual(JSON.parse(requests[1].validation_feedback),{path:'output',keyword:'jsonSyntax',
+    problem:'invalid_json',character_count:'PRIVATE_UNPARSEABLE_RESPONSE'.length});
+  assert.ok(!JSON.stringify(requests[1]).includes('PRIVATE_UNPARSEABLE_RESPONSE'));secretFree(logs);
 });
 
 test('unexpected validator exceptions stay terminal and leave no rejected candidate for a later call',async()=>{

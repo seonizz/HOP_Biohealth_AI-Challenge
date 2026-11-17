@@ -1,3 +1,4 @@
+import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -375,7 +376,7 @@ test('semantic repair retains its validated rejection pair but exhaustion clears
         assert.ok(input.stage.startsWith('turn_review'));reviews++;payload=review(input.data);
         if(reviews<=2){payload.state.approved=false;payload.state.issues=[{reason:`합성 검토 ${reviews}`,repair:'현재 원문으로 수정해 주세요.'}];}
       }
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,payload))}}]}));
     }});
   const execute=model.operation.bind(model);
   model.operation=(options,generate)=>execute(options,operation=>{recoveryStates.push(operation.recovery);return generate(operation);});
@@ -419,7 +420,7 @@ for(const basis of ['current_physical_danger','negated'])test('a new request ind
         assert.equal(input.data.safety,null);
         if(reviews<=2){payload.state.approved=false;payload.state.issues=[{reason:'합성 상태 수정',repair:'상태를 다시 살펴보세요.'}];}
       }
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,payload))}}]}));
     }});
   const execute=model.operation.bind(model);
   model.operation=(options,generate)=>execute(options,operation=>{recoveries.push(operation.recovery);return generate(operation);});
@@ -463,7 +464,7 @@ test('disabled whole-operation retries still reject after two reviews and releas
       calls++;const input=JSON.parse(JSON.parse(options.body).messages.at(-1).content);
       const payload=input.stage.startsWith('turn_draft')?draft(ctx):review(input.data);
       if(input.stage.startsWith('turn_review')){payload.state.approved=false;payload.state.issues=[{reason:'합성 거절',repair:'원문 확인'}];}
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,payload))}}]}));
     }});
   const execute=model.operation.bind(model);
   model.operation=(options,generate)=>execute(options,operation=>{recovery=operation.recovery;return generate(operation);});
@@ -481,7 +482,7 @@ test('cancelling during the last independent review releases retained source dat
       calls++;const input=JSON.parse(JSON.parse(options.body).messages.at(-1).content);
       const payload=input.stage.startsWith('turn_draft')?draft(ctx):review(input.data);
       if(input.stage.startsWith('turn_review')){payload.state.approved=false;payload.state.issues=[{reason:'합성 거절',repair:'원문 확인'}];}
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(payload)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,payload))}}]}));
     }});
   const execute=model.operation.bind(model);
   model.operation=(options,generate)=>execute(options,operation=>{recovery=operation.recovery;return generate(operation);});
@@ -522,7 +523,7 @@ test('identical cross-array unknowns share a model audit and retain distinct com
   assert.equal(model.calls.length,3);
   assert.match(prompt,/review_target\.claims에 나열된 각 id만/u);
   assert.match(prompt,/보이지 않는 다른 배열의 항목·id를 재구성하거나 추가하지 마세요/u);
-  assert.match(output.state_agent.prompt_version,/-combined-turn-v56$/);
+  assert.match(output.state_agent.prompt_version,/-combined-turn-v58$/);
 });
 
 test('rejected review history keeps all original unknown IDs and arrays after shared-audit expansion',async()=>{
@@ -828,7 +829,7 @@ function transportGateway(mode,value,{questionVerdict='supported',safetyBasis='c
       else if(stage.startsWith('question_review'))output={audits:audits(data.claims,questionVerdict)};
       else if(stage.startsWith('safety_review'))output=safetyReviewFixture(data,data.proposed_safety.urgent?safetyBasis:'unclear');
       else assert.fail('Unexpected stage: '+stage);
-      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(output)}}]}));
+      return new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(evidenceWireFixture(input,output))}}]}));
     }});
   return {model,stages,requests};
 }

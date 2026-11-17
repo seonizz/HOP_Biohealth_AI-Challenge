@@ -62,23 +62,26 @@ function referenceIds(registry) {
  */
 export function createFinalEvidenceReferenceCodec(selectionSchema,{registry}={}) {
   const schema=structuredClone(selectionSchema);
-  objectShape(schema,['observations','relationship','unknowns','safety'],'output');
+  const hasSafety=Object.hasOwn(schema.properties||{},'safety'),hasCase=Object.hasOwn(schema.properties||{},'case_formulation');
+  objectShape(schema,['observations','relationship','unknowns',...(hasSafety?['safety']:[]),...(hasCase?['case_formulation']:[])],'output');
   objectShape(schema.properties.observations,['patient','supporter'],'observations');
   objectShape(schema.properties.relationship,['label','supporter_role','dynamics','strengths','boundaries'],'relationship');
-  objectShape(schema.properties.safety,['urgent','evidence_ids'],'safety');
+  if(hasSafety)objectShape(schema.properties.safety,['urgent','evidence_ids'],'safety');
+  if(hasCase)objectShape(schema.properties.case_formulation,['findings'],'case_formulation');
   const byReference=new Map(),byId=new Map(),scopes=[],ids=referenceIds(registry);
-  for(const [group,key]of targets) {
+  for(const [group,key]of [...targets,...(hasCase?[['case_formulation','findings']]:[])]) {
     const path=group+'.'+key,rows=schema.properties[group].properties[key];
     if(rows?.type!=='array'||rows.anyOf||rows.enum)unsupported(path);
     let citations=rows;
-    if(group==='relationship') {
-      objectShape(rows.items,['interpretation','evidence','certainty'],path+'.items');
+    if(group!=='observations') {
+      objectShape(rows.items,group==='case_formulation'?['dimension','actor','source_kind','interpretation','time_scope','certainty','evidence']:
+        ['interpretation','evidence','certainty'],path+'.items');
       const certainty=rows.items.properties.certainty,allowed=key==='dynamics'?['tentative']:['reported','tentative'];
       if(certainty?.type!=='string'||!Array.isArray(certainty.enum)||certainty.enum.length!==allowed.length||
         !allowed.every(value=>certainty.enum.includes(value)))unsupported(path+'.items.certainty');
       citations=rows.items.properties.evidence;
     }
-    const leaf=citations?.items,leafPath=path+(group==='relationship'?'.items.evidence':'')+'.items';
+    const leaf=citations?.items,leafPath=path+(group!=='observations'?'.items.evidence':'')+'.items';
     if(citations?.type!=='array'||citations.anyOf||citations.enum)unsupported(leafPath);
     objectShape(leaf,fields,leafPath,true);
     // Object enums are expected only at citation leaves, so validate them below.

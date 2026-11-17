@@ -15,7 +15,7 @@ export const continuationView=row=>({id:row.id,source_record_id:row.source_recor
   status:row.state.status,messages:row.state.messages.map(publicMessage),pending:row.state.pending||null,
   summary:row.state.summary||null,cards:row.state.cards||[],safety_urgent:Boolean(row.state.safety_urgent)});
 
-export function createContinuations({store,gateway,sharedRun,subscribeRun}) {
+export function createContinuations({store,gateway,sharedRun,subscribeRun,resolveGateway=()=>gateway}) {
   const runs=new Map();
   const cancel=(owner,intakeId,reason=conflict())=>{
     for(const [key,run] of runs) if(run.owner===owner&&(intakeId===undefined||run.intakeId===intakeId)) {
@@ -25,8 +25,8 @@ export function createContinuations({store,gateway,sharedRun,subscribeRun}) {
   const cancelSession=(owner,id,reason=conflict())=>{
     for(const [key,run] of runs) if(run.owner===owner&&run.id===id) {run.controller.abort(reason);runs.delete(key);}
   };
-  const available=()=>{
-    if(typeof gateway?.continueConversation!=='function')throw new HttpError(503,'MODEL_NOT_CONNECTED','모델 연결 설정을 확인해 주세요.');
+  const available=selected=>{
+    if(typeof selected?.continueConversation!=='function')throw new HttpError(503,'MODEL_NOT_CONNECTED','모델 연결 설정을 확인해 주세요.');
   };
   async function sources(owner,row) {
     const {record,messages}=await store.continuationSources(owner,row.id,row.revision);
@@ -97,7 +97,7 @@ export function createContinuations({store,gateway,sharedRun,subscribeRun}) {
       for(const later of row.invalidated_ids||[])cancelSession(owner,later);
       return response(row);
     }
-    available();
+    available(resolveGateway(await store.record(owner,row.source_record_id)));
     if(!saved) {
       if(row.revision!==input.revision)throw conflict();
       if(row.state.pending)throw new HttpError(409,'CONTINUATION_PENDING','진행 중인 답변을 다시 시도하거나 대화를 마쳐 주세요.');
@@ -133,8 +133,9 @@ export function createContinuations({store,gateway,sharedRun,subscribeRun}) {
     const run=async runSignal=>{
       try {
         const inputSources=await sources(owner,pendingRow);
+        const selectedGateway=resolveGateway(inputSources.record);available(selectedGateway);
         runSignal.throwIfAborted();
-        const reviewed=await gateway.continueConversation(inputSources,{signal:runSignal,requestId:traceId});
+        const reviewed=await selectedGateway.continueConversation(inputSources,{signal:runSignal,requestId:traceId});
         // Validate again at the persistence boundary, including injected gateways.
         const {safety,...draft}=reviewed;
         validateContinuation(draft,continuationInput(inputSources.record,inputSources.messages));
@@ -143,16 +144,17 @@ export function createContinuations({store,gateway,sharedRun,subscribeRun}) {
         let card;
         if(action==='cards') {
           if(!draft.facts.length&&!safety.urgent)throw new HttpError(409,'NO_NEW_FACTS','새 카드에 반영할 실제 추가 상황을 먼저 들려주세요. 가정이나 질문만으로 사실을 만들지 않아요.');
-          if(typeof gateway.respond!=='function')throw new HttpError(503,'MODEL_NOT_CONNECTED','카드 생성 모델을 확인해 주세요.');
+          if(typeof selectedGateway.respond!=='function')throw new HttpError(503,'MODEL_NOT_CONNECTED','카드 생성 모델을 확인해 주세요.');
           const context=continuationCardContext(inputSources.record,inputSources.messages,draft,safety);
-          const result=await gateway.respond(context,null,{signal:runSignal,requestId:traceId});
+          const result=await selectedGateway.respond(context,null,{signal:runSignal,requestId:traceId});
           runSignal.throwIfAborted();
           if(safety.urgent&&!result.assessment.safety)throw new HttpError(502,'MODEL_INVALID_RESPONSE','현재 안전 상황을 반영한 카드를 다시 준비해 주세요.');
           card={id:randomUUID(),date:new Date().toISOString(),
             profile:{...context.profileInput,scores:{},safety:result.assessment.safety,symptoms:[],risks:[],protect:[]},
             guide:result.guide,...(result.relationship_analysis?{relationship_analysis:result.relationship_analysis}:{}),
             ...(result.conversation_detail?{conversation_detail:result.conversation_detail}:{}),
-            source_revision:pendingRow.revision,provenance:{kind:'model',model:gateway.model||'unknown',source_record_id:row.source_record_id}};
+            source_revision:pendingRow.revision,provenance:{kind:'model',model:selectedGateway.model||'unknown',source_record_id:row.source_record_id,
+              ...(inputSources.record.provenance?.model_profile_id!==undefined?{model_profile_id:inputSources.record.provenance.model_profile_id}:{})}};
         }
         row=await store.updateContinuation(owner,id,pendingRow.revision,state=>{
           runSignal.throwIfAborted();

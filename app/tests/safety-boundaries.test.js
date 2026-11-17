@@ -66,3 +66,66 @@ test('a selected danger source always restores its complete later correction',()
   assert.equal(result.urgent,false);assert.equal(result.evidence.length,2);
   assert.ok(result.evidence.some(ref=>ref.quote.includes('현재 위험은 없어요')));
 });
+
+
+test('duplicate safety-review IDs remain rejected with a precise repair diagnostic and unchanged candidate',()=>{
+  const ctx=structuredClone(cases.find(item=>item.id==='current_physical_danger').context);
+  const source=safetySources(ctx).find(row=>row.question_id==='risk');
+  const request=safetyReviewRequest(relationshipQuestionRequest(ctx),{safety_signal:{urgent:false,evidence:[]}});
+  const candidate={basis:'current_physical_danger',reason:'현재 원문의 위험을 검토했습니다.',evidence_ids:[source.id,source.id]};
+  const original=structuredClone(candidate);
+  assert.throws(()=>validateSafetyReview(candidate,ctx,request),error=>{
+    assert.equal(error.code,'MODEL_INVALID_RESPONSE');assert.equal(error.modelReason,'agent_safety_source');
+    const feedback=JSON.parse(error.modelFeedback);
+    assert.equal(feedback.path,'output.evidence_ids');assert.equal(feedback.keyword,'uniqueSafetySourceId');
+    assert.deepEqual(feedback.duplicate_ids,[source.id]);assert.ok(feedback.repair.length>0);
+    return true;
+  });
+  assert.deepEqual(candidate,original);
+});
+
+for(const [caseId,basis] of [['current_physical_danger','current_physical_danger'],['negated_current_danger','negated']])
+test(`safety-review retry receives duplicate-ID feedback and validates a fresh response: ${basis}`,async()=>{
+  const ctx=structuredClone(cases.find(item=>item.id===caseId).context);
+  const source=safetySources(ctx).find(row=>row.question_id==='risk');
+  const request=safetyReviewRequest(relationshipQuestionRequest(ctx),{safety_signal:{urgent:false,evidence:[]}});
+  const valid={basis,reason:'현재 원문의 위험·부정·시점을 독립적으로 대조했습니다.',evidence_ids:[source.id]};
+  const duplicate={...valid,evidence_ids:[source.id,source.id]},calls=[];
+  const model=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'synthetic',model:'synthetic',
+    protocol:'relationship_agent',agentFormat:'json_object',timeoutMs:0,retryFailures:false,diagnosticLogger:null,
+    fetchImpl:async(_url,options)=>{
+      const input=JSON.parse(JSON.parse(options.body).messages.at(-1).content);calls.push(input);
+      return envelope(calls.length===1?duplicate:valid);
+    }});
+  const result=await model.operation({},operation=>model.agentComplete('safety_review',request.prompt,request.data,
+    request.schema,operation,value=>validateSafetyReview(value,ctx,request)));
+  assert.equal(calls.length,2);assert.equal(calls[0].validation_feedback,undefined);
+  assert.deepEqual(calls[1].rejected_output,duplicate);
+  assert.deepEqual(calls[1].data,calls[0].data);assert.deepEqual(calls[1].output_schema,calls[0].output_schema);
+  const feedback=JSON.parse(calls[1].validation_feedback);
+  assert.equal(feedback.path,'output.evidence_ids');assert.equal(feedback.keyword,'uniqueSafetySourceId');
+  assert.deepEqual(feedback.duplicate_ids,[source.id]);
+  assert.equal(result.urgent,basis==='current_physical_danger');assert.equal(result.review.basis,basis);
+  assert.equal(result.review.reason,valid.reason);assert.ok(result.evidence.length>0);
+});
+
+for(const failure of ['duplicate','unknown','missing_current_danger_evidence'])
+test(`safety-review feedback never accepts a still-invalid response: ${failure}`,async()=>{
+  const ctx=structuredClone(cases.find(item=>item.id==='current_physical_danger').context);
+  const source=safetySources(ctx).find(row=>row.question_id==='risk');
+  const request=safetyReviewRequest(relationshipQuestionRequest(ctx),{safety_signal:{urgent:false,evidence:[]}});
+  const duplicate={basis:'current_physical_danger',reason:'현재 원문의 위험을 검토했습니다.',evidence_ids:[source.id,source.id]};
+  const later={...duplicate,evidence_ids:failure==='duplicate'?[source.id,source.id]:failure==='unknown'?['safety_not_in_current_sources']:[]};
+  const calls=[];
+  const model=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'synthetic',model:'synthetic',
+    protocol:'relationship_agent',agentFormat:'json_object',timeoutMs:0,retryFailures:false,diagnosticLogger:null,
+    fetchImpl:async(_url,options)=>{
+      calls.push(JSON.parse(JSON.parse(options.body).messages.at(-1).content));
+      return envelope(calls.length===1?duplicate:later);
+    }});
+  await assert.rejects(model.operation({},operation=>model.agentComplete('safety_review',request.prompt,request.data,
+    request.schema,operation,value=>validateSafetyReview(value,ctx,request))),{code:'MODEL_INVALID_RESPONSE',modelAttempts:3});
+  assert.equal(calls.length,3);assert.deepEqual(calls[1].rejected_output,duplicate);
+  assert.equal(JSON.parse(calls[1].validation_feedback).keyword,'uniqueSafetySourceId');
+  assert.deepEqual(calls[2].rejected_output,later);
+});

@@ -28,7 +28,7 @@ const StartScreen={
   </div>
 </section>`;},
   mount(){
-    $("go").onclick=begin;
+    $("go").onclick=()=>begin();
     $("dataPolicy").onclick=()=>{AboutScreen.open();$("data-policy").open=true;$("data-policy").scrollIntoView({block:"center"});};
     this.updRecN();
   },

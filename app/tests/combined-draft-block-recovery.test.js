@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { ModelGateway, relationshipEvidenceTransport } from '../src/model.js';
 import { runCombinedRelationshipState } from '../src/relationship-turn.js';
 import { HttpError } from '../src/errors.js';
-import { safetySources } from '../src/relationship-agent.js';
+import { safetySources, relationshipStateRequest, relationshipQuestionRequest } from '../src/relationship-agent.js';
 
 const field=(id,text)=>({id,question:id,status:'answered',text,rawText:text,custom:''});
 const context=()=>({patient:{alias:'지민',fields:{name:field('name','지민'),mood:field('mood','밤에 계획표를 고치지만 지금 해칠 생각은 없다고 말했어요.')}},
@@ -57,7 +57,7 @@ test('only three exhausted combined format failures generate four exact-schema b
   assert.deepEqual(calls.map(call=>call.stage),['turn_draft','turn_draft','turn_draft',...dispatchedBlocks.map(block=>'turn_draft_block_'+block),'turn_review','question_review','safety_review']);
   const original=calls[0],partCalls=calls.slice(3,7);
   for(const call of partCalls){
-    const block=call.data.output_block,index=blocks.indexOf(block),expected=block==='questions'?original.output_schema.properties.questions:original.output_schema.properties.state.properties[block];
+    const block=call.data.output_block,index=blocks.indexOf(block),expected=block==='questions'?relationshipQuestionRequest(ctx).schema:relationshipStateRequest(ctx,null).schema.properties[block];
     assert.deepEqual(block==='name_index'?call.output_schema.properties.name_index:call.output_schema,block==='relationship_memory'?relationshipEvidenceTransport(call.stage,expected).schema:expected);
     assert.equal(call.output_schema.type,'object');assert.equal(call.output_schema.additionalProperties,false);
     assert.equal(Object.hasOwn(call.data,'combined_output_schema'),false);assert.equal(Object.hasOwn(call.data,'failed_combined_candidate'),false);

@@ -18,6 +18,8 @@ export const context=()=>({patient:{alias:'지민',fields:{name:field('name','�
 export const analysis=()=>({observations:{patient:[ref()],supporter:[{subject:'supporter',question_id:'feeling',quote:'무력하고 걱정돼요'}]},
   relationship:{label:'자녀',supporter_role:'부모',dynamics:[{interpretation:'걱정에 응답하는 방식을 살펴볼 수 있어요.',evidence:[ref()],certainty:'tentative'}],strengths:[],boundaries:[]},
   unknowns:['대상자의 도움 의향은 미확인입니다.'],safety:{urgent:false,evidence_ids:[]}});
+export const caseDetail=()=>({findings:[{dimension:'behavior',actor:'patient',source_kind:'reported_observation',
+  interpretation:'이용자는 대상자가 밤에 계획표를 고친다고 보고했습니다.',time_scope:'unclear',certainty:'reported',evidence:[ref()]}]});
 export const plan=()=>({voice:'부모가 자녀에게 건네는 말',opening_evidence:[ref()],user_intent:'이해하고 싶어요',patient_choice:'원할 때 이야기해 주세요.',
   supporter_care:['자신의 휴식도 살펴보세요.'],avoid_patterns:['재촉 대신 허락 구하기'],next_step:'다음 대화 시간을 함께 정하기'});
 export const avoid={avoid_phrase:'재촉하는 말.',reason:'대답할 여유를 남겨야 합니다.',alternative:'편한 시간을 물어보세요.'};
@@ -33,11 +35,12 @@ export const audits=claims=>(claims||[]).map(claim=>({id:claim.id,
 export const envelope=value=>new Response(JSON.stringify({choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}]}));
 
 export function fixture({reuseFinalDraft=true,compactReviewInputs=false,scopedQualityRefinement=false,bundleFinalReviews=true,
-  shareReviewSources=false,repairReviewBundleTasks=false,extendedFinalEvidenceIds=false,bundleAnalysisPlan=false,compactReviewOutput=false,ctx=context(),validGuide=guide(),response:override,httpOverride,wireOverride}={}) {
+  shareReviewSources=false,repairReviewBundleTasks=false,extendedFinalEvidenceIds=false,bundleAnalysisPlan=false,compactReviewOutput=false,prioritizeSpeechPreview=false,
+  detailedCardAnalysis=false,caseFormulation=caseDetail(),ctx=context(),validGuide=guide(),response:override,httpOverride,wireOverride}={}) {
   const requests=[],responses=[],events=[],logicalRequests=[],originals=new Map();
   const gateway=new ModelGateway({baseUrl:'https://synthetic.invalid/v1',apiKey:'synthetic-key',model:'synthetic-model',
     protocol:'relationship_agent',agentFormat:'prompt',reasoningEffort:'omit',stateMode:'combined',reuseFinalDraft,compactReviewInputs,scopedQualityRefinement,bundleFinalReviews,
-    shareReviewSources,repairReviewBundleTasks,extendedFinalEvidenceIds,bundleAnalysisPlan,compactReviewOutput,
+    shareReviewSources,repairReviewBundleTasks,extendedFinalEvidenceIds,bundleAnalysisPlan,compactReviewOutput,prioritizeSpeechPreview,detailedCardAnalysis,
     timeoutMs:0,retryFailures:false,diagnosticLogger:null,fetchImpl:async (_url,request)=>{
       const body=JSON.parse(request.body),input=JSON.parse(body.messages.at(-1).content);
       requests.push({body,input:structuredClone(input)});
@@ -72,6 +75,9 @@ export function fixture({reuseFinalDraft=true,compactReviewInputs=false,scopedQu
       else if(/^speech_detail(?:_|$)/u.test(stage))payload={opening_end:1,listening_end:data.script_units.length-1,
         ...Object.fromEntries(['opening','listening','offer'].map(key=>[key,{why:'보고한 행동을 되짚으며 듣고 싶다는 뜻을 전하는 제안이에요.',evidence:[ref()]}]))};
       else assert.fail('Unexpected stage '+stage);
+      if(schema.properties?.case_formulation)payload.case_formulation=structuredClone(caseFormulation);
+      if(stage==='final_analysis_plan_draft'&&schema.properties.analysis.properties.case_formulation)
+        payload.analysis.case_formulation=structuredClone(caseFormulation);
       const replaced=await override?.(task,body,payload);
       return replaced===undefined?payload:replaced;
       };

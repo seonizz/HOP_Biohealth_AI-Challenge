@@ -15,6 +15,7 @@ const localModelDefaults = {
   MODEL_SCHEMA_STRING_LIMITS:'false',
   MODEL_TIMEOUT_MS:'0',
   MODEL_DISCOVER_TOKEN_LIMITS:'true',
+  MODEL_SELECTION_ENABLED:'true',
 };
 const options = Object.create(null);
 const args = process.argv.slice(2);

@@ -44,7 +44,7 @@ test('writer, delegated reviewer and classifier share one operation but distinct
   assert.doesNotMatch(JSON.stringify(records),/private-key|127\.0\.0\.1|synthetic/);
 });
 
-test('restarts and repairs retain operation counts without introducing a deadline or restart cap',async()=>{
+test('a bounded restart and repairs retain operation counts with an explicitly disabled deadline',async()=>{
   const records=[];let count=0;
   const gateway=make(records,async()=>{if(++count<=3)return new Response('busy',{status:503,headers:{'Retry-After':'0'}});return response();});
   gateway.retryFailures=true;gateway.retryDelayMs=1;

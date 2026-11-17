@@ -6,14 +6,15 @@ const controls = ['answered', 'unknown', 'skipped', 'refused', 'not_understood',
 const controlText = { unknown:'잘 모르겠어요', skipped:'(건너뛰었어요)', refused:'이 내용은 답하지 않을게요', not_understood:'질문을 이해하기 어려워요', stop:'여기까지 할게요' };
 
 export function initializeV3(state) {
-  state.v3 ||= { issued:{}, input_revision:0, goal_epoch:0, stopped:false, reports:[] };
+  state.v3 ||= { issued:{}, input_revision:0, goal_epoch:0, stopped:false, reports:[],
+    personalization:{version:1, questions:{}, presentations:{}, answer_order:[], progress:0} };
   return state.v3;
 }
 
 export function issueV3(state, question) {
   const progress = initializeV3(state);
   if (!progress.issued[question.id]) {
-    if (Object.keys(progress.issued).length >= 10) fail('QUESTION_BUDGET_EXHAUSTED', '안내 질문을 모두 확인했어요.');
+    if (Object.keys(progress.issued).length >= (progress.personalization?.version === 1 ? 12 : 10)) fail('QUESTION_BUDGET_EXHAUSTED', '안내 질문을 모두 확인했어요.');
     progress.issued[question.id] = { instance_id:`${state.questionSet.bundle_id}:${question.id}:1`, help_displays:0 };
   }
   return progress.issued[question.id];
@@ -61,8 +62,9 @@ export function v3ClarificationAvailable(state) {
 }
 
 function sourceForBinding(state, binding) {
-  const question = state.questionSet.questions.find(q => q.id === binding.source_question_id);
-  const answer = state.ans[binding.source_question_id];
+  const question = state.questionSet.questions.find(q => q.id === binding.source_question_id) ||
+    state.v3?.personalization?.questions?.[binding.source_question_id]?.question;
+  const answer = state.ans[binding.source_question_id] || state.clarificationAnswers?.[binding.source_question_id];
   if (!question || !answer || v3FieldStatus(answer) !== 'answered' || answer.response_event === 'unknown' ||
       !Number.isInteger(binding.source_revision) || binding.source_revision < 1 ||
       answer.source_revision !== binding.source_revision || !['rawText','custom'].includes(binding.component)) {

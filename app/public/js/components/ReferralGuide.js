@@ -1,6 +1,6 @@
 // 불씨는 대화가 끝난 결과 화면에서 원문과 서버의 등록 문구를 표시해요.
 const ReferralGuide={
-  sequence:0,key:null,root:null,screen:null,data:null,retry:null,controller:null,
+  sequence:0,key:null,root:null,screen:null,data:null,retry:null,controller:null,pendingRequest:null,
   mount(){
     if(this.root)this.root.remove();
     this.root=document.createElement("aside");this.root.id="referralGuide";this.root.className="referral-guide";this.root.hidden=true;
@@ -11,7 +11,7 @@ const ReferralGuide={
     input?.addEventListener("click",event=>{if(event.target.closest("button"))edit();},true);
     this.navigate($("chat")?.hidden?"start":"chat");
   },
-  invalidate(){this.controller?.abort();this.controller=null;this.sequence++;this.key=null;this.data=null;this.retry=null;if(this.root){this.root.hidden=true;this.root.textContent="";}},
+  invalidate(){this.controller?.abort();this.controller=null;this.pendingRequest=null;this.sequence++;this.key=null;this.data=null;this.retry=null;if(this.root){this.root.hidden=true;this.root.textContent="";}},
   navigate(screen){
     this.screen=screen;
     if(!this.root)return;
@@ -36,13 +36,25 @@ const ReferralGuide={
   async observe(view,{retry=false}={}){
     if(this.screen!=="result"||!this.eligible(view)){this.invalidate();return;}
     view={...view}; // Result preparation can advance the shared conversation revision.
+    if(retry){
+      const sequence=this.sequence;
+      let finishing;
+      while(typeof pendingConversationFinish==="function"&&(finishing=pendingConversationFinish(view))){
+        try{await finishing;}catch{ /* The result flow owns its error display. */ }
+        if(!this.current(view,sequence))return;
+      }
+      if(!this.current(view,sequence))return;
+    }
     const key=`${view.id}:${view.revision}`;
-    if(this.key===key&&!retry)return;
+    if(this.key===key&&!retry)return this.pendingRequest;
     this.invalidate();this.key=key;
     const controller=typeof AbortController==="function"?new AbortController():null;this.controller=controller;
     const sequence=this.sequence;
+    let request;
     try{
-      const data=await API.request(`/api/intakes/${encodeURIComponent(view.id)}/guidance`,{method:"POST",body:{revision:view.revision},...(controller?{signal:controller.signal}:{})});
+      request=API.request(`/api/intakes/${encodeURIComponent(view.id)}/guidance`,{method:"POST",body:{revision:view.revision},...(controller?{signal:controller.signal}:{})});
+      this.pendingRequest=request;
+      const data=await request;
       if(!this.current(view,sequence))return;
       if(data?.revision!==view.revision)return;
       if(typeof data.guidance?.message!=="string")throw new Error("Invalid guidance");
@@ -50,7 +62,7 @@ const ReferralGuide={
     }catch(error){
       if(controller?.signal.aborted||!this.current(view,sequence)||error.status===404||error.status===409&&["REVISION_CONFLICT","REFERRAL_INPUT_PENDING"].includes(error.code))return;
       this.drawUnavailable(()=>this.observe(view,{retry:true}));
-    }finally{if(this.controller===controller)this.controller=null;}
+    }finally{if(this.controller===controller)this.controller=null;if(this.pendingRequest===request)this.pendingRequest=null;}
   },
   node(tag,className,text){
     const node=document.createElement(tag);node.className=className;

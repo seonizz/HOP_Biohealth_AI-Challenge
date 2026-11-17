@@ -6,6 +6,7 @@ import {ModelGateway} from '../src/model.js';
 import {HttpError} from '../src/errors.js';
 import {groundedEvidenceSchema,relationshipSelectionSchema,validateSchema} from '../src/relationship-agent.js';
 import {evidenceWireFixture} from './evidence-wire.fixture.js';
+import {cardCaseFormulationSchema} from '../src/card-case-formulation.js';
 const stage='relationship_analysis';
 const ref=(subject='patient',question_id='mood',quote='PRIVATE_원문 그대로. 조건과 정정도 보존.')=>({subject,question_id,quote});
 const field=ref=>({id:ref.question_id,question:ref.question_id,status:'answered',rawText:ref.quote,text:ref.quote,custom:''});
@@ -19,6 +20,30 @@ function fixture(){
     strengths:[{interpretation:'가능한 해석: 다른 근거를 살펴볼 수 있어요.',evidence:[other],certainty:'tentative'}],boundaries:[]},unknowns:[],safety:{urgent:false,evidence_ids:[]}};
   return {schema,value,context,patient,other,supporter};
 }
+for(const detailed of [false,true])test('reviewed safety omission retains lossless final evidence transport, detailed='+detailed,()=>{
+ const {schema,value,context,patient}=fixture();
+ delete schema.properties.safety;schema.required=schema.required.filter(key=>key!=='safety');delete value.safety;
+ if(detailed){
+  schema.properties.case_formulation=groundedEvidenceSchema(cardCaseFormulationSchema,context);schema.required.push('case_formulation');
+  value.case_formulation={findings:[{dimension:'behavior',actor:'unclear',source_kind:'reported_observation',
+   interpretation:'보고한 행동 원문입니다.',time_scope:'unclear',certainty:'reported',evidence:[patient]}]};
+ }
+ const before=structuredClone({schema,value}),transport=finalEvidenceTransport(stage,schema);
+ assert.ok(transport,'independently reviewed safety must not disable citation encoding');
+ const wire=evidenceWireFixture({output_schema:transport.schema,evidence_sources:transport.table},value);
+ assert.equal(typeof wire.observations.patient[0],'string');assert.equal('safety' in wire,false);
+ if(detailed){
+  assert.equal(wire.case_formulation.findings[0].evidence[0],wire.observations.patient[0]);
+  assert.equal(wire.case_formulation.findings[0].interpretation,value.case_formulation.findings[0].interpretation);
+  assert.ok(transport.table.locations.some(row=>row.schema_path.includes('case_formulation')));
+ }
+ assert.deepEqual(transport.decode(wire),value);assert.deepEqual({schema,value},before);
+ const invalid=structuredClone(wire);invalid.safety={urgent:false,evidence_ids:[]};
+ assert.throws(()=>transport.decode(invalid),{code:'MODEL_INVALID_RESPONSE'});
+ if(detailed){invalid.case_formulation.findings[0].evidence=['missing'];delete invalid.safety;
+  assert.throws(()=>transport.decode(invalid),{code:'MODEL_INVALID_RESPONSE'});}
+});
+
 for(const selectedStage of [stage,'analysis_repair','analysis_repair_after_guide_review'])test('final codec exact roundtrip and global dedup with node allowlists: '+selectedStage,()=>{
   const {schema,value}=fixture(),before=structuredClone({schema,value}),transport=finalEvidenceTransport(selectedStage,schema),codec=createFinalEvidenceReferenceCodec(schema);
   assert.ok(transport);const wire=codec.encode(value);assert.deepEqual(transport.decode(wire),value);

@@ -61,7 +61,8 @@ export function finalEvidenceTransport(stage,originalSchema,{extended=false,regi
     return transportFor(codec,originalSchema,codec.locations,extendedInstruction);
   }
   const paths=[['observations','patient'],['observations','supporter'],
-    ['relationship','dynamics'],['relationship','strengths'],['relationship','boundaries']];
+    ['relationship','dynamics'],['relationship','strengths'],['relationship','boundaries'],
+    ...(originalSchema.properties?.case_formulation?[['case_formulation','findings']]:[])];
   const nodes=paths.map(([group,key])=>{
     const rows=originalSchema.properties?.[group]?.properties?.[key];
     return group==='observations'?rows?.items:rows?.items?.properties?.evidence?.items;

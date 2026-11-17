@@ -1,19 +1,19 @@
 # 말씨 앱 실행
 
-현재 앱은 임시 테스트용 native Ollama `gemma4:12b`와 `relationship_agent`를 사용합니다. 최종 목표는 31B이며 [모델 진행 방향](../docs/current/현황과_할일.md#모델-진행-방향)을 따릅니다. 이 문서는 설치·환경 설정의 기준 문서입니다.
+현재 앱은 `relationship_agent` 프로토콜을 사용하며 `/admin/models`에서 12B·31B 연결과 질문 실행 방식을 설정합니다. 기본 질문 처리는 단독 범용 모델 1회이며 최종 카드 생성·검토는 별도입니다. 이 문서의 설치 예시는 로컬 Ollama `gemma4:12b`를 사용합니다. [최근 변경과 실모델 검증 한계](docs/RECENT_CHANGES_2026-11-17.md)를 함께 확인하세요.
 
 [프로젝트 홈](../README.md) · [통합 실행·검증](../docs/current/실행과_검증.md) · [현황과 할 일](../docs/current/현황과_할일.md)
 
-새 대화는 [v3 질문 계약](docs/QUESTIONS.md)의 기본 9문항과 조건부 확인 1문항을 사용합니다. 이전 대화의 질문과 기록은 당시 스냅샷으로 보존합니다.
+새 대화는 [v3 질문 계약](docs/QUESTIONS.md)의 기본 9문항·조건부 확인 1문항·맞춤 추가 최대 2문항을 사용합니다. 전부 필수로 묻는 목록이 아니며 목적과 앞선 답변에 따라 생략합니다. 이전 대화의 질문과 기록은 당시 스냅샷으로 보존합니다.
 
-2026-11-14 기준 버전 식별자는 다음과 같습니다. 질문셋의 `v3`는 앱 패키지나 모델 크기의 버전이 아닙니다.
+2026-11-17 기준 버전 식별자는 다음과 같습니다. 질문셋의 `v3`는 앱 패키지나 모델 크기의 버전이 아닙니다.
 
 | 대상 | 현재 식별자 | 기준 |
 | --- | --- | --- |
 | 새 대화 질문셋 | `malssi-intake-3.0.0-rc1` | `seeds/questionnaire-v3/bundle.json` |
 | 앱 npm 패키지 | `0.1.0` | `package.json` |
 | 관계 프롬프트 | `relationship-v3.28-speech-detail-review` | `src/relationship-prompts.js` |
-| 통합 턴 | 위 프롬프트 + `-combined-turn-v56` | `src/relationship-turn.js` |
+| 통합 턴 | 위 프롬프트 + `-combined-turn-v58` | `src/relationship-turn.js` |
 
 질문셋 원본은 참조 후보판이며 운영 승인·안정판 선언은 아닙니다. 앱 적용과 실제 생성·DB 저장의 확인 범위는 [v3 검증 기록](docs/QUESTIONNAIRE_V3_VERIFICATION.md)에서 실행별로 구분합니다.
 

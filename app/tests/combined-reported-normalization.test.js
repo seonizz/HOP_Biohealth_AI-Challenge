@@ -1,3 +1,4 @@
+import {evidenceWireFixture} from './evidence-wire.fixture.js';
 import {safetyReviewFixture} from './helpers/safety-review.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -52,13 +53,16 @@ for(const subject of ['patient','supporter'])test('two reported rows and one hyp
 
 for(const subject of ['patient','supporter'])test('streaming preserves the existing three-row representation exception: '+subject,async()=>{
   const f=fixture(subject),calls=[];
+  // The wire writer selects an exact allowed citation; partial literal citation
+  // normalization remains covered by the direct-validator cases above.
+  f.rows[1].evidence=[f.full];
   const model=new ModelGateway({baseUrl:'http://127.0.0.1:11434/v1',apiKey:'synthetic',model:'synthetic',
     protocol:'relationship_agent',agentFormat:'prompt',streamJson:true,retryFailures:false,timeoutMs:0,diagnosticLogger:null,
     fetchImpl:async(_url,options)=>{
       const data=JSON.parse(JSON.parse(options.body).messages.at(-1).content);calls.push(data.stage);
       if(data.stage==='turn_draft')assert.equal(data.output_schema.properties.state.properties.relationship_memory.properties[subject].maxItems,2);
       const value=data.stage==='turn_draft'?f.value:approve(data.data);
-      return new Response('data: '+JSON.stringify({choices:[{index:0,delta:{content:JSON.stringify(value)},finish_reason:null}]})+
+      return new Response('data: '+JSON.stringify({choices:[{index:0,delta:{content:JSON.stringify(evidenceWireFixture(data,value))},finish_reason:null}]})+
         '\n\ndata: '+JSON.stringify({choices:[{index:0,delta:{},finish_reason:'stop'}]})+'\n\ndata: [DONE]\n\n',
         {headers:{'content-type':'text/event-stream'}});
     }});

@@ -58,6 +58,8 @@ export function continuationCardContext(record, messages, reviewed, safety) {
   context.agent_state=null; context.relationship_state=null;
   delete context.safety_signal; delete context.safety_review_required;
   context.latest_answer=null; context.question_candidates=[]; context.clarification_candidates=[];
+  if (context.personalization) context.personalization.available=false;
+  if (context.personalization_candidates) context.personalization_candidates=[];
   // Preserve the current communication task without promoting questions or
   // hypothetical situations into factual evidence for the new cards.
   const request=messages.findLast(message=>message.role==='user'&&!message.skipped&&message.text?.trim());
@@ -107,6 +109,44 @@ export function continuationCardContext(record, messages, reviewed, safety) {
       }
       for (const subject of ['patient','supporter']) if (context[subject]?.fields) delete context[subject].fields.q3_10;
       context.payload.answers=context.payload.answers.filter(answer=>answer.id!=='q3_10');
+    }
+  }
+  // Generated follow-up prompts are bound to the exact original report. A
+  // correction removes dependent answers transitively, never just their parent.
+  const invalidated = new Set(removed.map(source=>source.question_id));
+  if (context.clarification_state?.status === 'obsolete') invalidated.add('q3_10');
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const entry of context.personalization?.history || []) {
+      const decision = entry.decision || entry;
+      if (!invalidated.has(decision.source_question_id)) continue;
+      const newlyInvalidated = !invalidated.has(entry.id);
+      entry.status = 'obsolete';
+      if (decision.kind !== 'follow_up') {
+        for (const subject of subjects) {
+          const field = context[subject]?.fields?.[entry.id];
+          if (field?.canonical_question) field.question = field.canonical_question;
+        }
+        for (const answer of context.payload.answers) {
+          if (answer.id === entry.id && answer.canonical_question) answer.question = answer.canonical_question;
+        }
+        continue;
+      }
+      invalidated.add(entry.id);
+      for (const subject of subjects) if (context[subject]?.fields) delete context[subject].fields[entry.id];
+      context.payload.answers = context.payload.answers.filter(answer=>answer.id !== entry.id);
+      if (context.profileInput?.answers) delete context.profileInput.answers[entry.id];
+      if (newlyInvalidated) changed = true;
+    }
+    const clarification = context.clarification_state;
+    if (clarification && clarification.status !== 'obsolete' && invalidated.has(clarification.binding.source_question_id)) {
+      clarification.status = 'obsolete';
+      delete clarification.assignment;
+      invalidated.add('q3_10');
+      for (const subject of subjects) if (context[subject]?.fields) delete context[subject].fields.q3_10;
+      context.payload.answers = context.payload.answers.filter(answer=>answer.id !== 'q3_10');
+      changed = true;
     }
   }
   for (const [index,fact] of reviewed.facts.entries()) {

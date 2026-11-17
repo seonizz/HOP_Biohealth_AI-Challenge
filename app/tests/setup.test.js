@@ -13,7 +13,7 @@ const local = {
   MODEL_BASE_URL:'http://127.0.0.1:11434/v1', MODEL_API_KEY:'local-ollama', MODEL_NAME:'gemma4:12b',
   MODEL_PROTOCOL:'relationship_agent', MODEL_STATE_MODE:'combined_blocks', MODEL_AGENT_FORMAT:'json_schema',
   MODEL_REASONING_EFFORT:'none', MODEL_STREAM_JSON:'true', MODEL_STREAM_COMPLETE_JSON:'true', MODEL_SCHEMA_STRING_LIMITS:'false',
-  MODEL_TIMEOUT_MS:'0', MODEL_DISCOVER_TOKEN_LIMITS:'true',
+  MODEL_TIMEOUT_MS:'0', MODEL_DISCOVER_TOKEN_LIMITS:'true', MODEL_SELECTION_ENABLED:'true',
 };
 const legacy = {
   MODEL_BASE_URL:'http://127.0.0.1:18080/v1',

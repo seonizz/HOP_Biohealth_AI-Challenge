@@ -9,9 +9,9 @@ import { COMMON, STATE_REVIEW, PROMPT_VERSION } from './relationship-prompts.js'
 import { claimsOf, auditSchema, validateAuditCoverage, validateAudits } from './grounding-audit.js';
 import { literalStateRepairSchema, literalStateRepairInstruction } from './relationship-state-repair.js';
 import { scopedBlockInput, scopedBlockPrompt, reviewedNameInput, REVIEWED_NAME_PROMPT, reviewedSafetyRequest } from './turn-input-scope.js';
-import { finalReviewBundle } from './final-review-bundle.js';
+import { finalReviewBundle, reviewSourceTransport } from './final-review-bundle.js';
 
-export const TURN_PROMPT_VERSION = PROMPT_VERSION + '-combined-turn-v56';
+export const TURN_PROMPT_VERSION = PROMPT_VERSION + '-combined-turn-v58';
 
 const object = properties => ({ type:'object', properties, required:Object.keys(properties), additionalProperties:false });
 const absent = {type:'null'};
@@ -70,7 +70,8 @@ function draftPrompt(state,questions,block=null,stageScopedQuestionRules=false) 
     ?'이름 추출 블록만 작성하세요. 최상위 키는 name_index 하나이며 그 값은 output_schema가 허용하는 이름 객체 또는 null입니다. 다른 블록·state 부모·설명은 출력하지 마세요.'
     :`전체 초안의 ${block} 블록 값만 작성하세요. 최상위 키는 ${blockKeys.join(', ')}입니다. 이 키들을 ${block} 또는 state라는 바깥 키로 다시 감싸지 마세요. output_schema에 맞는 객체 하나만 출력하세요.`)+
     ' 아래 state/questions 경로 규칙은 서버가 나중에 조합할 전체 초안을 설명하며 이번 응답의 바깥 키가 아닙니다.'):
-    '한 번의 요청에서 상태 기록과 질문 진행 초안을 함께 작성하세요. 최상위 키는 state와 questions입니다. state에는 patient_state,name_index,relationship_memory만 넣고 questions는 state 밖의 형제 키로 반환하세요.';
+    '한 번의 요청에서 상태 기록과 질문 진행 초안을 함께 작성하세요. 최상위 키는 state와 questions입니다. state에는 patient_state,name_index,relationship_memory만 넣고 questions는 state 밖의 형제 키로 반환하세요.'+
+    (questions?` questions는 배열이 아니라 ${Object.keys(questions.schema.properties).join(', ')} 키를 모두 포함하는 객체입니다. 생략 제안 배열은 questions.skip 안에만 넣고 questions 전체를 그 배열로 대체하지 마세요. 각 필드의 판단은 question_input 원문과 output_schema에 따라 작성하고 누락된 판단을 기본값으로 채우지 마세요.`:'');
   return COMMON+'\n'+contract+`
 shared_input을 각 *_input과 합쳐 읽되 retrieval은 해당 입력의 허용 범위만 사용하세요.
 patient/supporter/user_goal에는 현재까지의 원문·직접 입력·후속 답변이 보존되어 있습니다. 이전 모델의 요약·선택 목록·가설·미확인 문구는 초안의 입력 예시로 제공하지 않습니다. 전체 현재 원문에서 현재 필요한 근거와 중요한 미확인 범위를 새로 선택하고 출력 스키마의 배열 상한을 지키세요. 이름은 name_index에서 보존하므로 facts에 이름·관계·연락 빈도를 빠짐없이 나열할 필요는 없습니다. 현재 retrieval 범위 밖의 인용은 선택하지 마세요.
@@ -84,12 +85,13 @@ patient/supporter의 최신 answered 원문·후속 답변에 상태·관계 해
 아래 상태 규칙의 patient_state, name_index, relationship_memory는 출력 state 내부입니다. state_input의 전체 원문을 기준으로 작성하고 그 retrieval에 포함된 근거만 선택하세요.
 `+rules+(questions?(stageScopedQuestionRules&&['patient_state','name_index','relationship_memory'].includes(block)?'':`
 아래 질문 진행 규칙의 skip, clarify, safety는 출력 questions 내부입니다. question_input의 전체 원문과 후보를 기준으로 작성하고 그 retrieval에 포함된 근거만 선택하세요. 두 retrieval의 허용 근거를 섞지 마세요.
+현재 질문 객체의 전체 키는 ${Object.keys(questions.schema.properties).join(', ')}이며 각 필드는 output_schema를 따르세요.
 ${questions.data.bundle_id==='malssi-intake-3.0.0-rc1'?'questions.clarify는 [] 또는 원문·revision·한 사건·한 축에 묶인 객체 하나입니다. clarification_available=false이면 반드시 []입니다. true여도 해당 확인이 요청 결과에 필요하지 않거나 원문에 이미 답이 있으면 []입니다. clarification_candidates가 비어 있다는 사실은 이 판본의 객체 확인을 금지하는 조건이 아닙니다.':'questions.clarify에 선택할 추가 확인이 없으면 []입니다. clarification_candidates가 비었으면 반드시 []로 반환하세요. 이때 output_schema의 enum에 있는 "none"은 빈 후보를 표현하는 자리표시자이며 실제 선택지가 아니므로 ["none"]을 출력하지 마세요. 후보가 있어도 추가 확인이 불필요하면 []입니다.'}
 `+withoutCommon(questions.prompt)):'\n이번 요청은 질문 진행 판단을 하지 않습니다. questions는 null입니다.')+`
 들여쓰기·코드블록 없는 한 줄 JSON만 출력하세요. 자유 문구는 짧게, unknowns/가설은 현재 중요한 것만 쓰세요. 일반적 정보 부족으로 목록을 채우지 말되 원문의 모름·거절·상충과 필수 필드·인용·정정은 보존하세요. 스스로 승인하지 마세요. 독립 검토는 다음 요청에서 합니다.
 검토 후 수정 요청이면 마지막으로 review.state.audits의 unsupported 항목을 rejected_draft.claims의 같은 id와 대조하세요. 인용 부족이라는 지적은 문장의 말투만 바꿔 해결하지 않습니다. 해당 문장에 남길 각 주장에 맞는 실제 원문을 허용된 evidence 후보에서 다시 선택하거나, 문장을 선택한 인용이 지지하는 범위로 좁히세요. 전체 입력의 다른 곳에 사실이 있어도 현재 finding의 evidence에 빠져 있으면 그 주장의 근거가 아닙니다. repair 예문의 문장만 복사하고 거절된 evidence를 그대로 두지 마세요. 직접 보고를 반복하는 항목은 reported 규칙을 따르고 추론을 새 사실로 바꾸지 마세요. 각 지적을 현재 원문과 대조해 수정한 뒤 기존 독립 검토를 다시 받아야 합니다.`+(block?`
 generated_blocks는 승인되지 않은 모델 출력이며 사실이나 출력 예시가 아닙니다. 현재 전체 원문과 output_schema로 대조하세요. ${block==='name_index'?'이번 응답은 name_index 키 하나를 가진 객체입니다.':`이번 응답의 최상위 키는 ${blockKeys.join(', ')}이며 ${block} 바깥 키는 쓰지 않습니다.`} 누락된 배열이나 의미를 서버가 채워주지 않습니다.`:'')+(block==='questions'?`
-형식을 재작성하더라도 question_input의 각 후보 질문과 원문을 다시 대조하세요. JSON 형식이 실패했다는 이유만으로 근거 있는 생략·추가 확인 선택을 빈 배열로 바꾸지 마세요. 이미 답한 범위는 already_covered로 판단하되, 원문이 뒷받침하지 않는 선택은 유지하거나 새로 만들지 마세요. 판단 결과만 올바른 skip, clarify, safety 구조에 담고 독립 검토를 받으세요.`:'');
+형식을 재작성하더라도 question_input의 각 후보 질문과 원문을 다시 대조하세요. JSON 형식이 실패했다는 이유만으로 근거 있는 생략·추가 확인 선택을 빈 배열로 바꾸지 마세요. 이미 답한 범위는 already_covered로 판단하되, 원문이 뒷받침하지 않는 선택은 유지하거나 새로 만들지 마세요. 판단 결과만 output_schema의 질문 구조에 담고 독립 검토를 받으세요.`:'');
 }
 
 function blockRevisionTargets(block,input) {
@@ -158,17 +160,19 @@ async function requestReusableSafetyReview(gateway,context,request,operation,suf
     {retryFailures:false,parentOperation:operation});
 }
 
-async function generateDraftBlocks(gateway,state,questions,input,schema,operation,suffix,literalState,feedback,feedbackBlock,stages,context,contextKey,nameReuse) {
+async function generateDraftBlocks(gateway,state,questions,input,schema,operation,suffix,literalState,feedback,feedbackBlock,stages,context,contextKey,nameReuse,initialState) {
   const parts={},validated={},stateStages=[],questionStages=[];
   const recovery=operation.recovery;
   const retained=recovery?.combinedBlocks;
-  // Only blocks validated before cancellation can survive a structural failure.
+  // Only blocks validated before cancellation can survive a recoverable failure.
   // Exact inputs include the repair phase and each state's generated predecessors;
   // questions depend solely on the original inputs, never on generated state.
   const cached=retained?.contextKey===contextKey&&retained.requestId===operation.requestId&&
     !operation.controller?.signal.aborted?retained.blocks:{};
   if(recovery)delete recovery.combinedBlocks;
-  const scopedRules=gateway.stateMode==='combined_blocks'&&gateway.stageScopedQuestionRules===true;
+  // This function is also the combined mode's capacity/format fallback.
+  // Apply the same opted-in block boundaries once either mode reaches it.
+  const scopedRules=gateway.stageScopedQuestionRules===true;
   const scopedInputs=scopedRules&&gateway.blockScopedInputs===true;
   const generateBlock=async(block,branchOperation,blockStages)=>{
     branchOperation.controller?.signal.throwIfAborted();
@@ -182,7 +186,7 @@ async function generateDraftBlocks(gateway,state,questions,input,schema,operatio
     const normalizedName=block==='name_index'&&gateway.stateMode==='combined_blocks'&&gateway.reuseReviewedName===true;
     const basePrompt=draftPrompt(state,questions,block,scopedRules);
     const prompt=(normalizedName?REVIEWED_NAME_PROMPT:scopedInputs?scopedBlockPrompt(block,basePrompt):basePrompt)+
-      (literalState?literalStateRepairInstruction({combined:true}):'')+
+      (literalState&&(!scopedInputs||block!=='questions')?literalStateRepairInstruction({combined:true}):'')+
       (revisionTargets.length?BLOCK_REVISION_INSTRUCTION:'');
     const payload={
       ...(normalizedName?reviewedNameInput(context,input):scopedInputs?scopedBlockInput(block,input):input),output_block:block,
@@ -199,6 +203,14 @@ async function generateDraftBlocks(gateway,state,questions,input,schema,operatio
       if(normalizedName)validateNameIndex(value.name_index,context);
       return structuredClone(wrapped?value.name_index:value);
     };
+    // A malformed question container does not invalidate an independently
+    // source-validated state draft. Retain only that exact draft with this
+    // request's cache key; approval still requires the fresh review below.
+    if(block!=='questions'&&initialState) {
+      const raw=structuredClone(initialState[block]),value=validateBlock(wrapped?{name_index:raw}:raw);
+      validated[block]={key:cacheKey,value:structuredClone(value),sourceStage:'turn_draft'+suffix};
+      return value;
+    }
     // No inference or cross-turn cache is needed when null is the sole value
     // allowed by the current name schema. Still use the block and full-state
     // validators, and do not report this constant as a model generation stage.
@@ -206,7 +218,7 @@ async function generateDraftBlocks(gateway,state,questions,input,schema,operatio
       return validateBlock({name_index:null});
     }
     try {
-      let value,reusedName=false;
+      let value,reusedName=false,sourceStage;
       // Rejected/repair work never mints a reusable approval. The current
       // whole-state independent review still runs after an eligible hit.
       const nameRequest={stage,prompt,payload,schema:blockSchema};
@@ -226,6 +238,7 @@ async function generateDraftBlocks(gateway,state,questions,input,schema,operatio
       }else if(cached?.[block]?.key===cacheKey){
         const retainedValue=structuredClone(cached[block].value);
         value=validateBlock(wrapped?{name_index:retainedValue}:retainedValue);
+        sourceStage=cached[block].sourceStage;
       }else value=await gateway.agentComplete(stage,prompt,payload,blockSchema,branchOperation,validateBlock);
       branchOperation.controller?.signal.throwIfAborted();
       const nameAttempts=(branchOperation.metrics?.families?.get('writer:turn_name_index')??0)-nameAttemptsBefore;
@@ -234,8 +247,8 @@ async function generateDraftBlocks(gateway,state,questions,input,schema,operatio
       if(nameKey&&(reusedName||nameAttempts===1)&&
         nameKey===reviewedRequestFingerprint(gateway,nameRequest,branchOperation.tokenPolicy,NAME_REUSE_VERSION))
         nameReuse.entry={version:NAME_REUSE_VERSION,fingerprint:nameKey,name_index:structuredClone(value),reused:reusedName};
-      validated[block]={key:cacheKey,value:structuredClone(value)};
-      blockStages.push(stage);
+      validated[block]={key:cacheKey,value:structuredClone(value),...(sourceStage?{sourceStage}:{})};
+      if(!blockStages.includes(sourceStage||stage))blockStages.push(sourceStage||stage);
       return value;
     } catch(error) {
       // Paths in a block validator start at output, not the full draft root.
@@ -261,9 +274,10 @@ async function generateDraftBlocks(gateway,state,questions,input,schema,operatio
   } catch(error) {
     // Siblings are drained before recording recovery. Never retain a late result
     // or let a sibling's cancellation replace the first structural failure.
-    if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&recovery&&
-      !operation.controller?.signal.aborted&&
-      ['agent_schema','content_json','stream_whitespace_stall'].includes(error.modelReason))
+    if(error instanceof HttpError&&recovery&&!operation.controller?.signal.aborted&&
+      (error.code==='MODEL_INVALID_RESPONSE'&&['agent_schema','content_json','stream_whitespace_stall'].includes(error.modelReason)||
+        (initialState||Object.values(cached||{}).some(block=>block.sourceStage))&&
+          ['MODEL_UNAVAILABLE','MODEL_TIMEOUT'].includes(error.code)))
       recovery.combinedBlocks={contextKey,requestId:operation.requestId,blocks:validated};
     throw error;
   }
@@ -285,6 +299,8 @@ export function reviewPrompt({typedUnknowns=false}={}) {
 이번 요청은 상태만 검토합니다. 질문 생략·추가 확인·위험 제안은 별도 요청에서 검토하므로 questions와 safety는 null입니다. skip/clarify/위험 제안의 찬반을 state.issues에 넣거나 상태 거절 사유로 삼지 마세요.
 shared_input을 state.input과 합쳐 읽고 해당 retrieval 범위만 사용하세요.
 state.input은 전체 원문, state.state는 facts/name_index, state.claims는 관계 주장과 두 unknowns 전체입니다. 서버가 만든 summary/facts.interpretation과 claims 중복은 생략했습니다. 아래 규칙으로 이 상태 전체를 검토하고 출력 state에 판정하세요.
+state.state.patient_state.facts는 patient와 supporter 양쪽 원문을 subject로 구분해 보관하는 근거 목록입니다. patient_state라는 부모 이름은 모든 fact의 주체가 patient라는 뜻이 아닙니다. subject=supporter인 fact 자체를 혼입 오류로 거절하지 마세요. 각 fact의 subject·question_id·quote를 해당 사람의 실제 원문과 대조하고, 다른 사람으로 귀속을 바꾸거나 원문·부정·정정·확실성을 왜곡한 내용은 계속 거절하세요. 이 facts의 구조를 relationship_memory.patient/supporter의 사람별 주장 규칙과 혼동하지 마세요.
+한 finding이 같은 문항의 여러 구절이나 전체·부분 인용을 함께 근거로 가질 수 있습니다. 인용 범위가 겹친다는 형식만으로 상태를 거절하지 마세요. 각 인용의 실제 원문 일치와 전체 주장의 뒷받침을 검토하고, 다른 사람·시점·범위로의 확대나 근거 없는 주장·정정 누락은 계속 거절하세요. 인용 개수를 줄이기 위해 필요한 근거나 부정·조건을 지우도록 요구하지 마세요.
 state.reference_roles는 원문의 역할을 구분하는 참고 표이며 새로운 사실·판정·답변 요약이 아닙니다. known_name은 검증된 지칭 이름이고 user_goal_fields는 이용자가 전하고 싶은 말이나 바라는 결과입니다. supporter_report_fields의 실제 보고와 혼동하지 말고 state.input의 각 원문·사람·시점을 대조하세요.
 현재 state.state와 state.claims를 전체 최신 원문으로 독립적으로 검증하세요. 각 주장의 현재 문구·근거·범위를 판정하고 현재 남은 오류와 새로 생긴 실제 오류는 계속 거절하세요. 이번 입력에 없는 이전 문구나 이전 판정을 추정해 현재 오류로 재사용하지 마세요.
 `+stateRules+`
@@ -426,6 +442,15 @@ export async function requestCombinedStateReview(gateway,payload,operation,suffi
 // A semantic rejection is a complete result, not an operational failure:
 // question decisions and confirmed danger must survive state repair.
 async function parallelTurnTasks(operation,tasks) {
+  if(operation.questionExecution==='individual') {
+    const results=[];
+    for(const task of tasks) {
+      operation.controller?.signal.throwIfAborted();
+      results.push(await task({...operation}));
+      operation.controller?.signal.throwIfAborted();
+    }
+    return results;
+  }
   const controller=new AbortController(),parentSignal=operation.controller?.signal;
   const abort=()=>controller.abort(parentSignal.reason);
   parentSignal?.addEventListener('abort',abort,{once:true});
@@ -726,7 +751,9 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
   const {prior_state,prior_relationship_memory,...raw}=stateRequest.data;
   const draftInputs=shareInputs({state_input:draftReferenceInput(stateRequest.data),question_input:draftReferenceInput(questions?.data||null)});
   const contextKey=createHash('sha256').update(JSON.stringify({version:TURN_PROMPT_VERSION,final,state:stateRequest,questions})).digest('hex');
-  const recovery=operation.recovery;
+  const singleCall=gateway.singleCallTurns===true&&!final;
+  // Single-call turns never resume cached reviews or split a failed draft.
+  const recovery=singleCall?undefined:operation.recovery;
   if(recovery?.combinedTurn?.contextKey!==contextKey&&recovery)delete recovery.combinedTurn;
   if(recovery?.combinedDraft?.contextKey!==contextKey&&recovery)delete recovery.combinedDraft;
   if(recovery?.combinedBlocks?.contextKey!==contextKey&&recovery)delete recovery.combinedBlocks;
@@ -742,6 +769,7 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
   let semanticRejections=retained?.semanticRejections||0;
   const literalState=semanticRejections>=2&&retained.literalState===true;
   const draftSchema=literalState?literalStateRepairSchema(baseDraftSchema,{combined:true}):baseDraftSchema;
+  const draftEnvelopeSchema=object(Object.fromEntries(Object.keys(draftSchema.properties).map(key=>[key,{}])));
   const stages=[];
   let previousReview=retained?structuredClone(retained.review):null,
     previousDraft=retained?structuredClone(retained.draft):null,
@@ -756,6 +784,10 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
     let lastCandidate;
     const validateDraft=payload=>{
       lastCandidate=structuredClone(payload);
+      // Report misplaced root fields before inspecting their citations. Nested
+      // enum excerpts and the existing reported-row representation exception
+      // still receive their ordinary validation below.
+      validateSchema(payload,draftEnvelopeSchema,'output',true);
       // Check the original candidate before any representation normalization.
       // A JSON-object runner must not sneak hypotheses into literal recovery.
       if(literalState)validateSchema(payload,draftSchema,'output',true);
@@ -774,24 +806,85 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
       if(recovery)recovery.combinedDraft={contextKey,...(failedCandidate===undefined?{}:{candidate:structuredClone(failedCandidate)}),
         ...(blockFeedback?{feedback:blockFeedback,...(feedbackBlock?{feedbackBlock}:{})}:{})};
     };
-    let drafted;
+    let drafted,initialState;
     if(!blockDraft) {
+      let evidenceFailures=0;
       try {
         drafted=await gateway.agentComplete('turn_draft'+suffix,draftPrompt(stateRequest,questions)+
-          (literalState?literalStateRepairInstruction({combined:true}):''),input,draftSchema,operation,validateDraft,
-          {relationshipBlockRecovery:true});
+          (literalState?literalStateRepairInstruction({combined:true}):''),input,draftSchema,operation,payload=>{
+            try { return validateDraft(payload); }
+            catch(error) {
+              if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&
+                ['agent_evidence','agent_retrieval_evidence'].includes(error.modelReason))evidenceFailures++;
+              throw error;
+            }
+          },
+          singleCall?{maxAttempts:1}:{relationshipBlockRecovery:true});
       } catch(error) {
+        if(singleCall)throw error;
+        let questionShapeFailure=false,duplicateJsonFailure=false;
+        if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelReason==='agent_schema'&&
+          error.combinedStructuralFailure===true&&Array.isArray(lastCandidate?.questions)) {
+          try {
+            const issue=JSON.parse(error.modelFeedback);
+            questionShapeFailure=issue.path==='output.questions'&&issue.keyword==='type'&&
+              issue.expected?.type==='object'&&issue.actual?.type==='array';
+          } catch { /* Unstructured errors cannot unlock targeted recovery. */ }
+        }
+        if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&error.modelReason==='content_json'&&
+          error.combinedJsonFailure===true) {
+          try {
+            const issue=JSON.parse(error.modelFeedback);
+            duplicateJsonFailure=issue.path==='output'&&issue.keyword==='jsonSyntax'&&issue.problem==='duplicate_key';
+          } catch { /* Other parser failures retain the ordinary attempt budget. */ }
+        }
         const repeatedKeys=error?.modelRelationshipBlockRecovery===true&&error.modelAttempts===2&&error.modelStructuralFailures===2;
-        if(!(error instanceof HttpError)||error.code!=='MODEL_INVALID_RESPONSE'||
-          (!repeatedKeys&&(error.modelAttempts!==3||error.modelStructuralFailures!==3))||
-          !['agent_schema','content_json','stream_whitespace_stall'].includes(error.modelReason))throw error;
-        blockDraft=true;failedCandidate=lastCandidate;blockFeedback=error.modelFeedback;feedbackBlock=undefined;
+        // Only count source failures observed by this candidate validator. A
+        // timeout, transport failure or independent semantic rejection cannot
+        // consume a format attempt and then unlock another generation mode.
+        const mixedDraftFailures=error?.modelAttempts===3&&evidenceFailures>0&&error.modelStructuralFailures>0&&
+          evidenceFailures+error.modelStructuralFailures===3&&
+          ['agent_schema','content_json','stream_whitespace_stall','agent_evidence','agent_retrieval_evidence'].includes(error.modelReason);
+        const exhausted=error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE'&&
+          (mixedDraftFailures||(repeatedKeys||error.modelAttempts===3&&error.modelStructuralFailures===3)&&
+            ['agent_schema','content_json','stream_whitespace_stall'].includes(error.modelReason));
+        const contextLimit=error instanceof HttpError&&error.code==='MODEL_CONTEXT_TOO_LONG'&&error.modelReason==='context_budget';
+        if(!exhausted&&!contextLimit&&!questionShapeFailure&&!duplicateJsonFailure)throw error;
+        // Split only the output work; retain each block's complete source and
+        // independent reviews instead of truncating inputs or output budgets.
+        blockDraft=true;failedCandidate=duplicateJsonFailure?undefined:lastCandidate;blockFeedback=error.modelFeedback;feedbackBlock=undefined;
+        if(duplicateJsonFailure) {
+          // Duplicate keys invalidate the entire JSON document before any
+          // source validation. Never salvage a parsed prefix or an earlier
+          // rejected candidate; every block must be generated and reviewed.
+          lastCandidate=undefined;
+          if(recovery)delete recovery.combinedBlocks;
+          try { gateway.diagnosticLogger?.({event:'model_output_recovery',generation:'turn_draft'+suffix,
+            reason:'duplicate_json_key',retained_state:false,
+            ...(operation.requestId?{request_id:operation.requestId}:{})}); } catch { /* Diagnostics cannot approve a draft. */ }
+        }
+        if(questionShapeFailure) {
+          // Never wrap the rejected array or invent missing safety, clarify or
+          // personalization decisions. Only fully validated state may survive.
+          try {
+            validateSchema(lastCandidate.state,draftSchema.properties.state,'output.state',true);
+            validateState(lastCandidate.state,context,stateRequest);
+            initialState=structuredClone(lastCandidate.state);
+            feedbackBlock='questions';
+            stages.push('turn_draft'+suffix);
+          } catch(stateError) {
+            if(!(stateError instanceof HttpError)||stateError.code!=='MODEL_INVALID_RESPONSE')throw stateError;
+          }
+          try { gateway.diagnosticLogger?.({event:'model_output_recovery',generation:'turn_draft'+suffix,
+            reason:'questions_array',retained_state:Boolean(initialState),
+            ...(operation.requestId?{request_id:operation.requestId}:{})}); } catch { /* Diagnostics cannot approve a draft. */ }
+        }
         rememberBlocks();
       }
     }
     if(blockDraft) {
       try {
-        const candidate=await generateDraftBlocks(gateway,stateRequest,questions,input,draftSchema,operation,suffix,literalState,blockFeedback,feedbackBlock,stages,context,contextKey,nameReuse);
+        const candidate=await generateDraftBlocks(gateway,stateRequest,questions,input,draftSchema,operation,suffix,literalState,blockFeedback,feedbackBlock,stages,context,contextKey,nameReuse,initialState);
         drafted=validateDraft(candidate);
       } catch(error) {
         if(error instanceof HttpError&&error.code==='MODEL_INVALID_RESPONSE') {
@@ -804,8 +897,15 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
     if(!blockDraft)stages.push('turn_draft'+suffix);
     const result=drafted.state;
     let decision=drafted.questions;
+    if(singleCall) {
+      // A proposal is not independent approval. Intake keeps urgent proposals
+      // separate until the final independent safety review resolves them.
+      if(decision)Object.assign(result,decision);
+      result.state_agent={prompt_version:TURN_PROMPT_VERSION,stages,reviewed:false,mode:'single_call'};
+      return result;
+    }
     const claims=stateClaims(result);
-    const questionRequest=decision&&(decision.question_plan.skip.length||decision.clarification)
+    const questionRequest=decision&&(decision.question_plan.skip.length||decision.clarification||decision.personalization)
       ?questionReviewRequest(decision,questions):null;
     // A memory repair cannot silently withdraw danger that the independent
     // reviewer already confirmed. Re-review its full evidence alongside any new
@@ -839,10 +939,11 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
     let reviewed;
     if(useReviewBundles&&requests.length>1) {
       const stage='turn_review_bundle'+suffix,bundle=finalReviewBundle(requests,validateSchema);
+      const transport=gateway.shareReviewSources===true?reviewSourceTransport(bundle.payload):null;
       try {
-        const output=await gateway.agentComplete(stage,bundle.prompt+
+        const output=await gateway.agentComplete(stage,bundle.prompt+(transport?.instruction||'')+
           '\n이번 tasks는 상태·질문·안전 검토입니다. 각 task의 원래 입력 경계를 그대로 적용하세요. 상태의 원문은 review_target.input이고, 질문과 안전의 원문은 각 task 입력의 patient/supporter/user_goal입니다. 서로 다른 task의 retrieval·proposal·판정을 섞지 마세요. state task 출력의 questions/safety=null은 그 task 안의 계약이며 독립 questions/safety task를 생략한다는 뜻이 아닙니다.',
-          bundle.payload,bundle.schema,operation,bundle.validate);
+          transport?.payload||bundle.payload,bundle.schema,operation,bundle.validate);
         operation.controller?.signal.throwIfAborted();
         reviewed=requests.map(request=>output[request.key]);stages.push(stage);
       } catch(error) {
@@ -889,7 +990,7 @@ export async function runCombinedRelationshipState(gateway,context,memory,operat
     if(safetyRequest) {
       decision.finish_early=reviewedSafety.urgent;
       decision.safety_signal=reviewedSafety;
-      if(decision.finish_early) { decision.question_plan={skip:[]};decision.clarification=null; }
+      if(decision.finish_early) { decision.question_plan={skip:[]};decision.clarification=null;if(Object.hasOwn(decision,'personalization'))decision.personalization=null; }
     }
     if(decision) Object.assign(result,decision);
     result.state_agent={prompt_version:TURN_PROMPT_VERSION,stages,reviewed:true,

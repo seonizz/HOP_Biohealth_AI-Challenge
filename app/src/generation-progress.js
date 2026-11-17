@@ -27,7 +27,8 @@ export function generationProgress() {
   const state={status:'running',completed:[],current:phases[0].label,attempt:1,
     step_index:0,step_total:phases.length,progress:0,
     steps:phases.map(({label},index)=>({label,status:index===0?'current':'pending'}))};
-  const completedStages=new Map(),cards=new Map();
+  const completedStages=new Map(),cards=new Map(),listeners=new Set();
+  const publish=()=>{for(const listener of listeners){try{listener();}catch{/* An observer cannot stop generation. */}}};
   const cardIds=new Set(["care","doList","avoid","next","script","relationship"]);
   const refreshCompleted=()=>{state.completed=[...completedStages.values()].map(({label})=>({label}));};
   const advance=index=>{
@@ -44,11 +45,12 @@ export function generationProgress() {
   return {
     state,
     cards:()=>structuredClone([...cards.values()]),
+    subscribe(listener){listeners.add(listener);return ()=>listeners.delete(listener);},
     card(event){
-      if(event?.type==='reset'){cards.clear();return;}
+      if(event?.type==='reset'){cards.clear();publish();return;}
       if(!cardIds.has(event?.id))return;
-      if(event.type==='remove'){cards.delete(event.id);return;}
-      if(event.type==='upsert')cards.set(event.id,structuredClone({id:event.id,value:event.value,...(event.detail?{detail:event.detail}:{})}));
+      if(event.type==='remove'){cards.delete(event.id);publish();return;}
+      if(event.type==='upsert'){cards.set(event.id,structuredClone({id:event.id,value:event.value,...(event.detail?{detail:event.detail}:{})}));publish();}
     },
     event({stage,status,attempt=1}) {
       const label=labels.find(([pattern])=>pattern.test(stage))?.[1] || '답안 작성·검토';
@@ -57,7 +59,7 @@ export function generationProgress() {
       // or completed phase from the discarded operation remains valid.
       if(stage==='retry'){
         cards.clear();completedStages.clear();refreshCompleted();state.status='running';
-        advance(0);state.attempt=attempt+1;return;
+        advance(0);state.attempt=attempt+1;publish();return;
       }
       const phase=phases.findIndex(({matches})=>matches?.test(stage));
       // Parallel branches may finish an earlier phase after another branch has
@@ -66,6 +68,7 @@ export function generationProgress() {
       if(status==='completed'&&!completedStages.has(stage)){
         completedStages.set(stage,{label,phase});refreshCompleted();
       }
+      publish();
     },
     finish(status) {
       state.status=status;
@@ -78,6 +81,7 @@ export function generationProgress() {
       }else if(status==='failed'){
         state.current='답안 준비 중단';
       }
+      publish();
     },
   };
 }

@@ -6,8 +6,9 @@ import { isDeepStrictEqual } from 'node:util';
 import { modelHttpFetch } from '../src/model-http.js';
 
 export const BUNDLE_ID = 'malssi-intake-3.0.0-rc1';
-export const MAX_HTTP_REQUESTS = 16;
+export const MAX_HTTP_REQUESTS = 18;
 const BASE_IDS = Array.from({length:9}, (_, index) => `q3_${String(index + 1).padStart(2, '0')}`);
+const PERSONAL_IDS = ['q3_personal_01','q3_personal_02'];
 const appRoot = fileURLToPath(new URL('../', import.meta.url));
 const nonempty = value => typeof value === 'string' && Boolean(value.trim());
 const kst = time => new Intl.DateTimeFormat('sv-SE', {timeZone:'Asia/Seoul', dateStyle:'short', timeStyle:'medium', hour12:false}).format(new Date(time)) + ' KST';
@@ -59,9 +60,14 @@ const reports = {
 };
 
 export function syntheticAnswer(question) {
-  requireValue(question && (BASE_IDS.includes(question.id) || question.id === 'q3_10'), 'UNREGISTERED_QUESTION');
+  requireValue(question && (BASE_IDS.includes(question.id) || question.id === 'q3_10' || PERSONAL_IDS.includes(question.id)), 'UNREGISTERED_QUESTION');
   requireValue(nonempty(question.instance_id), 'MISSING_QUESTION_INSTANCE');
   const common = {question_id:question.id, instance_id:question.instance_id, follow_up:Boolean(question.follow_up)};
+  if (PERSONAL_IDS.includes(question.id)) {
+    requireValue(question.personalized === true && question.follow_up === true && question.type === 'text' && nonempty(question.q), 'INVALID_PERSONALIZED_QUESTION');
+    // Unknown is honest synthetic input: never invent an answer to generated prose.
+    return {...common, response_event:'unknown', text:'', selected:[], custom:'', skipped:false};
+  }
   if (question.id === 'q3_10') {
     requireValue(question.follow_up === true && question.binding?.bundle_id === BUNDLE_ID &&
       ['actor','execution','source','time','agreement','modality'].includes(question.binding.axis) &&
@@ -79,28 +85,42 @@ export function syntheticAnswer(question) {
   return {...common, response_event:'answered', selected, custom, text};
 }
 
-export function verifyContext(context, submitted) {
+function questionProgress(context) {
   requireValue(context?.bundle_id === BUNDLE_ID && nonempty(context.question_set_version), 'BUNDLE_MISMATCH');
-  requireValue(context.user_stopped !== true, 'UNEXPECTED_STOP');
   const fields = Object.assign({}, context.patient?.fields, context.supporter?.fields);
   for (const id of BASE_IDS) requireValue(fields[id]?.id === id, 'MISSING_SOURCE_FIELD');
-  const absent = [];
-  for (const id of [...BASE_IDS,'q3_10']) {
+  const skipped = [], unasked = [];
+  for (const id of BASE_IDS) {
+    const field = fields[id];
+    requireValue(['answered','unknown','skipped','refused','stopped','auto_skipped','not_asked'].includes(field.status), 'SOURCE_STATUS_MISMATCH');
+    if (!['auto_skipped','not_asked'].includes(field.status)) continue;
+    requireValue(!nonempty(field.text) && !nonempty(field.rawText) && !nonempty(field.custom), 'FABRICATED_UNANSWERED_SOURCE');
+    (field.status === 'auto_skipped' ? skipped : unasked).push(id);
+  }
+  return {skipped_question_ids:skipped, unasked_question_ids:unasked};
+}
+
+export function verifyContext(context, submitted) {
+  const progress = questionProgress(context);
+  requireValue(context.user_stopped !== true, 'UNEXPECTED_STOP');
+  const fields = Object.assign({}, context.patient?.fields, context.supporter?.fields);
+  for (const id of [...BASE_IDS,'q3_10',...PERSONAL_IDS]) {
     const field = fields[id], input = submitted.get(id);
     if (!input) {
       if (field) requireValue(['not_asked','auto_skipped'].includes(field.status) &&
         !nonempty(field.text) && !nonempty(field.rawText) && !nonempty(field.custom), 'FABRICATED_UNANSWERED_SOURCE');
-      absent.push(id);
       continue;
     }
-    requireValue(field && (id === 'q3_10' ? field.status === 'unknown' : field.status === 'answered'), 'SOURCE_STATUS_MISMATCH');
+    requireValue(field && (id === 'q3_10' || PERSONAL_IDS.includes(id) ? field.status === 'unknown' : field.status === 'answered'), 'SOURCE_STATUS_MISMATCH');
     if (nonempty(input.text)) requireValue(field.rawText === input.text, 'SOURCE_TEXT_MISMATCH');
     if (input.custom !== undefined) requireValue((field.custom || '') === input.custom, 'SOURCE_TEXT_MISMATCH');
+    if (PERSONAL_IDS.includes(id)) requireValue(field.response_event === 'unknown' && field.personalization?.kind === 'follow_up' &&
+      submitted.has(field.personalization.source_question_id) && field.assignment === undefined, 'UNBOUND_PERSONALIZED_QUESTION');
     if (id === 'q3_10') requireValue(field.response_event === 'unknown' && field.assignment?.value === 'unknown', 'CLARIFICATION_NOT_UNKNOWN');
   }
   requireValue(Array.isArray(context.payload?.answers) && context.payload.answers.every(answer => submitted.has(answer.id)), 'FABRICATED_UNANSWERED_SOURCE');
   requireValue(Object.values(context.profileInput?.answers || {}).some(text => text.includes('검증용 가상 상황')), 'SYNTHETIC_MARKER_MISSING');
-  return absent.filter(id => id !== 'q3_10');
+  return progress;
 }
 
 export function verifyRecord(record, submitted) {
@@ -125,6 +145,9 @@ function statusMarkdown(state) {
     `최대 실행 종료: ${state.deadline_at}\n\n예상 시간은 초기 로컬 모델 측정 기반의 범위이며 완료 보장이 아닙니다.\n\n` +
     `PID: ${state.pid}\n\nHTTP 요청: ${state.request_count}/${MAX_HTTP_REQUESTS}\n\n` +
     `검증 대화: ${state.intake_id || '아직 없음'}\n\n저장 기록: ${state.record_id || '아직 없음'}\n\n` +
+    (state.question_progress.status === 'verified'
+      ? `확인된 자동 생략: ${state.skipped_question_ids.join(', ') || '없음'}\n\n아직 묻지 않은 문항: ${state.unasked_question_ids.join(', ') || '없음'}\n\n`
+      : '자동 생략·미질문 진행 상태: 미확인\n\n') +
     (state.error ? `실패 코드: ${state.error.code}${state.error.http_status ? ` (HTTP ${state.error.http_status})` : ''}\n\n` : '') +
     `별도 세션의 가상 사례만 사용합니다. 모델 응답의 임상적 정확도를 평가하는 검사는 아닙니다.\n\n${stages}\n`;
 }
@@ -142,7 +165,8 @@ export async function runVerification(options, {fetchImpl = modelHttpFetch, onSt
     started_at:kst(started), updated_at:kst(started), deadline_at:kst(deadline),
     estimated_finish:{earliest:kst(started + config.estimateMinSeconds * 1000), latest:kst(started + config.estimateMaxSeconds * 1000),
       min_seconds:config.estimateMinSeconds, max_seconds:config.estimateMaxSeconds, basis:'initial_local_model_measurement_heuristic'},
-    request_timeout_seconds:config.requestTimeoutSeconds, request_count:0, answered_question_ids:[], skipped_question_ids:[], stages:[], checks:[]};
+    request_timeout_seconds:config.requestTimeoutSeconds, request_count:0, answered_question_ids:[], skipped_question_ids:[], unasked_question_ids:[],
+    question_progress:{status:'unverified'}, stages:[], checks:[]};
   let cookie, csrf;
   const saveStatus = async (stage, detail = {}) => {
     Object.assign(state, detail, {stage, updated_at:kst(Date.now()), elapsed_seconds:Math.round((Date.now() - started) / 1000)});
@@ -150,13 +174,13 @@ export async function runVerification(options, {fetchImpl = modelHttpFetch, onSt
     await atomicFile(resolve(config.output, 'status.json'), JSON.stringify(state, null, 2) + '\n');
     await atomicFile(resolve(config.output, 'status.md'), statusMarkdown(state));
   };
-  const request = async (path, method = 'GET', body) => {
+  const request = async (path, method = 'GET', body, maxTimeoutMs = Infinity) => {
     requireValue(state.request_count < MAX_HTTP_REQUESTS, 'REQUEST_LIMIT');
     const remaining = deadline - Date.now();
     requireValue(remaining > 0, 'OVERALL_TIMEOUT');
     state.request_count++;
     const controller = new AbortController();
-    const timeoutMs = Math.min(config.requestTimeoutSeconds * 1000, remaining);
+    const timeoutMs = Math.min(config.requestTimeoutSeconds * 1000, remaining, maxTimeoutMs);
     let timer;
     const timeout = new Promise((_, reject) => {
       timer = setTimeout(() => {
@@ -211,7 +235,8 @@ export async function runVerification(options, {fetchImpl = modelHttpFetch, onSt
     while (view.status === 'active') {
       requireValue(view.bundle_id === BUNDLE_ID && Number.isInteger(view.revision) && view.revision >= 0, 'BUNDLE_MISMATCH');
       requireValue(view.user_stopped !== true && view.input_locked !== true && view.model_pending !== true, 'UNEXPECTED_PENDING_STATE');
-      requireValue(submitted.size < 10 && Number.isInteger(view.question_instances) && view.question_instances <= 10, 'QUESTION_LIMIT');
+      const limit = view.maxQuestions ?? 10;
+      requireValue([10,12].includes(limit) && submitted.size < limit && Number.isInteger(view.question_instances) && view.question_instances <= limit, 'QUESTION_LIMIT');
       const input = syntheticAnswer(view.question);
       requireValue(!submitted.has(input.question_id), 'REPEATED_QUESTION');
       if (input.question_id === 'q3_10') requireValue(submitted.has(view.question.binding.source_question_id), 'UNBOUND_CLARIFICATION');
@@ -223,11 +248,11 @@ export async function runVerification(options, {fetchImpl = modelHttpFetch, onSt
       view = next;
     }
     requireValue(view.status === 'ready' && view.bundle_id === BUNDLE_ID && view.user_stopped !== true && submitted.has('q3_01') &&
-      view.question_instances <= 10 && view.model_pending !== true, 'INTAKE_NOT_READY');
+      view.question_instances <= (view.maxQuestions ?? 10) && [10,12].includes(view.maxQuestions ?? 10) && view.model_pending !== true, 'INTAKE_NOT_READY');
     state.checks.push('bounded_adaptive_conversation');
     await saveStatus('verify_input_context');
     const context = await request(`/api/intakes/${state.intake_id}/context`);
-    state.skipped_question_ids = verifyContext(context.context, submitted);
+    Object.assign(state, verifyContext(context.context, submitted), {question_progress:{status:'verified', source:'input_context'}});
     state.checks.push('exact_submitted_sources', 'unasked_sources_not_fabricated');
     await saveStatus('generate_result');
     const generated = await request(`/api/intakes/${state.intake_id}/result`, 'POST', {revision:view.revision});
@@ -251,6 +276,19 @@ export async function runVerification(options, {fetchImpl = modelHttpFetch, onSt
     state.status = 'failed';
     state.error = {code:error instanceof VerificationError ? error.code : 'RUNNER_ERROR',
       ...(error instanceof VerificationError && error.httpStatus ? {http_status:error.httpStatus} : {})};
+    // A failed answer may follow independently approved skips. Read only this
+    // intake once, within the existing request/deadline limits, and never turn
+    // an unacknowledged answer into a successfully submitted answer.
+    if (state.stage === 'answer_question' && error instanceof VerificationError && error.httpStatus &&
+        state.intake_id && state.request_count < MAX_HTTP_REQUESTS && deadline > Date.now()) {
+      try {
+        const progress = await request(`/api/intakes/${state.intake_id}/context`, 'GET', undefined, 3000);
+        requireValue(progress.id === state.intake_id, 'INVALID_INTAKE_ID');
+        Object.assign(state, questionProgress(progress.context), {question_progress:{status:'verified', source:'failure_context'}});
+      } catch (progressError) {
+        state.question_progress = {status:'unavailable', code:progressError instanceof VerificationError ? progressError.code : 'RUNNER_ERROR'};
+      }
+    }
     await saveStatus('failed', {failed_stage:state.stage, completed_at:kst(Date.now())});
   }
   await atomicFile(resolve(config.output, 'report.json'), JSON.stringify(state, null, 2) + '\n');

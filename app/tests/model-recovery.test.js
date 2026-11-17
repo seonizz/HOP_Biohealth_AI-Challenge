@@ -459,15 +459,15 @@ test('internal recovery preserves default backoff for malformed Retry-After head
   }
 });
 
-test('internal recovery renews an explicit expired deadline rather than reusing an aborted controller',async()=>{
+test('internal recovery does not renew an expired operation deadline or dispatch another request',async()=>{
   const signals=[];
   const gateway=makeGateway((_url,request)=>{
     signals.push(request.signal);
     if(signals.length===1)return new Promise((resolve,reject)=>request.signal.addEventListener('abort',()=>reject(new Error('aborted')),{once:true}));
     return Promise.resolve(envelope(state()));
   },{timeoutMs:20,retryFailures:true,retryDelayMs:1});
-  assert.deepEqual((await gateway.updateState(context())).patient_state,memory());
-  assert.equal(signals.length,2);assert.equal(signals[0].aborted,true);assert.equal(signals[1].aborted,false);
+  await assert.rejects(gateway.updateState(context()),{code:'MODEL_TIMEOUT'});
+  assert.equal(signals.length,1);assert.equal(signals[0].aborted,true);
 });
 
 test('authentication, configuration and input-budget errors remain terminal with internal recovery enabled',async()=>{

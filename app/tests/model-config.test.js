@@ -8,7 +8,7 @@ import {Store} from '../src/store.js';
 
 test('two-request turns, joint analysis/plan and compact output are explicit valid opt-ins',()=>{
   const env={MODEL_BASE_URL:'http://127.0.0.1:11434',MODEL_PROTOCOL:'relationship_agent',MODEL_STATE_MODE:'combined',MODEL_BUNDLE_FINAL_REVIEWS:'true'};
-  const keys={MODEL_BUNDLE_COMBINED_TURN_REVIEWS:'bundleCombinedTurnReviews',MODEL_BUNDLE_ANALYSIS_PLAN:'bundleAnalysisPlan',MODEL_COMPACT_REVIEW_OUTPUT:'compactReviewOutput'};
+  const keys={MODEL_BUNDLE_COMBINED_TURN_REVIEWS:'bundleCombinedTurnReviews',MODEL_BUNDLE_ANALYSIS_PLAN:'bundleAnalysisPlan',MODEL_COMPACT_REVIEW_OUTPUT:'compactReviewOutput',MODEL_COMPACT_TURN_REVIEW_OUTPUT:'compactTurnReviewOutput',MODEL_COMBINED_TURN_EVIDENCE_IDS:'combinedTurnEvidenceIds',MODEL_SAFETY_REVIEW_SELECTION_MAP:'safetyReviewSelectionMap',MODEL_DETAILED_CARD_ANALYSIS:'detailedCardAnalysis'};
   for(const [key,option]of Object.entries(keys)){
     assert.equal(configuredModelGateway({env})[option],false);
     assert.equal(configuredModelGateway({env:{...env,[key]:'true'}})[option],true);
@@ -280,4 +280,17 @@ test('remaining optimizations are strict opt-in and policy reuse keeps independe
   }
   for(const MODEL_PROTOCOL of ['json_prompt','json_schema'])for(const key of ['MODEL_COMPACT_REVIEW_INPUTS','MODEL_SCOPED_QUALITY_REFINEMENT'])
     assert.throws(()=>configuredModelGateway({env:{...env,MODEL_PROTOCOL,[key]:'true'}}),/Invalid MODEL configuration/);
+});
+
+test('trained-chat writer and independent reviewer can stream while terminal proof remains required',()=>{
+ const env={MODEL_SERVER_GPU_ONLY:'true',MODEL_BASE_URL:'http://127.0.0.1:18731/v1',MODEL_NAME:'malssi-gemma4-31b-step5128',MODEL_API_KEY:'synthetic-stream-key',
+  MODEL_API_PROFILE:'trained_chat',MODEL_AGENT_FORMAT:'prompt',MODEL_REASONING_EFFORT:'omit',MODEL_STREAM_JSON:'true',MODEL_STREAM_COMPLETE_JSON:'false',
+  MODEL_REVIEW_BASE_URL:'http://127.0.0.1:18731/v1',MODEL_REVIEW_API_KEY:'synthetic-stream-key',MODEL_REVIEW_NAME:'malssi-gemma4-31b-step5128',MODEL_REVIEW_API_PROFILE:'trained_chat',MODEL_REVIEW_AGENT_FORMAT:'prompt',MODEL_REVIEW_REASONING_EFFORT:'omit',MODEL_REVIEW_STREAM_JSON:'true',MODEL_REVIEW_STREAM_COMPLETE_JSON:'false'};
+ const gateway=configuredModelGateway({env,retryFailures:false});
+ for(const value of [gateway,gateway.reviewGateway]){assert.equal(value.configured,true);assert.equal(value.streamJson,true);assert.equal(value.streamCompleteJson,false);assert.equal(value.singleCallTurns,false);assert.equal(value.serverGpuOnly,true);}
+ for(const prefix of ['MODEL','MODEL_REVIEW']){
+  for(const value of ['true','TRUE',true])assert.throws(()=>configuredModelGateway({env:{...env,[prefix+'_STREAM_COMPLETE_JSON']:value}}),/Invalid MODEL(?:_REVIEW)? configuration/);
+  for(const value of ['TRUE','yes',true])assert.throws(()=>configuredModelGateway({env:{...env,[prefix+'_STREAM_JSON']:value}}),/Invalid MODEL(?:_REVIEW)? configuration/);
+ }
+ assert.throws(()=>configuredModelGateway({env:{...env,MODEL_BASE_URL:'https://api.example.test/v1',MODEL_REVIEW_BASE_URL:'https://api.example.test/v1'}}),/Invalid MODEL configuration/);
 });

@@ -19,10 +19,18 @@ test('effective settings distinguish previously colliding configurations', () =>
 });
 
 test('every gateway-owned configuration field is explicitly classified', () => {
-  const excluded = new Set(['baseUrl','apiKey','fetchImpl','diagnosticLogger','reviewGateway']);
+  // reviewedNameIdentity binds cached reviews to one gateway instance, not its settings.
+  const excluded = new Set(['baseUrl','apiKey','fetchImpl','diagnosticLogger','reviewGateway','reviewedNameIdentity']);
   for (const gateway of [new ModelGateway(), make()]) {
     assert.deepEqual(Object.keys(gateway).filter(key => !excluded.has(key) && !Object.hasOwn(MODEL_IDENTITY_FIELDS,key)), []);
   }
+});
+
+test('runtime review identity does not change the effective configuration digest', () => {
+  const first = make(), second = make();
+  assert.notEqual(first.reviewedNameIdentity, second.reviewedNameIdentity);
+  assert.deepEqual(describeModelGateway(first), describeModelGateway(second));
+  assert.equal(JSON.stringify(describeModelGateway(first)).includes(first.reviewedNameIdentity), false);
 });
 
 test('every allowlisted scalar setting contributes to the configuration digest', () => {

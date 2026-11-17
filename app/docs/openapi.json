@@ -438,12 +438,18 @@
         "summary": "답변 저장 및 모델 내부 상태 갱신",
         "responses": {
           "200": {
-            "description": "성공",
+            "description": "JSON 성공 또는 SSE 스트림; SSE 시작 후 오류는 status/error를 포함한 error 이벤트로 전달",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object"
                 }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "event: progress\ndata: {\"revision\":0,\"progress\":{\"status\":\"running\"},\"cards\":[]}\n\n"
               }
             }
           },
@@ -546,6 +552,19 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept",
+            "required": false,
+            "description": "text/event-stream을 지정하면 progress 스냅샷과 저장 후 result 또는 error를 SSE로 전송. 자세한 이벤트 계약은 API.md 참고.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "application/json",
+                "text/event-stream"
+              ]
             }
           }
         ]
@@ -676,12 +695,18 @@
         "summary": "누적 상태를 읽어 실제 모델 가이드 생성 및 기록 저장",
         "responses": {
           "200": {
-            "description": "성공",
+            "description": "JSON 성공 또는 SSE 스트림; SSE 시작 후 오류는 status/error를 포함한 error 이벤트로 전달",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object"
                 }
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "event: progress\ndata: {\"revision\":0,\"progress\":{\"status\":\"running\"},\"cards\":[]}\n\n"
               }
             }
           },
@@ -735,6 +760,19 @@
             "required": true,
             "schema": {
               "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Accept",
+            "required": false,
+            "description": "text/event-stream을 지정하면 progress 스냅샷과 저장 후 result 또는 error를 SSE로 전송. 자세한 이벤트 계약은 API.md 참고.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "application/json",
+                "text/event-stream"
+              ]
             }
           }
         ]
@@ -2247,6 +2285,388 @@
           }
         }
       }
+    },
+    "/api/admin/models": {
+      "get": {
+        "summary": "관리자 모델 선택 조회",
+        "responses": {
+          "200": {
+            "description": "두 프로필의 설정 여부와 새 대화 기본 모델",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 없음 또는 외부 관리자 인증 없음/실패 (ADMIN_AUTH_REQUIRED, WWW-Authenticate)"
+          },
+          "403": {
+            "description": "로컬 관리자/Origin/CSRF 거부"
+          },
+          "422": {
+            "description": "설정 검증 실패"
+          },
+          "503": {
+            "description": "모델 선택 비활성 또는 연결 설정 없음"
+          }
+        },
+        "description": "기본은 루프백 관리자. ADMIN_REMOTE_* 설정을 켠 외부 HTTPS Origin에서는 remoteAdminBasic 인증도 필요하다. 세션·CSRF·Origin 검사를 유지한다."
+      },
+      "put": {
+        "summary": "새 대화 기본 모델 선택 저장",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "model_profile_id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "model_profile_id": {
+                    "type": "string",
+                    "enum": [
+                      "local12b",
+                      "gpu31b"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "저장된 기본 모델과 두 프로필 목록",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 없음 또는 외부 관리자 인증 없음/실패 (ADMIN_AUTH_REQUIRED, WWW-Authenticate)"
+          },
+          "403": {
+            "description": "로컬 관리자/Origin/CSRF 거부"
+          },
+          "422": {
+            "description": "설정 검증 실패"
+          },
+          "503": {
+            "description": "모델 선택 비활성 또는 연결 설정 없음"
+          }
+        },
+        "description": "기본은 루프백 관리자. ADMIN_REMOTE_* 설정을 켠 외부 HTTPS Origin에서는 remoteAdminBasic 인증도 필요하다. 세션·CSRF·Origin 검사를 유지한다."
+      }
+    },
+    "/api/admin/model-connections": {
+      "get": {
+        "summary": "관리자 연결 메타데이터 조회",
+        "responses": {
+          "200": {
+            "description": "주소·모델명·키 설정 여부·1회 호출 여부; 키 값은 반환하지 않음",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 없음 또는 외부 관리자 인증 없음/실패 (ADMIN_AUTH_REQUIRED, WWW-Authenticate)"
+          },
+          "403": {
+            "description": "로컬 관리자/Origin/CSRF 거부"
+          },
+          "422": {
+            "description": "설정 검증 실패"
+          },
+          "503": {
+            "description": "모델 선택 비활성 또는 연결 설정 없음"
+          }
+        },
+        "description": "기본은 루프백 관리자. ADMIN_REMOTE_* 설정을 켠 외부 HTTPS Origin에서는 remoteAdminBasic 인증도 필요하다. 세션·CSRF·Origin 검사를 유지한다."
+      }
+    },
+    "/api/admin/model-connections/{id}": {
+      "put": {
+        "summary": "관리자 모델 연결의 암호화된 새 버전 저장",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "local12b",
+                "gpu31b"
+              ]
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "base_url",
+                  "model"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "base_url": {
+                    "type": "string",
+                    "maxLength": 2048
+                  },
+                  "model": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "api_key": {
+                    "type": "string",
+                    "maxLength": 4096,
+                    "writeOnly": true,
+                    "description": "빈 값 또는 생략 시 기존 키 유지"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "기본 모델은 유지하고 새 대화부터 적용; 키 없는 메타데이터 반환",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 없음 또는 외부 관리자 인증 없음/실패 (ADMIN_AUTH_REQUIRED, WWW-Authenticate)"
+          },
+          "403": {
+            "description": "로컬 관리자/Origin/CSRF 거부"
+          },
+          "422": {
+            "description": "설정 검증 실패"
+          },
+          "503": {
+            "description": "모델 선택 비활성 또는 연결 설정 없음"
+          }
+        },
+        "description": "기본은 루프백 관리자. ADMIN_REMOTE_* 설정을 켠 외부 HTTPS Origin에서는 remoteAdminBasic 인증도 필요하다. 세션·CSRF·Origin 검사를 유지한다."
+      }
+    },
+    "/api/admin/model-execution": {
+      "get": {
+        "summary": "관리자 질문 실행 정책·역할별 연결 조회",
+        "responses": {
+          "200": {
+            "description": "executions: 프로필별 설정·키 없는 역할 연결·configured 반환",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 없음 또는 외부 관리자 인증 없음/실패 (ADMIN_AUTH_REQUIRED, WWW-Authenticate)"
+          },
+          "403": {
+            "description": "로컬 관리자/Origin/CSRF 거부"
+          },
+          "422": {
+            "description": "설정 검증 실패"
+          },
+          "503": {
+            "description": "모델 선택 비활성 또는 연결 설정 없음"
+          }
+        },
+        "description": "기본은 루프백 관리자. ADMIN_REMOTE_* 설정을 켠 외부 HTTPS Origin에서는 remoteAdminBasic 인증도 필요하다. 세션·CSRF·Origin 검사를 유지한다."
+      }
+    },
+    "/api/admin/model-execution/{id}": {
+      "put": {
+        "summary": "질문 실행 정책과 역할별 연결의 암호화 불변 버전 저장",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "local12b",
+                "gpu31b"
+              ]
+            }
+          },
+          {
+            "in": "header",
+            "name": "X-CSRF-Token",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "question_mode",
+                  "scheduling",
+                  "question_source",
+                  "review_source"
+                ],
+                "properties": {
+                  "question_mode": {
+                    "type": "string",
+                    "enum": [
+                      "single",
+                      "two",
+                      "individual"
+                    ]
+                  },
+                  "scheduling": {
+                    "type": "string",
+                    "enum": [
+                      "individual",
+                      "parallel"
+                    ]
+                  },
+                  "question_source": {
+                    "type": "string",
+                    "enum": [
+                      "general",
+                      "custom"
+                    ]
+                  },
+                  "review_source": {
+                    "type": "string",
+                    "enum": [
+                      "general",
+                      "custom"
+                    ]
+                  },
+                  "question_connection": {
+                    "type": "object",
+                    "required": [
+                      "base_url",
+                      "model"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "base_url": {
+                        "type": "string",
+                        "maxLength": 2048
+                      },
+                      "model": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "api_key": {
+                        "type": "string",
+                        "maxLength": 4096,
+                        "writeOnly": true,
+                        "description": "빈 값 또는 생략 시 기존 키 유지"
+                      }
+                    }
+                  },
+                  "review_connection": {
+                    "type": "object",
+                    "required": [
+                      "base_url",
+                      "model"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "base_url": {
+                        "type": "string",
+                        "maxLength": 2048
+                      },
+                      "model": {
+                        "type": "string",
+                        "maxLength": 200
+                      },
+                      "api_key": {
+                        "type": "string",
+                        "maxLength": 4096,
+                        "writeOnly": true,
+                        "description": "빈 값 또는 생략 시 기존 키 유지"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "새 대화부터 적용; 기본 프로필·최종 카드 흐름 유지; executions 메타데이터 반환",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "세션 없음 또는 외부 관리자 인증 없음/실패 (ADMIN_AUTH_REQUIRED, WWW-Authenticate)"
+          },
+          "403": {
+            "description": "로컬 관리자/Origin/CSRF 거부"
+          },
+          "422": {
+            "description": "설정 검증 실패"
+          },
+          "503": {
+            "description": "모델 선택 비활성 또는 연결 설정 없음"
+          }
+        },
+        "description": "기본은 루프백 관리자. ADMIN_REMOTE_* 설정을 켠 외부 HTTPS Origin에서는 remoteAdminBasic 인증도 필요하다. 세션·CSRF·Origin 검사를 유지한다."
+      }
     }
   },
   "components": {
@@ -2255,6 +2675,11 @@
         "type": "apiKey",
         "in": "cookie",
         "name": "malssi_session"
+      },
+      "remoteAdminBasic": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "외부 관리자 설정이 활성화된 정확한 HTTPS Origin에서만 추가로 요구한다. 기존 browserSession과 변경 요청의 CSRF·Origin 검사는 함께 필요하다. 로컬 관리자는 기존 루프백 접근을 유지한다."
       }
     },
     "schemas": {
