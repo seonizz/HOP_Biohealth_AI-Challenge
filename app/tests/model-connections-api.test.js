@@ -92,7 +92,11 @@ dbtest('unbound legacy answers, result, referral and continuations retain a dist
  }});
  t.after(()=>delete ModelGateway.prototype.referralGuidance);
  const f=await fixture(t,{distinctLegacy:true,referral:true}),owner=await f.owner();
- const unbound=await f.app.store.createIntake(owner,createIntake(await f.app.store.questionSet()),0);
+ const legacyState=createIntake(await f.app.store.questionSet());
+ // This unbound connection represents a saved intake predating both model
+ // connection binding and compact question flow.
+ delete legacyState.v3.compact_flow;
+ const unbound=await f.app.store.createIntake(owner,legacyState,0);
  const view=(await f.request(`/api/intakes/${unbound.id}`)).data;assert.equal(view.model_profile_id,undefined);
  await f.save('edited-local','edited-key');await f.restart('changed-environment');
  const before=f.seen.length;

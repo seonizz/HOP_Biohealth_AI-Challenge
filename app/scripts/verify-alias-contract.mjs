@@ -20,10 +20,20 @@ export function assertAliasContract(value,nameSchema){
 export function aliasContractScenario(){
   const input=(state,text)=>{const question=currentView(state).question;return {
     question_id:question.id,instance_id:question.instance_id,follow_up:Boolean(question.follow_up),
-    response_event:'answered',text,custom:text,selected:[],
+    response_event:'answered',...(question.type==='text'?{text}:{custom:text,selected:[]}),
   };};
   let state=createIntake(activeQuestionSet);
   state=answerIntake(state,input(state,'친구에게 부담 없이 이야기를 시작할 방법을 찾고 싶어요.'));
+  assert.equal(currentView(state).question.id,'q3_03');
+  // This qualification deliberately selects the optional relationship source;
+  // ordinary new conversations finish after the core when no choice is made.
+  const scene=prepareModelAnswer(state,input(state,'호칭을 넣어 편지를 쓰려는데 상대를 어떻게 부를지 정리하고 싶어요.'),0);
+  const source=buildContext(scene).patient.fields.q3_03;
+  state=completeModelAnswer(scene,{name_index:null,patient_state:{},question_plan:{skip:[]},personalization:{
+    kind:'next',question_id:'q3_02',subject:'patient',source_question_id:source.id,source_revision:source.source_revision,
+    component:'rawText',quote:source.rawText,quote_start:0,quote_end:Array.from(source.rawText).length,
+    question:null,focus:null,reason:'요청한 편지에 쓸 호칭이 아직 없어 상대를 부르는 표현을 확인합니다.',
+  }});
   assert.equal(currentView(state).question.id,'q3_02');
   const pending=prepareModelAnswer(state,input(state,ALIAS_REPORT),0),context=buildContext(pending);
   const nameSchema=modelResponseFormat(context).json_schema.schema.properties.name_index;

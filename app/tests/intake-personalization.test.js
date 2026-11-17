@@ -5,7 +5,8 @@ import { createIntake, currentView, answerIntake, prepareModelAnswer, completeMo
   buildContext, backIntake, discardModelAnswer } from '../src/intake.js';
 import { continuationCardContext, continuationInput } from '../src/continuation-model.js';
 
-const start = () => createIntake(activeQuestionSet);
+// Preserve the pre-compact v3 snapshot contract; new compact intakes have dedicated tests.
+const start = () => { const state=createIntake(activeQuestionSet); delete state.v3.compact_flow; return state; };
 const input = (state, text='친구가 내일 만나서 이야기하자고 했어요.') => {
   const question = currentView(state).question;
   return {question_id:question.id, follow_up:Boolean(question.follow_up), instance_id:question.instance_id,

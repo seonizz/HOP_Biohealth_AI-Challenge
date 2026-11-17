@@ -7,6 +7,9 @@ import {syntheticAnswer} from '../scripts/verify-questionnaire-v3-live.mjs';
 
 const fixture=()=>{
  let state=createIntake(activeQuestionSet);
+ // This reviewer fixture retains the historical Q1/Q2 evidence contract.
+ // Compact intake behavior is covered by compact-question-flow/storage.
+ delete state.v3.compact_flow;
  for(let revision=0;revision<2;revision++){
   state=prepareModelAnswer(state,syntheticAnswer(currentView(state).question),revision);
   state=completeModelAnswer(state,{name_index:null,patient_state:{facts:[],unknowns:[]},question_plan:{skip:[]}});

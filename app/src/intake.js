@@ -1,6 +1,7 @@
 import { hasAnswerContent, isThin, optLabel, optMeta, renderQuestion, renderText } from './catalog.js';
 import { initialQuestionSet, conditionMatches, followMatches, mergeFollow, branchGateIds } from './question-bank.js';
 import { HttpError } from './errors.js';
+import { COMPACT_QUESTION_FLOW, hasCompactQuestionFlow, compactQuestionPolicy, compactQuestionIndex } from './compact-question-flow.js';
 import { validateNameIndex, validateQuestionPlan } from './agent-state.js';
 import { clarificationQuestions, clarificationCandidates } from './clarifications.js';
 import { validateRelationshipMemory, validateSafetyEvidence, safetySnapshotFingerprint, currentApprovedSafety, currentReviewedSafety } from './relationship-agent.js';
@@ -48,6 +49,7 @@ function addPrompt(state, question, followUp = false) {
 
 function advance(state, previous) {
   const { questions, gapQuestion } = questionSetOf(state);
+  if (hasCompactQuestionFlow(state)) state.i = compactQuestionIndex(state);
   while (state.i < questions.length && ((isV3Intake(state) && state.ans[questions[state.i].id] && state.v3.editingQuestion !== questions[state.i].id) ||
     state.modelSkipped?.[questions[state.i].id] ||
     (questions[state.i].when && !conditionMatches(questions[state.i].when, state)))) state.i++;
@@ -82,7 +84,10 @@ export function createIntake(questionSet = initialQuestionSet) {
     prev: null, cur: null, history: [], pendingFollow: null, status: 'active',
     modelSkipped: {}, nameIndex: null, chatTitle: '',
   };
-  if (isV3Intake(state)) initializeV3(state);
+  if (isV3Intake(state)) {
+    initializeV3(state);
+    state.v3.compact_flow = structuredClone(COMPACT_QUESTION_FLOW);
+  }
   advance(state);
   return state;
 }
@@ -191,6 +196,7 @@ function commitAnswer(state, question, answer) {
 
 function answerV3(originalState, question, input) {
   const state = structuredClone(originalState), progress = initializeV3(state);
+  const isCorrection=Boolean(state.ans[question.id] || state.clarificationAnswers?.[question.id]);
   if (input.instance_id !== undefined && input.instance_id !== progress.issued[question.id]?.instance_id) {
     invalid('question_mismatch', '현재 질문에 답해 주세요.', 409);
   }
@@ -198,6 +204,10 @@ function answerV3(originalState, question, input) {
   if (hasPersonalization(state)) answer.asked_question = renderIntakeQuestion(question, state).q;
   delete progress.helpReplay;
   delete progress.editingQuestion;
+  if (hasCompactQuestionFlow(state)) {
+    delete progress.compact_flow.selected_question_id;
+    if (progress.compact_flow.resume_question_id === question.id) delete progress.compact_flow.resume_question_id;
+  }
   if (state.ans[question.id] || state.clarificationAnswers?.[question.id]) state.log = state.log.filter(entry => entry.question_id !== question.id);
   state.log.push({ who:'me', text:answer.text, fu:Boolean(state.pendingFollow), question_id:question.id, source_revision:answer.source_revision });
   if (answer.response_event === 'not_understood' && progress.issued[question.id].help_displays === 0) {
@@ -232,13 +242,15 @@ function answerV3(originalState, question, input) {
     const personal = progress.personalization;
     if (!personal.answer_order.includes(question.id)) personal.answer_order.push(question.id);
     if (personal.presentations[question.id]?.status === 'issued') personal.presentations[question.id].status = answer.response_event;
-    personal.progress = Math.max(personal.progress, Math.min(99, Object.keys(state.ans).length / state.questionSet.questions.length * 100));
+    personal.progress = Math.max(personal.progress, Math.min(99, Object.keys(state.ans).length / (hasCompactQuestionFlow(state) ? COMPACT_QUESTION_FLOW.target_questions : state.questionSet.questions.length) * 100));
   }
-  // Every completed response, including a bound clarification, can invalidate
-  // earlier skip decisions. Keep issued prompts and saved answers intact;
-  // advance/buildContext reconsider only unshown questions. Help replay returns
-  // above, and stop below never advances to another prompt.
-  state.modelSkipped = {};
+  // New compact intakes retain evidence-backed coverage while those answers
+  // are unchanged. A correction clears it for replanning; ordinary optional
+  // answers must not cause an already covered scene to be asked again.
+  // Context-dependent not_needed decisions are always reconsidered. Historical
+  // snapshots keep their previous all-decisions-replanned behavior.
+  state.modelSkipped = hasCompactQuestionFlow(state) && !isCorrection
+    ? Object.fromEntries(Object.entries(state.modelSkipped || {}).filter(([,decision])=>decision.reason==='already_covered')) : {};
   state.i = 0;
   delete progress.returnIndex;
   if (answer.response_event === 'stop') {
@@ -426,6 +438,10 @@ export function backIntake(originalState) {
   if (isV3Intake(originalState) && currentView(originalState).canGoBack) {
     const state = structuredClone(originalState);
     const questions = state.questionSet.questions;
+    if (hasCompactQuestionFlow(state) && !state.v3.editingQuestion && !state.pendingFollow) {
+      const current=questions[state.i];
+      if (current && !state.ans[current.id]) state.v3.compact_flow.resume_question_id=current.id;
+    }
     const previousId = hasPersonalization(state) ? previousPersonalQuestion(state)
       : questions.findLast((question, index) => index < state.i && state.ans[question.id]).id;
     const previousIndex = questions.findIndex(question => question.id === previousId);
@@ -510,7 +526,7 @@ export function applyModelUpdate(originalState, output) {
   }
   const nameIndex = validateNameIndex(output.name_index, context);
   const plan = validateQuestionPlan(output.question_plan, context);
-  const personalization = validatePersonalization(output.personalization ?? null, context,
+  let personalization = validatePersonalization(output.personalization ?? null, context,
     {skip:plan.skip, clarification:output.clarification, urgent:output.finish_early === true || output.safety_signal?.urgent === true});
   const state = structuredClone(originalState);
   state.history = structuredClone(historyOf(originalState));
@@ -551,6 +567,15 @@ export function applyModelUpdate(originalState, output) {
   }
   state.modelSkipped ||= {};
   for (const decision of plan.skip) state.modelSkipped[decision.question_id] = structuredClone(decision);
+  let clarification=output.clarification;
+  const resumeId=state.v3?.compact_flow?.resume_question_id;
+  const resumingQuestion=resumeId && state.v3.issued[resumeId] && !state.ans[resumeId] && !state.modelSkipped[resumeId];
+  if (hasCompactQuestionFlow(state) && ((!state.ans.q3_03 && !state.modelSkipped.q3_03) || resumingQuestion)) {
+    // Ask the core scene and resume an already displayed unanswered question
+    // before creating optional detail. Suppression affects routing only: no
+    // hidden presentation, additional slot, user fact or skip reason is made.
+    personalization=null;clarification=null;
+  }
   if (output.finish_early===true) {
     // A short base answer may already have prepared a follow-up. Preserve that
     // report before ending intake; no follow-up answer has been supplied yet.
@@ -561,8 +586,19 @@ export function applyModelUpdate(originalState, output) {
     state.pendingFollow=null;state.status='ready';
     state.log.push({who:'ai',face:'ponder',fu:false,text:'지금 즉각적인 위험이 있다면 대화를 이어가기보다 응급 도움을 요청하고, 당신의 안전을 먼저 확보해 주세요. 혼자 감당하지 않도록 주변 도움을 함께 요청해 주세요.'});
   }
-  if (personalization?.kind === 'next') createPersonalQuestion(state, personalization);
-  if (state.status === 'active' && !state.pendingFollow && !state.v3?.helpReplay) {
+  if (personalization?.kind === 'next') {
+    createPersonalQuestion(state, personalization);
+    if (hasCompactQuestionFlow(state)) state.v3.compact_flow.selected_question_id=personalization.question_id;
+  }
+  if (hasCompactQuestionFlow(state) && !output.finish_early && !state.pendingFollow && !state.v3.helpReplay && !state.v3.stopped) {
+    // Prepared prompts are not displayed until the model decision commits. A
+    // null decision after the two core prompts ends intake without declaring
+    // unasked optional fields answered or fabricating skip evidence.
+    const previous=state.prev;
+    state.log.length=state.log.findLastIndex(item=>item.who==='me')+1;
+    state.status='active';state.cur=null;
+    advance(state,previous);
+  } else if (state.status === 'active' && !state.pendingFollow && !state.v3?.helpReplay) {
     // The next prompt was prepared before the external model call and has not been displayed yet.
     const previous = state.prev;
     state.log.length = state.cur.logLen;
@@ -580,13 +616,13 @@ export function applyModelUpdate(originalState, output) {
     state.status = 'active';
     state.fuCount++;
     addPrompt(state, question, true);
-  } else if (isV3Intake(state) && !output.finish_early && output.clarification && !state.v3.stopped && !state.v3.helpReplay) {
+  } else if (isV3Intake(state) && !output.finish_early && clarification && !state.v3.stopped && !state.v3.helpReplay) {
     // Clarification preempts the prepared, still-unshown ordinary question.
     if (state.status === 'active' && !state.pendingFollow) {
       state.log.length = state.cur.logLen;
       if (!originalState.v3.issued[state.questionSet.questions[state.i].id]) delete state.v3.issued[state.questionSet.questions[state.i].id];
     }
-    const question = createV3Clarification(state, output.clarification);
+    const question = createV3Clarification(state, clarification);
     state.pendingFollow = { kind:'v3_clarification', questionId:'q3_10' };
     state.status = 'active';
     state.fuCount++;
@@ -668,7 +704,7 @@ export function buildContext(state) {
     clarification_candidates:clarificationCandidates(state).map(q=>({...q,question:renderQuestion(q,state).q})),
     question_set_version:version,
     ...(v3 ? { bundle_id:state.questionSet.bundle_id, questionnaire_bundle:structuredClone(state.questionSet.bundle),
-      question_policy:{ minimum_answer_count:0, maximum_question_instances:maximumQuestions(state), maximum_clarification_instances:1,
+      question_policy:{ ...compactQuestionPolicy(state), minimum_answer_count:0, maximum_question_instances:maximumQuestions(state), maximum_clarification_instances:1,
         ...(hasPersonalization(state) ? {maximum_personalized_follow_ups:2} : {}) },
       ...personalizationContext(state),
       clarification_available:v3ClarificationAvailable(state),
@@ -678,7 +714,7 @@ export function buildContext(state) {
       clarification_state:state.v3.clarification ? structuredClone(state.v3.clarification) : null } : {}),
     answered_count: Object.values(evidenceState.ans).filter(answer => !answer.skipped).length,
     latest_answer: latestQuestion ? {question_id:latestAnswerId,subject:subjectOf(latestQuestion)} : null,
-    question_candidates: state.status === 'active' ? (hasPersonalization(state) ? questions : questions.slice(state.i))
+    question_candidates: (state.status === 'active' || (hasCompactQuestionFlow(state) && !state.v3.stopped)) ? (hasPersonalization(state) ? questions : questions.slice(state.i))
       .filter(question => !['name','want','cause'].includes(question.id) && !gates.has(question.id) && !evidenceState.ans[question.id] &&
         !state.modelSkipped?.[question.id] && (!v3 || !state.v3.issued[question.id]) && (!question.when || conditionMatches(question.when, evidenceState)))
       .map(question => ({ id:question.id, question:renderQuestion(question, evidenceState).q,

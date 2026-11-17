@@ -133,6 +133,9 @@ test('expansion rejects malformed factor groups and closed-object changes',()=>{
 
 test('all nine actual synthetic intake schemas retain exact complete clarification choices',()=>{
   let intake=createIntake(activeQuestionSet),count=0;
+  // Retain coverage of every original bank schema through a historical saved
+  // intake; compact new conversations deliberately ask only the needed subset.
+  delete intake.v3.compact_flow;
   while(currentView(intake).question){
     const question=currentView(intake).question;
     intake=prepareModelAnswer(intake,syntheticAnswer(question),++count);

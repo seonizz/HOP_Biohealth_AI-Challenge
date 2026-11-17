@@ -5,9 +5,10 @@ import pg from 'pg';
 import {createApp} from '../src/server.js';
 import {safetySources,agentContext} from '../src/relationship-agent.js';
 import {HttpError} from '../src/errors.js';
+import {restoreLegacyV3Flow} from './helpers/legacy-v3-flow.js';
 
 const databaseUrl=process.env.TEST_DATABASE_URL;
-async function fixture(t,{clarify=false,failStopOnce=false,questionUpdate}={}) {
+async function fixture(t,{clarify=false,failStopOnce=false,questionUpdate,legacyFlow=false}={}) {
   const schema='test_v3_api_'+randomUUID().replaceAll('-','');
   const admin=new pg.Pool({connectionString:databaseUrl,connectionTimeoutMillis:5000});
   await admin.query(`CREATE SCHEMA ${schema}`);
@@ -37,6 +38,10 @@ async function fixture(t,{clarify=false,failStopOnce=false,questionUpdate}={}) {
   }
   const created=await request('/api/intakes','POST',{conversation_epoch:bootstrap.conversation_epoch});
   assert.equal(created.status,201);
+  if(legacyFlow){
+    await restoreLegacyV3Flow(app.store,created.data.id);
+    created.data=(await request(`/api/intakes/${created.data.id}`)).data;
+  }
   async function answer(view,input){
     const result=await request(`/api/intakes/${view.id}/answers`,'POST',{revision:view.revision,question_id:view.question.id,instance_id:view.question.instance_id,follow_up:!!view.question.follow_up,...input});
     assert.equal(result.status,200,JSON.stringify(result.data));return result.data;
@@ -44,8 +49,8 @@ async function fixture(t,{clarify=false,failStopOnce=false,questionUpdate}={}) {
   return {request,answer,view:created.data,bootstrap,seen};
 }
 
-test('v3 HTTP preserves option+custom, one help display, refusal/stop and persisted bundle', {skip:!databaseUrl},async t=>{
-  const f=await fixture(t);
+test('legacy v3 HTTP preserves option+custom, one help display, refusal/stop and persisted bundle', {skip:!databaseUrl},async t=>{
+  const f=await fixture(t,{legacyFlow:true});
   assert.equal(f.bootstrap.questions.length,9);
   let v=f.view;
   assert.equal(v.question.id,'q3_01');
@@ -78,8 +83,8 @@ test('v3 HTTP preserves option+custom, one help display, refusal/stop and persis
   assert.equal(result.data.error.code,'INTAKE_STOPPED');
 });
 
-test('v3 HTTP renders bound Q10 once and keeps the single selected axis through reload', {skip:!databaseUrl},async t=>{
-  const f=await fixture(t,{clarify:true});let v=f.view;
+test('legacy v3 HTTP renders bound Q10 once and keeps the single selected axis through reload', {skip:!databaseUrl},async t=>{
+  const f=await fixture(t,{clarify:true,legacyFlow:true});let v=f.view;
   v=await f.answer(v,{selected:[3]});
   v=await f.answer(v,{response_event:'skipped'});
   v=await f.answer(v,{text:'내일 만나자고 했어요.'});
@@ -95,9 +100,9 @@ test('v3 HTTP renders bound Q10 once and keeps the single selected axis through 
   assert.equal(stale.status,409);
 });
 
-test('v3 persisted correction from final Q10 replans unshown questions without refunding clarification', {skip:!databaseUrl},async t=>{
+test('legacy v3 persisted correction from final Q10 replans unshown questions without refunding clarification', {skip:!databaseUrl},async t=>{
   const ids=['q3_02','q3_03','q3_04','q3_05','q3_06','q3_07','q3_08'];
-  const f=await fixture(t,{questionUpdate(context){
+  const f=await fixture(t,{legacyFlow:true,questionUpdate(context){
     const sourceId=context.latest_answer.question_id,source=context.supporter.fields[sourceId];
     if(!['q3_01','q3_09'].includes(sourceId)||source.rawText.startsWith('정정'))return {};
     const question_plan={skip:ids.map(question_id=>({question_id,reason:'not_needed',explanation:'지금 요청은 보고한 범위의 짧은 문안 정리입니다.',

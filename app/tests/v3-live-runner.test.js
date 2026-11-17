@@ -20,6 +20,9 @@ async function output(t) {
 
 function fixture({adaptive = false, clarify = false, skipAfterFirst = false, failure, mutateRecord, corruptContext, repeat = false, pending = false} = {}) {
   let state = createIntake(activeQuestionSet), revision = 0, record;
+  // Preserve the runner's original nine-question, archived-conversation
+  // fixture; new intake completion is covered by compact-question-storage.
+  delete state.v3.compact_flow;
   const requests = [];
   const view = () => ({id:intakeId,revision,...currentView(state)});
   const fetchImpl = async (url, options) => {

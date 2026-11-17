@@ -46,7 +46,7 @@ test('one routing POST returns explicit deferred state without manufacturing or 
   assert.equal(p.calls.length,1);assert.equal(p.calls[0].input.stage,'question_plan');
   assert.deepEqual(Object.keys(p.calls[0].input.output_schema.properties),['skip','clarify','safety','personalization']);
   for(const key of ['patient_state','relationship_memory','name_index'])assert.equal(output[key],null);
-  assert.deepEqual(output.state_agent,{prompt_version:PROMPT_VERSION+'-question-slots-v2-personalized-v1',
+  assert.deepEqual(output.state_agent,{prompt_version:PROMPT_VERSION+'-question-slots-v2-compact-v1-personalized-v1',
     stages:['question_plan'],reviewed:false,mode:'single_call',memory_deferred:true});
   assert.deepEqual(output.question_plan,{skip:[]});assert.equal(output.safety_signal.review,undefined);
   assert.throws(()=>currentReviewedSafety({...p.ctx,safety_signal:output.safety_signal}),{modelReason:'agent_safety_stale'});

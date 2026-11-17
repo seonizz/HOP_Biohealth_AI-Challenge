@@ -156,8 +156,9 @@ dbtest('default one-call question flow reaches synthetic general-model cards and
         next:'편한 시간을 확인하세요.',care:{feel:'나의 여건도 돌봐 주세요.',tips:['잠시 쉬어도 괜찮아요.']}}};
   });
   let view=await f.create(),answers=0;
-  while(view.status==='active'){assert.ok(answers++<12);view=await f.answer(view);}
-  assert.ok(answers>=9);assert.equal(f.seen.length,answers);
+  const asked=[];
+  while(view.status==='active'){assert.ok(answers++<12);asked.push(view.question.id);view=await f.answer(view);}
+  assert.equal(answers,2);assert.deepEqual(asked,['q3_01','q3_03']);assert.equal(f.seen.length,answers);
   assert.ok(f.seen.every(call=>call.input.stage==='question_plan'&&call.body.model==='general-original'));
   const result=await f.request(`/api/intakes/${view.id}/result`,'POST',{revision:view.revision});
   assert.equal(result.status,200,result.raw);assert.equal(finalCalls.length,1);assert.equal(finalCalls[0].model,'general-original');

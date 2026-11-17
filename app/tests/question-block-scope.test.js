@@ -15,6 +15,9 @@ const questionCall=call=>call.data.output_block==='questions';
 const reviewCall=call=>/^(turn_review|question_review|safety_review)(?:_after_review)?$/u.test(call.stage);
 const v3Contexts=()=>{
   let intake=createIntake(activeQuestionSet),count=0;
+  // Exercise source preservation for every bank question using a saved legacy
+  // intake; the new compact flow intentionally does not issue all nine.
+  delete intake.v3.compact_flow;
   const contexts=[];
   while(currentView(intake).question){
     intake=prepareModelAnswer(intake,syntheticAnswer(currentView(intake).question),++count);

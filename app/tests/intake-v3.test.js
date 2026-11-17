@@ -5,7 +5,8 @@ import { createIntake, currentView, answerIntake, backIntake, buildContext, prep
   completeModelAnswer, applyModelUpdate, createTestIntake, discardModelAnswer } from '../src/intake.js';
 import { safetySources } from '../src/relationship-agent.js';
 
-const start = () => createIntake(activeQuestionSet);
+// Preserve the pre-compact v3 snapshot contract; new compact intakes have dedicated tests.
+const start = () => { const state=createIntake(activeQuestionSet); delete state.v3.compact_flow; return state; };
 const reply = (state, input = {}) => {
   const q = currentView(state).question;
   return answerIntake(state, { question_id:q.id, instance_id:q.instance_id, follow_up:Boolean(q.follow_up), ...input });

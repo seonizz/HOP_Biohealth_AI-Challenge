@@ -6,6 +6,7 @@ import {createApp} from '../src/server.js';
 import {buildContext} from '../src/intake.js';
 import {activeQuestionSet} from '../src/question-bank.js';
 import {HttpError} from '../src/errors.js';
+import {restoreLegacyV3Flow} from './helpers/legacy-v3-flow.js';
 
 const databaseUrl=process.env.TEST_DATABASE_URL;
 const databaseTest=(name,run)=>test(name,{skip:!databaseUrl&&'Requires isolated PostgreSQL test database'},run);
@@ -56,6 +57,10 @@ async function fixture(t,personalize,{failFirst=false}={}){
   }
   const created=await request('/api/intakes','POST',{conversation_epoch:bootstrap.conversation_epoch});
   assert.equal(created.status,201);
+  // These regressions retain the original 12-slot personalized flow for saved
+  // conversations. New compact-flow HTTP/storage coverage lives separately.
+  await restoreLegacyV3Flow(app.store,created.data.id);
+  created.data=(await request(`/api/intakes/${created.data.id}`)).data;
   const input=(view,value)=>({revision:view.revision,question_id:view.question.id,instance_id:view.question.instance_id,
     follow_up:Boolean(view.question.follow_up),...value});
   async function answer(view,value){
@@ -83,7 +88,7 @@ async function fixture(t,personalize,{failFirst=false}={}){
   return {app,request,input,answer,persisted,finish,view:created.data,seen,finalContexts};
 }
 
-databaseTest('personalized follow-up and adapted canonical question survive HTTP reload and encrypted final storage',async t=>{
+databaseTest('legacy personalized follow-up and adapted canonical question survive HTTP reload and encrypted final storage',async t=>{
   let requested;
   const f=await fixture(t,context=>{
     if(context.latest_answer.question_id==='q3_01')return requested=decision(context);
@@ -122,7 +127,7 @@ databaseTest('personalized follow-up and adapted canonical question survive HTTP
   assert.deepEqual(await f.app.store.record(stored.owner,record.id),record);
 });
 
-databaseTest('persisted source correction removes transitive personalized answers from current and final evidence',async t=>{
+databaseTest('legacy persisted source correction removes transitive personalized answers from current and final evidence',async t=>{
   const f=await fixture(t,context=>{
     const latest=context.latest_answer.question_id;
     if(latest==='q3_01'&&!context.supporter.fields.q3_01.rawText.startsWith('정정'))return decision(context);
@@ -164,7 +169,7 @@ databaseTest('persisted source correction removes transitive personalized answer
   }
 });
 
-databaseTest('persisted failed question turn retries without consuming extra personalized slots or instances',async t=>{
+databaseTest('legacy persisted failed question turn retries without consuming extra personalized slots or instances',async t=>{
   const f=await fixture(t,context=>context.latest_answer.question_id==='q3_01'?decision(context):null,{failFirst:true});
   const path=`/api/intakes/${f.view.id}/answers`,input=f.input(f.view,{custom:report});
   const failed=await f.request(path,'POST',input);

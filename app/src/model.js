@@ -938,7 +938,7 @@ export class ModelGateway {
       // No inferred memory is fabricated or reused to advance a question. The
       // final respond() path rebuilds missing state from sources and reviews it.
       return {...decision,patient_state:null,relationship_memory:null,name_index:null,
-        state_agent:{prompt_version:PROMPT_VERSION+'-question-slots-v2'+(context.personalization?.version===1?'-personalized-v1':''),stages:['question_plan'],
+        state_agent:{prompt_version:PROMPT_VERSION+'-question-slots-v2'+(context.question_policy?.compact_flow?.version===1?'-compact-v1':'')+(context.personalization?.version===1?'-personalized-v1':''),stages:['question_plan'],
           reviewed:false,mode:'single_call',memory_deferred:true}};
     }
     if (['combined', 'combined_blocks'].includes(this.stateMode) && !final) return runCombinedRelationshipState(this,context,memory,operation,final);
