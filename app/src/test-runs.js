@@ -8,13 +8,12 @@ const cancelled = () => new HttpError(499, 'MODEL_CANCELLED', '테스트를 중�
 
 // Test inputs and cards live only for the connected request. Never write intakes,
 // records, model memory or raw inputs into the normal service's database.
-export function createTestRuns({ gateway, questionSet }) {
+export function createTestRuns({ gateway, resolveGateway = () => gateway, questionSet }) {
   const runs = new Map();
   const keyOf = (owner, id) => `${owner}:${id}`;
   return {
     async start(owner, id, input, { signal, requestId } = {}) {
       object(input, ['answers']);
-      if (!gateway) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
       if ([...runs.values()].some(run => run.owner === owner)) throw new HttpError(409, 'TEST_RUN_ACTIVE', '실행 중인 테스트가 있어요. 완료하거나 중단한 뒤 다시 시도해 주세요.');
       if (runs.size >= 4) throw new HttpError(429, 'TEST_RUN_BUSY', '테스트가 진행 중이에요. 잠시 후 다시 시도해 주세요.');
       const key = keyOf(owner, id), controller = new AbortController(), progress = generationProgress();
@@ -24,10 +23,13 @@ export function createTestRuns({ gateway, questionSet }) {
       signal?.addEventListener('abort', abort, { once:true });
       if (signal?.aborted) abort();
       try {
+        const selected = await resolveGateway();
+        controller.signal.throwIfAborted();
+        if (!selected) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
         const state = createTestIntake(input.answers, await questionSet());
         const context = buildContext(state);
         controller.signal.throwIfAborted();
-        const result = await gateway.respond(context, null, { requestId, signal:controller.signal,
+        const result = await selected.respond(context, null, { requestId, signal:controller.signal,
           onProgress:event => { if (!controller.signal.aborted) progress.event(event); },
           onCard:event => { if (!controller.signal.aborted) progress.card(event); },
           onCardProcess:event => { if (!controller.signal.aborted) progress.cardProcess(event); } });
@@ -37,7 +39,7 @@ export function createTestRuns({ gateway, questionSet }) {
           ...(result.agent?.safety_signal ? { safety_signal:result.agent.safety_signal } : {}),
           ...(result.relationship_memory ? { relationship_memory:result.relationship_memory } : {}) });
         const profile = { ...context.profileInput, name:reviewed.name, scores:{},
-          safety:finalSafety(context, result, gateway.protocol), symptoms:[], risks:[], protect:[] };
+          safety:finalSafety(context, result, selected.protocol), symptoms:[], risks:[], protect:[] };
         return { test:true, saved:false, profile, guide:result.guide,
           ...(result.relationship_analysis ? { relationship_analysis:result.relationship_analysis } : {}),
           ...(result.conversation_detail ? { conversation_detail:result.conversation_detail } : {}) };

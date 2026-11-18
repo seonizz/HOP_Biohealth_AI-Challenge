@@ -129,18 +129,18 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
     return profiles.resolve(id);
   };
   const resultGateways = new WeakMap();
-  const resultGateway = id => {
-    const bound = profileGateway(id);
+  const splitResultGateway = bound => {
     if (!(bound instanceof ModelGateway)) return bound;
     if (!resultGateways.has(bound)) {
       resultGateways.set(bound, new ModelGateway({...bound, reviewGateway:null, skipFinalExtras:false, retryFailures:false}));
     }
     return resultGateways.get(bound);
   };
+  const resultGateway = id => splitResultGateway(profileGateway(id));
   const validateRoles = (questionId, resultId) => {
-    const question = profileGateway(questionId);
+    const question = profiles.resolve(profiles.bind(questionId));
     if (resultId == null) return;
-    const result = profileGateway(resultId);
+    const result = profiles.resolve(profiles.bind(resultId));
     if (typeof question.routeQuestion !== 'function' || result.protocol !== 'relationship_agent' ||
         (question instanceof ModelGateway && question.protocol !== 'relationship_agent')) {
       throw new HttpError(422, 'INVALID_MODEL_PROFILE', '질문 판단과 카드 검토가 가능한 모델 연결을 선택해 주세요.');
@@ -191,7 +191,13 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   const modelRuns = new Map();
   const stopping = new AbortController();
   const continuations = createContinuations({store,gateway,sharedRun,subscribeRun,resolveGateway:record=>profileGateway(record.provenance?.model_profile_id)});
-  const testRuns = createTestRuns({ gateway, questionSet:() => store.questionSet() });
+  const selectedCardGateway = async () => {
+    if (!profiles) return legacyGateway;
+    const roles = await readModelRoles(store, profiles.defaultId);
+    if (roles.result_profile_id === null) return profiles.current(roles.question_profile_id);
+    return splitResultGateway(profiles.current(roles.result_profile_id));
+  };
+  const testRuns = createTestRuns({ resolveGateway:selectedCardGateway, questionSet:() => store.questionSet() });
   const cancelRuns = (owner, id, reason = revisionConflict(), keepRevision) => {
     for (const runs of [modelRuns, resultRuns, splitWaits]) for (const [key, run] of runs) {
       if (run.owner !== owner || id !== undefined && run.id !== id || run.revision === keepRevision) continue;
@@ -339,11 +345,14 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       if (req.headers['sec-fetch-site'] === 'cross-site') throw new HttpError(403, 'ORIGIN_REJECTED', '같은 앱에서 요청해 주세요.');
       const url = new URL(req.url, expectedOrigin), path = url.pathname, method = req.method;
       if (path === '/api/admin/models'||path==='/api/admin/model-connections'||path.startsWith('/api/admin/model-connections/')||path==='/api/admin/model-execution'||path.startsWith('/api/admin/model-execution/')) requireAdmin(req,res,hostOrigin);
-      if (path === '/health' && method === 'GET') return json(res, retentionCleanupOk ? 200 : 503, { status:retentionCleanupOk ? 'ok' : 'retention_cleanup_failed', model_configured:Boolean(gateway), mode:'personal_demo',
-        retention_cleanup_ok:retentionCleanupOk,
-        source_sha256:sourceIdentity.sha256, model_protocol:gateway?.protocol || null,
-        prompt_version:gateway?.protocol==='relationship_agent'?PROMPT_VERSION:null, model_requested:gateway?.model || null,
-        runtime_model_identity_verified:false });
+      if (path === '/health' && method === 'GET') {
+        const selected = await selectedCardGateway();
+        return json(res, retentionCleanupOk ? 200 : 503, { status:retentionCleanupOk ? 'ok' : 'retention_cleanup_failed', model_configured:Boolean(selected), mode:'personal_demo',
+          retention_cleanup_ok:retentionCleanupOk,
+          source_sha256:sourceIdentity.sha256, model_protocol:selected?.protocol || null,
+          prompt_version:selected?.protocol==='relationship_agent'?PROMPT_VERSION:null, model_requested:selected?.model || null,
+          runtime_model_identity_verified:false });
+      }
       if (!path.startsWith('/api/')) {
         if (!['GET','HEAD'].includes(method)) throw new HttpError(405, 'METHOD_NOT_ALLOWED', '허용되지 않은 요청이에요.');
         let decoded;

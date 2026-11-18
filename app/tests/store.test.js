@@ -1,7 +1,8 @@
 import { restoreLegacyQuestionBank } from './helpers/legacy-question-bank.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomBytes, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import pg from 'pg';
 import { Store } from '../src/store.js';
 import { createIntake, answerIntake, backIntake, buildContext, currentView } from '../src/intake.js';
@@ -158,6 +159,22 @@ databaseTest('restart preserves encrypted data, startup rejects a changed key, a
   assert.equal((await f.store.pool.query('SELECT COUNT(*)::INTEGER AS count FROM schema_migrations')).rows[0].count, 14);
   await f.store.pool.query('UPDATE schema_migrations SET checksum=$1', ['tampered-checksum']);
   await assert.rejects(Store.connect(databaseUrl, f.key, 30, { schema: f.schema }), /checksum/);
+});
+
+databaseTest('migration checksums accept historical CRLF and still reject edited SQL', async t => {
+  const f = await fixture(t);
+  const version = '001_initial.sql';
+  const sql = (await readFile(new URL('../migrations/' + version, import.meta.url), 'utf8')).replaceAll('\r\n', '\n');
+  const hash = text => createHash('sha256').update(text).digest('hex');
+  const {rows:[stored]} = await f.store.pool.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
+  assert.equal(stored.checksum, hash(sql));
+  const crlf = sql.replaceAll('\n', '\r\n');
+  const saveHash = text => f.store.pool.query('UPDATE schema_migrations SET checksum=$1 WHERE version=$2', [hash(text), version]);
+  await saveHash(crlf);
+  const reopened = await Store.connect(databaseUrl, f.key, 30, {schema:f.schema});
+  await reopened.close();
+  await saveHash(crlf + '-- edited');
+  await assert.rejects(Store.connect(databaseUrl, f.key, 30, {schema:f.schema}), /checksum/);
 });
 
 databaseTest('database questions seed once and edits, additions, ordering and removals survive restart', async t => {

@@ -59,10 +59,15 @@ export class Store {
           version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`);
         for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql', '008_record_access_keys.sql', '009_continuations.sql', '010_questionnaire_v3.sql', '011_model_selection.sql', '012_model_connections.sql', '013_split_model_roles.sql', '014_split_result_jobs.sql']) {
-          const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8');
+          const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8').replaceAll('\r\n', '\n');
           const checksum = digest(source);
           const applied = await client.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
-          if (applied.rowCount && applied.rows[0].checksum !== checksum) throw new Error('Applied database migration checksum does not match');
+          if (applied.rowCount && applied.rows[0].checksum !== checksum) {
+            // Older Windows installs hashed the same SQL with CRLF line endings.
+            if (applied.rows[0].checksum !== digest(source.replaceAll('\n', '\r\n'))) {
+              throw new Error('Applied database migration checksum does not match');
+            }
+          }
           if (!applied.rowCount) {
             await client.query(source);
             if (version === '002_questions.sql') {
