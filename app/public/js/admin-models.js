@@ -1,6 +1,7 @@
 export async function mountModelAdmin({document,fetchImpl=fetch}) {
   const form=document.getElementById('modelForm');
   const picker=document.getElementById('modelProfile');
+  const resultPicker=document.getElementById('resultModelProfile');
   const save=document.getElementById('saveModel');
   const current=document.getElementById('currentModel');
   const status=document.getElementById('modelStatus');
@@ -29,9 +30,16 @@ export async function mountModelAdmin({document,fetchImpl=fetch}) {
   const executionChoices={question_mode:['single','two','individual'],scheduling:['individual','parallel'],
     question_source:['general','custom'],review_source:['general','custom']};
   let csrf,profiles=[],connections=[],executions=[],busy=true;
+  const available=id=>profiles.some(profile=>profile.id===id&&profile.available);
+  const validSelection=()=>available(picker.value)&&
+    (resultPicker.value===''||available(resultPicker.value)&&resultPicker.value!==picker.value);
   const controls=()=>{
     picker.disabled=busy||!profiles.some(profile=>profile.available);
-    save.disabled=busy||!profiles.some(profile=>profile.id===picker.value&&profile.available);
+    resultPicker.disabled=picker.disabled;
+    for(const option of resultPicker.children){
+      if(option.value)option.disabled=!available(option.value)||option.value===picker.value;
+    }
+    save.disabled=busy||!validSelection();
     const connectionDisabled=busy||!connections.some(item=>item.id===connectionPicker.value);
     connectionPicker.disabled=busy||connections.length===0;
     for(const field of Object.values(apiFields))field.disabled=connectionDisabled;
@@ -59,16 +67,26 @@ export async function mountModelAdmin({document,fetchImpl=fetch}) {
     return data;
   };
   const render=data=>{
+    const resultId=data?.result_model_profile ?? null;
     if(!Array.isArray(data?.profiles)||!data.profiles.every(profile=>profile&&ids.includes(profile.id)&&typeof profile.label==='string'&&typeof profile.available==='boolean')||
-      !data.profiles.some(profile=>profile.id===data.selected_model_profile))throw new Error('모델 설정 응답을 확인하지 못했어요. 새로고침해 주세요.');
-    profiles=data.profiles;picker.textContent='';
+      !data.profiles.some(profile=>profile.id===data.selected_model_profile)||
+      (resultId!==null&&(resultId===data.selected_model_profile||!data.profiles.some(profile=>profile.id===resultId))))
+      throw new Error('모델 설정 응답을 확인하지 못했어요. 새로고침해 주세요.');
+    profiles=data.profiles;picker.textContent='';resultPicker.textContent='';
+    const shared=document.createElement('option');
+    shared.value='';shared.textContent='대화 모델 사용';resultPicker.appendChild(shared);
     for(const profile of profiles){
       const option=document.createElement('option');option.value=profile.id;
       option.textContent=profile.label+(profile.available?'':' · 연결 설정 필요');
       option.disabled=!profile.available;picker.appendChild(option);
+      const resultOption=document.createElement('option');
+      resultOption.value=option.value;resultOption.textContent=option.textContent;resultPicker.appendChild(resultOption);
     }
     picker.value=data.selected_model_profile;
-    current.textContent=`현재 설정: ${profiles.find(profile=>profile.id===data.selected_model_profile).label}`;
+    resultPicker.value=resultId ?? '';
+    const questionLabel=profiles.find(profile=>profile.id===picker.value).label;
+    const resultLabel=profiles.find(profile=>profile.id===resultId)?.label;
+    current.textContent=resultLabel?`현재 설정: 대화 ${questionLabel} · 분석·카드 ${resultLabel}`:`현재 설정: ${questionLabel}`;
   };
   const showConnection=()=>{
     const connection=connections.find(item=>item.id===connectionPicker.value);
@@ -97,7 +115,7 @@ export async function mountModelAdmin({document,fetchImpl=fetch}) {
       fields.api_key.value='';
       keyState.textContent=`API 키: ${connection?.api_key_configured?'설정됨':'미설정'}`;
     }
-    executionState.textContent=execution.configured?'최종 카드는 범용 모델의 기존 흐름을 사용합니다.':'먼저 위에서 범용 모델 연결을 저장해 주세요.';
+    executionState.textContent=execution.configured?'범용 모델 연결이 준비됐어요.':'먼저 위에서 범용 모델 연결을 저장해 주세요.';
   };
   const renderExecutions=data=>{
     const validConnection=value=>value===null||value&&typeof value.base_url==='string'&&typeof value.model==='string'&&typeof value.api_key_configured==='boolean';
@@ -111,14 +129,15 @@ export async function mountModelAdmin({document,fetchImpl=fetch}) {
     showExecution();
   };
   picker.onchange=controls;
+  resultPicker.onchange=controls;
   connectionPicker.onchange=()=>{showConnection();apiStatus.textContent='';controls();};
   executionPicker.onchange=()=>{showExecution();executionStatus.textContent='';controls();};
   for(const field of Object.values(executionFields))field.onchange=controls;
   form.onsubmit=async event=>{
-    event.preventDefault();if(busy||!profiles.some(profile=>profile.id===picker.value&&profile.available))return;
+    event.preventDefault();if(busy||!validSelection())return;
     busy=true;controls();status.textContent='설정을 저장하고 있어요.';
     try{
-      render(await request('PUT','/api/admin/models',{model_profile_id:picker.value}));
+      render(await request('PUT','/api/admin/models',{model_profile_id:picker.value,result_model_profile_id:resultPicker.value||null}));
       status.textContent='저장했어요. 다음에 시작하는 새 대화부터 적용됩니다.';
     }catch(error){status.textContent=error.message;}
     finally{busy=false;controls();}

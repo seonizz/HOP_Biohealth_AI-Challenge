@@ -1,3 +1,4 @@
+import {assertSplitResultClaim, syncSplitResultJob} from './split-result-jobs.js';
 import pg from 'pg';
 import { createHash, randomBytes, randomUUID, createCipheriv, createDecipheriv } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync, chmodSync, existsSync } from 'node:fs';
@@ -57,7 +58,7 @@ export class Store {
         await client.query(`CREATE TABLE IF NOT EXISTS schema_migrations (
           version TEXT PRIMARY KEY, checksum TEXT NOT NULL, applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
         )`);
-        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql', '008_record_access_keys.sql', '009_continuations.sql', '010_questionnaire_v3.sql', '011_model_selection.sql', '012_model_connections.sql']) {
+        for (const version of ['001_initial.sql', '002_questions.sql', '003_frontend_name.sql', '004_frontend_questions.sql', '005_conversation_epoch.sql', '006_data_retention.sql', '007_natural_prompts.sql', '008_record_access_keys.sql', '009_continuations.sql', '010_questionnaire_v3.sql', '011_model_selection.sql', '012_model_connections.sql', '013_split_model_roles.sql', '014_split_result_jobs.sql']) {
           const source = readFileSync(new URL(`../migrations/${version}`, import.meta.url), 'utf8');
           const checksum = digest(source);
           const applied = await client.query('SELECT checksum FROM schema_migrations WHERE version=$1', [version]);
@@ -308,7 +309,7 @@ export class Store {
     return { id, revision: row.revision, context: normalizeAnswerContext(this.open(row.content, `${owner}:patient:${id}:${row.revision}`)) };
   }
 
-  async updateIntake(owner, id, revision, operation, reason = 'user_answer') {
+  async updateIntake(owner, id, revision, operation, reason = 'user_answer', {resultJob} = {}) {
     if (!['user_answer', 'correction', 'model_update'].includes(reason)) throw new Error('Invalid patient state revision reason');
     return this.transaction(async client => {
       await this.lockOwner(client, owner);
@@ -316,6 +317,7 @@ export class Store {
       if (!result.rowCount) throw notFound();
       const current = result.rows[0];
       if (current.revision !== revision) throw new HttpError(409, 'REVISION_CONFLICT', '다른 요청이 먼저 반영됐어요. 현재 질문을 다시 확인해 주세요.');
+      if (resultJob) await assertSplitResultClaim(client, owner, id, revision, resultJob.token);
       const previous=this.open(current.content, `${owner}:intake:${id}`);
       const assessment=previous.referralAssessment?structuredClone(previous.referralAssessment):null;
       const wasReady=previous.status==='ready'&&!previous.modelPending&&!previous.agentRecord;
@@ -327,6 +329,13 @@ export class Store {
       await client.query('UPDATE intakes SET revision=$1,content=$2,updated_at=$3 WHERE id=$4 AND owner=$5',
         [revision + 1, this.seal(state, `${owner}:intake:${id}`), now(), id, owner]);
       await this.writeContext(client, owner, id, revision + 1, state, reason);
+      if (resultJob && state.agentRecord) {
+        const record = state.agentRecord;
+        const recordId = String(record.id);
+        await client.query('INSERT INTO records(id,owner,intake_id,content,created_at) VALUES ($1,$2,$3,$4,$5)',
+          [recordId, owner, id, this.seal(record, `${owner}:record:${recordId}`), record.date]);
+      }
+      if (state.resultModelProfileId !== undefined) await syncSplitResultJob(client, owner, id, revision + 1, state);
       return { id, revision: revision + 1, state };
     });
   }

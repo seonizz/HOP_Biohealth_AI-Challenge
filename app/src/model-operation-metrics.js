@@ -35,7 +35,7 @@ function familiesOf(stage,request) {
   if(/^state_observations(?:_|$)/u.test(stage))return ['turn_patient_state','turn_name_index'];
   if(stage==='final_analysis_plan_draft')return ['final_analysis','communication_plan'];
   if(/^relationship_memory(?:_|$)/u.test(stage))return ['turn_relationship_memory'];
-  if(stage==='question_plan')return ['turn_questions'];
+  if(stage==='question_plan'||stage==='question_route')return ['turn_questions'];
   if(stage==='state')return ['turn_patient_state','turn_name_index','turn_questions'];
   if(/^(?:relationship_analysis|analysis_repair)(?:_|$)/u.test(stage))return ['final_analysis'];
   if(/^communication_plan(?:_|$)/u.test(stage))return ['communication_plan'];

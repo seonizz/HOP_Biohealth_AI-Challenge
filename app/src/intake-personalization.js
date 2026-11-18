@@ -26,12 +26,13 @@ export function personalizationContext(state) {
   } };
 }
 
-export function createPersonalQuestion(state, decision) {
+export function createPersonalQuestion(state, decision, {includeQuote = true} = {}) {
   const personal = state.v3.personalization;
   if (decision.kind === 'next') {
     const question = state.questionSet.questions.find(item => item.id === decision.question_id);
+    const text = renderQuestion(question, state).q;
     personal.presentations[question.id] = { decision:structuredClone(decision), status:'issued',
-      text:`“${decision.quote}”라고 말씀하신 내용과 관련해 여쭤볼게요.\n${renderQuestion(question, state).q}` };
+      text:includeQuote ? `“${decision.quote}”라고 말씀하신 내용과 관련해 여쭤볼게요.\n${text}` : text };
     state.i = state.questionSet.questions.indexOf(question);
     return question;
   }

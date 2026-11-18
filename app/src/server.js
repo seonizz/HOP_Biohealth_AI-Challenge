@@ -1,4 +1,5 @@
 import { createServer } from 'node:http';
+import { setTimeout as wait } from 'node:timers/promises';
 import { readFile, stat } from 'node:fs/promises';
 import { resolve, extname, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +9,7 @@ import { HttpError, object } from './errors.js';
 import { columns, categories } from './catalog.js';
 import { questionCatalogOf } from './question-bank.js';
 import { createIntake, currentView, answerIntake, backIntake, buildContext, applyModelUpdate,
-  prepareModelAnswer, completeModelAnswer, discardModelAnswer } from './intake.js';
+  prepareModelAnswer, completeModelAnswer, discardModelAnswer, splitQuestionPreflight, completeSplitModelAnswer } from './intake.js';
 import { configuredModelGateway } from './model-config.js';
 import {configuredModelProfiles,createModelProfiles} from './model-profiles.js';
 import { generationProgress } from './generation-progress.js';
@@ -24,6 +25,9 @@ import {configuredAdminAccess} from './admin-access.js';
 import {withModelConnections,prepareModelConnection,prepareModelExecution,missingExecutionDefaults,missingModelBaselines,missingLegacyModelBaseline} from './model-connections.js';
 import {DEFAULT_MODEL_EXECUTION} from './model-execution.js';
 import {respondWithRun,streamEvent} from './response-stream.js';
+import {ModelGateway} from './model.js';
+import {readModelRoles,saveModelRoles} from './split-model-settings.js';
+import {createSplitResultWorker,retrySplitResultJob,splitResultJob} from './split-result-jobs.js';
 
 const ROOT = fileURLToPath(new URL('../public/', import.meta.url));
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -124,6 +128,24 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
     if(!profiles)throw new HttpError(503,'MODEL_PROFILE_UNAVAILABLE','선택한 모델의 연결을 준비한 뒤 다시 시도해 주세요.');
     return profiles.resolve(id);
   };
+  const resultGateways = new WeakMap();
+  const resultGateway = id => {
+    const bound = profileGateway(id);
+    if (!(bound instanceof ModelGateway)) return bound;
+    if (!resultGateways.has(bound)) {
+      resultGateways.set(bound, new ModelGateway({...bound, reviewGateway:null, skipFinalExtras:false, retryFailures:false}));
+    }
+    return resultGateways.get(bound);
+  };
+  const validateRoles = (questionId, resultId) => {
+    const question = profileGateway(questionId);
+    if (resultId == null) return;
+    const result = profileGateway(resultId);
+    if (typeof question.routeQuestion !== 'function' || result.protocol !== 'relationship_agent' ||
+        (question instanceof ModelGateway && question.protocol !== 'relationship_agent')) {
+      throw new HttpError(422, 'INVALID_MODEL_PROFILE', '질문 판단과 카드 검토가 가능한 모델 연결을 선택해 주세요.');
+    }
+  };
   const store = await Store.connect(databaseUrl, key || loadContentKey(resolve('./runtime/content.key')), sessionDays, { schema, retentionDays });
   try{if(profiles){
     let rows=await store.modelConnections();
@@ -153,7 +175,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
     const providers=new WeakMap();
     const providerForState=referralProvider===undefined?state=>{
       if(state.modelProfileId===undefined)return legacyProvider;
-      const selected=profileGateway(state.modelProfileId);
+      const selected=state.resultModelProfileId === undefined
+        ? profileGateway(state.modelProfileId) : resultGateway(state.resultModelProfileId);
       if(!providers.has(selected))providers.set(selected,typeof selected.referralGuidance==='function'
         ? input=>selected.referralGuidance(input)
         : configuredReferralProvider({gateway:selected,env:{REFERRAL_GUIDANCE_ENABLED:process.env.REFERRAL_GUIDANCE_ENABLED,REFERRAL_COUNTRY:process.env.REFERRAL_COUNTRY}}));
@@ -170,7 +193,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   const continuations = createContinuations({store,gateway,sharedRun,subscribeRun,resolveGateway:record=>profileGateway(record.provenance?.model_profile_id)});
   const testRuns = createTestRuns({ gateway, questionSet:() => store.questionSet() });
   const cancelRuns = (owner, id, reason = revisionConflict(), keepRevision) => {
-    for (const runs of [modelRuns, resultRuns]) for (const [key, run] of runs) {
+    for (const runs of [modelRuns, resultRuns, splitWaits]) for (const [key, run] of runs) {
       if (run.owner !== owner || id !== undefined && run.id !== id || run.revision === keepRevision) continue;
       run.controller.abort(reason);
       runs.delete(key);
@@ -182,6 +205,116 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   const view = row => ({ id: row.id, revision: row.revision, name:row.state.name, chat_title:row.state.chatTitle || '', ...currentView(row.state), log: row.state.log,
     referral_available:referral.available(row.state),
     ...(row.state.modelProfileId!==undefined?{model_profile_id:row.state.modelProfileId}:{}) });
+  const generateResult = async (owner, id, revision, progress, requestId, signal, job) => {
+    let row = await store.intake(owner, id);
+    if (row.state.agentRecord) {
+      progress.savedRevision=row.revision;progress.finish('saving');
+      signal.throwIfAborted();
+      const record=await (job ? store.record(owner,row.state.agentRecord.id) : store.saveRecord(owner,row.state.agentRecord,id));
+      progress.finish('complete');return {record,revision:row.revision};
+    }
+    if (row.revision !== revision || row.state.status !== 'ready') throw new HttpError(409, 'INTAKE_NOT_READY', '대화를 마친 뒤 결과를 확인해 주세요.');
+    const selectedGateway=job ? resultGateway(row.state.resultModelProfileId) : profileGateway(row.state.modelProfileId);
+    if (!selectedGateway) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
+    // Rebuild safety metadata from the current saved intake. Contexts
+    // written by an older version may omit its approved danger signal.
+    const context = buildContext(row.state);
+    if (context.user_stopped && !context.safety_signal?.urgent && !context.safety_review_pending) {
+      throw new HttpError(409, 'INTAKE_STOPPED', '대화를 종료했어요. 새 대화는 처음 화면에서 시작해 주세요.');
+    }
+    signal.throwIfAborted();
+    let result;
+    try {
+      result = await selectedGateway.respond(context, row.state.agentMemory || null, { requestId, signal, onProgress:event=>{if(!signal.aborted)progress.event(event);},
+        onCard:event=>{if(!signal.aborted)progress.card(event);} });
+    } catch(error) {
+      // A stopped conversation may resolve its pending safety review
+      // without generating a guide. Persist that verdict once, so a
+      // reload does not rerun the same independent review forever.
+      if(error instanceof HttpError&&error.code==='INTAKE_STOPPED'&&error.reviewedSafety) {
+        signal.throwIfAborted();
+        const reviewed=currentReviewedSafety({...context,safety_signal:error.reviewedSafety});
+        if(reviewed?.urgent===false) {
+          row=await store.updateIntake(owner,id,row.revision,state=>{
+            signal.throwIfAborted();
+            const next={...state,safetySignal:reviewed};delete next.safetyReviewPending;return next;
+          },'model_update',{resultJob:job});
+          referral.cancel(owner,id,revisionConflict(),row.revision);
+        }
+      }
+      throw error;
+    }
+    signal.throwIfAborted();
+    progress.finish('saving');
+    const recordId = await store.nextRecordId();
+    const p = { ...context.profileInput, scores:{}, safety:finalSafety(context, result, selectedGateway.protocol),
+      symptoms:[], risks:[], protect:[] };
+    row = await store.updateIntake(owner, id, revision, state => {
+      signal.throwIfAborted();
+      const next = { ...applyModelUpdate(state, { patient_state:result.patient_state,
+        name_index:result.name_index, question_plan:{ skip:[] },
+        ...(result.agent?.safety_signal ? {safety_signal:result.agent.safety_signal} : {}),
+        ...(result.relationship_memory ? {relationship_memory:result.relationship_memory} : {}) }), agentResult:result };
+      next.log = [...state.log, { who:'ai', text:'고마워요. 들려주신 이야기를 바탕으로 말하는 방법을 정리했어요.', fu:false, face:'thanks' }];
+      next.agentRecord = {
+        id:recordId, title:next.chatTitle || next.name || '그분', date:new Date().toISOString(),
+        profile:{ ...p, name:next.name }, guide:result.guide, log:next.log, followUps:state.fuCount,
+        ...(result.relationship_analysis ? {relationship_analysis:result.relationship_analysis} : {}),
+        ...(result.conversation_detail ? {conversation_detail:result.conversation_detail} : {}),
+        provenance:{ kind:'model', model:selectedGateway.model || 'unknown', clinically_validated:false,
+          ...(state.modelProfileId!==undefined?{model_profile_id:state.resultModelProfileId ?? state.modelProfileId}:{}),
+          ...(job ? {question_model_profile_id:state.modelProfileId} : {}),
+          source_sha256:sourceIdentity.sha256, model_protocol:selectedGateway.protocol || null, runtime_model_identity_verified:false,
+          ...(result.agent ? {agent:result.agent} : {}) }
+      };
+      next.agentRecord.context = buildContext(next);
+      return next;
+    }, 'model_update', {resultJob:job});
+    signal.throwIfAborted();
+    progress.savedRevision=row.revision;
+    referral.cancel(owner, id, revisionConflict(), row.revision);
+    const record=job ? row.state.agentRecord : await store.saveRecord(owner, row.state.agentRecord, id);
+    progress.finish('complete');
+    return { record, revision:row.revision };
+  };
+  const splitWaits = new Map();
+  const resultWorker = createSplitResultWorker(store, async (job, signal) => {
+    const {owner,id,revision} = job;
+    const key = `${owner}:${id}:${revision}`;
+    const progress = splitWaits.get(key)?.progress ?? generationProgress();
+    const run = sharedRun(resultRuns, key, {owner,id,revision,progress}, async runSignal => {
+      const combined = AbortSignal.any([signal, runSignal]);
+      try {
+        return await generateResult(owner,id,revision,progress,randomUUID(),combined,job);
+      } catch (error) {
+        progress.card({type:'reset'});
+        progress.finish('failed');
+        throw error;
+      }
+    });
+    await run.promise;
+  }, error => console.error(JSON.stringify({event:'split_result_worker_failed',code:error instanceof HttpError ? error.code : 'INTERNAL_ERROR'})));
+
+  async function waitForResult(owner, id, revision, signal) {
+    for (;;) {
+      signal.throwIfAborted();
+      const status = await splitResultJob(store,owner,id,revision);
+      if (status === 'failed') throw new HttpError(503, 'MODEL_RESULT_FAILED', '말하는 방법을 준비하지 못했어요. 저장된 답변으로 다시 시도해 주세요.');
+      if (!status) {
+        const row = await store.intake(owner,id);
+        if (row.state.agentRecord)
+          return {record:await store.record(owner,row.state.agentRecord.id),revision:row.revision};
+        if (row.state.v3?.stopped && !row.state.safetySignal?.urgent && !row.state.safetyReviewPending?.urgent)
+          throw new HttpError(409, 'INTAKE_STOPPED', '대화를 종료했어요. 새 대화는 처음 화면에서 시작해 주세요.');
+        if (row.revision !== revision) throw revisionConflict();
+        throw new HttpError(500, 'RESULT_STORAGE_FAILED', '결과 작업을 읽지 못했어요. 잠시 후 다시 시도해 주세요.');
+      }
+      await wait(500, undefined, {signal}).catch(error => {
+        signal.throwIfAborted();
+        throw error;
+      });
+    }
+  }
   const server = createServer(async (req, res) => {
     const requestId = randomUUID();
     const requestStarted = Date.now();
@@ -299,12 +432,15 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       }
       if (path === '/api/admin/models') {
         if (!profiles) throw new HttpError(503, 'MODEL_SELECTION_DISABLED', '모델 선택 설정이 준비되지 않았어요.');
-        if (method === 'GET') return json(res, 200, {profiles:profiles.list(),selected_model_profile:await store.selectedModelProfile(profiles.defaultId)});
+        const metadata = roles => ({profiles:profiles.list(), selected_model_profile:roles.question_profile_id,
+          result_model_profile:roles.result_profile_id});
+        if (method === 'GET') return json(res, 200, metadata(await readModelRoles(store, profiles.defaultId)));
         if (method === 'PUT') {
-          const input=object(await body(req), ['model_profile_id']);
-          if(!profiles.list().some(profile=>profile.id===input.model_profile_id&&profile.available))profiles.resolve(input.model_profile_id);
-          const id=await store.setModelProfile(input.model_profile_id);
-          return json(res, 200, {profiles:profiles.list(),selected_model_profile:id});
+          const input = object(await body(req), ['model_profile_id','result_model_profile_id']);
+          const current = await readModelRoles(store, profiles.defaultId);
+          const resultId = input.result_model_profile_id === undefined ? current.result_profile_id : input.result_model_profile_id;
+          validateRoles(input.model_profile_id, resultId);
+          return json(res, 200, metadata(await saveModelRoles(store, input.model_profile_id, input.result_model_profile_id)));
         }
         throw new HttpError(405, 'METHOD_NOT_ALLOWED', '허용되지 않은 요청이에요.');
       }
@@ -375,8 +511,12 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         const epoch = revisionOf(input.conversation_epoch);
         const state=createIntake(await store.questionSet());
         if(profiles){
-          const id=await store.selectedModelProfile(profiles.defaultId);
-          const binding=profiles.bind(id);profiles.resolve(binding);state.modelProfileId=binding;
+          const roles = await readModelRoles(store, profiles.defaultId);
+          // Snapshot both immutable connection bindings for the lifetime of this intake.
+          // Resolve the result gateway when its worker runs so a card outage does not block intake.
+          state.modelProfileId = profiles.bind(roles.question_profile_id);
+          profiles.resolve(state.modelProfileId);
+          if (roles.result_profile_id !== null) state.resultModelProfileId = profiles.bind(roles.result_profile_id);
         }
         return json(res, 201, view(await store.createIntake(owner,state,epoch)));
       }
@@ -412,9 +552,10 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
         if (method === 'POST' && ['answers','back'].includes(action)) {
           const input = object(await body(req), action === 'back' ? ['revision'] : ['revision','question_id','text','selected','custom','skipped','follow_up','response_event','instance_id']);
           const revision = revisionOf(input.revision);
-          const selectedGateway=action==='answers'?profileGateway((await store.intake(owner,id)).state.modelProfileId):null;
-          if (selectedGateway && action === 'answers' && (!input.skipped || selectedGateway.protocol==='relationship_agent')) {
-            let row = await store.intake(owner, id);
+          let row = action === 'answers' ? await store.intake(owner, id) : null;
+          const split = row?.state.resultModelProfileId !== undefined;
+          const selectedGateway = row ? profileGateway(row.state.modelProfileId) : null;
+          if (selectedGateway && (split || !input.skipped || selectedGateway.protocol==='relationship_agent')) {
             const retry = row.state.modelPending && sameAnswer(row.state.modelPending.input, input);
             if (revision !== row.revision && !(retry && revision === row.state.modelPending.sourceRevision)) throw revisionConflict();
             if (!retry) {
@@ -434,23 +575,26 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
             const progress=generationProgress();
             const run = async signal => {
               const context = buildContext(row.state);
-              const memory = await selectedGateway.updateState(context, row.state.agentMemory || null, { requestId, signal,
-                onProgress:event=>{if(!signal.aborted)progress.event(event);} });
+              const options = { requestId, signal, onProgress:event=>{if(!signal.aborted)progress.event(event);} };
+              const decision = split
+                ? splitQuestionPreflight(row.state) ?? await selectedGateway.routeQuestion(context, options)
+                : await selectedGateway.updateState(context, row.state.agentMemory || null, options);
               signal.throwIfAborted();
               progress.finish('saving');
               const updated = await store.updateIntake(owner, id, row.revision, state => {
                 signal.throwIfAborted();
-                return completeModelAnswer(state, memory);
+                return split ? completeSplitModelAnswer(state, decision) : completeModelAnswer(state, decision);
               }, 'model_update');
               referral.cancel(owner, id, revisionConflict(), updated.revision);
               progress.finish('complete');
+              if (split && updated.state.status === 'ready') setImmediate(resultWorker.wake);
               return updated;
             };
             // The pending input remains saved; an error cannot advance a prompt.
             return await respondWithRun(req,res,sharedRun(modelRuns, runKey,
               {owner, id, revision:row.revision, progress}, run),modelSignal,subscribeRun,{revision,project:view});
           }
-          const row = await store.updateIntake(owner, id, revision, state => {
+          row = await store.updateIntake(owner, id, revision, state => {
             const next = action === 'back' ? backIntake(state) : answerIntake(discardModelAnswer(state), input);
             // This path commits without a model update (offline answers, legacy
             // skipped answers, or back). Old interpretations/approvals/results
@@ -468,77 +612,20 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
           const revision = revisionOf(input.revision);
           const runKey = `${owner}:${id}:${revision}`;
           const progress=generationProgress();
-          const run = async signal => {
-            let row = await store.intake(owner, id);
-            if (row.state.agentRecord) {
-              progress.savedRevision=row.revision;progress.finish('saving');
-              signal.throwIfAborted();
-              const record=await store.saveRecord(owner,row.state.agentRecord,id);
-              progress.finish('complete');return {record,revision:row.revision};
-            }
-            if (row.revision !== revision || row.state.status !== 'ready') throw new HttpError(409, 'INTAKE_NOT_READY', '대화를 마친 뒤 결과를 확인해 주세요.');
-            const selectedGateway=profileGateway(row.state.modelProfileId);
-            if (!selectedGateway) throw new HttpError(503, 'MODEL_NOT_CONNECTED', '모델 API 설정을 확인해 주세요.');
-            // Rebuild safety metadata from the current saved intake. Contexts
-            // written by an older version may omit its approved danger signal.
-            const context = buildContext(row.state);
-            if (context.user_stopped && !context.safety_signal?.urgent && !context.safety_review_pending) {
+          const row = profiles ? await store.intake(owner, id) : null;
+          if (row?.state.resultModelProfileId !== undefined) {
+            if (row.state.agentRecord) return json(res,200,{record:await store.record(owner,row.state.agentRecord.id),revision:row.revision});
+            if (row.revision !== revision || row.state.status !== 'ready') throw revisionConflict();
+            if (row.state.v3?.stopped && !row.state.safetySignal?.urgent && !row.state.safetyReviewPending?.urgent)
               throw new HttpError(409, 'INTAKE_STOPPED', '대화를 종료했어요. 새 대화는 처음 화면에서 시작해 주세요.');
-            }
-            signal.throwIfAborted();
-            let result;
-            try {
-              result = await selectedGateway.respond(context, row.state.agentMemory || null, { requestId, signal, onProgress:event=>{if(!signal.aborted)progress.event(event);},
-                onCard:event=>{if(!signal.aborted)progress.card(event);} });
-            } catch(error) {
-              // A stopped conversation may resolve its pending safety review
-              // without generating a guide. Persist that verdict once, so a
-              // reload does not rerun the same independent review forever.
-              if(error instanceof HttpError&&error.code==='INTAKE_STOPPED'&&error.reviewedSafety) {
-                signal.throwIfAborted();
-                const reviewed=currentReviewedSafety({...context,safety_signal:error.reviewedSafety});
-                if(reviewed?.urgent===false) {
-                  row=await store.updateIntake(owner,id,row.revision,state=>{
-                    signal.throwIfAborted();
-                    const next={...state,safetySignal:reviewed};delete next.safetyReviewPending;return next;
-                  },'model_update');
-                  referral.cancel(owner,id,revisionConflict(),row.revision);
-                }
-              }
-              throw error;
-            }
-            signal.throwIfAborted();
-            progress.finish('saving');
-            const recordId = await store.nextRecordId();
-            const p = { ...context.profileInput, scores:{}, safety:finalSafety(context, result, selectedGateway.protocol),
-              symptoms:[], risks:[], protect:[] };
-            row = await store.updateIntake(owner, id, revision, state => {
-              signal.throwIfAborted();
-              const next = { ...applyModelUpdate(state, { patient_state:result.patient_state,
-                name_index:result.name_index, question_plan:{ skip:[] },
-                ...(result.agent?.safety_signal ? {safety_signal:result.agent.safety_signal} : {}),
-                ...(result.relationship_memory ? {relationship_memory:result.relationship_memory} : {}) }), agentResult:result };
-              next.log = [...state.log, { who:'ai', text:'고마워요. 들려주신 이야기를 바탕으로 말하는 방법을 정리했어요.', fu:false, face:'thanks' }];
-              next.agentRecord = {
-                id:recordId, title:next.chatTitle || next.name || '그분', date:new Date().toISOString(),
-                profile:{ ...p, name:next.name }, guide:result.guide, log:next.log, followUps:state.fuCount,
-                ...(result.relationship_analysis ? {relationship_analysis:result.relationship_analysis} : {}),
-                ...(result.conversation_detail ? {conversation_detail:result.conversation_detail} : {}),
-                provenance:{ kind:'model', model:selectedGateway.model || 'unknown', clinically_validated:false,
-                  ...(state.modelProfileId!==undefined?{model_profile_id:state.modelProfileId}:{}),
-                  source_sha256:sourceIdentity.sha256, model_protocol:selectedGateway.protocol || null, runtime_model_identity_verified:false,
-                  ...(result.agent ? {agent:result.agent} : {}) }
-              };
-              next.agentRecord.context = buildContext(next);
-              return next;
-            }, 'model_update');
-            signal.throwIfAborted();
-            progress.savedRevision=row.revision;
-            referral.cancel(owner, id, revisionConflict(), row.revision);
-            const record=await store.saveRecord(owner, row.state.agentRecord, id);
-            progress.finish('complete');
-            return { record, revision:row.revision };
-          };
+            if (!splitWaits.has(runKey)) await retrySplitResultJob(store, owner, id, revision);
+            resultWorker.wake();
+            const current = resultRuns.get(runKey);
+            const run = sharedRun(splitWaits, runKey, {owner,id,revision,progress:current?.progress ?? progress},
+              signal => waitForResult(owner,id,revision,signal));
+            return await respondWithRun(req,res,run,modelSignal,subscribeRun);
+          }
+          const run = signal => generateResult(owner,id,revision,progress,requestId,signal);
           return await respondWithRun(req,res,sharedRun(resultRuns, runKey,
             {owner, id, revision, progress}, run),modelSignal,subscribeRun);
         }
@@ -596,15 +683,20 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
   cleanupTimer.unref();
   let storeClosing, shutdownRun;
   const closeStore = () => storeClosing ||= store.close();
-  server.on('close', () => { clearInterval(cleanupTimer); continuations.close(); closeStore().catch(() => {}); });
+  if (profiles) server.once('listening', resultWorker.start);
+  server.on('close', () => {
+    clearInterval(cleanupTimer); continuations.close();
+    Promise.resolve(resultWorker.close()).finally(closeStore).catch(() => {});
+  });
   const shutdown = () => shutdownRun ||= (async () => {
     stopping.abort(cancelled());
     // An unlimited model retry must stop before graceful HTTP close waits for
     // its response. These runs all belong to this app instance.
-    for (const runs of [modelRuns, resultRuns]) {
+    for (const runs of [modelRuns, resultRuns, splitWaits]) {
       for (const run of runs.values()) run.controller.abort(cancelled());
       runs.clear();
     }
+    const workerClosing = resultWorker.close();
     referral.shutdown();
     continuations.close();
     testRuns.shutdown();
@@ -612,6 +704,7 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
       server.close(error => error && error.code !== 'ERR_SERVER_NOT_RUNNING' ? reject(error) : resolve());
       server.closeIdleConnections();
     });
+    await workerClosing;
     await closeStore();
   })();
   return { server, store, shutdown };
