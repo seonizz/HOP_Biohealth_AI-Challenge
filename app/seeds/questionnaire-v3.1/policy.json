@@ -1,0 +1,224 @@
+{
+  "schema_version": "reference-policy-1",
+  "bundle_id": "malssi-intake-3.1.0-rc1",
+  "artifact_status": "active_reference_candidate",
+  "production_approved": false,
+  "native_app_compatibility_verified": false,
+  "purpose": "수정 질문셋·의미·진행·출력·평가의 동일한 참조계약",
+  "limits": {
+    "registered_question_ids": 10,
+    "collection_instances_per_intake": 10,
+    "clarification_instances_per_intake": 1,
+    "help_redisplays_per_instance": 1,
+    "mandatory_name": false,
+    "minimum_answer_count": 0
+  },
+  "question_progression": {
+    "base_order": [
+      "Q3-01",
+      "Q3-03",
+      "Q3-02",
+      "Q3-04",
+      "Q3-05",
+      "Q3-06",
+      "Q3-07",
+      "Q3-08",
+      "Q3-09"
+    ],
+    "common_clarification_id": "Q3-10",
+    "order_semantics": "priority_among_eligible_unshown_questions",
+    "eligibility": [
+      "material_to_requested_output",
+      "missing_or_ambiguous",
+      "not_previously_shown",
+      "not_refused",
+      "not_bypassing_skip",
+      "within_budget",
+      "safety_cleared",
+      "session_active"
+    ],
+    "covered_skip_requires": [
+      "current_source_revision",
+      "same_person",
+      "same_scene",
+      "same_fact_scope"
+    ],
+    "not_needed_skip_requires": "requested_output_does_not_depend_on_answer",
+    "goal_change": "increment_goal_epoch_and_replan_only_unshown_eligible_questions",
+    "correction": "invalidate_dependent_facts_skips_outputs_jobs_then_replan_unshown_only",
+    "spontaneous_information": "may_update_explicitly_supplied_fact_without_reopening_all_questions",
+    "refusal_release": "explicit_user_permission_for_the_same_scope_only",
+    "normal_collection_after_end": false,
+    "resume": "explicit_new_user_request_preserves_intake_budget_and_refusal_scopes",
+    "unregistered_legacy_followups": "disabled_in_new_intake; covered facts reused; missing facts follow registered questions or limited output"
+  },
+  "clarification": {
+    "consumption_point": "first_committed_display",
+    "anchor": [
+      "source_id",
+      "source_revision",
+      "component",
+      "exact_quote",
+      "event_id",
+      "axis",
+      "goal_epoch",
+      "question_instance_id",
+      "bundle_id"
+    ],
+    "axes": [
+      "actor",
+      "execution",
+      "source",
+      "time",
+      "agreement",
+      "modality"
+    ],
+    "assignments_per_choice": 1,
+    "inherited_values": "retain_only_current_supported_values",
+    "infer_unselected_axes": false,
+    "refund_on_correction_or_unknown_or_retry": false,
+    "stale_selection": "reject_without_rebinding_or_refund",
+    "second_material_ambiguity": "preserve_unknown_and_use_requested_scope_completion_rules",
+    "task_availability": [
+      "T1",
+      "T2",
+      "T3",
+      "T4",
+      "T5",
+      "T6"
+    ]
+  },
+  "input_control": {
+    "source_is_not_event_actor": true,
+    "first_input_question_id": null,
+    "control_intents": [
+      "continue",
+      "unknown",
+      "skip",
+      "refuse",
+      "confused",
+      "end"
+    ],
+    "all_nonempty_components_to_safety_review": true,
+    "content_implies_control_reset": false,
+    "unknown_with_substantive_content": "retain_unknown_selection; ordinary_facts_may_use_explicit_content",
+    "refusal_or_end_with_content": "retain_control; exclude_from_ordinary_fact_expansion; retain_safety_context",
+    "quoted_control_words": "data; control_requires_user_intent_attribution",
+    "misunderstood_once": "registered_help_and_same_instance_redisplay",
+    "misunderstood_again": "skip_reason_not_understood; no_new_explanation; preserve_existing_facts"
+  },
+  "safety": {
+    "role": "adapter_to_existing_approved_policy_not_new_clinical_classifier",
+    "candidate_eligibility": "all_nonempty_input_components_regardless_of_question_or_control",
+    "states": [
+      "pending",
+      "clear",
+      "urgent",
+      "needs_check",
+      "unavailable"
+    ],
+    "pending": "pause_ordinary_questions_and_results",
+    "clear": "resume_only_if_user_control_and_session_allow",
+    "urgent": "only_matching_approved_fixed_template; keep_end_and_refusal_intent",
+    "needs_check": "approved_safety_protocol_or_hold; not_ordinary_task_success",
+    "unavailable": "hold_with_existing_approved_failure_path; never_imply_clear",
+    "safety_confirmation_count": "separate_from_intake_collection_and_reported_separately",
+    "explicit_general_topic_rule_exception": "only_existing_approved_safety_protocol_when_indicated",
+    "actual_provider_policy_version": null,
+    "actual_fixed_templates_included": false,
+    "clinical_label_validation_executed": false
+  },
+  "output": {
+    "modes": [
+      "brief_text",
+      "structured_summary",
+      "full_guide",
+      "urgent_fixed"
+    ],
+    "detail_for_brief_summary_or_urgent": null,
+    "full_guide_detail": "optional; if enabled exactly three nonempty contiguous parts reconstruct the original script",
+    "fabricate_cards_for_shape": false,
+    "urgent_text_rewrite_by_style_reviewer": false,
+    "completion_states": [
+      "completed",
+      "limited",
+      "awaiting_confirmation",
+      "changed_goal_completed",
+      "user_stopped",
+      "incomplete"
+    ],
+    "system_failure": "incomplete_with_failure_reason",
+    "t3_modes": [
+      "summarize_known",
+      "confirmed_full"
+    ],
+    "t3_confirmed_full": "all_requested_items_have_supported_explicit_mutual_agreement",
+    "t3_summarize_known": "all_requested_known_and_unknown_items_are_accurately_represented",
+    "new_proposal": "clearly_mark_as_new_suggestion; never_store_as_historical_agreement",
+    "refusal_requires_alternative_time": false
+  },
+  "work_fence": {
+    "must_match_at_commit": [
+      "session_id",
+      "bundle_id",
+      "input_revision",
+      "goal_epoch_or_generation",
+      "request_id"
+    ],
+    "tombstone_blocks_all_writes": true,
+    "same_request_same_payload": "idempotent",
+    "same_request_different_payload": "reject_conflict",
+    "cancel_alone_is_not_a_commit_guard": true,
+    "compare_and_store_must_be_atomic_in_native_app": true
+  },
+  "versions": {
+    "pin_unit": "entire_behavior_bundle",
+    "deploy_changes_only_new_default": true,
+    "supported_old_bundle": "resume_with_its_contract",
+    "unsupported_bundle": "read_only_or_explicit_restart; no_silent_policy_mix",
+    "migration": "explicit; provenance_and_refusals_preserved; no_ID_only_mapping",
+    "rollback": "retain_matching_handler_or_hold_new_sessions",
+    "completed_records": "read_with_stored_output_schema",
+    "followup": "distinct_pinned_run_with_explicitly_selected_valid_prior_evidence"
+  },
+  "browser_drafts": {
+    "storage": "sessionStorage_unsubmitted_only",
+    "ttl_seconds_since_last_edit": 86400,
+    "max_entries_per_tab": 32,
+    "binding": [
+      "account_scope",
+      "session_id",
+      "intake_id",
+      "bundle_id",
+      "question_instance_id",
+      "source_revision",
+      "component"
+    ],
+    "clear_on": [
+      "durable_submit_ack",
+      "conversation_delete",
+      "logout_or_account_switch",
+      "expired",
+      "binding_invalidated"
+    ],
+    "model_failure_after_durable_submit": "clear_draft_and_restore_submitted_record_from_server",
+    "ambiguous_submit_ack": "retain_draft_and_retry_same_request_id",
+    "production_browser_behavior_verified": false
+  },
+  "evaluation": {
+    "active_oracles": "../evaluation/semantic_oracles.json",
+    "app_model_cases": "../evaluation/app_model_cases.json",
+    "historical_cases_used_for_scoring": false,
+    "reference_contract_tests": "execute_with_manual_semantic_annotations_and_safety_decision_stubs",
+    "actual_app_tests": "not_run",
+    "model_extraction_tests": "not_run",
+    "clinical_safety_tests": "not_run",
+    "user_burden_comparison": "not_run",
+    "multi_answer_scoring": "exact_conditioned_allowed_action_set; separate_output_validity",
+    "report_outcomes_separately": true
+  },
+  "related_docs": [
+    "../docs/01_architecture_and_decisions.md",
+    "../docs/04_versions_storage_and_handoff.md"
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "schema_version": "active-bundle-1",
+  "bundle_id": "malssi-intake-3.1.0-rc1",
+  "created_date": "2026-11-19",
+  "timezone": "Asia/Seoul",
+  "purpose": "reference_only",
+  "status": "active_reference_candidate",
+  "production_approved": false,
+  "native_app_compatibility_verified": false,
+  "active_entrypoints": {
+    "questions": "active/questions.json",
+    "tasks": "active/tasks.json",
+    "semantics": "active/codebook.json",
+    "policy": "active/policy.json",
+    "semantic_oracles": "evaluation/semantic_oracles.json",
+    "scenario_registry": "evaluation/app_model_cases.json",
+    "reference_runner": "reference/run_checks.py"
+  },
+  "authority_order": [
+    "this_manifest_pins_exact_active_assets",
+    "active_semantic_oracles_and_contracts",
+    "docs_explain_the_same_contract",
+    "sources_and_history_are_not_active_gold"
+  ],
+  "assets": [
+    {
+      "path": "active/questions.json",
+      "bytes": 23855,
+      "sha256": "ffab6828767eb57b6971f3202ad7ec7eb091fde3f34802afc307be5c8ae12b82"
+    },
+    {
+      "path": "active/tasks.json",
+      "bytes": 17143,
+      "sha256": "19ab0a69b63d1f0cec2863be6f961d08efd855b083a92b552c2a096d27a8812a"
+    },
+    {
+      "path": "active/codebook.json",
+      "bytes": 8095,
+      "sha256": "49a30018b382c6227445b49073a98a7f9e3bd167b84abb0cb1e4d96b45d48f5a"
+    },
+    {
+      "path": "active/policy.json",
+      "bytes": 7987,
+      "sha256": "ee009511c32aa34731ad83a6a3a1bc41e68aa1085eda002e5ce78c9aa11b294f"
+    },
+    {
+      "path": "evaluation/semantic_oracles.json",
+      "bytes": 21824,
+      "sha256": "132b685c99308f88756a37ec78d901b3d28b1552ac3aecb9cb3df4c0e65a363d",
+      "carried_from": "malssi-intake-3.0.0-rc1"
+    },
+    {
+      "path": "evaluation/app_model_cases.json",
+      "bytes": 68244,
+      "sha256": "4be31c20f033f3d8a1e3c270dfb7185ad96f39e63e42a18155522ca0b45fd3e7",
+      "carried_from": "malssi-intake-3.0.0-rc1"
+    },
+    {
+      "path": "evaluation/measurement_plan.json",
+      "bytes": 4972,
+      "sha256": "ac37e35c9a92c05ed110b0afa7eac0fed00537da4efbeedb754559d63972eb2b",
+      "carried_from": "malssi-intake-3.0.0-rc1"
+    },
+    {
+      "path": "evaluation/findings_traceability.json",
+      "bytes": 9469,
+      "sha256": "c7845f231f56928fd08322f9feb4dbf2be107913775f356c9e92ca23694d0251",
+      "carried_from": "malssi-intake-3.0.0-rc1"
+    },
+    {
+      "path": "reference/engine.py",
+      "bytes": 45385,
+      "sha256": "f129161bb62f5db6103a96961c86663e8b0db8be63fe01d30575285b76fd40f1",
+      "carried_from": "malssi-intake-3.0.0-rc1"
+    },
+    {
+      "path": "reference/test_engine.py",
+      "bytes": 40457,
+      "sha256": "da1d7cce0fdf6fe3eda4337dc02341a46ff218117c2aa0bee50c93a1944133ff",
+      "carried_from": "malssi-intake-3.0.0-rc1"
+    },
+    {
+      "path": "reference/run_checks.py",
+      "bytes": 13723,
+      "sha256": "44c5c51fded618bda2b126935e8fb249d95ea78fefedc59584a1f0f16d276bc0",
+      "carried_from": "malssi-intake-3.0.0-rc1"
+    }
+  ],
+  "excluded_from_active_inputs": [
+    "sources/",
+    "history/"
+  ],
+  "result_files_not_hashed_here_to_avoid_cycles": [
+    "reference/results.json",
+    "validation/package_validation.json",
+    "manifest.json"
+  ],
+  "production_dependencies_not_supplied": [
+    "actual_question_loader_and_bank",
+    "existing_app_source_and_DB_API",
+    "actual_prompts_and_model_configuration",
+    "approved_safety_policy_and_fixed_templates",
+    "native_browser_storage_and_renderer",
+    "legacy_bundle_handlers"
+  ],
+  "trusted_reference_inputs": [
+    "manually_reviewed_semantic_annotations",
+    "attributed_control_intent",
+    "independently_reviewed_task_plan_and_concreteness",
+    "injected_safety_verdict_for_branch_tests"
+  ],
+  "not_implemented_claims": [
+    "natural_language_extraction",
+    "clinical_decision_accuracy",
+    "native_atomic_database_writes",
+    "actual_browser_or_legacy_app_compatibility",
+    "automatic_multi_task_completion"
+  ],
+  "supersedes": "malssi-intake-3.0.0-rc1"
+}

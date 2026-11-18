@@ -11,7 +11,7 @@ import { Store } from '../src/store.js';
 const read = path => readFileSync(new URL(path, import.meta.url), 'utf8');
 
 test('v3 native adapter retains each source question, option and registered help exactly', () => {
-  const source = JSON.parse(read('../seeds/questionnaire-v3/questions.json'));
+  const source = JSON.parse(read('../seeds/questionnaire-v3.1/questions.json'));
   assert.equal(activeQuestionSet.bundle_id, source.bundle_id);
   assert.equal(activeQuestionSet.questions.length, 9);
   assert.equal(activeQuestionSet.gapQuestion, null);
@@ -46,8 +46,11 @@ test('v3 rejects mixed, missing or edited rows and versions the whole behavior s
 });
 
 test('v3 migration embeds the exact adapted seed and archives previous administrative rows', () => {
-  const sql = read('../migrations/010_questionnaire_v3.sql');
-  assert.deepEqual(JSON.parse(sql.match(/\$v3\$([\s\S]+?)\$v3\$/)[1]), activeQuestionRows);
+  const sql = read('../migrations/015_questionnaire_v3_1.sql');
+  assert.deepEqual(JSON.parse(sql.match(/\$v31\$([\s\S]+?)\$v31\$/)[1]), activeQuestionRows);
+  // The 3.0 migration stays byte-for-byte tied to the preserved 3.0 rows.
+  assert.deepEqual(JSON.parse(read('../migrations/010_questionnaire_v3.sql').match(/\$v3\$([\s\S]+?)\$v3\$/)[1]),
+    JSON.parse(read('../seeds/questions-v3.0.json')));
   assert.match(sql, /INSERT INTO question_bank_archive/);
   assert.doesNotMatch(sql, /DELETE FROM (?:intakes|records)|UPDATE (?:intakes|records)/i);
 });
@@ -75,7 +78,7 @@ test('v3 DB migration updates only the new default, preserves encrypted old conv
   // Reconstruct the prior deployment inside this disposable test schema.
   await store.pool.query("UPDATE questions SET enabled=NOT (id LIKE 'q3_%')");
   await store.pool.query("UPDATE questions SET definition=jsonb_set(definition,'{q}',to_jsonb('보관할 관리자 질문'::text)) WHERE id='name'");
-  await store.pool.query("DELETE FROM schema_migrations WHERE version='010_questionnaire_v3.sql'");
+  await store.pool.query("DELETE FROM schema_migrations WHERE version IN ('010_questionnaire_v3.sql','015_questionnaire_v3_1.sql')");
   await store.pool.query('DELETE FROM question_bank_archive');
   const browser = await store.createBrowser();
   const old = await store.createIntake(browser.id,createIntake(initialQuestionSet));
@@ -85,11 +88,14 @@ test('v3 DB migration updates only the new default, preserves encrypted old conv
   assert.deepEqual((await store.questionSet()).questions.map(q=>q.id),activeQuestionSet.questions.map(q=>q.id));
   assert.equal((await store.pool.query('SELECT content FROM intakes WHERE id=$1',[old.id])).rows[0].content,saved);
   assert.deepEqual((await store.context(browser.id,old.id)).context,oldContext);
-  const archived = (await store.pool.query('SELECT rows FROM question_bank_archive')).rows[0].rows;
+  const archived = (await store.pool.query("SELECT rows FROM question_bank_archive WHERE bundle_id='before-malssi-intake-3.0.0-rc1'")).rows[0].rows;
+  // 3.1 archives the 3.0 administrative rows under its own key before replacing the wording.
+  const archived30 = (await store.pool.query("SELECT rows FROM question_bank_archive WHERE bundle_id='before-malssi-intake-3.1.0-rc1'")).rows[0].rows;
+  assert.equal(archived30.find(q=>q.id==='q3_08').definition.q,'이번 상황에서 본인이 할 수 있는 도움의 방법과 범위는 어느 정도인가요?');
   assert.equal(archived.find(q=>q.id==='name').definition.q,'보관할 관리자 질문');
   const current = await store.createIntake(browser.id,createIntake(await store.questionSet()));
   assert.equal(current.state.questionSet.bundle.policy.limits.collection_instances_per_intake,10);
   await store.close();store = await Store.connect(databaseUrl,key,30,{schema});
   assert.deepEqual((await store.intake(browser.id,current.id)).state,current.state);
-  assert.equal((await store.pool.query('SELECT count(*)::int n FROM question_bank_archive')).rows[0].n,1);
+  assert.equal((await store.pool.query('SELECT count(*)::int n FROM question_bank_archive')).rows[0].n,2);
 });

@@ -5,7 +5,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { isDeepStrictEqual } from 'node:util';
 import { modelHttpFetch } from '../src/model-http.js';
 
-export const BUNDLE_ID = 'malssi-intake-3.0.0-rc1';
+export const BUNDLE_ID = 'malssi-intake-3.1.0-rc1';
 export const MAX_HTTP_REQUESTS = 18;
 const BASE_IDS = Array.from({length:9}, (_, index) => `q3_${String(index + 1).padStart(2, '0')}`);
 const PERSONAL_IDS = ['q3_personal_01','q3_personal_02'];

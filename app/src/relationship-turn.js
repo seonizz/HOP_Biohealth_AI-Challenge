@@ -1,3 +1,4 @@
+import { isV3BundleId } from './v3-bundles.js';
 import { HttpError } from './errors.js';
 import { createHash } from 'node:crypto';
 import { answerComponents } from './answer-sources.js';
@@ -86,7 +87,7 @@ patient/supporter의 최신 answered 원문·후속 답변에 상태·관계 해
 `+rules+(questions?(stageScopedQuestionRules&&['patient_state','name_index','relationship_memory'].includes(block)?'':`
 아래 질문 진행 규칙의 skip, clarify, safety는 출력 questions 내부입니다. question_input의 전체 원문과 후보를 기준으로 작성하고 그 retrieval에 포함된 근거만 선택하세요. 두 retrieval의 허용 근거를 섞지 마세요.
 현재 질문 객체의 전체 키는 ${Object.keys(questions.schema.properties).join(', ')}이며 각 필드는 output_schema를 따르세요.
-${questions.data.bundle_id==='malssi-intake-3.0.0-rc1'?'questions.clarify는 [] 또는 원문·revision·한 사건·한 축에 묶인 객체 하나입니다. clarification_available=false이면 반드시 []입니다. true여도 해당 확인이 요청 결과에 필요하지 않거나 원문에 이미 답이 있으면 []입니다. clarification_candidates가 비어 있다는 사실은 이 판본의 객체 확인을 금지하는 조건이 아닙니다.':'questions.clarify에 선택할 추가 확인이 없으면 []입니다. clarification_candidates가 비었으면 반드시 []로 반환하세요. 이때 output_schema의 enum에 있는 "none"은 빈 후보를 표현하는 자리표시자이며 실제 선택지가 아니므로 ["none"]을 출력하지 마세요. 후보가 있어도 추가 확인이 불필요하면 []입니다.'}
+${isV3BundleId(questions.data.bundle_id)?'questions.clarify는 [] 또는 원문·revision·한 사건·한 축에 묶인 객체 하나입니다. clarification_available=false이면 반드시 []입니다. true여도 해당 확인이 요청 결과에 필요하지 않거나 원문에 이미 답이 있으면 []입니다. clarification_candidates가 비어 있다는 사실은 이 판본의 객체 확인을 금지하는 조건이 아닙니다.':'questions.clarify에 선택할 추가 확인이 없으면 []입니다. clarification_candidates가 비었으면 반드시 []로 반환하세요. 이때 output_schema의 enum에 있는 "none"은 빈 후보를 표현하는 자리표시자이며 실제 선택지가 아니므로 ["none"]을 출력하지 마세요. 후보가 있어도 추가 확인이 불필요하면 []입니다.'}
 `+withoutCommon(questions.prompt)):'\n이번 요청은 질문 진행 판단을 하지 않습니다. questions는 null입니다.')+`
 들여쓰기·코드블록 없는 한 줄 JSON만 출력하세요. 자유 문구는 짧게, unknowns/가설은 현재 중요한 것만 쓰세요. 일반적 정보 부족으로 목록을 채우지 말되 원문의 모름·거절·상충과 필수 필드·인용·정정은 보존하세요. 스스로 승인하지 마세요. 독립 검토는 다음 요청에서 합니다.
 검토 후 수정 요청이면 마지막으로 review.state.audits의 unsupported 항목을 rejected_draft.claims의 같은 id와 대조하세요. 인용 부족이라는 지적은 문장의 말투만 바꿔 해결하지 않습니다. 해당 문장에 남길 각 주장에 맞는 실제 원문을 허용된 evidence 후보에서 다시 선택하거나, 문장을 선택한 인용이 지지하는 범위로 좁히세요. 전체 입력의 다른 곳에 사실이 있어도 현재 finding의 evidence에 빠져 있으면 그 주장의 근거가 아닙니다. repair 예문의 문장만 복사하고 거절된 evidence를 그대로 두지 마세요. 직접 보고를 반복하는 항목은 reported 규칙을 따르고 추론을 새 사실로 바꾸지 마세요. 각 지적을 현재 원문과 대조해 수정한 뒤 기존 독립 검토를 다시 받아야 합니다.`+(block?`

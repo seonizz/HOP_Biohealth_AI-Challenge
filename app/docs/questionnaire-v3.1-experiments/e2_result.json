@@ -1,0 +1,412 @@
+{
+ "budget4|O0(3.0 번호순)|W0(3.0 문구)": {
+  "avg_questions": 3.557,
+  "required_complete": 0.762,
+  "wasted_per_session": 0.287,
+  "custom_needed": 0.119
+ },
+ "budget4|O0(3.0 번호순)|W1(+Q3 관계)": {
+  "avg_questions": 3.559,
+  "required_complete": 0.761,
+  "wasted_per_session": 0.29,
+  "custom_needed": 0.119
+ },
+ "budget4|O0(3.0 번호순)|W2(+Q8 시간)": {
+  "avg_questions": 3.559,
+  "required_complete": 0.772,
+  "wasted_per_session": 0.255,
+  "custom_needed": 0.085
+ },
+ "budget4|O0(3.0 번호순)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 3.559,
+  "required_complete": 0.771,
+  "wasted_per_session": 0.256,
+  "custom_needed": 0.085
+ },
+ "budget4|O1(목적→상황→관계…)|W0(3.0 문구)": {
+  "avg_questions": 3.483,
+  "required_complete": 0.762,
+  "wasted_per_session": 0.305,
+  "custom_needed": 0.151
+ },
+ "budget4|O1(목적→상황→관계…)|W1(+Q3 관계)": {
+  "avg_questions": 3.354,
+  "required_complete": 0.768,
+  "wasted_per_session": 0.299,
+  "custom_needed": 0.193
+ },
+ "budget4|O1(목적→상황→관계…)|W2(+Q8 시간)": {
+  "avg_questions": 3.354,
+  "required_complete": 0.799,
+  "wasted_per_session": 0.203,
+  "custom_needed": 0.097
+ },
+ "budget4|O1(목적→상황→관계…)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 3.354,
+  "required_complete": 0.799,
+  "wasted_per_session": 0.203,
+  "custom_needed": 0.097
+ },
+ "budget4|O2(필수정보 우선)|W0(3.0 문구)": {
+  "avg_questions": 3.482,
+  "required_complete": 0.81,
+  "wasted_per_session": 0.339,
+  "custom_needed": 0.212
+ },
+ "budget4|O2(필수정보 우선)|W1(+Q3 관계)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.809,
+  "wasted_per_session": 0.303,
+  "custom_needed": 0.211
+ },
+ "budget4|O2(필수정보 우선)|W2(+Q8 시간)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.894,
+  "wasted_per_session": 0.202,
+  "custom_needed": 0.111
+ },
+ "budget4|O2(필수정보 우선)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.894,
+  "wasted_per_session": 0.202,
+  "custom_needed": 0.111
+ },
+ "budget4+필수예약|O0(3.0 번호순)|W0(3.0 문구)": {
+  "avg_questions": 3.557,
+  "required_complete": 0.813,
+  "wasted_per_session": 0.351,
+  "custom_needed": 0.209
+ },
+ "budget4+필수예약|O0(3.0 번호순)|W1(+Q3 관계)": {
+  "avg_questions": 3.558,
+  "required_complete": 0.814,
+  "wasted_per_session": 0.351,
+  "custom_needed": 0.208
+ },
+ "budget4+필수예약|O0(3.0 번호순)|W2(+Q8 시간)": {
+  "avg_questions": 3.558,
+  "required_complete": 0.895,
+  "wasted_per_session": 0.253,
+  "custom_needed": 0.11
+ },
+ "budget4+필수예약|O0(3.0 번호순)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 3.558,
+  "required_complete": 0.895,
+  "wasted_per_session": 0.254,
+  "custom_needed": 0.11
+ },
+ "budget4+필수예약|O1(목적→상황→관계…)|W0(3.0 문구)": {
+  "avg_questions": 3.482,
+  "required_complete": 0.811,
+  "wasted_per_session": 0.341,
+  "custom_needed": 0.21
+ },
+ "budget4+필수예약|O1(목적→상황→관계…)|W1(+Q3 관계)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.811,
+  "wasted_per_session": 0.3,
+  "custom_needed": 0.209
+ },
+ "budget4+필수예약|O1(목적→상황→관계…)|W2(+Q8 시간)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.893,
+  "wasted_per_session": 0.203,
+  "custom_needed": 0.112
+ },
+ "budget4+필수예약|O1(목적→상황→관계…)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.894,
+  "wasted_per_session": 0.203,
+  "custom_needed": 0.112
+ },
+ "budget4+필수예약|O2(필수정보 우선)|W0(3.0 문구)": {
+  "avg_questions": 3.482,
+  "required_complete": 0.81,
+  "wasted_per_session": 0.339,
+  "custom_needed": 0.212
+ },
+ "budget4+필수예약|O2(필수정보 우선)|W1(+Q3 관계)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.809,
+  "wasted_per_session": 0.303,
+  "custom_needed": 0.211
+ },
+ "budget4+필수예약|O2(필수정보 우선)|W2(+Q8 시간)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.894,
+  "wasted_per_session": 0.202,
+  "custom_needed": 0.111
+ },
+ "budget4+필수예약|O2(필수정보 우선)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 3.353,
+  "required_complete": 0.894,
+  "wasted_per_session": 0.202,
+  "custom_needed": 0.111
+ },
+ "budget10|O0(3.0 번호순)|W0(3.0 문구)": {
+  "avg_questions": 4.367,
+  "required_complete": 0.811,
+  "wasted_per_session": 0.413,
+  "custom_needed": 0.208
+ },
+ "budget10|O0(3.0 번호순)|W1(+Q3 관계)": {
+  "avg_questions": 4.365,
+  "required_complete": 0.814,
+  "wasted_per_session": 0.413,
+  "custom_needed": 0.206
+ },
+ "budget10|O0(3.0 번호순)|W2(+Q8 시간)": {
+  "avg_questions": 4.365,
+  "required_complete": 0.897,
+  "wasted_per_session": 0.316,
+  "custom_needed": 0.108
+ },
+ "budget10|O0(3.0 번호순)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 4.376,
+  "required_complete": 0.897,
+  "wasted_per_session": 0.316,
+  "custom_needed": 0.109
+ },
+ "budget10|O1(목적→상황→관계…)|W0(3.0 문구)": {
+  "avg_questions": 4.203,
+  "required_complete": 0.81,
+  "wasted_per_session": 0.394,
+  "custom_needed": 0.21
+ },
+ "budget10|O1(목적→상황→관계…)|W1(+Q3 관계)": {
+  "avg_questions": 3.948,
+  "required_complete": 0.814,
+  "wasted_per_session": 0.348,
+  "custom_needed": 0.208
+ },
+ "budget10|O1(목적→상황→관계…)|W2(+Q8 시간)": {
+  "avg_questions": 3.948,
+  "required_complete": 0.896,
+  "wasted_per_session": 0.25,
+  "custom_needed": 0.109
+ },
+ "budget10|O1(목적→상황→관계…)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 3.953,
+  "required_complete": 0.894,
+  "wasted_per_session": 0.254,
+  "custom_needed": 0.111
+ },
+ "budget10|O2(필수정보 우선)|W0(3.0 문구)": {
+  "avg_questions": 4.223,
+  "required_complete": 0.811,
+  "wasted_per_session": 0.397,
+  "custom_needed": 0.21
+ },
+ "budget10|O2(필수정보 우선)|W1(+Q3 관계)": {
+  "avg_questions": 3.966,
+  "required_complete": 0.811,
+  "wasted_per_session": 0.353,
+  "custom_needed": 0.211
+ },
+ "budget10|O2(필수정보 우선)|W2(+Q8 시간)": {
+  "avg_questions": 3.966,
+  "required_complete": 0.894,
+  "wasted_per_session": 0.253,
+  "custom_needed": 0.11
+ },
+ "budget10|O2(필수정보 우선)|W3(+Q4 도움말 바람)": {
+  "avg_questions": 3.975,
+  "required_complete": 0.895,
+  "wasted_per_session": 0.254,
+  "custom_needed": 0.11
+ },
+ "_sensitivity": {
+  "cases": 27,
+  "v31_fewer_or_equal_questions": 27,
+  "v31_higher_or_equal_complete": 27,
+  "v31_fewer_custom": 19,
+  "mean_delta_questions": -0.192,
+  "mean_delta_complete": 0.034
+ },
+ "_by_task_budget4": {
+  "T1|3.0": {
+   "avg_q": 3.3,
+   "complete": 0.848,
+   "custom": 0.16
+  },
+  "T1|3.1": {
+   "avg_q": 2.72,
+   "complete": 0.837,
+   "custom": 0.169
+  },
+  "T2|3.0": {
+   "avg_q": 4,
+   "complete": 0.036,
+   "custom": 0.342
+  },
+  "T2|3.1": {
+   "avg_q": 4,
+   "complete": 0.272,
+   "custom": 0.187
+  },
+  "T3|3.0": {
+   "avg_q": 3.63,
+   "complete": 0.991,
+   "custom": 0.009
+  },
+  "T3|3.1": {
+   "avg_q": 3.07,
+   "complete": 0.991,
+   "custom": 0.009
+  },
+  "T4|3.0": {
+   "avg_q": 3.97,
+   "complete": 0.935,
+   "custom": 0.065
+  },
+  "T4|3.1": {
+   "avg_q": 3.92,
+   "complete": 0.941,
+   "custom": 0.059
+  },
+  "T5|3.0": {
+   "avg_q": 2.42,
+   "complete": 0.923,
+   "custom": 0.077
+  },
+  "T5|3.1": {
+   "avg_q": 2.42,
+   "complete": 0.921,
+   "custom": 0.079
+  },
+  "T6|3.0": {
+   "avg_q": 4,
+   "complete": 0.85,
+   "custom": 0.059
+  },
+  "T6|3.1": {
+   "avg_q": 4,
+   "complete": 0.844,
+   "custom": 0.065
+  }
+ },
+ "_required_only_5seeds": {
+  "3.0": {
+   "avg_questions": [
+    2.299,
+    2.3,
+    2.304,
+    2.302,
+    2.295
+   ],
+   "required_complete": [
+    0.808,
+    0.81,
+    0.811,
+    0.807,
+    0.807
+   ],
+   "custom_needed": [
+    0.213,
+    0.211,
+    0.209,
+    0.212,
+    0.215
+   ],
+   "wasted": [
+    0.246,
+    0.243,
+    0.247,
+    0.248,
+    0.251
+   ]
+  },
+  "3.1": {
+   "avg_questions": [
+    2.299,
+    2.3,
+    2.304,
+    2.302,
+    2.295
+   ],
+   "required_complete": [
+    0.89,
+    0.894,
+    0.893,
+    0.893,
+    0.889
+   ],
+   "custom_needed": [
+    0.116,
+    0.111,
+    0.112,
+    0.112,
+    0.116
+   ],
+   "wasted": [
+    0.127,
+    0.121,
+    0.127,
+    0.127,
+    0.128
+   ]
+  }
+ },
+ "_required_only_by_task": {
+  "T1|3.0": {
+   "avg_q": 2.66,
+   "complete": 0.85,
+   "custom": 0.156
+  },
+  "T1|3.1": {
+   "avg_q": 2.66,
+   "complete": 0.842,
+   "custom": 0.163
+  },
+  "T2|3.0": {
+   "avg_q": 3.63,
+   "complete": 0.256,
+   "custom": 0.862
+  },
+  "T2|3.1": {
+   "avg_q": 3.63,
+   "complete": 0.751,
+   "custom": 0.272
+  },
+  "T3|3.0": {
+   "avg_q": 2.11,
+   "complete": 0.99,
+   "custom": 0.01
+  },
+  "T3|3.1": {
+   "avg_q": 2.11,
+   "complete": 0.99,
+   "custom": 0.01
+  },
+  "T4|3.0": {
+   "avg_q": 1.65,
+   "complete": 0.932,
+   "custom": 0.068
+  },
+  "T4|3.1": {
+   "avg_q": 1.65,
+   "complete": 0.933,
+   "custom": 0.067
+  },
+  "T5|3.0": {
+   "avg_q": 2,
+   "complete": 0.898,
+   "custom": 0.102
+  },
+  "T5|3.1": {
+   "avg_q": 2,
+   "complete": 0.898,
+   "custom": 0.102
+  },
+  "T6|3.0": {
+   "avg_q": 1.76,
+   "complete": 0.922,
+   "custom": 0.078
+  },
+  "T6|3.1": {
+   "avg_q": 1.76,
+   "complete": 0.926,
+   "custom": 0.075
+  }
+ }
+}

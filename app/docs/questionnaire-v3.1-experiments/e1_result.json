@@ -1,0 +1,270 @@
+{
+ "per_candidate": {
+  "Q3-03:a(3.0)": {
+   "text": "이번에 다루고 싶은 상황을 설명해 주실 수 있나요?",
+   "chars": 28,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": null,
+   "presumes_help": null,
+   "or_pairs": 0
+  },
+  "Q3-03:b": {
+   "text": "누구와 어떤 일이 있었는지 알려 주실 수 있나요?",
+   "chars": 27,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": null,
+   "presumes_help": null,
+   "or_pairs": 0
+  },
+  "Q3-03:c": {
+   "text": "이번에 다루고 싶은 일은 누구와의 어떤 일인가요?",
+   "chars": 27,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": null,
+   "presumes_help": null,
+   "or_pairs": 0
+  },
+  "Q3-04:a(3.0)": {
+   "text": "그 상황에서 상대가 한 말이나 행동은 무엇인가요?",
+   "chars": 27,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": false,
+   "presumes_help": null,
+   "or_pairs": 1
+  },
+  "Q3-04:b": {
+   "text": "그 상황에서 상대가 실제로 한 말이나 행동은 무엇인가요?",
+   "chars": 31,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": false,
+   "presumes_help": null,
+   "or_pairs": 1
+  },
+  "Q3-04:c": {
+   "text": "그때 상대가 실제로 한 말이나 행동을 알려 주실 수 있나요?",
+   "chars": 33,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": true,
+   "presumes_help": null,
+   "or_pairs": 1
+  },
+  "Q3-05:a(3.0)": {
+   "text": "그 상황에서 본인이 한 말이나 행동이 있었나요? 있었다면 그 뒤에 확인한 상대의 반응은 무엇인가요?",
+   "chars": 55,
+   "sentences": 2,
+   "qmarks": 2,
+   "time_anchor": true,
+   "presumes_help": null,
+   "or_pairs": 1
+  },
+  "Q3-05:b": {
+   "text": "지금까지 이 일로 상대에게 이미 한 말이나 행동이 있었나요? 있었다면 그 뒤 상대는 어떻게 반응했나요?",
+   "chars": 57,
+   "sentences": 2,
+   "qmarks": 2,
+   "time_anchor": true,
+   "presumes_help": null,
+   "or_pairs": 1
+  },
+  "Q3-05:c": {
+   "text": "이 일로 지금까지 본인이 상대에게 한 말이나 행동이 있나요? 있다면 상대는 어떻게 반응했나요?",
+   "chars": 52,
+   "sentences": 2,
+   "qmarks": 2,
+   "time_anchor": true,
+   "presumes_help": null,
+   "or_pairs": 1
+  },
+  "Q3-07:a(3.0)": {
+   "text": "상대가 원하거나 원하지 않는 도움을 직접 말한 적이 있나요? 있다면 어떤 말이었나요?",
+   "chars": 47,
+   "sentences": 2,
+   "qmarks": 2,
+   "time_anchor": null,
+   "presumes_help": true,
+   "or_pairs": 1
+  },
+  "Q3-07:b": {
+   "text": "이 일과 관련해 상대가 \"이렇게 해 줬으면 좋겠다\"거나 \"이건 안 했으면 좋겠다\"고 말한 적이 있나요?",
+   "chars": 57,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": null,
+   "presumes_help": false,
+   "or_pairs": 1
+  },
+  "Q3-07:c": {
+   "text": "이 일과 관련해 상대가 바란다고 했거나 하지 말아 달라고 한 것이 있나요?",
+   "chars": 41,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": null,
+   "presumes_help": false,
+   "or_pairs": 1
+  },
+  "Q3-08:a(3.0)": {
+   "text": "이번 상황에서 본인이 할 수 있는 도움의 방법과 범위는 어느 정도인가요?",
+   "chars": 40,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": false,
+   "presumes_help": true,
+   "or_pairs": 0
+  },
+  "Q3-08:b": {
+   "text": "앞으로 본인이 해 줄 수 있는 도움은 어느 정도인가요? 가능한 시간이 있다면 함께 알려 주세요.",
+   "chars": 53,
+   "sentences": 2,
+   "qmarks": 1,
+   "time_anchor": true,
+   "presumes_help": true,
+   "or_pairs": 0
+  },
+  "Q3-08:c": {
+   "text": "앞으로 본인이 할 수 있는 일과 가능한 시간은 어느 정도인가요?",
+   "chars": 35,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": true,
+   "presumes_help": false,
+   "or_pairs": 0
+  },
+  "Q3-09:a(3.0)": {
+   "text": "이번 상황에서 본인은 어떻게 하고 싶으신가요?",
+   "chars": 25,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": null,
+   "presumes_help": null,
+   "or_pairs": 0
+  },
+  "Q3-09:b": {
+   "text": "할 수 있는지와는 별개로, 이번에 본인은 어떻게 하고 싶으신가요?",
+   "chars": 36,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": null,
+   "presumes_help": null,
+   "or_pairs": 0
+  },
+  "Q3-09:c": {
+   "text": "이번 일에서 본인이 하고 싶은 것은 무엇인가요?",
+   "chars": 26,
+   "sentences": 1,
+   "qmarks": 1,
+   "time_anchor": null,
+   "presumes_help": null,
+   "or_pairs": 0
+  }
+ },
+ "sets": {
+  "3.0": {
+   "mean": 0.081,
+   "max": 0.357,
+   "top3": [
+    [
+     "Q3-04",
+     "Q3-05",
+     0.357
+    ],
+    [
+     "Q3-01",
+     "Q3-09",
+     0.231
+    ],
+    [
+     "Q3-08",
+     "Q3-09",
+     0.211
+    ]
+   ],
+   "total_chars": 291,
+   "total_qmarks": 11
+  },
+  "03b,04b,05b,07b,08b,09b": {
+   "mean": 0.045,
+   "max": 0.219,
+   "top3": [
+    [
+     "Q3-01",
+     "Q3-09",
+     0.219
+    ],
+    [
+     "Q3-04",
+     "Q3-05",
+     0.113
+    ],
+    [
+     "Q3-08",
+     "Q3-09",
+     0.089
+    ]
+   ],
+   "total_chars": 330,
+   "total_qmarks": 10
+  },
+  "03c,04b,05c,07c,08c,09c": {
+   "mean": 0.055,
+   "max": 0.179,
+   "top3": [
+    [
+     "Q3-01",
+     "Q3-03",
+     0.179
+    ],
+    [
+     "Q3-04",
+     "Q3-09",
+     0.176
+    ],
+    [
+     "Q3-03",
+     "Q3-09",
+     0.156
+    ]
+   ],
+   "total_chars": 281,
+   "total_qmarks": 10
+  },
+  "argmin(max,mean,qmarks,chars) 03a,04c,05b,07c,08c,09c": {
+   "mean": 0.041,
+   "max": 0.139,
+   "top3": [
+    [
+     "Q3-03",
+     "Q3-04",
+     0.139
+    ],
+    [
+     "Q3-04",
+     "Q3-05",
+     0.135
+    ],
+    [
+     "Q3-08",
+     "Q3-09",
+     0.105
+    ]
+   ],
+   "total_chars": 289,
+   "total_qmarks": 10
+  }
+ },
+ "q5_vs_q8": {
+  "3.0": 0.138,
+  "b": 0.028,
+  "c": 0.035
+ },
+ "q8_vs_q9": {
+  "3.0": 0.211,
+  "c/b": 0.14,
+  "c/c": 0.105
+ }
+}

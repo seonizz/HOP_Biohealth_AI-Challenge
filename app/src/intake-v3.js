@@ -1,6 +1,7 @@
+import { isV3BundleId } from './v3-bundles.js';
 import { HttpError } from './errors.js';
 
-export const isV3Intake = value => (value?.questionSet || value)?.bundle_id === 'malssi-intake-3.0.0-rc1';
+export const isV3Intake = value => isV3BundleId((value?.questionSet || value)?.bundle_id);
 const fail = (code, message, status = 422) => { throw new HttpError(status, code, message); };
 const controls = ['answered', 'unknown', 'skipped', 'refused', 'not_understood', 'stop'];
 const controlText = { unknown:'잘 모르겠어요', skipped:'(건너뛰었어요)', refused:'이 내용은 답하지 않을게요', not_understood:'질문을 이해하기 어려워요', stop:'여기까지 할게요' };
