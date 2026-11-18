@@ -1189,6 +1189,15 @@ test('the pending result shows each card’s current work and changes to saving'
   context.resultScreen.progress({status:'running',card_stages:{script:'문장을 다듬고 있어요'}});
   assert.equal(card.querySelector('[data-stage-card="care"]').hidden,true);
   assert.equal(stage('script').textContent,'문장을 다듬고 있어요');
+  context.resultScreen.progress({status:'running',card_stages:{care:'전체 안내를 최종 확인하고 있어요',script:'문장을 다듬고 있어요'}});
+  assert.equal(card.querySelector('[data-stage-card="care"]').hidden,true,'a displayed card does not return to the progress list during a later review');
+  for(const id of ['relationship','script','doList','avoid','next'])context.resultScreen.previewCards.set(id,{});
+  context.resultScreen.progress({status:'running',step_index:3,card_stages:{care:'전체 안내를 최종 확인하고 있어요'}});
+  assert.equal(card.querySelector('.result-stages').hidden,true);
+  assert.match(card.querySelector('h3').textContent,/마지막으로 확인하고 있어요/);
+  context.resultScreen.previewCards.clear();context.resultScreen.previewCards.set('care',{});
+  context.resultScreen.progress({status:'running',card_stages:{script:'문장을 다듬고 있어요'}});
+  assert.equal(card.querySelector('.result-stages').hidden,false);
   context.resultScreen.progress({status:'saving'});
   assert.equal(card.querySelector('.result-stages').hidden,true);
   assert.match(card.querySelector('h3').textContent,/기록에 저장하고 있어요/);

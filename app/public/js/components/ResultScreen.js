@@ -45,15 +45,19 @@ const ResultScreen={
     const status=value?.status;
     card.hidden=status==="complete"||status==="failed";
     const stages=card.querySelector(".result-stages");
-    stages.hidden=status==="saving";
+    // A card that is already on screen stays out of this list, even while a
+    // later whole-guide review touches it again.
+    const remaining=[...stages.children].filter(row=>!this.previewCards.has(row.dataset.stageCard)).length;
+    stages.hidden=status==="saving"||remaining===0;
     const sharedStage=["들려주신 이야기를 살펴보고 있어요","안내 방향을 정하고 있어요"][value?.step_index];
     const label=status==="saving"?"검토한 카드를 기록에 저장하고 있어요":
-      status==="idle"?"카드 생성이 시작되기를 기다리고 있어요":sharedStage||"카드를 준비하고 있어요";
+      status==="idle"?"카드 생성이 시작되기를 기다리고 있어요":
+      remaining===0?"완성된 카드를 마지막으로 확인하고 있어요":sharedStage||"카드를 준비하고 있어요";
     if(heading.textContent!==label)heading.textContent=label;
     if(card.hidden||stages.hidden)return;
     for(const row of stages.children){
       const id=row.dataset.stageCard,stage=value?.card_stages?.[id];
-      row.hidden=!stage&&this.previewCards.has(id);
+      row.hidden=this.previewCards.has(id);
       const statusText=row.querySelector(".result-stage-status");
       const text=stage||"차례를 기다리고 있어요";
       if(statusText.textContent!==text)statusText.textContent=text;
