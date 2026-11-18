@@ -1,0 +1,2 @@
+# The questionnaire manifest verifies the exact bytes of these JSON files.
+*.json text eol=lf

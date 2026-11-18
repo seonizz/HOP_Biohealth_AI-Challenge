@@ -23,13 +23,78 @@ const phases = [
   {label:'원문과 안내 확인하기',matches:/^(?:guide_repair|guide_review|speech_review|support_review|speech_detail|final_review_bundle)/},
   {label:'결과 저장하기',matches:null},
 ];
+const guideCardIds=['care','doList','avoid','next','script'];
+const cardIds=[...guideCardIds,'relationship'];
+const singleCard=/^(card|speech_review_card|support_review_card|card_review_bundle)_(care|doList|avoid|next|script)(?:_|$)/;
+const writing={
+  care:'당신의 마음을 돌보는 방법을 적고 있어요',
+  doList:'해 볼 행동과 방법을 정리하고 있어요',
+  avoid:'피할 말과 대신 쓸 표현을 찾고 있어요',
+  next:'상대의 반응에 따른 다음 행동을 정리하고 있어요',
+};
+
+// Descriptions and card IDs are allowlisted here before any progress is published.
+function cardProcess(stage,fields) {
+  const single=stage.match(singleCard);
+  if(single) {
+    const [,kind,id]=single;
+    return {ids:[id],label:writing[id]&&kind==='card'?writing[id]:
+      kind==='support_review_card'?'부담 없이 실천할 수 있는지 확인하고 있어요':'답변에 근거한 안내인지 확인하고 있어요'};
+  }
+  const process=[
+    [/^(?:final_analysis_plan_draft|relationship_analysis)/,['relationship'],'두 분의 상황과 관계를 정리하고 있어요'],
+    [/^analysis_repair/,['relationship'],'관계 해석을 보완하고 있어요'],
+    [/^analysis_review/,['relationship'],'관계 해석을 답변과 대조하고 있어요'],
+    [/^(?:guide_write|guide$)/,guideCardIds,'카드 초안을 작성하고 있어요'],
+    [/^speech_opening/,['script'],'대화를 시작할 첫마디를 만들고 있어요'],
+    [/^speech_listening/,['script'],'마음을 전하고 이야기를 들을 말을 만들고 있어요'],
+    [/^speech_offer/,['script'],'부담 없이 건넬 제안을 만들고 있어요'],
+    [/^speech_write/,['script'],'첫마디부터 제안까지 하나의 대화로 잇고 있어요'],
+    [/^speech_detail_review/,['script'],'대화문의 각 부분이 답변에 맞는지 확인하고 있어요'],
+    [/^speech_detail_repair/,['script'],'대화문의 각 부분을 다시 정리하고 있어요'],
+    [/^speech_detail/,['script'],'대화문의 각 부분을 정리하고 있어요'],
+    [/^(?:guide_refine|guide_repair)/,fields,'검토에서 지적된 내용을 수정하고 있어요'],
+    [/^guide_quality/,guideCardIds,'안내가 구체적이고 이해하기 쉬운지 검토하고 있어요'],
+    [/^support_review/,['care','next'],'부담 없이 실천할 수 있는지 확인하고 있어요'],
+    [/^(?:speech_review|continuation_context_review)/,guideCardIds,'안내를 들려주신 답변과 대조하고 있어요'],
+    [/^guide_review/,cardIds,'전체 안내의 근거와 일관성을 최종 확인하고 있어요'],
+    [/^final_review_bundle/,fields,'여러 카드의 내용과 근거를 함께 검토하고 있어요'],
+  ].find(([pattern])=>pattern.test(stage));
+  if(process) {
+    const [,ids=[],label]=process;
+    return {ids,label};
+  }
+}
+
+export function reviewBundleCardIds(stages) {
+  return [...new Set(stages.flatMap(stage=>cardProcess(stage)?.ids??[]))];
+}
+
+export async function withCardProgress(operation,stage,fields,work) {
+  const process=operation.onCardProcess&&cardProcess(stage,fields);
+  if(!process?.ids.length)return work();
+  const token=Symbol();
+  const report=status=>{
+    try{operation.onCardProcess({stage,fields,status,token});}
+    catch{/* Progress cannot stop generation. */}
+  };
+  report('started');
+  try{return await work();}
+  finally{report('settled');}
+}
+
 export function generationProgress() {
   const state={status:'running',completed:[],current:phases[0].label,attempt:1,
     step_index:0,step_total:phases.length,progress:0,
-    steps:phases.map(({label},index)=>({label,status:index===0?'current':'pending'}))};
-  const completedStages=new Map(),cards=new Map(),listeners=new Set();
+    steps:phases.map(({label},index)=>({label,status:index===0?'current':'pending'})),card_stages:{}};
+  const completedStages=new Map(),cards=new Map(),activeProcesses=new Map(),listeners=new Set();
   const publish=()=>{for(const listener of listeners){try{listener();}catch{/* An observer cannot stop generation. */}}};
-  const cardIds=new Set(["care","doList","avoid","next","script","relationship"]);
+  const refreshCardStages=()=>{
+    const stages={};
+    for(const {ids,label} of activeProcesses.values())for(const id of ids)if(cardIds.includes(id))stages[id]=label;
+    state.card_stages=stages;
+  };
+  const clearCardStages=()=>{activeProcesses.clear();refreshCardStages();};
   const refreshCompleted=()=>{state.completed=[...completedStages.values()].map(({label})=>({label}));};
   const advance=index=>{
     // Re-entering an earlier phase discards its dependent work. The progress
@@ -47,10 +112,18 @@ export function generationProgress() {
     cards:()=>structuredClone([...cards.values()]),
     subscribe(listener){listeners.add(listener);return ()=>listeners.delete(listener);},
     card(event){
-      if(event?.type==='reset'){cards.clear();publish();return;}
-      if(!cardIds.has(event?.id))return;
+      if(event?.type==='reset'){cards.clear();clearCardStages();publish();return;}
+      if(!cardIds.includes(event?.id))return;
       if(event.type==='remove'){cards.delete(event.id);publish();return;}
       if(event.type==='upsert'){cards.set(event.id,structuredClone({id:event.id,value:event.value,...(event.detail?{detail:event.detail}:{})}));publish();}
+    },
+    cardProcess({stage,fields,status,token}) {
+      if(status==='started'&&state.status==='running'){
+        const process=cardProcess(stage,fields);
+        if(!process?.ids.length)return;
+        activeProcesses.set(token,process);
+      }else if(status!=='settled'||!activeProcesses.delete(token))return;
+      refreshCardStages();publish();
     },
     event({stage,status,attempt=1}) {
       const label=labels.find(([pattern])=>pattern.test(stage))?.[1] || '답안 작성·검토';
@@ -59,6 +132,7 @@ export function generationProgress() {
       // or completed phase from the discarded operation remains valid.
       if(stage==='retry'){
         cards.clear();completedStages.clear();refreshCompleted();state.status='running';
+        clearCardStages();
         advance(0);state.attempt=attempt+1;publish();return;
       }
       const phase=phases.findIndex(({matches})=>matches?.test(stage));
@@ -72,6 +146,7 @@ export function generationProgress() {
     },
     finish(status) {
       state.status=status;
+      clearCardStages();
       if(status==='complete'){
         state.step_index=phases.length;state.progress=100;
         state.steps.forEach(step=>{step.status='complete';});

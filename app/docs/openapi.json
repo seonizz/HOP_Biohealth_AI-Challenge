@@ -1391,6 +1391,19 @@
                         "attempt": {
                           "type": "integer",
                           "minimum": 1
+                        },
+                        "card_stages": {
+                          "type": "object",
+                          "description": "실행 중인 카드의 ID와 공개용 작업 설명. 해당 카드가 대기 중이거나 처리가 끝났으면 키가 없습니다.",
+                          "additionalProperties": false,
+                          "properties": {
+                            "care": { "type": "string" },
+                            "doList": { "type": "string" },
+                            "avoid": { "type": "string" },
+                            "next": { "type": "string" },
+                            "script": { "type": "string" },
+                            "relationship": { "type": "string" }
+                          }
                         }
                       }
                     }

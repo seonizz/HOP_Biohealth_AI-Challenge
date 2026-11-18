@@ -1170,15 +1170,42 @@ test('conversation header fills by saved question steps and reserves the final s
   assert.equal(bar.getAttribute('aria-valuetext'),'대화를 마쳤어요');
 });
 
-test('the pending result card uses the same animated dots as chat',()=>{
+test('the pending result shows each card’s current work and changes to saving',()=>{
   const {document,context}=conversationHarness(async()=>{});
   vm.runInContext(script('components/ResultScreen.js')+'\nglobalThis.resultScreen=ResultScreen;',context);
   context.resultScreen.prepare({name:'친구'});
   const card=document.getElementById('rbody').querySelector('.result-pending');
   assert.equal(document.getElementById('result').hidden,false);
-  assert.equal(card.querySelector('.dots').children.length,3);
-  context.resultScreen.progress({status:'running',current:'문안 검토',attempt:2});
-  assert.equal(card.textContent,'');
+  assert.equal(card.querySelector('.dots'),null);
+  assert.equal(card.querySelectorAll('[data-stage-card]').length,6);
+  const stage=id=>card.querySelector(`[data-stage-card="${id}"]`).querySelector('.result-stage-status');
+  assert.equal(stage('script').textContent,'차례를 기다리고 있어요');
+  context.resultScreen.progress({status:'running',card_stages:{script:'첫마디를 만들고 있어요',care:'답변과 대조하고 있어요'}});
+  assert.equal(stage('script').textContent,'첫마디를 만들고 있어요');
+  assert.equal(stage('care').textContent,'답변과 대조하고 있어요');
+  assert.equal(stage('avoid').textContent,'차례를 기다리고 있어요');
+  assert.ok(stage('script').classList.contains('is-active'));
+  context.resultScreen.previewCards.set('care',{});
+  context.resultScreen.progress({status:'running',card_stages:{script:'문장을 다듬고 있어요'}});
+  assert.equal(card.querySelector('[data-stage-card="care"]').hidden,true);
+  assert.equal(stage('script').textContent,'문장을 다듬고 있어요');
+  context.resultScreen.progress({status:'running',card_stages:{care:'전체 안내를 최종 확인하고 있어요',script:'문장을 다듬고 있어요'}});
+  assert.equal(card.querySelector('[data-stage-card="care"]').hidden,true,'a displayed card does not return to the progress list during a later review');
+  for(const id of ['relationship','script','doList','avoid','next'])context.resultScreen.previewCards.set(id,{});
+  context.resultScreen.progress({status:'running',step_index:3,card_stages:{care:'전체 안내를 최종 확인하고 있어요'}});
+  assert.equal(card.querySelector('.result-stages').hidden,true);
+  assert.match(card.querySelector('h3').textContent,/마지막으로 확인하고 있어요/);
+  context.resultScreen.previewCards.clear();context.resultScreen.previewCards.set('care',{});
+  context.resultScreen.progress({status:'running',card_stages:{script:'문장을 다듬고 있어요'}});
+  assert.equal(card.querySelector('.result-stages').hidden,false);
+  context.resultScreen.progress({status:'saving'});
+  assert.equal(card.querySelector('.result-stages').hidden,true);
+  assert.match(card.querySelector('h3').textContent,/기록에 저장하고 있어요/);
+  context.resultScreen.progress({status:'failed'});
+  context.resultScreen.previewCards.clear();
+  context.resultScreen.pendingError('잠시 후 다시 시도해 주세요.',()=>{});
+  assert.equal(card.hidden,false);
+  assert.equal(card.getAttribute('role'),'alert');
   assert.equal(card.querySelector('[role="progressbar"]'),null);
 });
 
@@ -1191,7 +1218,7 @@ function controlProgressTimers(context){
 
 test('result polling forwards real server step metadata into the visible pending card',async()=>{
   const result=deferred(),progress=generationProgress();
-  progress.event({stage:'guide_write',status:'started'});
+  progress.cardProcess({stage:'guide_write',status:'started',token:Symbol()});
   const {document,context}=conversationHarness(path=>path.endsWith('/progress')?Promise.resolve({revision:1,progress:progress.state}):result.promise);
   vm.runInContext(script('components/ResultScreen.js')+'\nglobalThis.resultScreen=ResultScreen;',context);
   const clock=controlProgressTimers(context);
@@ -1200,8 +1227,8 @@ test('result polling forwards real server step metadata into the visible pending
   assert.equal(document.getElementById('result').hidden,false);
   await clock.run();
   const card=document.getElementById('rbody').querySelector('.result-pending');
-  assert.equal(card.querySelector('.waiting-dots').getAttribute('aria-busy'),'true');
-  assert.equal(card.querySelector('.waiting-dots').getAttribute('aria-busy'),'true');
+  assert.match(card.querySelector('[data-stage-card="script"]').textContent,/카드 초안을 작성하고 있어요/);
+  assert.match(card.querySelector('[data-stage-card="relationship"]').textContent,/차례를 기다리고 있어요/);
   assert.equal(document.getElementById('thinking').querySelector('.waiting-dots').getAttribute('aria-busy'),'true');
   context.flow.show('records');result.resolve({revision:2,record:historyRecord});await finishing;
   assert.equal(clock.timers.size,0);
@@ -1389,7 +1416,7 @@ function progressiveResultHarness(request=async()=>{},{animate=false}={}){
   return fixture;
 }
 
-test('approved result cards appear in completion order while dots remain and saving is not claimed',()=>{
+test('approved result cards appear in completion order while the remaining cards show progress',()=>{
   const {document,context}=progressiveResultHarness(),screen=context.resultScreen;
   screen.prepare(conversationView('친구'));
   const next={id:'next',value:'다음 행동'},care={id:'care',value:{feel:'돌봄 안내',tips:['휴식']}};
@@ -1402,7 +1429,11 @@ test('approved result cards appear in completion order while dots remain and sav
   screen.partial([care,next]);
   assert.deepEqual(stream.children.map(node=>node.dataset.card),['care','next']);
   assert.equal(stream.children[1],first,'remove and reapproval between polls preserves the DOM while reordering');
-  assert.ok(document.getElementById('rbody').querySelector('.dots'));
+  screen.progress({status:'running',card_stages:{script:'첫마디를 만들고 있어요'}});
+  const pending=document.getElementById('rbody').querySelector('.result-pending');
+  assert.equal(pending.querySelector('[data-stage-card="care"]').hidden,true);
+  assert.equal(pending.querySelector('[data-stage-card="next"]').hidden,true);
+  assert.match(pending.querySelector('[data-stage-card="script"]').textContent,/첫마디를 만들고 있어요/);
   assert.doesNotMatch(document.getElementById('rbody').textContent,/기록으로 저장/);
   screen.partial([care]);assert.deepEqual(stream.children.map(node=>node.dataset.card),['care']);
   screen.partial([]);assert.equal(stream.children.length,0);

@@ -10,6 +10,15 @@
 .result-stream:empty{display:none}
 .result-live-card{min-width:0}
 .result-pending>p{margin:0;color:var(--muted)}
+.result-pending:has(.result-stages[hidden]) .result-pending-heading{margin-bottom:0}
+.result-pending .result-stages{display:grid;gap:0;margin:0;padding:0;list-style:none}
+.result-stages li{display:grid;gap:4px;padding:10px 0;border-top:1px solid var(--leaf-soft);min-width:0}
+.result-stages li:last-child{padding-bottom:0}
+.result-stage-status{display:flex;align-items:baseline;gap:8px;color:var(--muted);font-size:15px}
+.result-stage-status.is-active{color:var(--stem)}
+.result-stage-status.is-active::before{content:"";width:.7em;height:.7em;flex:none;align-self:center;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:result-spin .9s linear infinite}
+@keyframes result-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.result-stage-status.is-active::before{animation:none}}
 .care>div,.next>div{min-width:0}
 .next{display:flex;gap:18px;align-items:center}
 .conversation-history{margin-top:18px;background:var(--bg)}

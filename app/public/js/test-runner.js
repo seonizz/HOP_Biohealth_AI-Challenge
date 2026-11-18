@@ -42,7 +42,7 @@ const TestRunner = {
     } else if (item.status==='running') {
       const name=item.answers.find(answer=>answer.question_id==='name')?.text;
       ResultScreen.prepare({ name:name || item.title });
-      if (item.progress) { ResultScreen.progress(item.progress.progress); ResultScreen.partial(item.progress.cards); }
+      if (item.progress) { ResultScreen.partial(item.progress.cards); ResultScreen.progress(item.progress.progress); }
     } else {
       show('result');
       $('rbody').innerHTML=`<div class="card"><h3>${esc(item.title)}</h3><p>${esc(item.error || (item.status==='cancelled'?'테스트를 중단했어요. 입력을 확인하고 다시 실행할 수 있어요.':'이 사례의 순서를 기다리고 있어요.'))}</p></div>`;
@@ -55,7 +55,7 @@ const TestRunner = {
         const progress=await this.request(`/api/test-runs/${run.id}/progress`, { signal:run.controller.signal });
         if (this.active!==run) return;
         this.cases[index].progress=progress;
-        if (this.selected===index) { ResultScreen.progress(progress.progress); ResultScreen.partial(progress.cards); }
+        if (this.selected===index) { ResultScreen.partial(progress.cards); ResultScreen.progress(progress.progress); }
       } catch { /* The POST carries errors; a poll may race request start or completion. */ }
       if (this.active!==run || run.controller.signal.aborted) return;
       await new Promise(resolve=>{run.wake=resolve;run.timer=setTimeout(resolve,1200);});

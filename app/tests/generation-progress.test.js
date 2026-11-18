@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { generationProgress } from '../src/generation-progress.js';
+import { generationProgress, reviewBundleCardIds, withCardProgress } from '../src/generation-progress.js';
 
 const finishStage=(progress,stage,attempt=1)=>{
   progress.event({stage,status:'started',attempt});
@@ -121,6 +121,40 @@ test('parallel completions do not invalidate stages already reviewing another ca
   finishStage(progress,'card_care');
   assert.equal(progress.state.progress,60);
   assert.ok(progress.state.completed.some(item=>item.label==='건넬 말과 행동의 근거 검토'));
+});
+
+test('parallel card work clears independently, and a whole-operation retry clears old work',async()=>{
+  const progress=generationProgress(),operation={onCardProcess:event=>progress.cardProcess(event)};
+  const speech=Promise.withResolvers(),care=Promise.withResolvers();
+  const speechWork=withCardProgress(operation,'speech_opening',undefined,()=>speech.promise);
+  const careWork=withCardProgress(operation,'support_review_card_care',undefined,()=>care.promise);
+  assert.deepEqual(progress.state.card_stages,{
+    script:'대화를 시작할 첫마디를 만들고 있어요',
+    care:'부담 없이 실천할 수 있는지 확인하고 있어요',
+  });
+  care.resolve();await careWork;
+  assert.deepEqual(Object.keys(progress.state.card_stages),['script']);
+  progress.event({stage:'retry',status:'started'});
+  assert.deepEqual(progress.state.card_stages,{});
+  const nextSpeech=Promise.withResolvers();
+  const nextSpeechWork=withCardProgress(operation,'speech_opening',undefined,()=>nextSpeech.promise);
+  speech.reject(new Error('discarded operation'));await assert.rejects(speechWork,/discarded operation/);
+  assert.deepEqual(Object.keys(progress.state.card_stages),['script']);
+  nextSpeech.resolve();await nextSpeechWork;
+  assert.deepEqual(progress.state.card_stages,{});
+});
+
+test('bundle partitions and repairs mark only affected cards with public descriptions',async()=>{
+  const progress=generationProgress(),operation={onCardProcess:event=>progress.cardProcess(event)};
+  const fields=reviewBundleCardIds(['speech_review_card_avoid','support_review_card_next','speech_review_card_next']);
+  await withCardProgress(operation,'final_review_bundle_initial_part_2',fields,()=>{
+    assert.deepEqual(Object.keys(progress.state.card_stages),['avoid','next']);
+  });
+  await withCardProgress(operation,'guide_repair_after_analysis_repair', ['care','internal stage'],()=>{
+    assert.deepEqual(progress.state.card_stages,{care:'검토에서 지적된 내용을 수정하고 있어요'});
+    progress.finish('saving');
+    assert.deepEqual(progress.state.card_stages,{});
+  });
 });
 
 test('partial cards are immutable snapshots with stable completion order and explicit invalidation',()=>{
