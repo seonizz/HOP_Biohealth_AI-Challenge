@@ -8,6 +8,7 @@ import { validateRelationshipMemory, validateSafetyEvidence, safetySnapshotFinge
 import { normalizeAnswerField } from './answer-sources.js';
 import { validatePersonalization } from './personalized-questions.js';
 import { immediateSplitSafety, splitQuestionRequest, validateSplitQuestion } from './split-question-router.js';
+import { forwardOnlyFilter, resetForwardProgress } from './question-flow-guards.js';
 import { hasPersonalization, personalQuestions, maximumQuestions, renderIntakeQuestion, personalizationContext,
   createPersonalQuestion, answerPersonalQuestion, invalidatePersonalization, previousPersonalQuestion } from './intake-personalization.js';
 import { isV3Intake, initializeV3, issueV3, normalizeV3Answer, stampV3Answer, v3FieldStatus,
@@ -260,6 +261,7 @@ function answerV3(originalState, question, input) {
   // answers must not cause an already covered scene to be asked again.
   // Context-dependent not_needed decisions are always reconsidered. Historical
   // snapshots keep their previous all-decisions-replanned behavior.
+  if (isCorrection) resetForwardProgress(state);
   state.modelSkipped = hasCompactQuestionFlow(state) && !isCorrection
     ? Object.fromEntries(Object.entries(state.modelSkipped || {}).filter(([,decision])=>decision.reason==='already_covered')) : {};
   state.i = 0;
@@ -780,6 +782,7 @@ export function buildContext(state) {
   const extraFields=Object.fromEntries(extraQuestions.filter(q=>state.clarificationAnswers?.[q.id]).map(q=>[q.id,
     evidenceField(q,{...state,ans:state.clarificationAnswers})]));
   const value = id => state.ans[id]?.skipped ? '' : state.ans[id]?.text || '';
+  const forwardOnly = v3 ? forwardOnlyFilter(state) : () => true;
   const context = {
     schema_version: '1.0',
     adaptive_questions:true,
@@ -798,7 +801,8 @@ export function buildContext(state) {
     latest_answer: latestQuestion ? {question_id:latestAnswerId,subject:subjectOf(latestQuestion)} : null,
     question_candidates: (state.status === 'active' || (hasCompactQuestionFlow(state) && !state.v3.stopped)) ? (hasPersonalization(state) ? questions : questions.slice(state.i))
       .filter(question => !['name','want','cause'].includes(question.id) && !gates.has(question.id) && !evidenceState.ans[question.id] &&
-        !state.modelSkipped?.[question.id] && (!v3 || !state.v3.issued[question.id]) && (!question.when || conditionMatches(question.when, evidenceState)))
+        !state.modelSkipped?.[question.id] && (!v3 || !state.v3.issued[question.id]) && (!question.when || conditionMatches(question.when, evidenceState)) &&
+        (!v3 || forwardOnly(question.id)))
       .map(question => ({ id:question.id, question:renderQuestion(question, evidenceState).q,
         subject:subjectOf(question),
         required:Boolean(question.required), noSkip:Boolean(question.noSkip) })) : [],

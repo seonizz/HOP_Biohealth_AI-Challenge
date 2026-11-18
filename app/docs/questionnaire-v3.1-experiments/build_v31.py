@@ -33,6 +33,12 @@ for item in q['questions']:
     if i in HELP: item['help']['text']=HELP[i]
     for c in COLLECTS_ADD.get(i,[]):
         if c not in item['collects']: item['collects'].append(c)
+q['planning']['forward_only']=True
+q['planning']['forward_only_rule']='once_a_later_priority_question_is_shown_earlier_unshown_questions_are_not_offered'
+q['planning']['custom_followup']={
+  'focus_owner':{'behavior':['Q3-04','Q3-05'],'emotion':['Q3-06'],'relationship':['Q3-02'],'support':['Q3-08'],'goal':['Q3-09']},
+  'focus_blocked_when':'every_owner_question_already_shown',
+  'reject_unspecific_questions':True}
 dump(q,f'{DST}/questions.json')
 t=swap(json.load(open(f'{SRC}/tasks.json'))); t['created_date']='2026-11-19'
 if 'default_priority' in t: t['default_priority']=ORDER
