@@ -5,6 +5,7 @@ import {Store} from '../src/store.js';
 import {createApp} from '../src/server.js';
 import {createIntake} from '../src/intake.js';
 import {HttpError} from '../src/errors.js';
+import {withCardProgress} from '../src/generation-progress.js';
 
 const deferred=()=>{let resolve,reject;const promise=new Promise((done,fail)=>{resolve=done;reject=fail;});return {promise,resolve,reject};};
 const update={patient_state:{summary:'합성 상태',facts:[],unknowns:[],user_goal:'이야기 듣기'},name_index:null,question_plan:{skip:[]}};
@@ -86,16 +87,19 @@ test('HTTP stream pushes initial progress and reviewed cards, and confirms compl
   const entered=deferred(),modelGate=deferred(),saveGate=deferred();let options;
   const f=await fixture(t,{ready:true,saveGate,work:async(_context,_memory,input)=>{
     options=input;entered.resolve();input.onProgress({stage:'guide_write',status:'started',raw:'PRIVATE_MODEL_DELTA'});
-    await waitFor(modelGate,input.signal);return generated;
+    await withCardProgress(input,'speech_opening',undefined,()=>waitFor(modelGate,input.signal));return generated;
   }});
   const stream=observe(await f.send('result'));await entered.promise;
   const initial=await stream.until(event=>event.type==='progress');assert.equal(initial.data.revision,0);assert.equal(f.recordSaves(),0);
+  const writing=await stream.until(event=>event.data.progress?.card_stages.script);
+  assert.deepEqual(writing.data.progress.card_stages,{script:'대화를 시작할 첫마디를 만들고 있어요'});
   assert.equal(stream.events.some(terminal),false);
   options.onCard({type:'upsert',id:'script',value:generated.guide.script});
   const card=await stream.until(event=>event.data.cards?.some(card=>card.id==='script'));
   assert.equal(card.data.cards[0].value,generated.guide.script);assert.equal(stream.events.some(terminal),false);
   modelGate.resolve();await f.saveEntered.promise;
-  await stream.until(event=>event.data.progress?.status==='saving');
+  const saving=await stream.until(event=>event.data.progress?.status==='saving');
+  assert.deepEqual(saving.data.progress.card_stages,{});
   assert.equal(stream.events.some(event=>event.data.progress?.status==='complete'||terminal(event)),false);
   saveGate.resolve();const result=await stream.until(event=>event.type==='result');await stream.done;
   assert.equal(result.data.record.guide.script,generated.guide.script);assert.equal(result.data.revision,1);

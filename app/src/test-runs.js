@@ -29,7 +29,8 @@ export function createTestRuns({ gateway, questionSet }) {
         controller.signal.throwIfAborted();
         const result = await gateway.respond(context, null, { requestId, signal:controller.signal,
           onProgress:event => { if (!controller.signal.aborted) progress.event(event); },
-          onCard:event => { if (!controller.signal.aborted) progress.card(event); } });
+          onCard:event => { if (!controller.signal.aborted) progress.card(event); },
+          onCardProcess:event => { if (!controller.signal.aborted) progress.cardProcess(event); } });
         controller.signal.throwIfAborted();
         const reviewed = applyModelUpdate(state, { patient_state:result.patient_state,
           name_index:result.name_index, question_plan:{ skip:[] },

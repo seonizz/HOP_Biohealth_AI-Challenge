@@ -5,6 +5,7 @@ import {Store} from '../src/store.js';
 import {createApp} from '../src/server.js';
 import {createIntake} from '../src/intake.js';
 import {HttpError} from '../src/errors.js';
+import {withCardProgress} from '../src/generation-progress.js';
 
 const deferred=()=>{let resolve;return {promise:new Promise(done=>resolve=done),resolve};};
 const absent=()=>new HttpError(404,'NOT_FOUND','합성 기록 없음');
@@ -33,8 +34,9 @@ async function fixture(t,{holdSave=false}={}) {
     async deleteIntake(candidate,requested){owned(candidate,requested);row=null;return {deleted_records:0};},
   };
   t.mock.method(Store,'connect',async()=>store);
-  const gateway={model:'synthetic',respond:async(_context,_memory,{onProgress})=>{
-    onProgress({stage:'guide_write',status:'started'});entered.resolve();await release.promise;
+  const gateway={model:'synthetic',respond:async(_context,_memory,options)=>{
+    options.onProgress({stage:'guide_write',status:'started'});
+    await withCardProgress(options,'card_care',undefined,()=>{entered.resolve();return release.promise;});
     return {guide,assessment:{safety:false},patient_state:{summary:'합성 요약',facts:[],unknowns:[],user_goal:'말 걸기'},name_index:null};
   }};
   const app=await createApp({databaseUrl:'synthetic-memory',key:randomBytes(32),gateway,referralProvider:null});
@@ -60,6 +62,7 @@ test('active and saved-revision progress avoid intake reads while auth and inact
     const progress=await f.request('progress');
     assert.equal(progress.status,200);assert.equal(progress.data.revision,0);
     assert.equal(progress.data.progress.status,'running');
+    assert.deepEqual(progress.data.progress.card_stages,{care:'당신의 마음을 돌보는 방법을 적고 있어요'});
   }
   assert.equal(f.counters.intake,baseline);
   assert.equal(f.counters.activity,activity+4);

@@ -10,6 +10,7 @@ import { JSON_STREAM_COMPLETE, ModelStreamError, streamJsonResponse, schemaArray
 import { discoverModelTokenPolicy } from './model-token-policy.js';
 import { randomUUID } from 'node:crypto';
 import {createOperationMetrics, operationMetrics, beginHttpAttempt, modelStageRole} from './model-operation-metrics.js';
+import {withCardProgress} from './generation-progress.js';
 import { contextGoal, validateAgentResult, validateStateResult, validatePatientState, validateNameIndex, validateQuestionPlan, isV3Context } from './agent-state.js';
 import { modelResponseFormat } from './model-schema.js';
 import { trainedContext } from './model-context.js';
@@ -782,7 +783,7 @@ export class ModelGateway {
           hasCards=event.type==='reset'?false:true;
           try{options?.onCard?.(event);}catch{ /* Display updates cannot stop generation. */ }
         };
-        const operation={controller,deadline,requestId,onProgress:options?.onProgress,onCard,recovery,httpBudget,
+        const operation={controller,deadline,requestId,onProgress:options?.onProgress,onCard,onCardProcess:options?.onCardProcess,recovery,httpBudget,
           questionExecution:parentOperation?.questionExecution,
           metrics,restart:parentOperation?.restart??retries,tokenPolicies:parentOperation?.tokenPolicies||new Map()};
         let delay;
@@ -898,12 +899,13 @@ export class ModelGateway {
           const updated = await this.trainedState(context, null, operation, true);
           memory = updated.patient_state; name = updated.name_index;
         }
-        return this.completeTrained(context, memory, true, operation, payload => {
+        return withCardProgress(operation,'guide',undefined,()=>this.completeTrained(context, memory, true, operation, payload => {
           exactKeys(payload, ['guide', 'assessment']);
           return validateGuide({ ...payload, patient_state: memory, name_index: name }, context);
-        });
+        }));
       }
-      return this.complete(context, priorMemory, SYSTEM_PROMPT, operation, payload => validateGuide(payload, context), true);
+      return withCardProgress(operation,'guide',undefined,()=>
+        this.complete(context, priorMemory, SYSTEM_PROMPT, operation, payload => validateGuide(payload, context), true));
     });
   }
 

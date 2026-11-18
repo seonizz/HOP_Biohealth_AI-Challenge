@@ -226,7 +226,8 @@ export async function createApp({ databaseUrl = process.env.DATABASE_URL, schema
     let result;
     try {
       result = await selectedGateway.respond(context, row.state.agentMemory || null, { requestId, signal, onProgress:event=>{if(!signal.aborted)progress.event(event);},
-        onCard:event=>{if(!signal.aborted)progress.card(event);} });
+        onCard:event=>{if(!signal.aborted)progress.card(event);},
+        onCardProcess:event=>{if(!signal.aborted)progress.cardProcess(event);} });
     } catch(error) {
       // A stopped conversation may resolve its pending safety review
       // without generating a guide. Persist that verdict once, so a

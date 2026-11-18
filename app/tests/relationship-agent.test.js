@@ -493,16 +493,22 @@ test('quality reviews the final speech and preserves the exact refinement histor
   const spoken='지민아, 밤에 계획표를 고치는 모습을 봤어. 네가 걱정되지만 네 마음을 이해하고 싶어. 지금 이야기해도 괜찮을까?';
   const refined=guide();refined.guide.script=spoken.replace(' 네가 걱정되지만','\n\n네가 걱정되지만');
   const quality={improvements:[{field:'script',reason:'전할 마음과 관찰을 읽기 쉽게 나누세요.',repair:'원래 걱정과 이해하고 싶은 마음을 유지하며 두 문단으로 다듬으세요.'}]};
-  const speechReviews=[],events=[],phases=[],progress=generationProgress();
+  const speechReviews=[],events=[],phases=[],cardStages=new Map(),progress=generationProgress();
   const model=gateway(body=>{
     const input=JSON.parse(body.messages.at(-1).content);
     return fixtureEnvelope({relationship_analysis:analysis(),analysis_review:{approved:true,issues:[]},communication_plan:plan(),
       guide_write:provisional,guide_quality:quality,guide_refine:refined,guide_review:{approved:true,issues:[]}}[input.stage]);
   },{speechWrite:()=>({script:spoken}),speechReview:input=>{speechReviews.push(input.data.script);return {approved:true,issues:[]};}});
-  const result=await model.respond(context(),memory(),{onProgress:event=>{
-    events.push(event);progress.event(event);
-    if(event.status==='completed')phases.push([event.stage,progress.state.progress]);
-  }});
+  const result=await model.respond(context(),memory(),{
+    onProgress:event=>{
+      events.push(event);progress.event(event);
+      if(event.status==='completed')phases.push([event.stage,progress.state.progress]);
+    },
+    onCardProcess:event=>{
+      progress.cardProcess(event);
+      if(event.status==='started')cardStages.set(event.stage,progress.state.card_stages);
+    },
+  });
   const inputFor=stage=>model.transportInputs.find(input=>input.stage===stage).data;
   const before={...guide().guide,script:spoken};
   assert.equal(inputFor('guide_quality').guide.script,spoken);
@@ -523,6 +529,9 @@ test('quality reviews the final speech and preserves the exact refinement histor
   assert.deepEqual(phases.filter(([stage])=>['speech_write','guide_quality','guide_refine','guide_quality_check','speech_review'].includes(stage)),
     [['speech_write',40],['guide_quality',40],['guide_refine',40],['guide_quality_check',40],['speech_review',60]]);
   assert.equal(progress.state.progress,60);
+  assert.deepEqual(cardStages.get('guide_refine'),{script:'검토에서 지적된 내용을 수정하고 있어요'});
+  assert.deepEqual(cardStages.get('speech_detail_review'),{script:'대화문의 각 부분이 답변에 맞는지 확인하고 있어요'});
+  assert.deepEqual(progress.state.card_stages,{});
   assert.equal(progress.state.steps.at(-1).status,'pending');
 });
 

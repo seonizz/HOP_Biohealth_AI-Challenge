@@ -14,6 +14,7 @@ import {cardCaseFormulationSchema,cardCaseClaims,reviewedCardCase} from './card-
 import {CARD_CASE_FORMULATION,CARD_CASE_REVIEW,CARD_CASE_USE} from './relationship-prompts.js';
 import {personalizationSchema,personalizationSources,validatePersonalization,personalizationClaim,PERSONALIZATION_PROMPT,compactQuestionInstructions} from './personalized-questions.js';
 import {cardRepetition,cardRepetitionIssue} from './card-repetition.js';
+import {reviewBundleCardIds,withCardProgress} from './generation-progress.js';
 
 const string = (maxLength = 2000) => ({ type:'string', minLength:1, maxLength });
 const object = properties => ({ type:'object', properties, required:Object.keys(properties), additionalProperties:false });
@@ -1111,7 +1112,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         ...[...(payload.review?.issues||[]),...(payload.issues||[])].map(issue=>typeof issue==='string'?issue:issue.reason+' '+issue.repair)].filter(Boolean).join(' ')});
     return appendV3SafetyDocuments(context,retrieval,reviewedSafety?.evidence||[]);
   };
-  const generate=async (stage,prompt,payload,schema,validate,activeOperation=operation,retrievalOverride,requestOptions)=>{
+  const generate=async (stage,prompt,payload,schema,validate,activeOperation=operation,retrievalOverride,requestOptions,bundleFields)=>{
     activeOperation.controller.signal.throwIfAborted();
     const seeded=finalSeed&&(stage==='relationship_analysis'&&reviewedSafety
       ?Object.fromEntries(Object.entries(finalSeed.selection).filter(([key])=>key!=='safety'))
@@ -1151,7 +1152,11 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
         result=validateGenerated(structuredClone(seeded));
         if(stage==='relationship_analysis'&&!equalJSON(result,finalSeed.analysis))throw invalidFinalDraftSeed();
       } catch { throw invalidFinalDraftSeed(); }
-    } else result=await gateway.agentComplete(stage,prompt,wirePayload,groundedSchema,activeOperation,validateGenerated,requestOptions);
+    } else {
+      const fields=bundleFields??(payload.field?[payload.field]:payload.edited_fields??payload.quality?.improvements?.map(issue=>issue.field));
+      result=await withCardProgress(activeOperation,stage,fields,()=>
+        gateway.agentComplete(stage,prompt,wirePayload,groundedSchema,activeOperation,validateGenerated,requestOptions));
+    }
     activeOperation.controller.signal.throwIfAborted();
     retrievalTrace.push({stage,...(seeded?{source:'trusted_local_seed'}:{}),indexed_sources:retrieval.indexed_sources,source_ids:retrieval.documents.map(row=>row.source_id)});
     if(seeded)seededStages.push(stage);else stages.push(stage);
@@ -1179,7 +1184,7 @@ export async function runRelationshipAgent(gateway,context,memory,name,operation
       const retrieval={...selected[0].payload.retrieval,stage:partStage,documents:[...documents.values()]};
       try {
         const output=await generate(partStage,bundle.prompt,bundle.payload,bundle.schema,bundle.validate,activeOperation,retrieval,
-          {uniqueJsonKeys:gateway.repairReviewBundleTasks===true});
+          {uniqueJsonKeys:gateway.repairReviewBundleTasks===true},reviewBundleCardIds(selected.map(request=>request.stage)));
         if(targets)bindBundle(output,targets);
         completed.push({stage:partStage,reviews:selected.map(request=>request.stage)});
         return output;

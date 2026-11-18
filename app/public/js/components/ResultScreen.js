@@ -1,4 +1,12 @@
 // 3. 결과 화면: 좌 마스코트 · 우 가이드 카드
+const resultCardTitles={
+  relationship:"함께 살펴본 관계",
+  care:"당신의 마음도 소중해요",
+  script:"이렇게 시작해 보세요",
+  doList:"이렇게 해 보세요",
+  avoid:"피하면 좋아요",
+  next:"다음 단계"
+};
 const ResultScreen={
   render(){return `
 <section class="screen" id="result" hidden>
@@ -15,16 +23,42 @@ const ResultScreen={
      <div class="cards">
        ${view.safety_notice?`<p role="alert">${esc(view.safety_notice)}</p>`:""}
        <div class="result-stream" aria-live="polite" aria-relevant="additions text"></div>
-       <div class="card result-pending" role="status" aria-live="polite">${ChatScreen.progressMarkup()}</div>
+       <div class="card result-pending" role="status" aria-live="polite">
+         <h3 class="result-pending-heading"></h3>
+         <ul class="result-stages" role="list">
+           ${Object.entries(resultCardTitles).map(([id,title])=>`
+             <li data-stage-card="${id}">
+               <strong>${title}</strong><span class="result-stage-status"></span>
+             </li>`).join("")}
+         </ul>
+       </div>
        ${editAnswer?'<div><button class="ghost" id="edit-result-answer" type="button">마지막 답변 수정</button></div>':""}
      </div>`;
     if(editAnswer)$("edit-result-answer").onclick=editAnswer;
     show("result");
-    this.progress({status:"running",current:"이야기 살펴보기",attempt:1});
+    this.progress({status:"idle"});
   },
   progress(value){
     const card=$("rbody").querySelector(".result-pending");
-    if(card)ChatScreen.thinkProgress(value,card);
+    const heading=card?.querySelector(".result-pending-heading");
+    if(!heading)return;
+    const status=value?.status;
+    card.hidden=status==="complete"||status==="failed";
+    const stages=card.querySelector(".result-stages");
+    stages.hidden=status==="saving";
+    const sharedStage=["들려주신 이야기를 살펴보고 있어요","안내 방향을 정하고 있어요"][value?.step_index];
+    const label=status==="saving"?"검토한 카드를 기록에 저장하고 있어요":
+      status==="idle"?"카드 생성이 시작되기를 기다리고 있어요":sharedStage||"카드를 준비하고 있어요";
+    if(heading.textContent!==label)heading.textContent=label;
+    if(card.hidden||stages.hidden)return;
+    for(const row of stages.children){
+      const id=row.dataset.stageCard,stage=value?.card_stages?.[id];
+      row.hidden=!stage&&this.previewCards.has(id);
+      const statusText=row.querySelector(".result-stage-status");
+      const text=stage||"차례를 기다리고 있어요";
+      if(statusText.textContent!==text)statusText.textContent=text;
+      statusText.className=stage?"result-stage-status is-active":"result-stage-status";
+    }
   },
   partial(cards){
     const stream=$("rbody").querySelector(".result-stream");
@@ -76,7 +110,7 @@ const ResultScreen={
   pendingError(message,retry){
     this.partial([]);
     const card=$("rbody").querySelector(".result-pending");if(!card)return;
-    card.setAttribute("role","alert");card.textContent="";
+    card.hidden=false;card.setAttribute("role","alert");card.textContent="";
     const heading=document.createElement("h3");heading.textContent="말하는 방법을 준비하지 못했어요";
     const detail=document.createElement("p");detail.textContent=message;
     const button=document.createElement("button");button.className="ghost";button.type="button";button.textContent="다시 시도";button.onclick=retry;

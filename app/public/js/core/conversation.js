@@ -321,8 +321,8 @@ async function finishConversation(run){
       const data=await Promise.race([API.request(`/api/intakes/${id}/progress`,controller?{signal:controller.signal}:{}),timeout]);
       if(polling&&current()&&data.revision===revision){
         ChatScreen.thinkProgress(data.progress);
-        if(typeof ResultScreen.progress==="function")ResultScreen.progress(data.progress);
         if(typeof ResultScreen.partial==="function")ResultScreen.partial(data.cards||[]);
+        if(typeof ResultScreen.progress==="function")ResultScreen.progress(data.progress);
       }
     }catch(error){
       // The server limits each IP to 600 API requests per minute by default.
@@ -347,8 +347,8 @@ async function finishConversation(run){
         // older JSON servers, and an in-flight fallback poll is cancelled here.
         stopPolling();
         ChatScreen.thinkProgress(data.progress);
-        if(typeof ResultScreen.progress==="function")ResultScreen.progress(data.progress);
         if(typeof ResultScreen.partial==="function")ResultScreen.partial(data.cards||[]);
+        if(typeof ResultScreen.progress==="function")ResultScreen.progress(data.progress);
       };
       const result=await requestConversation(`/api/intakes/${id}/result`,{method:"POST",body:{revision},onEvent},token);
       stopPolling();
