@@ -140,8 +140,8 @@ test('service introduction retains the restored layout with current question and
   assert.match(html, /보관과 삭제 안내/);
   assert.match(html, /원천 데이터 건수/);
   assert.match(html, /말씨의 질문과 안내에 필요한 자료도 별도로 구성했어요/);
-  assert.match(html, /앞으로의 평가 계획/);
-  assert.match(html, /아직 평가 결과가 나온 것은 아니에요/);
+  assert.match(html, /말씨에 맞게 새로 구성한 상담 데이터/);
+  assert.match(html, /진행 중인 평가의 점수와 개선 여부는 완료 후 확정해요/);
   assert.doesNotMatch(html, /Macro F1|Micro F1|90%|95%|0\.05/);
   assert.match(html, /보관키로 기록을 열어도 보관기간이 연장되지는 않아요/);
   assert.doesNotMatch(html, /8회기|CBT|쿠키를 지우거나 접근 기간이 끝나면 기존 기록을 열 수 없어요/);
@@ -151,6 +151,31 @@ test('service introduction excludes historical research and training copy from r
   const context = vm.createContext({ NavBar:() => '' });
   vm.runInContext(script('components/AboutScreen.js') + '\nglobalThis.screen = AboutScreen;', context);
   assert.doesNotMatch(context.screen.render(), /CFI|SSCS|FMI|DSM|회기|배우고 있|반구조화 면담|가족 영향 척도|문화적 공식화 면담|0~3점|46만여 단락|한 단락씩 읽고 표시|답이 부족하면 한 번 더/);
+});
+
+test('about distinguishes completed checkpoint evaluation from the ongoing base-model comparison', () => {
+  const context = vm.createContext({ NavBar:() => '' });
+  vm.runInContext(script('components/AboutScreen.js') + '\nglobalThis.screen = AboutScreen;', context);
+  const html = context.screen.render();
+  const disclosures = [...html.matchAll(/<details[^>]*>([\s\S]*?)<\/details>/g)].map(match => match[1]);
+  const completed = disclosures.find(text => text.includes('완료된 비교 평가'));
+  const ongoing = disclosures.find(text => text.includes('추가 평가 진행 중'));
+  assert.ok(completed);
+  assert.ok(ongoing);
+  assert.match(completed, /step4723[\s\S]*step5128/);
+  assert.doesNotMatch(completed, /원본 모델/);
+  for (const [before, after, total] of [[170,360,360],[247,353,360],[4,285,360],[136,196,360]]) {
+    assert.ok(completed.includes(`${(before/total*100).toFixed(1)}% → ${(after/total*100).toFixed(1)}%`));
+  }
+  assert.match(completed, /20개 원천 사례[\s\S]*1,080개 입력/);
+  assert.match(completed, /종합 평가 기준도 아직 충족하지 못했어요/);
+  assert.match(ongoing, /31B 원본 모델과 step5128/);
+  assert.match(ongoing, /336개[\s\S]*ARC-Challenge 200문항[\s\S]*ARC-Easy 200문항/);
+  assert.match(ongoing, /모델당 736개[\s\S]*1,472개/);
+  assert.match(ongoing, /점수와 개선 여부는 완료 후 확정/);
+  assert.match(ongoing, /사람의 품질 평가와 앱 전체 이용 과정의 평가는 포함하지 않아요/);
+  assert.match(html, /새로 만든 말씨 자료의 규모가 아니라/);
+  assert.ok(html.indexOf('말씨가 해야 할 일에 맞는 자료를 별도로') < html.indexOf('class="bignums"'));
 });
 
 test('public result preview uses current questionnaire wording and declares an authored UI fixture', () => {
