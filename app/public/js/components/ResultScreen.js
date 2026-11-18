@@ -73,6 +73,7 @@ const ResultScreen={
     }
     // The next card also uses tips from the currently approved care card.
     const care=cards.find(card=>card.id==='care')?.value;
+    const added=[];
     for(const card of cards){
       const signature=JSON.stringify(card.id==='next'?{...card,care}:card),previous=this.previewCards.get(card.id);
       if(previous?.signature===signature)continue;
@@ -84,7 +85,7 @@ const ResultScreen={
       node.innerHTML=html;
       [...node.querySelectorAll("details")].forEach((section,index)=>{if(expanded[index])section.open=true;});
       if(card.id==='script')GuideCards.bindCopy(node,card.value);
-      if(!previous)stream.appendChild(node);
+      if(!previous){stream.appendChild(node);added.push(node);}
       this.previewCards.set(card.id,{node,signature,html});
     }
     // Show either action as soon as it is ready. When both are ready, reuse
@@ -110,6 +111,12 @@ const ResultScreen={
     if(ordered.some((node,index)=>stream.children[index]!==node)){
       ordered.forEach(node=>{node.remove();stream.appendChild(node);});
     }
+    // Several approvals may arrive in one snapshot (especially after a poll).
+    // Animate only the new cards, once they are in their final DOM positions.
+    if(!globalThis.matchMedia?.("(prefers-reduced-motion: reduce)").matches)added.forEach((node,index)=>node.animate?.(
+      [{opacity:0,transform:"translateY(12px)"},{opacity:1,transform:"none"}],
+      {duration:260,delay:index*180,fill:"backwards",easing:"ease-out"}
+    ));
   },
   pendingError(message,retry){
     this.partial([]);

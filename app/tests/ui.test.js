@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { questionCatalog } from '../src/catalog.js';
 import { generationProgress } from '../src/generation-progress.js';
+import { activeQuestionSet } from '../src/question-bank.js';
 
 const script = path => readFileSync(new URL(`../public/js/${path}`, import.meta.url), 'utf8');
 
@@ -1416,6 +1417,24 @@ function progressiveResultHarness(request=async()=>{},{animate=false}={}){
   return fixture;
 }
 
+test('batched approvals reveal only new cards in completion order',()=>{
+  const {document,context}=progressiveResultHarness();
+  const create=document.createElement,animations=[];
+  document.createElement=tag=>{
+    const node=create(tag);
+    node.animate=(_frames,timing)=>animations.push([node.dataset.card,timing.delay]);
+    return node;
+  };
+  const screen=context.resultScreen;
+  screen.prepare(conversationView('친구'));
+  const cards=[{id:'avoid',value:['재촉']},{id:'next',value:'다음 안내'},{id:'doList',value:['경청']}];
+  screen.partial(cards);
+  assert.deepEqual(animations,[['avoid',0],['next',180],['doList',360]]);
+  screen.partial(cards);
+  screen.partial([{...cards[0],value:['수정된 안내']},...cards.slice(1)]);
+  assert.equal(animations.length,3);
+});
+
 test('approved result cards appear in completion order while the remaining cards show progress',()=>{
   const {document,context}=progressiveResultHarness(),screen=context.resultScreen;
   screen.prepare(conversationView('친구'));
@@ -1586,11 +1605,32 @@ test('additional-question entry survives appended key controls without replacing
   assert.equal(document.getElementById('rdetail').querySelector('.script').textContent,'원래 대화문');
 });
 
+test('QA choices keep their original server indices through draft restore and submission',async()=>{
+  for(const [id,visible,selected] of [['q3_01',[4,5],[5]],['q3_08',[0,1,2,4],[1,4]]]){
+    const document=documentWith(['input']),submitted=[];
+    const context=vm.createContext({document,setTimeout,clearTimeout});
+    vm.runInContext(script('core/utils.js')+script('core/questions.js')+script('components/ChatInput.js')+';globalThis.ui=ChatInput;',context);
+    const question=activeQuestionSet.questions.find(q=>q.id===id);
+    const render=()=>context.ui.render(question,(...args)=>submitted.push(args));
+    render();
+    const chips=document.querySelectorAll('.chip');
+    assert.deepEqual(chips.map(chip=>chip.textContent),visible.map(i=>question.opts[i][0]));
+    for(const index of selected)await chips[visible.indexOf(index)].click();
+    document.getElementById('own').value='직접 적은 내용';
+    const draft=context.ui.captureDraft();
+    assert.deepEqual(Array.from(draft.selected),selected);
+    render();context.ui.restoreDraft(draft);
+    await document.getElementById('input').querySelector(id==='q3_01'?'#ownSend':'.done').click();
+    assert.deepEqual(Array.from(submitted[0][1]),selected);
+    assert.equal(submitted[0][0],[...selected.map(i=>question.opts[i][0]),'직접 적은 내용'].join(', '));
+  }
+});
+
 test('v3 single choice waits for Send and submits the selected purpose together with typed details', async () => {
   const document = documentWith(['input']);
   const context = vm.createContext({document,submitted:[],setTimeout,clearTimeout});
   vm.runInContext(script('core/utils.js')+script('core/questions.js')+script('components/ChatInput.js')+';globalThis.inputUI=ChatInput;',context);
-  context.inputUI.render({id:'q3_01',type:'one',opts:[['목적',{value:'T1'}]],allowCustomWithSelection:true,response_controls:true},(...args)=>context.submitted.push(args));
+  context.inputUI.render({id:'q3_01',type:'one',opts:[['목적',{value:'T5'}]],allowCustomWithSelection:true,response_controls:true},(...args)=>context.submitted.push(args));
   await document.querySelectorAll('.chip')[0].click();
   assert.equal(context.submitted.length,0);
   document.getElementById('own').value='추가로 원하는 내용';
