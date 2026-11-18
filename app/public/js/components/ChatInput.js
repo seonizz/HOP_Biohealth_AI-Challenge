@@ -1,5 +1,13 @@
 // 입력 UI: 질문 객체 하나를 받아 답을 onDone(text, sel, custom, skipped)으로 돌려줌. onBack이 있으면 "이전 질문" 버튼을 보임
 const SKIP="(건너뛰었어요)";
+// Keep the server's option indices stable for submissions and saved drafts.
+const omittedChatOptions={
+  q3_01:new Set(["T1","T2","T3","T4"]),
+  q3_08:new Set(["share_work"])
+};
+const selectedOptionIndices=box=>[...box.querySelectorAll(".chip")]
+  .filter(chip=>chip.getAttribute("aria-pressed")==="true")
+  .map(chip=>Number(chip.dataset.optionIndex));
 const ChatInput={
   version:0,
   draftSequence:0,
@@ -14,7 +22,7 @@ const ChatInput={
     if(!this.draftQuestion)return null;
     const box=$("input");
     return {text:box.querySelector("#ta")?.value||"",own:box.querySelector("#own")?.value||"",
-      selected:[...box.querySelectorAll(".chip")].map((chip,index)=>chip.getAttribute("aria-pressed")==="true"?index:-1).filter(index=>index>=0),
+      selected:selectedOptionIndices(box),
       detailOption:this.draftDetail,...(this.typeAhead()?{nextText:this.typeAhead()}: {})};
   },
   restoreDraft(draft){
@@ -27,14 +35,14 @@ const ChatInput={
     if(this.draftQuestion.type==="one"){
       const selected=Array.isArray(draft.selected)?draft.selected:[];
       const index=selected.find(index=>Number.isInteger(index)&&index>=0&&index<this.draftQuestion.opts.length&&!optMeta(this.draftQuestion.opts[index]).input);
-      [...box.querySelectorAll(".chip")].forEach((chip,position)=>chip.setAttribute("aria-pressed",position===index?"true":"false"));
+      [...box.querySelectorAll(".chip")].forEach(chip=>chip.setAttribute("aria-pressed",Number(chip.dataset.optionIndex)===index?"true":"false"));
     }
     if(this.nextText)this.showTypeAhead();
     // Only multiple-choice chips can be replayed without submitting an answer.
     if(this.draftQuestion.type==="multi"){
       const selected=new Set(Array.isArray(draft.selected)?draft.selected:[]);
-      [...box.querySelectorAll(".chip")].forEach((chip,index)=>{
-        if(selected.has(index)&&chip.getAttribute("aria-pressed")!=="true")chip.click();
+      [...box.querySelectorAll(".chip")].forEach(chip=>{
+        if(selected.has(Number(chip.dataset.optionIndex))&&chip.getAttribute("aria-pressed")!=="true")chip.click();
       });
     }
   },
@@ -135,6 +143,7 @@ const ChatInput={
     this.openDraftDetail=openDetail;
     q.opts.forEach((o,k)=>{
       const m=optMeta(o);
+      if(omittedChatOptions[q.id]?.has(m.value))return;
       if(!chips||m.g!==lastG){
         if(m.g){const h=document.createElement("div");h.className="chip-group";h.textContent=m.g;wrap.appendChild(h);}
         chips=document.createElement("div");chips.className="chips";
@@ -143,6 +152,7 @@ const ChatInput={
         wrap.appendChild(chips);lastG=m.g;
       }
       const b=document.createElement("button");b.className="chip";b.textContent=optLabel(o);b.setAttribute("aria-pressed","false");
+      b.dataset.optionIndex=String(k);
       b.onclick=()=>{
         if(q.type==="one"){
           // 세부 설명은 옵션의 ask가 있으면 건너뛸 수 있고, 이전 질문은 원래 보기로 돌아가요.
@@ -156,7 +166,7 @@ const ChatInput={
         }
         const on=b.getAttribute("aria-pressed")!=="true";
         // "없어요/모름" 보기는 다른 보기와 함께 고를 수 없고, 직접 입력은 보존해요.
-        if(on)btns.forEach((x,j)=>{if(j!==k&&(m.none||optMeta(q.opts[j]).none))x.setAttribute("aria-pressed","false");});
+        if(on)btns.forEach(x=>{if(x!==b&&(m.none||optMeta(q.opts[Number(x.dataset.optionIndex)]).none))x.setAttribute("aria-pressed","false");});
         b.setAttribute("aria-pressed",on?"true":"false");
       };
       btns.push(b);chips.appendChild(b);
@@ -173,14 +183,13 @@ const ChatInput={
     row.appendChild(acts(g));
     box.appendChild(row);
     const own=$("own");
-    const pick=()=>btns.map((c,k)=>c.getAttribute("aria-pressed")==="true"?k:-1).filter(k=>k>=0);
     if(q.type==="one"){
-      const go=()=>{const v=own.value,sel=q.allowCustomWithSelection?pick():[];
+      const go=()=>{const v=own.value,sel=q.allowCustomWithSelection?selectedOptionIndices(box):[];
         if(!hasAnswerContent(v)&&!sel.length){own.focus();return;}
         submit([...sel.map(k=>optLabel(q.opts[k])),...(hasAnswerContent(v)?[v]:[])].join(", "),sel,hasAnswerContent(v)?v:"");};
       $("ownSend").onclick=go;own.onkeydown=e=>{if(e.key==="Enter"&&!e.isComposing){e.preventDefault();go();}};
     }else{
-      g.onclick=()=>{const sel=pick(),raw=own?.value||"",v=hasAnswerContent(raw)?raw:"";
+      g.onclick=()=>{const sel=selectedOptionIndices(box),raw=own?.value||"",v=hasAnswerContent(raw)?raw:"";
         if((q.required||q.noSkip||q.noOwn)&&!sel.length&&!v)return need(own);
         const parts=sel.map(k=>optLabel(q.opts[k]));if(v)parts.push(v);
         submit(parts.length?parts.join(", "):"해당 없음",sel,v);};
