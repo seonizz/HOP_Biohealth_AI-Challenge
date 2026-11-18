@@ -1,3 +1,4 @@
+import { isV3BundleId } from './v3-bundles.js';
 // Stable, optional prompts. A model may select a prompt but cannot invent one.
 export const clarificationQuestions = [
   { id:'clarify_help', subject:'patient', type:'text', sec:'조금 더 확인할게요', face:'ponder',
@@ -10,7 +11,7 @@ export const clarificationQuestions = [
 
 export function clarificationCandidates(state) {
   // v3 uses one source-bound axis question; the old three prompts are never mixed in.
-  if (state.questionSet?.bundle_id === 'malssi-intake-3.0.0-rc1') return [];
+  if (isV3BundleId(state.questionSet?.bundle_id)) return [];
   if (state.status!=='ready') return [];
   // Answered, unknown and declined prompts are all consumed. Never ask again.
   return clarificationQuestions.filter(q=>!Object.hasOwn(state.clarificationAnswers||{},q.id));

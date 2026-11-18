@@ -60,7 +60,7 @@ test('a selected bank question is shown once even during correction and stays th
   const next=route(pending,{action:'existing',question_id:'q3_03',source_id:'s1',quote:'부담되는 부탁',why:'거절할 부탁의 범위가 필요해요.'});
   const state=completeSplitModelAnswer(pending,next);
   assert.equal(currentView(state).question.id,'q3_03');
-  assert.match(currentView(state).question.q,/이번에 다루고 싶은 상황을 설명/u);
+  assert.match(currentView(state).question.q,/이번에 다루고 싶은 일은 누구와의 어떤 일인가요/u);
   const editing=backIntake(state);
   const corrected=submit(editing,'동료가 주말 자료 정리를 부탁해서 일부만 돕는 말을 만들고 싶어요.');
   const candidates=splitQuestionRequest(buildContext(corrected)).data.candidates.map(row=>row.id);

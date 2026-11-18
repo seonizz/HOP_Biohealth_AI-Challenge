@@ -74,7 +74,7 @@ test('legacy v3 HTTP preserves option+custom, one help display, refusal/stop and
   const restored=await f.request(`/api/intakes/${v.id}`);
   assert.deepEqual(restored.data,v);
   const context=(await f.request(`/api/intakes/${v.id}/context`)).data.context;
-  assert.equal(context.bundle_id,'malssi-intake-3.0.0-rc1');
+  assert.equal(context.bundle_id,'malssi-intake-3.1.0-rc1');
   assert.equal(context.user_stopped,true);
   assert.equal(context.user_goal.message.id,'q3_01');
   assert.match(context.user_goal.message.text,/이번에는/);
@@ -165,7 +165,7 @@ test('v3 ordinary completion retains card and encrypted record contracts', {skip
   assert.equal(result.status,200,JSON.stringify(result.data));
   const record=result.data.record;
   assert.ok(record.guide.script&&record.guide.care.feel&&record.guide.doList.length&&record.guide.avoid.length);
-  assert.equal(record.context.bundle_id,'malssi-intake-3.0.0-rc1');
+  assert.equal(record.context.bundle_id,'malssi-intake-3.1.0-rc1');
   const read=await f.request(`/api/records/${record.id}`);
   assert.deepEqual(read.data.record,record);
 });

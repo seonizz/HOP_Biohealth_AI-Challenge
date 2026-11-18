@@ -6,7 +6,7 @@ import { HttpError } from './errors.js';
 // Historical migrations and records without a snapshot retain their original bank.
 export const initialQuestionRows = JSON.parse(readFileSync(new URL('../seeds/questions-legacy.json', import.meta.url), 'utf8'));
 export const activeQuestionRows = JSON.parse(readFileSync(new URL('../seeds/questions.json', import.meta.url), 'utf8'));
-const bundleFile = name => readFileSync(new URL(`../seeds/questionnaire-v3/${name}.json`, import.meta.url), 'utf8');
+const bundleFile = name => readFileSync(new URL(`../seeds/questionnaire-v3.1/${name}.json`, import.meta.url), 'utf8');
 const manifest = JSON.parse(bundleFile('bundle'));
 const questionnaireBundle = Object.fromEntries(['questions','tasks','policy','codebook'].map(name => {
   const source = bundleFile(name);

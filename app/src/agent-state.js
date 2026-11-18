@@ -1,9 +1,10 @@
+import { isV3BundleId } from './v3-bundles.js';
 import { HttpError } from './errors.js';
 import { hasAnswerContent } from './catalog.js';
 
 const invalid = () => { throw new HttpError(502, 'MODEL_INVALID_RESPONSE', '모델의 답변을 확인하지 못했어요. 다시 시도해 주세요.'); };
 
-export const isV3Context = context => context?.bundle_id === 'malssi-intake-3.0.0-rc1';
+export const isV3Context = context => isV3BundleId(context?.bundle_id);
 export const minimumQuestionAnswers = context => isV3Context(context) ? 0 : 5;
 
 function exactObject(value, keys) {
