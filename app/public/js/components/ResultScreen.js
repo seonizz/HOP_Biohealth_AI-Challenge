@@ -6,16 +6,19 @@ const ResultScreen={
   <div class="wrapr" id="rbody"></div>
 </section>`;},
   mount(){},
-  prepare(view){
+  prepare(view,editAnswer){
     this.previewCards=new Map();
     $("rbody").innerHTML=`
      <div class="rside"><img src="${M.cheer}" alt="하트를 안은 말씨">
        <div class="pill">${esc(view.name||"그분")}</div>
        <h2>대화를 함께<br>살펴보고 있어요</h2></div>
      <div class="cards">
+       ${view.safety_notice?`<p role="alert">${esc(view.safety_notice)}</p>`:""}
        <div class="result-stream" aria-live="polite" aria-relevant="additions text"></div>
        <div class="card result-pending" role="status" aria-live="polite">${ChatScreen.progressMarkup()}</div>
+       ${editAnswer?'<div><button class="ghost" id="edit-result-answer" type="button">마지막 답변 수정</button></div>':""}
      </div>`;
+    if(editAnswer)$("edit-result-answer").onclick=editAnswer;
     show("result");
     this.progress({status:"running",current:"이야기 살펴보기",attempt:1});
   },

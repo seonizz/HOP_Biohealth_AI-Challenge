@@ -281,7 +281,14 @@ async function finishConversation(run){
   const id=S.id,revision=S.revision;
   ChatInput.clear();ChatScreen.think(true);
   const pending=typeof ResultScreen!=="undefined"&&typeof ResultScreen.prepare==="function";
-  if(pending)ResultScreen.prepare(S);
+  const editAnswer=S.canGoBack&&!S.input_locked?()=>{
+    if(S?.id!==id||S.revision!==revision||S.status!=="ready")return;
+    cancelConversationRequest();
+    ++conversationToken;
+    show("chat");
+    return goBack();
+  }:null;
+  if(pending)ResultScreen.prepare(S,editAnswer);
   const current=()=>!run.cancelled&&token===conversationToken&&S?.id===id&&(!pending||!$("result")?.hidden);
   run.retry=()=>{
     if(!current())return;

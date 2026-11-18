@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {mountModelAdmin} from '../public/js/admin-models.js';
 
-const settings=(selected='local12b',gpuAvailable=true)=>({profiles:[
+const settings=(selected='local12b',gpuAvailable=true,result=null)=>({profiles:[
   {id:'local12b',label:'12B',available:true},{id:'gpu31b',label:'31B',available:gpuAvailable},
-],selected_model_profile:selected});
+],selected_model_profile:selected,result_model_profile:result});
 function harness(handler,{executions=executionSettings(),executionHandler}={}){
   const element=()=>({value:'',children:[],disabled:false,appendChild(child){this.children.push(child);},
     set textContent(value){this.text=value;this.children=[];},get textContent(){return this.text||'';}});
-  const nodes=Object.fromEntries(['modelForm','modelProfile','saveModel','currentModel','modelStatus','apiForm','apiStatus','saveApi','connectionProfile','connectionState','apiBaseUrl','apiModel','apiKey','executionForm','executionProfile','saveExecution','executionStatus','executionState',
+  const nodes=Object.fromEntries(['modelForm','modelProfile','resultModelProfile','saveModel','currentModel','modelStatus','apiForm','apiStatus','saveApi','connectionProfile','connectionState','apiBaseUrl','apiModel','apiKey','executionForm','executionProfile','saveExecution','executionStatus','executionState',
     'questionMode','questionScheduling','questionSource','reviewSource','questionConnectionFields','questionKeyState','questionBaseUrl','questionModel','questionKey',
     'reviewConnectionFields','reviewKeyState','reviewBaseUrl','reviewModel','reviewKey'].map(id=>[id,element()]));
   const document={getElementById:id=>nodes[id],createElement:element};const calls=[];
@@ -29,14 +29,46 @@ test('admin model settings load, save with CSRF and display the persisted select
   page.nodes.modelProfile.value='gpu31b';page.nodes.modelProfile.onchange();await page.submit();
   const write=page.calls.at(-1);assert.equal(write.method,'PUT');
   assert.equal(write.headers['X-CSRF-Token'],'synthetic-csrf');
-  assert.deepEqual(JSON.parse(write.body),{model_profile_id:'gpu31b'});
+  assert.deepEqual(JSON.parse(write.body),{model_profile_id:'gpu31b',result_model_profile_id:null});
   assert.equal(page.nodes.currentModel.textContent,'현재 설정: 31B');
   assert.match(page.nodes.modelStatus.textContent,/저장했어요/);
+});
+
+test('admin saves and restores distinct conversation and result profiles, then can switch back to a shared profile',async()=>{
+  let stored=settings();
+  const page=harness((path,options)=>{
+    if(path==='/api/bootstrap')return {csrf_token:'synthetic-csrf'};
+    if(options.method==='PUT'){
+      const input=JSON.parse(options.body);
+      stored=settings(input.model_profile_id,true,input.result_model_profile_id);
+    }
+    return stored;
+  });
+  await page.mount();
+  assert.equal(page.nodes.resultModelProfile.children[1].disabled,true);
+  page.nodes.resultModelProfile.value='gpu31b';page.nodes.resultModelProfile.onchange();
+  await page.submit();
+  assert.deepEqual(JSON.parse(page.calls.at(-1).body),{model_profile_id:'local12b',result_model_profile_id:'gpu31b'});
+  await page.mount();
+  assert.equal(page.nodes.resultModelProfile.value,'gpu31b');
+  assert.equal(page.nodes.currentModel.textContent,'현재 설정: 대화 12B · 분석·카드 31B');
+  const before=page.calls.length;
+  page.nodes.modelProfile.value='gpu31b';page.nodes.modelProfile.onchange();
+  assert.equal(page.nodes.saveModel.disabled,true);await page.submit();
+  assert.equal(page.calls.length,before);
+  page.nodes.resultModelProfile.value='';page.nodes.resultModelProfile.onchange();
+  assert.equal(page.nodes.saveModel.disabled,false);await page.submit();
+  assert.deepEqual(JSON.parse(page.calls.at(-1).body),{model_profile_id:'gpu31b',result_model_profile_id:null});
+  assert.equal(page.nodes.currentModel.textContent,'현재 설정: 31B');
 });
 
 test('an unavailable model cannot be saved even by a synthetic select change',async()=>{
   const page=harness(path=>path==='/api/bootstrap'?{csrf_token:'csrf'}:settings('local12b',false));
   await page.mount();assert.equal(page.nodes.modelProfile.children[1].disabled,true);
+  assert.equal(page.nodes.resultModelProfile.children[2].disabled,true);
+  page.nodes.resultModelProfile.value='gpu31b';page.nodes.resultModelProfile.onchange();
+  assert.equal(page.nodes.saveModel.disabled,true);await page.submit();
+  page.nodes.resultModelProfile.value='';
   page.nodes.modelProfile.value='gpu31b';page.nodes.modelProfile.onchange();
   assert.equal(page.nodes.saveModel.disabled,true);await page.submit();
   assert.equal(page.calls.length,4);

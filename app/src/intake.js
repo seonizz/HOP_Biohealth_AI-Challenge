@@ -7,12 +7,15 @@ import { clarificationQuestions, clarificationCandidates } from './clarification
 import { validateRelationshipMemory, validateSafetyEvidence, safetySnapshotFingerprint, currentApprovedSafety, currentReviewedSafety } from './relationship-agent.js';
 import { normalizeAnswerField } from './answer-sources.js';
 import { validatePersonalization } from './personalized-questions.js';
+import { immediateSplitSafety, splitQuestionRequest, validateSplitQuestion } from './split-question-router.js';
 import { hasPersonalization, personalQuestions, maximumQuestions, renderIntakeQuestion, personalizationContext,
   createPersonalQuestion, answerPersonalQuestion, invalidatePersonalization, previousPersonalQuestion } from './intake-personalization.js';
 import { isV3Intake, initializeV3, issueV3, normalizeV3Answer, stampV3Answer, v3FieldStatus,
   v3ClarificationAvailable, createV3Clarification, answerV3Clarification, invalidateV3Clarification } from './intake-v3.js';
 
 const SKIP = '(건너뛰었어요)';
+const URGENT_MESSAGE = '지금 즉각적인 위험이 있다면 대화를 이어가기보다 응급 도움을 요청하고, 당신의 안전을 먼저 확보해 주세요. 혼자 감당하지 않도록 주변 도움을 함께 요청해 주세요.';
+const hasSplitRouting = state => isV3Intake(state) && state.resultModelProfileId !== undefined;
 const WELCOME = '안녕하세요, 말씨예요. 누군가에게 다가가려는 마음을 먹으셨군요.\n천천히 답해 주셔도 괜찮아요.';
 const CHEER = [
   [1 / 3, '벌써 3분의 1을 함께 왔어요. 들려주신 이야기 하나하나가 큰 도움이 돼요. 조금만 더 함께해 주세요.'],
@@ -64,6 +67,11 @@ function advance(state, previous) {
     }
     return;
   }
+  showBaseQuestion(state, previous);
+}
+
+function showBaseQuestion(state, previous) {
+  const {questions} = questionSetOf(state);
   state.prev = previous === undefined ? state.cur : previous;
   state.cur = snapshot(state);
   state.history ||= [];
@@ -115,14 +123,17 @@ export function currentView(state) {
     question: rendered,
     progress: state.status === 'ready' ? 100 : hasPersonalization(state) ? state.v3.personalization.progress : state.i / questions.length * 100,
     section: rendered?.sec || (state.i >= questions.length ? questions.at(-1).sec : ''),
-    canGoBack: isV3Intake(state) ? state.status === 'active' && !stopped && (hasPersonalization(state) ? Boolean(previousPersonalQuestion(state)) : questions.slice(0, state.i).some(q => state.ans[q.id]))
+    canGoBack: isV3Intake(state) ? (state.status === 'active' || hasSplitRouting(state) && state.status === 'ready' && !state.agentRecord &&
+      !state.safetySignal?.urgent && !state.safetyReviewPending?.urgent) &&
+      !stopped && (hasPersonalization(state) ? Boolean(previousPersonalQuestion(state)) : questions.slice(0, state.i).some(q => state.ans[q.id]))
       : state.status === 'active' && (state.pendingFollow ? historyOf(state).length > 0 : historyOf(state).length > 1),
     status: state.status,
     pendingFollow: Boolean(state.pendingFollow),
     totalQuestions: questions.length,
     questionIndex: state.i,
-    ...(isV3Intake(state) ? { bundle_id:state.questionSet.bundle_id, question_instances:Object.keys(state.v3.issued).length, maxQuestions:maximumQuestions(state),
+    ...(isV3Intake(state) ? { bundle_id:state.questionSet.bundle_id, question_instances:Object.keys(state.v3.issued).length, maxQuestions:hasSplitRouting(state) ? COMPACT_QUESTION_FLOW.target_questions : maximumQuestions(state),
       user_stopped:stopped, input_locked:stopped, safety_urgent:Boolean(state.safetySignal?.urgent), safety_review_pending:Boolean(state.safetyReviewPending?.urgent) } : {}),
+    ...(hasSplitRouting(state) && state.safetyReviewPending?.urgent ? {safety_notice:URGENT_MESSAGE} : {}),
     ...(state.modelPending ? { model_pending:true, pending_answer:structuredClone(state.modelPending.input) } : {}),
   };
 }
@@ -257,6 +268,12 @@ function answerV3(originalState, question, input) {
     progress.stopped = true;
     state.status = 'ready';
     state.pendingFollow = null;
+    return state;
+  }
+  if (hasSplitRouting(state)) {
+    // Publish a next prompt only after the bounded router accepts it.
+    state.i = state.questionSet.questions.length;
+    state.status = 'ready';
     return state;
   }
   while (state.i < state.questionSet.questions.length && state.ans[state.questionSet.questions[state.i].id]) state.i++;
@@ -429,6 +446,67 @@ export function completeModelAnswer(state, output) {
   return applyModelUpdate(preparedModelState(state), output);
 }
 
+// Read the submitted revision and control events from the already committed
+// pending answer. A deterministic action bypasses the inference gateway.
+export function splitQuestionPreflight(state) {
+  if (!hasSplitRouting(state) || !state.modelPending) invalid('REVISION_CONFLICT', '현재 질문을 다시 확인해 주세요.', 409);
+  const prepared = preparedModelState(state);
+  const context = buildContext(state);
+  const safety = immediateSplitSafety(context);
+  if (safety) return {action:'urgent', safety};
+  if (prepared.v3.helpReplay) return {action:'help'};
+  const request = splitQuestionRequest(context);
+  if (prepared.v3.stopped || Object.keys(prepared.v3.issued).length >= COMPACT_QUESTION_FLOW.target_questions ||
+      request.schema.properties?.action.const==='finish') {
+    return {action:'finish'};
+  }
+  // A purpose-only answer names what to do, but supplies no situation to organize.
+  const source = request.sources[0];
+  if (request.data.latest?.id === 'q3_01' && request.sources.length === 1 &&
+      source.question_id === 'q3_01' && /^상황을 정리하고 싶어요[.!。]?$/u.test(source.text.trim()) &&
+      request.candidates.some(row => row.id === 'q3_03')) {
+    return validateSplitQuestion({action:'existing',question_id:'q3_03',source_id:source.id,
+      quote:source.text,why:'상황을 정리하려면 어떤 일이 있었는지 알아야 해요.'},context,request);
+  }
+  return null;
+}
+
+export function completeSplitModelAnswer(pending, route) {
+  if (!hasSplitRouting(pending) || !pending.modelPending) invalid('REVISION_CONFLICT', '현재 질문을 다시 확인해 주세요.', 409);
+  const state = preparedModelState(pending);
+  const context = buildContext(pending);
+  for (const key of ['agentMemory','agentRelationshipMemory','agentStateExecution','safetySignal','safetyReviewPending','agentResult','agentRecord']) delete state[key];
+  state.modelStatus = 'connected';
+  if (route.action==='help' && state.v3.helpReplay) return state;
+  if (route.action==='finish' || route.action==='urgent') {
+    state.status = 'ready';
+    state.i = state.questionSet.questions.length;
+    state.pendingFollow = null;
+    delete state.v3.helpReplay;
+    if (route.action==='urgent') {
+      validateSafetyEvidence(route.safety,context);
+      state.safetyReviewPending = {...structuredClone(route.safety), source_snapshot:safetySnapshotFingerprint(context)};
+      state.log = [...pending.log,{who:'ai',face:'ponder',fu:false,text:URGENT_MESSAGE}];
+    }
+    return state;
+  }
+  if (!['existing','custom'].includes(route.action) || !route.decision ||
+      route.decision.kind!==(route.action==='existing'?'next':'follow_up') ||
+      Object.keys(state.v3.issued).length >= COMPACT_QUESTION_FLOW.target_questions) {
+    invalid('MODEL_INVALID_RESPONSE','다음 질문을 확인하지 못했어요.',502);
+  }
+  const decision = validatePersonalization(route.decision, context);
+  state.status = 'active';
+  const question = createPersonalQuestion(state, decision, {includeQuote:false});
+  if (route.action==='existing') showBaseQuestion(state);
+  else {
+    state.pendingFollow = {kind:'personalized', questionId:question.id};
+    state.fuCount++;
+    addPrompt(state,question,true);
+  }
+  return state;
+}
+
 export function backIntake(originalState) {
   if (isV3Intake(originalState) && (originalState.v3.stopped || originalState.modelPending?.prepared?.v3?.stopped)) {
     invalid('INTAKE_STOPPED', '종료한 대화에는 돌아갈 수 없어요. 새 대화를 시작해 주세요.', 409);
@@ -446,6 +524,7 @@ export function backIntake(originalState) {
       : questions.findLast((question, index) => index < state.i && state.ans[question.id]).id;
     const previousIndex = questions.findIndex(question => question.id === previousId);
     if (previousIndex >= 0) state.i = previousIndex;
+    state.status = 'active';
     state.v3.editingQuestion = previousId;
     if (state.pendingFollow?.kind === 'personalized') {
       const entry = state.v3.personalization.questions[state.pendingFollow.questionId];
@@ -567,6 +646,9 @@ export function applyModelUpdate(originalState, output) {
   }
   state.modelSkipped ||= {};
   for (const decision of plan.skip) state.modelSkipped[decision.question_id] = structuredClone(decision);
+  // A saved split interview already decided to finish. The final model may
+  // update reviewed analysis, but cannot reopen or add interview prompts.
+  if (hasSplitRouting(state) && state.status==='ready') return state;
   let clarification=output.clarification;
   const resumeId=state.v3?.compact_flow?.resume_question_id;
   const resumingQuestion=resumeId && state.v3.issued[resumeId] && !state.ans[resumeId] && !state.modelSkipped[resumeId];
@@ -584,7 +666,7 @@ export function applyModelUpdate(originalState, output) {
     }
     state.log.length=state.log.findLastIndex(item=>item.who==='me')+1;
     state.pendingFollow=null;state.status='ready';
-    state.log.push({who:'ai',face:'ponder',fu:false,text:'지금 즉각적인 위험이 있다면 대화를 이어가기보다 응급 도움을 요청하고, 당신의 안전을 먼저 확보해 주세요. 혼자 감당하지 않도록 주변 도움을 함께 요청해 주세요.'});
+    state.log.push({who:'ai',face:'ponder',fu:false,text:URGENT_MESSAGE});
   }
   if (personalization?.kind === 'next') {
     createPersonalQuestion(state, personalization);

@@ -16,6 +16,7 @@ import { trainedContext } from './model-context.js';
 import { OBSERVE, MEMORY, STATE_REVIEW, PROMPT_VERSION } from './relationship-prompts.js';
 import { claimsOf, auditSchema, validateAudits, AUDIT_INSTRUCTION } from './grounding-audit.js';
 import { runCombinedRelationshipState } from './relationship-turn.js';
+import { splitQuestionPrompt, splitQuestionRequest, validateSplitQuestion } from './split-question-router.js';
 import { literalStateRepairSchema, literalStateRepairInstruction } from './relationship-state-repair.js';
 import { runRelationshipAgent, assertRetrievedEvidence, relationshipStateRequest, canonicalRelationshipState, canonicalPatientState, currentRelationshipMemory, relationshipQuestionRequest, validateRelationshipQuestions, questionReviewRequest, applyQuestionReview, safetyReviewRequest, validateSafetyReview, validateSchema, speechPermissionQuestions } from './relationship-agent.js';
 
@@ -751,7 +752,7 @@ export class ModelGateway {
     } catch { return false; }
   }
 
-  async operation(options, generate, {retryFailures=this.retryFailures,parentOperation=null,maxHttpAttempts} = {}) {
+  async operation(options, generate, {retryFailures=this.retryFailures,parentOperation=null,maxHttpAttempts,skipTokenDiscovery=false,maxDurationMs=Infinity} = {}) {
     if (!this.configured) throw new HttpError(503, 'MODEL_NOT_CONFIGURED', '모델 연결 설정을 확인해 주세요.');
     if(maxHttpAttempts!==undefined&&(!Number.isSafeInteger(maxHttpAttempts)||maxHttpAttempts<1))throw new RangeError('Invalid model HTTP attempt limit');
     const requestId = typeof options?.requestId === 'string' && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(options.requestId)
@@ -765,7 +766,8 @@ export class ModelGateway {
     external?.addEventListener('abort',onCancel,{once:true});
     if(external?.aborted)onCancel();
     // One wall-clock budget covers generation, repairs, restarts and backoff.
-    const deadline=Math.min(parentOperation?.deadline??Infinity,this.timeoutMs===0?Infinity:performance.now()+this.timeoutMs);
+    const deadline=Math.min(parentOperation?.deadline??Infinity,
+      performance.now()+Math.min(maxDurationMs,this.timeoutMs||Infinity));
     const budgetTimer=Number.isFinite(deadline)?setTimeout(()=>cancellation.abort(timeout()),Math.max(0,deadline-performance.now())):undefined;
     let retries=0;
     try {
@@ -786,7 +788,7 @@ export class ModelGateway {
         let delay;
         try {
           ensureTime(operation);
-          await this.loadTokenPolicy(operation);
+          if(!skipTokenDiscovery)await this.loadTokenPolicy(operation);
           const result=await generate(operation);
           ensureTime(operation);
           return result;
@@ -903,6 +905,20 @@ export class ModelGateway {
       }
       return this.complete(context, priorMemory, SYSTEM_PROMPT, operation, payload => validateGuide(payload, context), true);
     });
+  }
+
+  async routeQuestion(context, options = {}) {
+    this.requireQuestionnaireProtocol(context);
+    const request=splitQuestionRequest(context);
+    return this.operation(options,operation=>this.request(()=>({
+      model:this.model, stream:false, temperature:0, max_tokens:320,
+      ...(this.reasoningEffort==='omit'?{}:{reasoning_effort:this.reasoningEffort}),
+      ...(this.agentFormat==='prompt'?{}:{response_format:this.agentFormat==='json_object'?{type:'json_object'}:
+        {type:'json_schema',json_schema:{name:'question_route',strict:true,schema:inferenceSchema(request.schema,
+          {preserveStringLimits:this.preserveStringLimits})}}}),
+      messages:[{role:'system',content:splitQuestionPrompt},{role:'user',content:JSON.stringify(request.data)}],
+    }),operation,value=>validateSplitQuestion(value,context,request),'question_route',request.schema,{maxAttempts:1}),
+    {retryFailures:false,maxHttpAttempts:1,skipTokenDiscovery:true,maxDurationMs:55_000});
   }
 
   async updateState(context, priorMemory = null, options = {}) {
