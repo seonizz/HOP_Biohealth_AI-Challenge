@@ -153,6 +153,22 @@ test('service introduction excludes historical research and training copy from r
   assert.doesNotMatch(context.screen.render(), /CFI|SSCS|FMI|DSM|회기|배우고 있|반구조화 면담|가족 영향 척도|문화적 공식화 면담|0~3점|46만여 단락|한 단락씩 읽고 표시|답이 부족하면 한 번 더/);
 });
 
+test('public result preview uses current questionnaire wording and declares an authored UI fixture', () => {
+  const sample = JSON.parse(readFileSync(new URL('../public/test-data/relationship-result.json', import.meta.url), 'utf8'));
+  assert.equal(sample.synthetic, true);
+  assert.equal(sample.preview_kind, 'ui_fixture');
+  assert.equal(sample.bundle_id, activeQuestionSet.bundle_id);
+  assert.equal(sample.model, undefined);
+  assert.equal(sample.prompt_version, undefined);
+  for (const answer of sample.answers) {
+    const question = activeQuestionSet.questions.find(row => row.id === answer.question_id);
+    assert.ok(question, answer.question_id);
+    assert.equal(answer.question, question.q);
+  }
+  assert.match(script('test-result.js'), /화면 확인용 가상 예시/);
+  assert.doesNotMatch(script('test-result.js'), /29개|length!==29|sample\.model/);
+});
+
 test('start screen sets waiting expectations and opens retention and access-loss deletion guidance', () => {
   const document = documentWith(['page']);
   let begun = false, opened = false, scrolled = false;
