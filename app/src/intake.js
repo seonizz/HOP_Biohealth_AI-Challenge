@@ -7,7 +7,7 @@ import { clarificationQuestions, clarificationCandidates } from './clarification
 import { validateRelationshipMemory, validateSafetyEvidence, safetySnapshotFingerprint, currentApprovedSafety, currentReviewedSafety } from './relationship-agent.js';
 import { normalizeAnswerField } from './answer-sources.js';
 import { validatePersonalization } from './personalized-questions.js';
-import { immediateSplitSafety, splitQuestionRequest } from './split-question-router.js';
+import { immediateSplitSafety, splitQuestionRequest, validateSplitQuestion } from './split-question-router.js';
 import { hasPersonalization, personalQuestions, maximumQuestions, renderIntakeQuestion, personalizationContext,
   createPersonalQuestion, answerPersonalQuestion, invalidatePersonalization, previousPersonalQuestion } from './intake-personalization.js';
 import { isV3Intake, initializeV3, issueV3, normalizeV3Answer, stampV3Answer, v3FieldStatus,
@@ -455,9 +455,18 @@ export function splitQuestionPreflight(state) {
   const safety = immediateSplitSafety(context);
   if (safety) return {action:'urgent', safety};
   if (prepared.v3.helpReplay) return {action:'help'};
+  const request = splitQuestionRequest(context);
   if (prepared.v3.stopped || Object.keys(prepared.v3.issued).length >= COMPACT_QUESTION_FLOW.target_questions ||
-      splitQuestionRequest(context).schema.properties?.action.const==='finish') {
+      request.schema.properties?.action.const==='finish') {
     return {action:'finish'};
+  }
+  // A purpose-only answer names what to do, but supplies no situation to organize.
+  const source = request.sources[0];
+  if (request.data.latest?.id === 'q3_01' && request.sources.length === 1 &&
+      source.question_id === 'q3_01' && /^상황을 정리하고 싶어요[.!。]?$/u.test(source.text.trim()) &&
+      request.candidates.some(row => row.id === 'q3_03')) {
+    return validateSplitQuestion({action:'existing',question_id:'q3_03',source_id:source.id,
+      quote:source.text,why:'상황을 정리하려면 어떤 일이 있었는지 알아야 해요.'},context,request);
   }
   return null;
 }

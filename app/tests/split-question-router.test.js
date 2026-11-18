@@ -71,6 +71,16 @@ test('a selected bank question is shown once even during correction and stays th
     {code:'MODEL_INVALID_RESPONSE'});
 });
 
+test('a purpose alone leads to the situation question in a fresh intake',()=>{
+  for (const input of [{selected:[3]},'상황을 정리하고 싶어요.']) {
+    const pending=submit(splitIntake(),input);
+    const next=completeSplitModelAnswer(pending,splitQuestionPreflight(pending));
+    assert.equal(currentView(next).question.id,'q3_03');
+    assert.equal(next.status,'active');
+  }
+  assert.equal(splitQuestionPreflight(submit(splitIntake(),'상황을 정리하고 싶어요. 어제 친구와 말다툼했어요.')),null);
+});
+
 test('one custom question must cite a literal contiguous quote at the current source revision',()=>{
   const pending=submit(splitIntake(),'🙂 '+goal);
   const wire={action:'custom',subject:'supporter',focus:'support',question:'발표 도입을 보는 데 어느 정도 시간을 쓰실 수 있나요?',
