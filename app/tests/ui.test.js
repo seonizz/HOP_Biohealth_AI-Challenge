@@ -144,7 +144,7 @@ test('service introduction retains the restored layout with current question and
   assert.match(html, /진행 중인 평가의 점수와 개선 여부는 완료 후 확정해요/);
   assert.doesNotMatch(html, /Macro F1|Micro F1|90%|95%|0\.05/);
   assert.match(html, /보관키로 기록을 열어도 보관기간이 연장되지는 않아요/);
-  assert.doesNotMatch(html, /8회기|CBT|쿠키를 지우거나 접근 기간이 끝나면 기존 기록을 열 수 없어요/);
+  assert.doesNotMatch(html, /8회기|쿠키를 지우거나 접근 기간이 끝나면 기존 기록을 열 수 없어요/);
 });
 
 test('service introduction excludes historical research and training copy from rendered markup', () => {
@@ -176,6 +176,27 @@ test('about distinguishes completed checkpoint evaluation from the ongoing base-
   assert.match(ongoing, /사람의 품질 평가와 앱 전체 이용 과정의 평가는 포함하지 않아요/);
   assert.match(html, /새로 만든 말씨 자료의 규모가 아니라/);
   assert.ok(html.indexOf('말씨가 해야 할 일에 맞는 자료를 별도로') < html.indexOf('class="bignums"'));
+});
+
+test('about explains advisory design principles separately from v3.1 wording changes', () => {
+  const context = vm.createContext({ NavBar:() => '' });
+  vm.runInContext(script('components/AboutScreen.js') + '\nglobalThis.screen = AboutScreen;', context);
+  const html = context.screen.render();
+  assert.match(html, /상담사 자문을 바탕으로 정리한 v2 설계/);
+  assert.match(html, /인지행동치료\(CBT\)의 협력적 상황 평가/);
+  assert.match(html, /행동 ABC/);
+  assert.match(html, /동기강화면담\(MI\)의 협력과 자율성/);
+  assert.match(html, /임상 효과가 검증됐다는 뜻은 아니에요/);
+  assert.match(html, /기본 질문 후보 9개[\s\S]*확인 질문 1개/);
+  assert.match(html, /여섯 질문의 문구를 고쳤어요/);
+  assert.match(html, /모든 질문에 답해야 한다는 뜻은 아니에요/);
+  assert.match(html, /답변을 정정하면 바뀐 내용을 기준/);
+  assert.doesNotMatch(html, /상담사가.*(?:승인|직접 작성)|28문항|29문항/);
+  const section = html.slice(html.indexOf('자문을 바탕으로 다듬은 질문'), html.indexOf('<span class="anum">04'));
+  for (const phrase of ['누구와의 어떤 일','실제로','지금까지','앞으로','가능한 시간']) {
+    assert.ok(section.includes(phrase));
+    assert.ok(activeQuestionSet.questions.some(q => q.q.includes(phrase)));
+  }
 });
 
 test('public result preview uses current questionnaire wording and declares an authored UI fixture', () => {
