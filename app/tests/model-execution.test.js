@@ -46,6 +46,10 @@ test('same model in both roles is supported without confusing role credentials',
   assert.equal(second.gateway.questionGateway.model,second.gateway.questionGateway.reviewGateway.model);
   assert.equal(second.gateway.questionGateway.apiKey,'same_PRIVATE_KEY');
   assert.equal(second.gateway.questionGateway.reviewGateway.apiKey,'REVIEW_PRIVATE_KEY');
+  for (const role of ['question','review']) {
+    const moved={...custom('same'),base_url:'https://new-role.example/v1',api_key:''};
+    assert.throws(()=>prepare(settings({[role+'_connection']:moved}),first.gateway),{code:'INVALID_MODEL_CONNECTION'});
+  }
   assert.throws(()=>prepare(settings({question_source:'custom',question_connection:{...custom('new'),api_key:''}})),{code:'INVALID_MODEL_CONNECTION'});
 });
 

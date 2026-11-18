@@ -14,7 +14,8 @@ export function validateModelConnection(input,current){
   const baseUrl=resolveModelBaseUrl(input.base_url),url=new URL(baseUrl);
   if(url.protocol!=='https:'&&!localHost(url.hostname))throw invalid();
   if(input.api_key!==undefined&&(typeof input.api_key!=='string'||input.api_key.length>4096||/[^\x20-\x7e]/u.test(input.api_key)))throw invalid();
-  const apiKey=input.api_key?.trim()||current?.apiKey||(localHost(url.hostname)?'local-ollama':'');
+  const sameOrigin=current?.baseUrl && new URL(current.baseUrl).origin===url.origin;
+  const apiKey=input.api_key?.trim()||(sameOrigin && current.apiKey)||(localHost(url.hostname)?'local-ollama':'');
   if(!apiKey)throw invalid();
   return {baseUrl,model:input.model.trim(),apiKey};
  }catch{throw invalid();}
@@ -125,7 +126,7 @@ export function withModelConnections(base,rows=[],{legacyGateway=null}={}){
  return {defaultId:base.defaultId,add,current,
   resolveLegacy:()=>legacyVersion===undefined?legacyGateway:versions.get(legacyVersion),
   legacyReferralSettings:()=>legacyVersion===undefined?undefined:structuredClone(legacyReferralSettings),
-  bind:id=>{if(!ids.includes(id))throw invalid();return latest.get(id)??id;},
+  bind:id=>{if(!ids.includes(id))throw new HttpError(422,'INVALID_MODEL_PROFILE','사용할 모델을 다시 선택해 주세요.');return latest.get(id)??id;},
   list:()=>base.list().map(row=>({...row,available:latest.has(row.id)||baselines.has(row.id)||row.available})),
   executions:()=>ids.map(id=>executionMetadata(id,current(id))),
   connections:()=>ids.map(id=>{const gateway=current(id);return {id,base_url:gateway?.baseUrl||'',model:gateway?.model||'',api_key_configured:Boolean(gateway?.apiKey),single_call_turns:(gateway?.questionGateway??gateway)?.singleCallTurns===true};}),

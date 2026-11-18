@@ -40,7 +40,7 @@
         <input id="apiBaseUrl" type="url" placeholder="https://api.example.com/v1" spellcheck="false" required disabled>
         <label for="apiModel">모델 이름</label>
         <input id="apiModel" type="text" spellcheck="false" required disabled>
-        <label for="apiKey">API 키 <span class="note">(비워 두면 기존 키 유지)</span></label>
+        <label for="apiKey">API 키 <span class="note">(프로토콜·호스트·포트가 같으면 비워 두어 기존 키 유지)</span></label>
         <input id="apiKey" type="password" autocomplete="new-password" spellcheck="false" disabled>
         <button class="btn" id="saveApi" type="submit" disabled>연결 저장</button>
       </form>
@@ -72,7 +72,7 @@
           <input id="questionBaseUrl" type="url" spellcheck="false" required disabled>
           <label for="questionModel">모델 이름</label>
           <input id="questionModel" type="text" spellcheck="false" required disabled>
-          <label for="questionKey">API 키 <span class="note">(비워 두면 기존 질문용 키 유지)</span></label>
+          <label for="questionKey">API 키 <span class="note">(프로토콜·호스트·포트가 같으면 비워 두어 기존 질문용 키 유지)</span></label>
           <input id="questionKey" type="password" autocomplete="new-password" spellcheck="false" disabled>
         </fieldset>
         <label for="reviewSource">검토용 모델</label>
@@ -85,7 +85,7 @@
           <input id="reviewBaseUrl" type="url" spellcheck="false" required disabled>
           <label for="reviewModel">모델 이름</label>
           <input id="reviewModel" type="text" spellcheck="false" required disabled>
-          <label for="reviewKey">API 키 <span class="note">(비워 두면 기존 검토용 키 유지)</span></label>
+          <label for="reviewKey">API 키 <span class="note">(프로토콜·호스트·포트가 같으면 비워 두어 기존 검토용 키 유지)</span></label>
           <input id="reviewKey" type="password" autocomplete="new-password" spellcheck="false" disabled>
         </fieldset>
         <button class="btn" id="saveExecution" type="submit" disabled>질문 실행 설정 저장</button>

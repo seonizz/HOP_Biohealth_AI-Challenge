@@ -6,16 +6,26 @@ import {validateModelConnection,prepareModelConnection,withModelConnections,miss
 const input={base_url:'https://models.example/v1',model:'synthetic',api_key:'synthetic-key'};
 test('connection validation canonicalizes URLs, preserves blank keys and rejects unsafe endpoints',()=>{
  assert.equal(validateModelConnection({...input,base_url:'https://models.example/v1/chat/completions/'}).baseUrl,input.base_url);
- assert.equal(validateModelConnection({...input,api_key:''},{apiKey:'existing-key'}).apiKey,'existing-key');
+ assert.equal(validateModelConnection({...input,api_key:''},{baseUrl:'https://models.example:443/old',apiKey:'existing-key'}).apiKey,'existing-key');
  assert.equal(validateModelConnection({...input,base_url:'http://127.0.0.1:8080',api_key:''}).apiKey,'local-ollama');
  for(const patch of [{base_url:'http://external.example'},{base_url:'file:///tmp/key'},{base_url:'https://user:secret@external.example'},
   {base_url:'https://models.example/v1?key=secret'},{base_url:'https://models.example/v1#secret'},{model:''},{model:'x'.repeat(201)},{api_key:'x'.repeat(4097)},{api_key:'bad\nkey'},{api_key:''},{extra:true}])
   assert.throws(()=>validateModelConnection({...input,...patch}),{status:422,code:'INVALID_MODEL_CONNECTION'});
 });
+test('a blank key can only reuse credentials from the same origin',()=>{
+ const current={baseUrl:input.base_url,apiKey:'existing-key'};
+ for(const base_url of ['https://other.example/v1','https://models.example:8443/v1']){
+  assert.throws(()=>validateModelConnection({...input,base_url,api_key:''},current),{code:'INVALID_MODEL_CONNECTION'});
+  assert.equal(validateModelConnection({...input,base_url},current).apiKey,input.api_key);
+ }
+ assert.throws(()=>validateModelConnection({...input,api_key:''},{apiKey:'existing-key'}),{code:'INVALID_MODEL_CONNECTION'});
+ const local={...input,base_url:'http://localhost/v1',api_key:''};
+ assert.equal(validateModelConnection(local,{baseUrl:'https://localhost/v1',apiKey:'existing-key'}).apiKey,'local-ollama');
+});
 test('31B connection changes revoke one-call approval and preserve its own wire options and old versions',()=>{
  const original=configuredModelGateway({env:{MODEL_BASE_URL:'http://127.0.0.1:18731/v1',MODEL_NAME:'original31',MODEL_API_KEY:'old-key',MODEL_PROTOCOL:'relationship_agent',MODEL_STATE_MODE:'combined',
   MODEL_SINGLE_CALL_TURNS:'true',MODEL_AGENT_FORMAT:'prompt',MODEL_REASONING_EFFORT:'omit',MODEL_DISCOVER_TOKEN_LIMITS:'false'}});
- for(const patch of [{base_url:'https://changed.example/v1'},{model:'changed'},{api_key:'changed-key'}]){
+ for(const patch of [{base_url:'https://changed.example/v1',api_key:'new-key'},{model:'changed'},{api_key:'changed-key'}]){
   const updated=prepareModelConnection('gpu31b',{base_url:original.baseUrl,model:original.model,api_key:'',...patch},original);
   assert.equal(updated.gateway.singleCallTurns,false);assert.equal(updated.gateway.bundleCombinedTurnReviews,true);
   assert.equal(updated.gateway.agentFormat,'prompt');assert.equal(updated.gateway.reasoningEffort,'omit');
@@ -96,7 +106,7 @@ test('question-only connection preserves an unchanged writer but cannot enter a 
  assert.equal(same.gateway.singleCallTurns,true);assert.equal(same.gateway.singleCallQuestionOnly,true);
  assert.equal(same.gateway.reviewGateway.singleCallTurns,false);assert.equal(same.gateway.reviewGateway.singleCallQuestionOnly,false);
  assert.equal(same.gateway.configured,true);
- for(const patch of [{base_url:'https://changed.example/v1'},{model:'changed'},{api_key:'changed-key'}]){
+ for(const patch of [{base_url:'https://changed.example/v1',api_key:'new-key'},{model:'changed'},{api_key:'changed-key'}]){
   const changed=prepareModelConnection('gpu31b',{...input,...patch},original);
   assert.equal(changed.gateway.singleCallTurns,false);assert.equal(changed.gateway.singleCallQuestionOnly,false);
   assert.equal(changed.gateway.bundleCombinedTurnReviews,true);

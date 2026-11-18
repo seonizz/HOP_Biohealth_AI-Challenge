@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { randomBytes, randomUUID } from 'node:crypto';
 import pg from 'pg';
 import { createApp } from '../src/server.js';
+import { ModelGateway } from '../src/model.js';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
 const options = {skip:!databaseUrl, timeout:15000};
@@ -15,7 +16,7 @@ const output = () => ({patient_state:structuredClone(memory), name_index:null,
 const answers = [{question_id:'name', text:'합성별칭'}, {question_id:'concern', text:'  합성 원문\n둘째 줄  '}];
 const runPath = id => `/api/test-runs/${id}`;
 
-async function fixture(t, gateway) {
+async function fixture(t, gateway, modelProfiles) {
   const schema = `test_runner_${randomBytes(8).toString('hex')}`;
   const admin = new pg.Pool({connectionString:databaseUrl});
   let app;
@@ -27,7 +28,7 @@ async function fixture(t, gateway) {
       finally { await admin.end(); }
     }
   });
-  app = await createApp({databaseUrl, schema, key:randomBytes(32), gateway, referralProvider:null});
+  app = await createApp({databaseUrl, schema, key:randomBytes(32), gateway, modelProfiles, referralProvider:null});
   await restoreLegacyQuestionBank(app.store);
   await new Promise(resolve => app.server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${app.server.address().port}`;
@@ -125,6 +126,50 @@ test('test generation receives exact supplied evidence and never persists an int
   assert.equal(seen[0].context.followUps, 0);
   assert.equal((await f.request(session, `${runPath(id)}/progress`)).status, 404);
   assert.equal((await f.request(session, runPath(id), 'DELETE')).status, 404);
+  await f.assertEmpty(session);
+});
+
+test('admin-only connections drive role selection, health and card tests after each edit', options, async t => {
+  const f = await fixture(t, null, {local12b:null, gpu31b:null});
+  const session = await f.browser();
+  const request = (path, method, data) => f.request(session, path, method, data);
+  const seen = [];
+  t.mock.method(ModelGateway.prototype, 'respond', async function () {
+    seen.push({model:this.model, reviewer:this.reviewGateway?.model ?? null});
+    return output();
+  });
+  const run = () => request(runPath(randomUUID()), 'POST', {answers});
+  const save = async (id, model) => {
+    const response = await request('/api/admin/model-connections/' + id, 'PUT', {
+      base_url:'http://127.0.0.1:11434/v1', model, api_key:'',
+    });
+    assert.equal(response.status, 200);
+  };
+  const select = async (question, result) => {
+    const response = await request('/api/admin/models', 'PUT', {
+      model_profile_id:question, result_model_profile_id:result,
+    });
+    assert.equal(response.status, 200);
+  };
+  const checkCardModel = async (model, reviewer) => {
+    const health = await request('/health');
+    assert.equal(health.status, 200);
+    assert.equal(health.data.model_configured, true);
+    assert.equal(health.data.model_requested, model);
+    assert.equal(health.data.model_protocol, 'relationship_agent');
+    assert.equal((await run()).status, 200);
+    assert.deepEqual(seen.pop(), {model, reviewer});
+  };
+  assert.equal((await request('/health')).data.model_configured, false);
+  assert.equal((await run()).data.error.code, 'MODEL_NOT_CONNECTED');
+  await save('local12b','question-a');
+  await save('gpu31b','card-a');
+  await select('local12b','gpu31b');
+  await checkCardModel('card-a', null);
+  await save('gpu31b','card-b');
+  await checkCardModel('card-b', null);
+  await select('local12b',null);
+  await checkCardModel('question-a','question-a');
   await f.assertEmpty(session);
 });
 
