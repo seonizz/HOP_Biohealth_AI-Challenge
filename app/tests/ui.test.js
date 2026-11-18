@@ -138,6 +138,9 @@ test('service introduction retains the restored layout with current question and
   assert.match(html, /질문으로 상황 이해하기/);
   assert.match(html, /진단을 위한 검사가 아니/);
   assert.match(html, /보관과 삭제 안내/);
+  assert.match(html, /원천 데이터 건수/);
+  assert.match(html, /보관키로 기록을 열어도 보관기간이 연장되지는 않아요/);
+  assert.doesNotMatch(html, /8회기|CBT|쿠키를 지우거나 접근 기간이 끝나면 기존 기록을 열 수 없어요/);
 });
 
 test('start screen sets waiting expectations and opens retention and access-loss deletion guidance', () => {

@@ -1,7 +1,7 @@
 // 서비스 소개: 기존 화면 구성에 현재 질문 계약과 이용 안내를 반영합니다.
 // 칸(상자)을 줄이고, 단계마다 번호·큰 여백으로 나눔. 숫자는 큰 숫자와 막대 그래프로
-const ABOUT_SESSIONS=[["우울증",484],["불안장애",487],["중독",448],["일반군 (비교용)",242]];
-const ABOUT_LABELS=[["증상",28,"우울한 기분, 불안감, 갈망 등 · DSM-5-TR 기준"],["위험요인",20,"사회적 지지 부족, 스트레스 사건 등"],["상담사의 개입",11,"공감과 지지, 명료화와 반영 등"],["개선요인",5,"정서적 변화, 변화 동기 증진 등"]];
+const ABOUT_SOURCES=[["우울증",484],["불안장애",487],["중독",448],["일반군 (비교용)",242]];
+const ABOUT_LABELS=[["증상",28,"우울한 기분, 불안감, 갈망 등"],["위험요인",20,"사회적 지지 부족, 스트레스 사건 등"],["상담사의 개입",11,"공감과 지지, 명료화와 반영 등"],["개선요인",5,"정서적 변화, 변화 동기 증진 등"]];
 // 가로 막대 그래프 (한 가지 값이라 한 색, 값은 막대 옆에 바로 표시)
 const aboutBars=(rows,unit,label)=>{const max=Math.max(...rows.map(r=>r[1]));
   return `<div class="bars" role="img" aria-label="${label}: ${rows.map(r=>r[0]+" "+r[1]+unit).join(", ")}">${rows.map(([k,v,sub])=>`
@@ -31,35 +31,28 @@ const AboutScreen={
 
     <section class="asec">
       <header class="ahead"><span class="anum">02</span><div><span class="kicker">개발에 참고한 상담 데이터</span><h3 class="t">실제 상담실에서 오간 한국어 대화</h3></div></header>
-      <p class="alead it">말씨 개발에서는 AI허브에 공개된 「심리상담 데이터」를 참고했어요. 이 데이터는 우울증, 불안장애, 중독으로 어려움을 겪는 분들과 전문 상담사가 실제로 나눈 상담 대화 <b>1,661회기</b>를 기록한 것이에요.</p>
+      <p class="alead it">말씨 개발에서는 AI허브에 공개된 「심리상담 데이터」를 참고했어요. 공개 통계에는 우울증·불안장애·중독·일반군의 상담을 담은 원천 데이터 <b>1,661건</b>과 라벨링 데이터 <b>465,474건</b>이 안내되어 있어요.</p>
       <div class="bignums">
-        <div class="it"><b>1,661<small>회기</small></b><span>전문 상담사와 실제로 나눈 상담 대화</span></div>
-        <div class="it"><b>8<small>회기</small></b><span>내담자 한 분당, 검증된 인지행동치료(CBT) 흐름으로</span></div>
-        <div class="it"><b>46만<small>여 단락</small></b><span>전문가가 한 단락씩 읽고 표시</span></div>
-        <div class="it"><b>64<small>개 항목</small></b><span>단락마다 0~3점으로 평가한 마음의 신호</span></div>
+        <div class="it"><b>1,661<small>건</small></b><span>공개 통계의 원천 데이터</span></div>
+        <div class="it"><b>4<small>개 집단</small></b><span>우울증·불안장애·중독·일반군</span></div>
+        <div class="it"><b>46만<small>여 건</small></b><span>공개 통계의 라벨링 데이터</span></div>
+        <div class="it"><b>64<small>개 항목</small></b><span>증상·위험·개선·상담 개입의 분류 항목</span></div>
       </div>
       <div class="charts">
-        <figure class="chart it"><figcaption><b>어떤 대화가 담겨 있나요</b><span>상담 회기 수</span></figcaption>${aboutBars(ABOUT_SESSIONS,"회기","상담 회기 수")}</figure>
-        <figure class="chart it"><figcaption><b>무엇을 표시했나요</b><span>평가 항목 64개의 구성</span></figcaption>${aboutBars(ABOUT_LABELS,"개","평가 항목 수")}</figure>
+        <figure class="chart it"><figcaption><b>어떤 대화가 담겨 있나요</b><span>원천 데이터 건수</span></figcaption>${aboutBars(ABOUT_SOURCES,"건","원천 데이터 건수")}</figure>
+        <figure class="chart it"><figcaption><b>무엇을 표시했나요</b><span>분류 항목 64개의 구성</span></figcaption>${aboutBars(ABOUT_LABELS,"개","분류 항목 수")}</figure>
       </div>
       <div class="acc it">
-        <details><summary>실제 정신건강 어려움을 겪는 분들의 대화<span>참여자 선정과 구성</span></summary>
-          <p>참여자는 먼저 선별 검사를 받았어요. 기준을 넘은 분들은 질환별 공인 심리검사를 거쳤고, 정신보건 임상심리사와 정신과 전문의가 평가해 최종 선정했어요. 대화는 우울증 484회기, 불안장애 487회기, 중독 448회기, 비교를 위한 일반군 242회기로 고르게 구성되어 있어요.</p></details>
-        <details><summary>근거 기반 상담 구조<span>인지행동치료(CBT) 8회기</span></summary>
-          <p>모든 상담은 효과가 연구로 검증된 인지행동치료(CBT)를 바탕으로 진행됐어요. 내담자 한 분당 8회기씩, 정해진 흐름에 따라 이뤄졌어요.</p></details>
-        <details><summary>전문가가 한 단락씩 읽고 표시한 마음의 신호<span>46만여 단락 · 64개 항목</span></summary>
-          <p>상담 대화 46만여 단락마다 64개 세부 항목을 0~3점으로 평가했어요.</p>
-          <ul>
-            <li><b>증상</b> 우울한 기분, 불안감, 갈망 등 28개 항목이에요. 정신질환 진단 기준인 DSM-5-TR을 따랐어요.</li>
-            <li><b>위험요인</b> 사회적 지지 부족, 스트레스 사건 등 20개 항목이에요. 질환별 체계적 문헌고찰 연구를 참고했어요.</li>
-            <li><b>개선요인</b> 정서적 변화, 변화 동기 증진 등 5개 항목이에요.</li>
-            <li><b>상담사의 개입</b> 공감과 지지, 명료화와 반영 등 11개 항목이에요.</li>
-          </ul>
-          <p>라벨링은 임상·상담심리 석사 이상의 준전문가가 맡았고, 정신과 전문의와 심리학 교수급 전문가가 검수했어요.</p></details>
+        <details><summary>어떤 상담이 담겨 있나요?<span>원천 데이터의 구성</span></summary>
+          <p>공개 통계는 우울증 484건, 불안장애 487건, 중독 448건, 일반군 242건으로 구성돼 있어요.</p></details>
+        <details><summary>상담을 기록한 자료<span>음성과 전사 텍스트</span></summary>
+          <p>구조화된 심리상담 프로토콜로 수집한 음성과 이를 글로 옮긴 텍스트가 포함돼 있어요.</p></details>
+        <details><summary>대화에 담긴 내용을 분류한 정보<span>46만여 건 · 64개 항목</span></summary>
+          <p>공개된 데이터 구조에는 증상 28개, 위험요인 20개, 개선요인 5개, 상담사의 개입 11개 항목이 있어요.</p></details>
         <details><summary>우리말 그대로의 마음<span>번역이 아닌 한국어 대화</span></summary>
-          <p>번역된 외국 자료가 아니라 한국어로 오간 대화예요. 그래서 "괜찮아요"라는 말 속에 숨은 힘듦처럼 우리말 특유의 감정 표현과 돌려 말하는 방식이 담겨 있어요.</p></details>
+          <p>한국어 상담의 대화 맥락과 표현을 살펴볼 수 있는 자료예요.</p></details>
       </div>
-      <p class="note it">개인정보 보호를 위해 이름, 연락처, 소속 등은 모두 비식별 처리된 데이터예요.</p>
+      <p class="note it">공개 자료에는 이름 등 민감한 정보를 비식별 처리했다고 안내되어 있어요. <a href="https://www.aihub.or.kr/aihubdata/data/view.do?dataSetSn=71806" target="_blank" rel="noopener noreferrer">AI허브 데이터 소개<span class="sr">(새 탭에서 열림)</span></a></p>
       <div class="learn it">
         <p class="learn-t">말씨는 답변을 정리할 때 <b>두 가지</b>를 살펴요</p>
         <div class="learn-row"><div><span>1</span><b>어떤 일이 있었는지</b><p>직접 보고 들은 일과 상대가 표현한 말을 살펴요.</p></div><i aria-hidden="true">→</i><div><span>2</span><b>어떤 도움을 원하는지</b><p>당신의 마음, 가능한 범위와 원하는 선택을 함께 살펴요.</p></div></div>
@@ -128,7 +121,8 @@ const AboutScreen={
           <p>입력한 답변은 서버에 저장되고, 안내 생성을 위해 연결된 AI 모델로 전송돼요. 이름·연락처처럼 당사자를 알아볼 수 있는 정보는 꼭 필요한 만큼만 적어 주세요.</p>
           <p>대화를 중단하거나 브라우저를 닫아도 바로 삭제되지 않아요. 마지막 이용 후 ${typeof API!=="undefined"&&API.retentionDays?API.retentionDays():30}일이 지나면 기록을 열 수 없고, 서버 운영 중 1시간 안에 자동 삭제돼요. 서버가 멈춰 있었다면 다시 시작할 때 삭제해요.</p>
           <p>완료 기록과 진행 중이거나 중단한 대화는 「내 기록」에서 하나씩 또는 모두 삭제할 수 있어요. 대화를 삭제하면 관련 결과도 함께 지워져요. 칼럼의 읽음·담음은 유지돼요.</p>
-          <p>쿠키를 지우거나 접근 기간이 끝나면 기존 기록을 열 수 없어요. 그 전에 「내 기록」에서 삭제 키를 만들어 따로 보관하면 나중에도 해당 대화만 삭제할 수 있어요. 삭제 키는 기록을 다시 여는 데 사용할 수 없어요.</p>
+          <p>「내 기록」에서 완료 기록의 보관키를 만들어 두면, 쿠키를 잃어도 보관기간 안에는 그 기록을 다시 열 수 있어요. 보관키를 가진 사람은 해당 기록과 대화 내용을 볼 수 있으니 안전하게 보관해 주세요. 키를 교체·해제하거나 기록이 삭제되면 사용할 수 없어요.</p>
+          <p>「내 기록」에서 삭제 키를 만들어 따로 보관하면 쿠키를 잃은 뒤에도 그 키에 연결된 대화들을 삭제할 수 있어요. 보관키로 기록을 열어도 보관기간이 연장되지는 않아요.</p>
         </details>
       </div>
     </section>
