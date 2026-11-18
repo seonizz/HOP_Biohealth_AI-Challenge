@@ -67,7 +67,7 @@ test('one or two essential decisions yield three or four prompts, with no sequen
 
 test('an essential fifth question is permitted and the model sees the exceeded four-question target',()=>{
  let prepared=scenePending();
- for(const id of ['q3_08','q3_09','q3_07']){
+ for(const id of ['q3_07','q3_08','q3_09']){ // 3.1: registered questions only move forward
   const state=finish(prepared,{personalization:next(prepared,id)});prepared=pending(state,'상대가 직접 부탁한 범위만 도우려 합니다.');
  }
  assert.equal(buildContext(prepared).question_policy.compact_flow.issued_questions,5);
@@ -109,7 +109,7 @@ test('resuming an issued question suppresses competing next, follow-up and Q10 w
    component:'rawText',event_id:'request',quote:field.rawText,quote_start:0,quote_end:Array.from(field.rawText).length,
    axis:'modality',role:'',agreement_item_id:''}}
    :{personalization:kind==='next'?next(correction,'q3_09')
-    :next(correction,null,{kind,question:'다른 날짜에 가능한 시간이 있나요?',focus:'support'})};
+    :next(correction,null,{kind,question:'요청받은 뒤로 달라진 사정이 있나요?',focus:'change'})};
   const resumed=finish(correction,decision);
   assert.equal(currentView(resumed).question.id,'q3_08',kind);
   assert.deepEqual(Object.keys(resumed.v3.issued),['q3_01','q3_03','q3_08'],kind);

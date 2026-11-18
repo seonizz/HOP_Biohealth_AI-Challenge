@@ -1,6 +1,6 @@
 import { HttpError } from './errors.js';
 import { safetySources, validateSchema } from './relationship-agent.js';
-import { PERSONALIZED_FOCUSES, validatePersonalization } from './personalized-questions.js';
+import { allowedCustomFocuses, validatePersonalization } from './personalized-questions.js';
 
 const object = properties => ({type:'object',properties,required:Object.keys(properties),additionalProperties:false});
 const text = maxLength => ({type:'string',minLength:1,maxLength});
@@ -79,12 +79,13 @@ export function splitQuestionRequest(context) {
     ...(reported.some(value=>describedScene.test(value))?['q3_03']:[]),
     ...(reported.some(value=>describedSupport.test(value))?['q3_08']:[]),
   ];
-  const customFocuses = PERSONALIZED_FOCUSES.filter(focus=>focus!=='relationship'||!relationGiven);
   const draftContextComplete = covered.includes('q3_03') && covered.includes('q3_08') &&
     [goal?.field.rawText,goal?.field.custom].some(value=>draftingGoal.test(value || ''));
   const candidates = draftContextComplete ? [] :
     (context.question_candidates || []).filter(row=>!issued.has(row.id)&&!covered.includes(row.id));
-  const canCustomize = Boolean(context.personalization?.available&&context.personalization.remaining_follow_ups>0);
+  // A registered question that was already shown owns its topic.
+  const customFocuses = allowedCustomFocuses(context).filter(focus=>focus!=='relationship'||!relationGiven);
+  const canCustomize = Boolean(context.personalization?.available&&context.personalization.remaining_follow_ups>0&&customFocuses.length);
   const notRepeated = context.log?.filter(entry=>entry.who==='ai'&&issued.has(entry.question_id))
     .map(({question_id,text})=>({id:question_id,text})) || [];
   const alreadyAsked = [...new Map(notRepeated.map(item=>[item.id,item])).values()];

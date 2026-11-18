@@ -411,7 +411,31 @@
       "question_not_previously_issued",
       "no_stop_or_safety_hold"
     ],
-    "stale_response_policy": "reject_response_not_matching_active_instance_source_revision_and_goal_revision"
+    "stale_response_policy": "reject_response_not_matching_active_instance_source_revision_and_goal_revision",
+    "forward_only": true,
+    "forward_only_rule": "once_a_later_priority_question_is_shown_earlier_unshown_questions_are_not_offered",
+    "custom_followup": {
+      "focus_owner": {
+        "behavior": [
+          "Q3-04",
+          "Q3-05"
+        ],
+        "emotion": [
+          "Q3-06"
+        ],
+        "relationship": [
+          "Q3-02"
+        ],
+        "support": [
+          "Q3-08"
+        ],
+        "goal": [
+          "Q3-09"
+        ]
+      },
+      "focus_blocked_when": "every_owner_question_already_shown",
+      "reject_unspecific_questions": true
+    }
   },
   "clarification": {
     "question_id": "Q3-10",

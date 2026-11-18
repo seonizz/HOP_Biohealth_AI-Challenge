@@ -1,4 +1,5 @@
 import {HttpError} from './errors.js';
+import {blockedCustomFocuses, isUnspecificFollowUp} from './question-flow-guards.js';
 
 export const PERSONALIZED_FOCUSES = ['situation','behavior','emotion','relationship','change','support','goal'];
 const keys = ['kind','question_id','subject','source_question_id','source_revision','component','quote','quote_start','quote_end','question','focus','reason'];
@@ -20,6 +21,11 @@ export function personalizationSources(context) {
       .map(component => ({subject,source_question_id:field.id,source_revision:field.source_revision,component,text:field[component]}))));
 }
 
+export function allowedCustomFocuses(context) {
+  const blocked = blockedCustomFocuses(context);
+  return PERSONALIZED_FOCUSES.filter(focus => !blocked.includes(focus));
+}
+
 export function personalizationSchema(context) {
   const sources = personalizationSources(context);
   if (context.personalization?.version !== 1 || !context.personalization.available || !sources.length || context.user_stopped) return nil;
@@ -37,9 +43,10 @@ export function personalizationSchema(context) {
   if (candidates.length) choices.push(object({kind:{type:'string',const:'next'},
     question_id:{type:'string',enum:candidates.map(row => row.id)},subject:{type:'string',enum:['patient','supporter']},
     ...source,question:nil,focus:nil,reason:text(240)}));
-  if (context.personalization.remaining_follow_ups > 0) choices.push(object({kind:{type:'string',const:'follow_up'},
+  const focuses = allowedCustomFocuses(context);
+  if (context.personalization.remaining_follow_ups > 0 && focuses.length) choices.push(object({kind:{type:'string',const:'follow_up'},
     question_id:nil,subject:{type:'string',enum:['patient','supporter']},...source,
-    question:text(240),focus:{type:'string',enum:PERSONALIZED_FOCUSES},reason:text(240)}));
+    question:text(240),focus:{type:'string',enum:focuses},reason:text(240)}));
   return choices.length === 1 ? nil : {anyOf:choices};
 }
 
@@ -66,6 +73,8 @@ export function validatePersonalization(value, context, {skip=[],clarification=n
   } else if (value.kind === 'follow_up') {
     if (!(context.personalization.remaining_follow_ups > 0) || value.question_id !== null || !string(value.question,240) ||
         !PERSONALIZED_FOCUSES.includes(value.focus) || /[\r\n\u0000-\u001f]/u.test(value.question)) fail('agent_personalization_question');
+    if (!allowedCustomFocuses(context).includes(value.focus)) fail('agent_personalization_registered_scope');
+    if (isUnspecificFollowUp(context, value.question)) fail('agent_personalization_unspecific');
     const history = context.personalization.history || [];
     if (history.some(entry => {
       const previous = entry.decision || entry;
