@@ -124,16 +124,13 @@ function restoreUnsentDraft(context,draft){
   }};
 }
 
-test('service introduction restores the October 10 content with current retention guidance', () => {
+test('service introduction keeps research and implementation details in documentation', () => {
   const context = vm.createContext({ NavBar:() => '' });
   vm.runInContext(script('components/AboutScreen.js') + '\nglobalThis.screen = AboutScreen;', context);
   const html = context.screen.render();
-  assert.match(html, /실제 상담실에서 오간 한국어 대화/);
-  assert.match(html, /1,661/);
-  assert.match(html, /CFI · 문화적 공식화 면담/);
-  assert.match(html, /SSCS 모델 · FMI/);
-  assert.match(html, /웹이라서 더 좋아진 점/);
+  assert.doesNotMatch(html, /12B|31B|NLL|Macro F1|1,661|1,462|40,415|800행|CFI|FMI|SSCS|부분학습|검증 117/);
   assert.match(html, /질문으로 상황 이해하기/);
+  assert.match(html, /모른다고 답해도 괜찮아요/);
   assert.match(html, /진단을 위한 검사가 아니/);
   assert.match(html, /보관과 삭제 안내/);
 });
