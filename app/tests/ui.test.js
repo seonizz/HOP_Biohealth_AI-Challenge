@@ -134,13 +134,23 @@ test('service introduction retains the restored layout with current question and
   assert.match(html, /실제로 보고 들은 일과 내 마음 살피기/);
   assert.match(html, /앞으로 할 수 있는 일과 하고 싶은 일/);
   assert.doesNotMatch(html, /CFI|FMI|SSCS|얼마나 뚜렷한지|면담 방법 세 가지/);
-  assert.match(html, /웹이라서 더 좋아진 점/);
+  assert.match(html, /편한 때에, 편한 속도로 답할 수 있어요/);
   assert.match(html, /질문으로 상황 이해하기/);
   assert.match(html, /진단을 위한 검사가 아니/);
   assert.match(html, /보관과 삭제 안내/);
   assert.match(html, /원천 데이터 건수/);
+  assert.match(html, /말씨의 질문과 안내에 필요한 자료도 별도로 구성했어요/);
+  assert.match(html, /앞으로의 평가 계획/);
+  assert.match(html, /아직 평가 결과가 나온 것은 아니에요/);
+  assert.doesNotMatch(html, /Macro F1|Micro F1|90%|95%|0\.05/);
   assert.match(html, /보관키로 기록을 열어도 보관기간이 연장되지는 않아요/);
   assert.doesNotMatch(html, /8회기|CBT|쿠키를 지우거나 접근 기간이 끝나면 기존 기록을 열 수 없어요/);
+});
+
+test('service introduction excludes historical research and training copy from rendered markup', () => {
+  const context = vm.createContext({ NavBar:() => '' });
+  vm.runInContext(script('components/AboutScreen.js') + '\nglobalThis.screen = AboutScreen;', context);
+  assert.doesNotMatch(context.screen.render(), /CFI|SSCS|FMI|DSM|회기|배우고 있|반구조화 면담|가족 영향 척도|문화적 공식화 면담|0~3점|46만여 단락|한 단락씩 읽고 표시|답이 부족하면 한 번 더/);
 });
 
 test('start screen sets waiting expectations and opens retention and access-loss deletion guidance', () => {

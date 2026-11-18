@@ -43,14 +43,16 @@ const AboutScreen={
         <figure class="chart it"><figcaption><b>무엇을 표시했나요</b><span>분류 항목 64개의 구성</span></figcaption>${aboutBars(ABOUT_LABELS,"개","분류 항목 수")}</figure>
       </div>
       <div class="acc it">
-        <details><summary>어떤 상담이 담겨 있나요?<span>원천 데이터의 구성</span></summary>
-          <p>공개 통계는 우울증 484건, 불안장애 487건, 중독 448건, 일반군 242건으로 구성돼 있어요.</p></details>
-        <details><summary>상담을 기록한 자료<span>음성과 전사 텍스트</span></summary>
-          <p>구조화된 심리상담 프로토콜로 수집한 음성과 이를 글로 옮긴 텍스트가 포함돼 있어요.</p></details>
-        <details><summary>대화에 담긴 내용을 분류한 정보<span>46만여 건 · 64개 항목</span></summary>
-          <p>공개된 데이터 구조에는 증상 28개, 위험요인 20개, 개선요인 5개, 상담사의 개입 11개 항목이 있어요.</p></details>
-        <details><summary>우리말 그대로의 마음<span>번역이 아닌 한국어 대화</span></summary>
-          <p>한국어 상담의 대화 맥락과 표현을 살펴볼 수 있는 자료예요.</p></details>
+        <details><summary>한 문장보다, 대화의 흐름을 살펴요<span>상담 대화의 구성</span></summary>
+          <p>실제 상담 대화를 누가 어떤 순서로 말했는지에 맞춰 정리했어요. 내담자가 설명한 상황과 앞선 상담사의 말을 함께 보고, 그다음 상담사가 실제로 한 말을 연결했어요. 지나치게 단순하거나 맥락이 부족한 대화는 제외했어요.</p></details>
+        <details><summary>지금 필요한 질문을 고르기 위해<span>말씨에 맞춘 별도 자료</span></summary>
+          <p>말씨의 질문과 안내에 필요한 자료도 별도로 구성했어요. 대화에 맞는 다음 질문을 고르고, 인물 관계와 상황을 정리하는 자료예요.</p>
+          <p>앞뒤 내용이 달라지거나 답변에 오류가 있을 때, 무엇을 다시 확인해야 하는지도 다뤄요. 예를 들어 아버지 이야기를 하다가 동생 이야기로 바뀌면, 누구에 관한 말인지 구분해 확인하는 식이에요.</p></details>
+        <details><summary>하지 않은 말을 덧붙이지 않도록<span>사실과 안내의 근거 확인</span></summary>
+          <p>대화에서 실제로 나온 사실을 확인하고, 그 말을 정확하게 인용했는지 평가하는 자료를 구성했어요. 잘못된 안내를 찾아 고치고, 상황에 맞는 최종 안내 카드를 만드는 자료도 포함했어요.</p></details>
+        <details><summary>도움이 되는 안내인지 확인할 거예요<span>앞으로의 평가 계획</span></summary>
+          <p>필요한 질문을 잘 골랐는지, 사람과 상황을 정확히 이해했는지, 잘못된 초안을 바로잡고 괜찮은 초안은 유지했는지 평가할 예정이에요. 대화에 명시된 현재 위험을 놓치거나 지나치게 판단하지 않았는지도 확인할 거예요.</p>
+          <p>안내가 실제로 하신 말씀에 충실한지, 목적과 상황에 맞게 쓸 수 있는지도 두 평가자가 살펴볼 예정이에요. 아직 평가 결과가 나온 것은 아니에요.</p></details>
       </div>
       <p class="note it">공개 자료에는 이름 등 민감한 정보를 비식별 처리했다고 안내되어 있어요. <a href="https://www.aihub.or.kr/aihubdata/data/view.do?dataSetSn=71806" target="_blank" rel="noopener noreferrer">AI허브 데이터 소개<span class="sr">(새 탭에서 열림)</span></a></p>
       <div class="learn it">
@@ -104,7 +106,7 @@ const AboutScreen={
     </section>
 
     <section class="asec">
-      <header class="ahead"><span class="anum">04</span><h3 class="t">웹이라서 더 좋아진 점도 있어요</h3></header>
+      <header class="ahead"><span class="anum">04</span><h3 class="t">편한 때에, 편한 속도로 답할 수 있어요</h3></header>
       <div class="web">
         <div class="it"><img data-m="joy" alt=""><p>말씨에서는 <b>당신이 원하는 때에, 원하는 속도로</b> 답할 수 있어요.</p></div>
         <div class="it"><img data-m="hear" alt=""><p>답변에 맞춰 <b>안내에 필요한 내용을 구체적으로 확인해요.</b> 잘 모르겠거나 답하기 어려운 내용은 그대로 알려 주세요.</p></div>
